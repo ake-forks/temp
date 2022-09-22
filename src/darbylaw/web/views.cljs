@@ -1,11 +1,11 @@
-(ns darbylaw.views
+(ns darbylaw.web.views
   (:require
    [re-frame.core :as re-frame]
    [breaking-point.core :as bp]
-   [darbylaw.styles :as styles]
-   [darbylaw.events :as events]
-   [darbylaw.routes :as routes]
-   [darbylaw.subs :as subs]))
+   [darbylaw.web.styles :as styles]
+   [darbylaw.web.events :as events]
+   [darbylaw.web.routes :as routes]
+   [darbylaw.web.subs :as subs]))
 
 
 

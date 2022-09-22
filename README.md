@@ -45,11 +45,11 @@ you.
     - Created on build with either the [dev](#running-the-app) or [prod](#production) profile
     - `js/compiled/`: compiled CLJS (`shadow-cljs`)
       - Not tracked in source control; see [`.gitignore`](.gitignore)
-* [`src/darbylaw/styles.cljs`](src/darbylaw/styles.cljs): CSS compilation source file (ClojureScript,
+* [`src/darbylaw/styles.cljs`](src/darbylaw/web/styles.cljs): CSS compilation source file (ClojureScript,
 [Garden](https://github.com/noprompt/garden))
 * [`src/darbylaw/`](src/darbylaw/): SPA source files (ClojureScript,
 [re-frame](https://github.com/Day8/re-frame))
-  - [`core.cljs`](src/darbylaw/core.cljs): contains the SPA entry point, `init`
+  - [`core.cljs`](src/darbylaw/web/core.cljs): contains the SPA entry point, `init`
 * [`.github/workflows/`](.github/workflows/): contains the
 [github actions](https://github.com/features/actions) pipelines.
   - [`test.yaml`](.github/workflows/test.yaml): Pipeline for testing.

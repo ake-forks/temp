@@ -1,12 +1,12 @@
-(ns darbylaw.core
+(ns darbylaw.web.core
   (:require
    [reagent.dom :as rdom]
    [re-frame.core :as re-frame]
    [breaking-point.core :as bp]
-   [darbylaw.events :as events]
-   [darbylaw.routes :as routes]
-   [darbylaw.views :as views]
-   [darbylaw.config :as config]))
+   [darbylaw.web.events :as events]
+   [darbylaw.web.routes :as routes]
+   [darbylaw.web.views :as views]
+   [darbylaw.web.config :as config]))
 
 
 

@@ -1,4 +1,4 @@
-(ns darbylaw.subs
+(ns darbylaw.web.subs
   (:require
    [re-frame.core :as re-frame]))
 

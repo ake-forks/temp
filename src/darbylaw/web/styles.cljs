@@ -1,4 +1,4 @@
-(ns darbylaw.styles
+(ns darbylaw.web.styles
   (:require-macros
     [garden.def :refer [defcssfn]])
   (:require

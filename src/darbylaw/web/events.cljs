@@ -1,7 +1,7 @@
-(ns darbylaw.events
+(ns darbylaw.web.events
   (:require
    [re-frame.core :as re-frame]
-   [darbylaw.db :as db]))
+   [darbylaw.web.db :as db]))
 
 
 (re-frame/reg-event-db

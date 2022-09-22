@@ -1,9 +1,9 @@
-(ns darbylaw.routes
+(ns darbylaw.web.routes
   (:require
    [bidi.bidi :as bidi]
    [pushy.core :as pushy]
    [re-frame.core :as re-frame]
-   [darbylaw.events :as events]))
+   [darbylaw.web.events :as events]))
 
 (defmulti panels identity)
 (defmethod panels :default [] [:div "No panel found for this route."])

@@ -1,4 +1,4 @@
-(ns darbylaw.db)
+(ns darbylaw.web.db)
 
 (def default-db
   {:name "re-frame"})
