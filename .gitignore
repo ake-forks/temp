@@ -18,3 +18,12 @@
 /.idea
 /*.iml
 /.cpcache/
+
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+.terraformrc
+terraform.rc
