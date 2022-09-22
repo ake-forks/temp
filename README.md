@@ -1,102 +1,27 @@
 # darbylaw
 
-A [re-frame](https://github.com/day8/re-frame) application designed to ... well, that part is up to
-you.
+## Clojure Server
 
-## Getting Started
+### Usage
 
-### Project Overview
+Run the backend server on port 8080 (if no port is provided 8888 is used):
 
-* Architecture:
-[Single Page Application (SPA)](https://en.wikipedia.org/wiki/Single-page_application)
-* Languages
-  - Front end is [ClojureScript](https://clojurescript.org/) with ([re-frame](https://github.com/day8/re-frame))
-  - CSS compilation is [Garden](https://github.com/noprompt/garden) with [Spade](https://github.com/dhleong/spade)
-* Dependencies
-  - UI framework: [re-frame](https://github.com/day8/re-frame)
-  ([docs](https://github.com/day8/re-frame/blob/master/docs/README.md),
-  [FAQs](https://github.com/day8/re-frame/blob/master/docs/FAQs/README.md)) ->
-  [Reagent](https://github.com/reagent-project/reagent) ->
-  [React](https://github.com/facebook/react)
-  - Client-side routing: [bidi](https://github.com/juxt/bidi) and [pushy](https://github.com/kibu-australia/pushy)
-  - CSS rendering: [Garden](https://github.com/noprompt/garden)
-  - Screen breakpoints tool: [BREAKING-POINT](https://github.com/gadfly361/breaking-point)
-* Build tools
-  - CLJS compilation, dependency management, REPL, & hot reload: [`shadow-cljs`](https://github.com/thheller/shadow-cljs)
-* Development tools
-  - Debugging: [CLJS DevTools](https://github.com/binaryage/cljs-devtools),
-  [re-frisk](https://github.com/flexsurfer/re-frisk)
+    $ clojure -M -m darbylaw.core 8080
 
-#### Directory structure
+Run the project's tests (they'll fail until you edit them):
 
-* [`/`](/../../): project config files
-* [`dev/`](dev/): source files compiled only with the [dev](#running-the-app) profile
-  - [`user.cljs`](dev/cljs/user.cljs): symbols for use during development in the
-[ClojureScript REPL](#connecting-to-the-browser-repl-from-a-terminal)
-* [`resources/public/`](resources/public/): SPA root directory;
-[dev](#running-the-app) / [prod](#production) profile depends on the most recent build
-  - [`index.html`](resources/public/index.html): SPA home page
-    - Dynamic SPA content rendered in the following `div`:
-        ```html
-        <div id="app"></div>
-        ```
-    - Customizable; add headers, footers, links to other scripts and styles, etc.
-  - Generated directories and files
-    - Created on build with either the [dev](#running-the-app) or [prod](#production) profile
-    - `js/compiled/`: compiled CLJS (`shadow-cljs`)
-      - Not tracked in source control; see [`.gitignore`](.gitignore)
-* [`src/darbylaw/styles.cljs`](src/darbylaw/web/styles.cljs): CSS compilation source file (ClojureScript,
-[Garden](https://github.com/noprompt/garden))
-* [`src/darbylaw/`](src/darbylaw/): SPA source files (ClojureScript,
-[re-frame](https://github.com/Day8/re-frame))
-  - [`core.cljs`](src/darbylaw/web/core.cljs): contains the SPA entry point, `init`
-* [`.github/workflows/`](.github/workflows/): contains the
-[github actions](https://github.com/features/actions) pipelines.
-  - [`test.yaml`](.github/workflows/test.yaml): Pipeline for testing.
+    $ clojure -M:test:runner
 
+Build an uberjar:
 
-### Editor/IDE
+    $ clj -T:build clean
+    $ clj -T:build uber
 
-Use your preferred editor or IDE that supports Clojure/ClojureScript development. See
-[Clojure tools](https://clojure.org/community/resources#_clojure_tools) for some popular options.
+Run that uberjar:
 
-### Environment Setup
+    $ java -jar target/app-0.0.2-standalone.jar
 
-1. Install [JDK 8 or later](https://openjdk.java.net/install/) (Java Development Kit)
-2. Install [Node.js](https://nodejs.org/) (JavaScript runtime environment) which should include
-   [NPM](https://docs.npmjs.com/cli/npm) or if your Node.js installation does not include NPM also install it.
-5. Clone this repo and open a terminal in the `darbylaw` project root directory
-
-### Browser Setup
-
-Browser caching should be disabled when developer tools are open to prevent interference with
-[`shadow-cljs`](https://github.com/thheller/shadow-cljs) hot reloading.
-
-Custom formatters must be enabled in the browser before
-[CLJS DevTools](https://github.com/binaryage/cljs-devtools) can display ClojureScript data in the
-console in a more readable way.
-
-#### Chrome/Chromium
-
-1. Open [DevTools](https://developers.google.com/web/tools/chrome-devtools/) (Linux/Windows: `F12`
-or `Ctrl-Shift-I`; macOS: `⌘-Option-I`)
-2. Open DevTools Settings (Linux/Windows: `?` or `F1`; macOS: `?` or `Fn+F1`)
-3. Select `Preferences` in the navigation menu on the left, if it is not already selected
-4. Under the `Network` heading, enable the `Disable cache (while DevTools is open)` option
-5. Under the `Console` heading, enable the `Enable custom formatters` option
-
-#### Firefox
-
-1. Open [Developer Tools](https://developer.mozilla.org/en-US/docs/Tools) (Linux/Windows: `F12` or
-`Ctrl-Shift-I`; macOS: `⌘-Option-I`)
-2. Open [Developer Tools Settings](https://developer.mozilla.org/en-US/docs/Tools/Settings)
-(Linux/macOS/Windows: `F1`)
-3. Under the `Advanced settings` heading, enable the `Disable HTTP Cache (when toolbox is open)`
-option
-
-Unfortunately, Firefox does not yet support custom formatters in their devtools. For updates, follow
-the enhancement request in their bug tracker:
-[1262914 - Add support for Custom Formatters in devtools](https://bugzilla.mozilla.org/show_bug.cgi?id=1262914).
+## ClojureScript Client
 
 ## Development
 
@@ -199,3 +124,79 @@ Please be patient; it may take over 15 seconds to see any output, and over 30 se
 
 The `resources/public/js/compiled` directory is created, containing the compiled `app.js` and
 `manifest.edn` files.
+
+### Project Overview
+
+* Architecture:
+  [Single Page Application (SPA)](https://en.wikipedia.org/wiki/Single-page_application)
+* Languages
+    - Front end is [ClojureScript](https://clojurescript.org/) with ([re-frame](https://github.com/day8/re-frame))
+    - CSS compilation is [Garden](https://github.com/noprompt/garden) with [Spade](https://github.com/dhleong/spade)
+* Dependencies
+    - UI framework: [re-frame](https://github.com/day8/re-frame)
+      ([docs](https://github.com/day8/re-frame/blob/master/docs/README.md),
+      [FAQs](https://github.com/day8/re-frame/blob/master/docs/FAQs/README.md)) ->
+      [Reagent](https://github.com/reagent-project/reagent) ->
+      [React](https://github.com/facebook/react)
+    - Client-side routing: [bidi](https://github.com/juxt/bidi) and [pushy](https://github.com/kibu-australia/pushy)
+    - CSS rendering: [Garden](https://github.com/noprompt/garden)
+    - Screen breakpoints tool: [BREAKING-POINT](https://github.com/gadfly361/breaking-point)
+* Build tools
+    - CLJS compilation, dependency management, REPL, & hot reload: [`shadow-cljs`](https://github.com/thheller/shadow-cljs)
+* Development tools
+    - Debugging: [CLJS DevTools](https://github.com/binaryage/cljs-devtools),
+      [re-frisk](https://github.com/flexsurfer/re-frisk)
+
+#### Directory structure
+
+* [`/`](/../../): project config files
+* [`dev/`](dev/): source files compiled only with the [dev](#running-the-app) profile
+    - [`user.cljs`](dev/cljs/user.cljs): symbols for use during development in the
+      [ClojureScript REPL](#connecting-to-the-browser-repl-from-a-terminal)
+* [`resources/public/`](resources/public/): SPA root directory;
+  [dev](#running-the-app) / [prod](#production) profile depends on the most recent build
+    - Generated directories and files
+        - Created on build with either the [dev](#running-the-app) or [prod](#production) profile
+        - `js/compiled/`: compiled CLJS (`shadow-cljs`)
+            - Not tracked in source control; see [`.gitignore`](.gitignore)
+* [`src/darbylaw/styles.cljs`](src/darbylaw/web/styles.cljs): CSS compilation source file (ClojureScript,
+  [Garden](https://github.com/noprompt/garden))
+* [`src/darbylaw/`](src/darbylaw/): SPA source files (ClojureScript,
+  [re-frame](https://github.com/Day8/re-frame))
+    - [`core.cljs`](src/darbylaw/web/core.cljs): contains the SPA entry point, `init`
+* [`.github/workflows/`](.github/workflows/): contains the
+  [github actions](https://github.com/features/actions) pipelines.
+    - [`test.yaml`](.github/workflows/test.yaml): Pipeline for testing.
+
+
+### Browser Setup
+
+Browser caching should be disabled when developer tools are open to prevent interference with
+[`shadow-cljs`](https://github.com/thheller/shadow-cljs) hot reloading.
+
+Custom formatters must be enabled in the browser before
+[CLJS DevTools](https://github.com/binaryage/cljs-devtools) can display ClojureScript data in the
+console in a more readable way.
+
+#### Chrome/Chromium
+
+1. Open [DevTools](https://developers.google.com/web/tools/chrome-devtools/) (Linux/Windows: `F12`
+   or `Ctrl-Shift-I`; macOS: `⌘-Option-I`)
+2. Open DevTools Settings (Linux/Windows: `?` or `F1`; macOS: `?` or `Fn+F1`)
+3. Select `Preferences` in the navigation menu on the left, if it is not already selected
+4. Under the `Network` heading, enable the `Disable cache (while DevTools is open)` option
+5. Under the `Console` heading, enable the `Enable custom formatters` option
+
+#### Firefox
+
+1. Open [Developer Tools](https://developer.mozilla.org/en-US/docs/Tools) (Linux/Windows: `F12` or
+   `Ctrl-Shift-I`; macOS: `⌘-Option-I`)
+2. Open [Developer Tools Settings](https://developer.mozilla.org/en-US/docs/Tools/Settings)
+   (Linux/macOS/Windows: `F1`)
+3. Under the `Advanced settings` heading, enable the `Disable HTTP Cache (when toolbox is open)`
+   option
+
+Unfortunately, Firefox does not yet support custom formatters in their devtools. For updates, follow
+the enhancement request in their bug tracker:
+[1262914 - Add support for Custom Formatters in devtools](https://bugzilla.mozilla.org/show_bug.cgi?id=1262914).
+
