@@ -1,18 +1,20 @@
 (ns darbylaw.handler
   (:require
-   ;; third party libs
-   [reitit.ring :as ring]
-   [reitit.ring.coercion :as coercion]
-   [reitit.ring.middleware.parameters :as parameters]
-   [reitit.ring.middleware.muuntaja :as muuntaja]
-   [reitit.coercion.spec :as spec-coercion]
-   [muuntaja.core :as m]
-   [ring.middleware.cors :refer [wrap-cors]]
-   [ring.util.response :as r]
-   [hiccup.page :as h]
+    ;; third party libs
+    [reitit.ring :as ring]
+    [reitit.ring.coercion :as coercion]
+    [reitit.ring.middleware.parameters :as parameters]
+    [reitit.ring.middleware.muuntaja :as muuntaja]
+    [reitit.coercion.spec :as spec-coercion]
+    [muuntaja.core :as m]
+    [ring.middleware.cors :refer [wrap-cors]]
+    [ring.util.response :as r]
+    [hiccup.page :as h]
+    [xtdb.api :as xt]
+    [mount.core :as mount]
 
-   ;; app specific
-   [darbylaw.db-access :as db]))
+    ;; app specific
+    [darbylaw.xtdb-node :refer [xtdb-node]]))
 
 (defn page [meta-info & body]
   (r/response
@@ -42,10 +44,13 @@
    :headers {"content-type" "application/edn"}
    :body {:ip (:remote-addr request)}})
 
-(defn user-handler [_]
+(defn create-case [args]
+  (clojure.pprint/pprint (keys args))
+  (xt/await-tx xtdb-node
+    (xt/submit-tx xtdb-node [[::xt/put {:xt/id :testing
+                                        :name "Test"}]]))
   {:status 200
-   :headers {"content-type" "application/edn"}
-   :body {:users (db/get-all-users)}})
+   :body {:result "ok"}})
 
 (def routes
   [["/" {:get spa}]
@@ -58,31 +63,36 @@
                    :handler (fn [{{{:keys [x y]} :query} :parameters}]
                               {:status 200
                                :body {:total (+ x y)}})}}]
-   ["/users" {:get user-handler :name ::users}]])
 
-(def app
+   ["/api/case" {:post create-case}]])
+
+(defn make-ring-handler []
   (ring/ring-handler
-   (ring/router
-    routes
-    {:data {:coercion spec-coercion/coercion
-            :muuntaja muuntaja-instance
-            :middleware [;; Cross origin resourse aka cors
-                         [wrap-cors
-                          :access-control-allow-origin [#".*"]
-                          :access-control-allow-methods [:get :put :post :delete]]
-                         ;; query params and form params
-                         parameters/parameters-middleware
-                         muuntaja/format-negotiate-middleware
-                         ;; encoding response body
-                         muuntaja/format-response-middleware
-                         ;; coerce execeptions
-                         coercion/coerce-exceptions-middleware
-                         ;; decoding request body
-                         muuntaja/format-request-middleware
-                         ;; coercing request params
-                         coercion/coerce-request-middleware
-                         ;; coercing response params
-                         coercion/coerce-response-middleware]}})
-   (ring/routes
-    (ring/create-resource-handler {:path "/" :root "/public"})
-    (ring/create-default-handler))))
+    (ring/router
+      routes
+      {:data {:coercion spec-coercion/coercion
+              :muuntaja muuntaja-instance
+              :middleware [[wrap-cors
+                            :access-control-allow-origin [#".*"]
+                            :access-control-allow-methods [:get :put :post :delete]]
+                           parameters/parameters-middleware
+                           muuntaja/format-negotiate-middleware
+                           muuntaja/format-response-middleware
+                           coercion/coerce-exceptions-middleware
+                           muuntaja/format-request-middleware
+                           coercion/coerce-request-middleware
+                           coercion/coerce-response-middleware]}})
+    (ring/routes
+      (ring/create-resource-handler {:path "/" :root "/public"})
+      (ring/create-default-handler))))
+
+; Preserved only for compatibily. To be removed.
+(def app)
+
+(mount/defstate ring-handler
+  :start (let [handler (make-ring-handler)]
+           (alter-var-root (var app) (constantly handler))
+           handler))
+
+(comment
+  (mount/start))

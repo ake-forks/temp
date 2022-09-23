@@ -6,9 +6,8 @@
    [darbylaw.web.events :as events]
    [darbylaw.web.routes :as routes]
    [darbylaw.web.views :as views]
-   [darbylaw.web.config :as config]))
-
-
+   [darbylaw.web.config :as config]
+   [day8.re-frame.http-fx]))
 
 (defn dev-setup []
   (when config/debug?
