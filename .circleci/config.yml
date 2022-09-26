@@ -9,31 +9,8 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker
-      - run:
-          name: Install dependencies
-          command: |
-            apk add --no-cache \
-              gzip=1.8-r0
-      - restore_cache:
-          keys:
-            - v1-{{ .Branch }}
-          paths:
-            - /caches/app.tar.gz
-      - run:
-          name: Load Docker image layer cache
-          command: |
-            set +o pipefail
-            docker load -i /caches/app.tar.gz | true
+          docker_layer_caching: true
       - run: docker build -t app .
-      - run:
-          name: Save Docker image layer cache
-          command: |
-            mkdir -p /caches
-            docker save app | gz /caches/app.tar.gz
-      - save_cache:
-          key: v1-{{ .Branch }}-{{ epoch }}
-          paths:
-            - /caches/app.tar
 
 # Orchestrate our job run sequence
 workflows:
