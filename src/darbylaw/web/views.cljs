@@ -6,7 +6,8 @@
    [darbylaw.web.events :as events]
    [darbylaw.web.routes :as routes]
    [darbylaw.web.subs :as subs]
-   [ajax.core :as ajax]))
+   [ajax.core :as ajax]
+   [darbylaw.web.create-case]))
 
 
 (re-frame/reg-event-fx ::create-case-success
@@ -44,7 +45,7 @@
       [:h3 (str "screen-width: " @(re-frame/subscribe [::bp/screen-width]))]
       [:h3 (str "screen: " @(re-frame/subscribe [::bp/screen]))]]
      [:button
-      {:onClick #(re-frame/dispatch [::create-case])}
+      {:onClick #(re-frame/dispatch [::events/navigate :create-case])}
       "Create case"]]))
 
 

@@ -45,7 +45,6 @@
    :body {:ip (:remote-addr request)}})
 
 (defn create-case [args]
-  (clojure.pprint/pprint (keys args))
   (xt/await-tx xtdb-node
     (xt/submit-tx xtdb-node [[::xt/put {:xt/id :testing
                                         :name "Test"}]]))
@@ -53,7 +52,9 @@
    :body {:result "ok"}})
 
 (def routes
-  [["/" {:get spa}]
+  [["/" {:get (fn [_req] (r/redirect "/app"))}]
+
+   ["/app{*path}" {:get spa}]
 
    ["/ip" {:get ip-handler
            :name ::ip}]
