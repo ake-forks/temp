@@ -5,7 +5,7 @@ jobs:
   build:
     working_directory: /app
     docker:
-      - image: image: docker:17.05.0-ce-git
+      - image: docker:17.05.0-ce-git
     steps:
       - checkout
       - setup_remote_docker
