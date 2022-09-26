@@ -11,13 +11,11 @@ WORKDIR /app
 COPY deps.edn .
 RUN clojure -P
 
-# COPY package.json package-lock.json .
-# RUN npm install
+COPY package.json package-lock.json .
+RUN npm ci
 
 COPY . .
-# NOTE: If we let the `node_modules`
-RUN npm ci && npm run release && rm -rf node_modules
-#RUN npm run release
+RUN npm run release
 
 
 # Fetch clojure image as the base
