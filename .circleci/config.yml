@@ -13,7 +13,7 @@ jobs:
           name: Install dependencies
           command: |
             apk add --no-cache \
-              gzip=1.12-r0
+              gzip=1.8-r0
       - restore_cache:
           keys:
             - v1-{{ .Branch }}
