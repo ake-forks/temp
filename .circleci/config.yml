@@ -10,7 +10,14 @@ jobs:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
-      - run: docker build -t app .
+      - run:
+          name: Install Dependencies
+          command: |
+            akp add --no-cache \
+               aws-cli=1.22.81-r0
+      - run:
+          name: Build Application Docker Image
+          command: docker build -t app .
 
 # Orchestrate our job run sequence
 workflows:
