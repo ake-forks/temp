@@ -5,7 +5,7 @@ terraform {
     #       We use `tf workspace`s to deploy to different environments.
     # NOTE: The above will only work well while all environment contain the
     #       same assets.
-    key    = "terraform.tfstate"
+    key    = "app/terraform.tfstate"
     region = "eu-west-2"
   }
 
