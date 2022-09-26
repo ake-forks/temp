@@ -1,0 +1,13 @@
+# Git
+.git
+
+# Node
+node_modules
+build/Release
+
+# Shadowcljs
+.shadow-cljs
+
+# Clojure
+.cpcache
+target
