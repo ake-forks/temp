@@ -9,7 +9,11 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker
-      # Cache Docker layers for this branch
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --no-cache \
+              gzip=1.12-r0
       - restore_cache:
           keys:
             - v1-{{ .Branch }}
