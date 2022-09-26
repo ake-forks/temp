@@ -18,6 +18,17 @@ jobs:
       - run:
           name: Build Application Docker Image
           command: docker build -t app .
+      - run:
+          name: Push Image to ECR
+          command: |
+            region=eu-west-2
+            # TODO: How to work for prod vs staging?
+            # TODO: Only push on master
+            account_id=713170488151
+            ecr_endpoint="$account_id.dkr.ecr.$region.amazonaws.com"
+            aws ecr get-login-password --region $region | docker login --username AWS --password-stdin $ecr_endpoint
+            docker tag app "$ecr_endpoint:${CIRCLE_SHA1}"
+            docker push "$ecr_endpoint:${CIRCLE_SHA1}"
 
 # Orchestrate our job run sequence
 workflows:
