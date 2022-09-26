@@ -11,10 +11,10 @@ jobs:
       - setup_remote_docker
       # Cache Docker layers for this branch
       - restore_cache:
-        keys:
-          - v1-{{ .Branch }}
-        paths:
-          - /caches/app.tar
+          keys:
+            - v1-{{ .Branch }}
+          paths:
+            - /caches/app.tar
       - run:
           name: Load Docker image layer cache
           command: |
