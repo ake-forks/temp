@@ -11,7 +11,7 @@ WORKDIR /app
 COPY deps.edn .
 RUN clojure -P
 
-COPY package.json package-lock.json .
+COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY . .
