@@ -7,9 +7,11 @@ Doing this assumes that resources in this folder will be unique to an *environme
 If there's any shared infrastruction it should go in `infra/account`.
 
 
+
 ## Initial Setup
 
 For when there's nothing deployed in any *environment*.
+
 
 ### NOTE:
 You **must** manually run through these steps for the first time.
@@ -24,6 +26,7 @@ $ tf init
 $ tf workspace new production
 $ tf apply -var "darbylaw_docker_tag=latest"
 ```
+
 
 
 ## Usual Operation
