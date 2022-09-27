@@ -20,37 +20,22 @@ commands:
       - run:
           name: Push Image to ECR
           command: |
-            echo "setup env"
             # >> Setup environment
-            # This is some bash magic so that we can change the variable name
-            # We use this to change the prefix of the variable to the environment name
-            # This allows for a (hopefully) clean environment setup
-            # https://stackoverflow.com/a/18124325
-            varname=${environment}_AWS_ACCESS_KEY_ID
-            echo "$varname"
-            AWS_ACCESS_KEY_ID=${!varname}
-            echo "$AWS_ACCESS_KEY_ID"
-            varname=${environment}_AWS_SECRET_ACCESS_KEY
-            echo "$varname"
-            AWS_SECRET_ACCESS_KEY=${!varname}
-            echo "$AWS_SECRET_ACCESS_KEY"
+            AWS_ACCESS_KEY_ID="${<< parameters.environment >>_AWS_ACCESS_KEY_ID}"
+            AWS_SECRET_ACCESS_KEY="${<< parameters.environment >>AWS_SECRET_ACCESS_KEY}"
 
-            echo "config"
             # >> Config
             region=eu-west-2
             # Currently will always be the same account
             # If this changes just add another env variable <environment>_ACCOUNT_ID
             account_id=713170488151
 
-            echo "login"
             # >> Login
             ecr_endpoint="$account_id.dkr.ecr.$region.amazonaws.com"
             aws ecr get-login-password --region $region | docker login --username AWS --password-stdin $ecr_endpoint
 
             # >> Tag & Push
-            echo "tag"
             docker tag "$image_name:latest" "$ecr_endpoint/$image_name:${CIRCLE_SHA1}"
-            echo "push"
             docker push "$ecr_endpoint/$image_name:${CIRCLE_SHA1}"
 
 
