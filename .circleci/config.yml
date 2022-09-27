@@ -1,5 +1,48 @@
 version: 2.1
 
+# Define reusable commands that can be used as steps
+commands:
+  ecr_push_image:
+    description: |
+      Push the given docker image to the right account
+      Assumes that the image you want to push is tagged "$image_name:latest"
+      Assumes the following Environment Variables have been setup:
+      <environment>_AWS_ACCESS_KEY_ID
+      <environment>_AWS_SECRET_ACCESS_KEY
+    parameters:
+      environment:
+        description: The environment to push the image to, see command description
+        type: string
+      image_name:
+        description: The name of the image you want to push, see command description
+        type: string
+    steps:
+      - run:
+          name: Push Image to ECR
+          command: |
+            # >> Setup environment
+            # This is some bash magic so that we can change the variable name
+            # We use this to change the prefix of the variable to the environment name
+            # This allows for a (hopefully) clean environment setup
+            # https://stackoverflow.com/a/18124325
+            AWS_ACCESS_KEY_ID=${!${environment}_AWS_ACCESS_KEY_ID}
+            AWS_SECRET_ACCESS_KEY=${!${environment}_AWS_SECRET_ACCESS_KEY}
+
+            # >> Config
+            region=eu-west-2
+            # Currently will always be the same account
+            # If this changes just add another env variable <environment>_ACCOUNT_ID
+            account_id=713170488151
+
+            # >> Login
+            ecr_endpoint="$account_id.dkr.ecr.$region.amazonaws.com"
+            aws ecr get-login-password --region $region | docker login --username AWS --password-stdin $ecr_endpoint
+
+            # >> Tag & Push
+            docker tag "$image_name:latest" "$ecr_endpoint/$image_name:${CIRCLE_SHA1}"
+            docker push "$ecr_endpoint/$image_name:${CIRCLE_SHA1}"
+
+
 # Define the jobs we want to run for this project
 jobs:
   build:
@@ -17,18 +60,10 @@ jobs:
                aws-cli=1.22.81-r0
       - run:
           name: Build Application Docker Image
-          command: docker build -t app .
-      - run:
-          name: Push Image to ECR
-          command: |
-            region=eu-west-2
-            # TODO: How to work for prod vs staging?
-            # TODO: Only push on master
-            account_id=713170488151
-            ecr_endpoint="$account_id.dkr.ecr.$region.amazonaws.com"
-            aws ecr get-login-password --region $region | docker login --username AWS --password-stdin $ecr_endpoint
-            docker tag app "$ecr_endpoint:${CIRCLE_SHA1}"
-            docker push "$ecr_endpoint:${CIRCLE_SHA1}"
+          command: docker build -t darbylaw-production:latest .
+      - ecr_push_image:
+          environment: production
+          image_name: darbylaw-production
 
 # Orchestrate our job run sequence
 workflows:
