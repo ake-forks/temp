@@ -37,15 +37,9 @@ commands:
             apk add --no-cache \
               aws-cli=1.22.81-r0
       - aws-cli/setup:
-          profile-name: << parameters.environment >>
       - run:
           name: Push Image to ECR
           command: |
-            aws configure list
-            ls ~/.aws
-            cat ~/.aws/config
-            cat ~/.aws/credentials
-
             # >> Config
             region=eu-west-2
             # Currently will always be the same account
