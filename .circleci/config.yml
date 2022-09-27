@@ -7,8 +7,8 @@ orbs:
 commands:
   ecr_push_image:
     description: |
-      Push the given docker image to the right account
-      Assumes that the image you want to push is tagged "$image_name:latest"
+      Push the given docker image to the specified environment
+      Assumes that the image you want to push is built and tagged "$image_name:latest"
       Assumes the following Environment Variables have been setup:
       <environment>_AWS_ACCESS_KEY_ID
       <environment>_AWS_SECRET_ACCESS_KEY
