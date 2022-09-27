@@ -28,7 +28,7 @@ commands:
       - run:
           name: Install AWS CLI
           command: |
-            apk install --no-cache \
+            apk add --no-cache \
               aws-cli=1.22.81-r0
       - aws-cli/setup:
           profile-name: << parameters.environment >>
