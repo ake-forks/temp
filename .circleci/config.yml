@@ -25,8 +25,10 @@ commands:
             # We use this to change the prefix of the variable to the environment name
             # This allows for a (hopefully) clean environment setup
             # https://stackoverflow.com/a/18124325
-            AWS_ACCESS_KEY_ID=${!${environment}_AWS_ACCESS_KEY_ID}
-            AWS_SECRET_ACCESS_KEY=${!${environment}_AWS_SECRET_ACCESS_KEY}
+            varname=${environment}_AWS_ACCESS_KEY_ID
+            AWS_ACCESS_KEY_ID=${!varname}
+            varname=${environment}_AWS_SECRET_ACCESS_KEY
+            AWS_SECRET_ACCESS_KEY=${!varname}
 
             # >> Config
             region=eu-west-2
