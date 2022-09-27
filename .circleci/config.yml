@@ -30,7 +30,7 @@ commands:
             echo 'export AWS_ACCESS_KEY_ID="${<< parameters.environment >>_AWS_ACCESS_KEY_ID}"' >> "$BASH_ENV"
             echo 'export AWS_SECRET_ACCESS_KEY="${<< parameters.environment >>_AWS_SECRET_ACCESS_KEY}"' >> "$BASH_ENV"
       - run:
-          name: Install AWS CLI
+          name: Manually Install AWS CLI
           command: |
             # We manually do this rather than let the aws-cli orb do it for us because
             # when the orb installs the cli there's a conflict with the libgcc version
