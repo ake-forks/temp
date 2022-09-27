@@ -41,6 +41,8 @@ commands:
       - run:
           name: Push Image to ECR
           command: |
+            aws configure list
+
             # >> Config
             region=eu-west-2
             # Currently will always be the same account
