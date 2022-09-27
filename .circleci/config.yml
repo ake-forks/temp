@@ -56,7 +56,7 @@ jobs:
       - run:
           name: Install Dependencies
           command: |
-            akp add --no-cache \
+            apk add --no-cache \
                aws-cli=1.22.81-r0
       - run:
           name: Build Application Docker Image
