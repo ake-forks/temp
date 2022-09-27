@@ -25,6 +25,11 @@ commands:
           command: |
             AWS_ACCESS_KEY_ID="${<< parameters.environment >>_AWS_ACCESS_KEY_ID}"
             AWS_SECRET_ACCESS_KEY="${<< parameters.environment >>_AWS_SECRET_ACCESS_KEY}"
+      - run:
+          name: Install AWS CLI
+          command: |
+            apk install --no-cache \
+              aws-cli=1.22.81-r0
       - aws-cli/setup:
           profile-name: << parameters.environment >>
       - run:
