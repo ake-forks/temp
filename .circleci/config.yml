@@ -42,6 +42,9 @@ commands:
           name: Push Image to ECR
           command: |
             aws configure list
+            ls ~/.aws
+            cat ~/.aws/config
+            cat ~/.aws/credentials
 
             # >> Config
             region=eu-west-2
