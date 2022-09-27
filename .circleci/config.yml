@@ -28,6 +28,8 @@ commands:
       - run:
           name: Install AWS CLI
           command: |
+            # We manually do this rather than let the aws-cli orb do it for us because
+            # when the orb installs the cli there's a conflict with the libgcc version
             apk add --no-cache \
               aws-cli=1.22.81-r0
       - aws-cli/setup:
