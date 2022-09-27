@@ -1,5 +1,8 @@
 version: 2.1
 
+orbs:
+  aws-cli: circleci/aws-cli@3.1.3
+
 # Define reusable commands that can be used as steps
 commands:
   ecr_push_image:
@@ -18,14 +21,15 @@ commands:
         type: string
     steps:
       - run:
-          name: Push Image to ECR
+          name: Setup AWS Environment
           command: |
-            # >> Setup environment
-            AWS_DEFAULT_REGION=eu-west-2
             AWS_ACCESS_KEY_ID="${<< parameters.environment >>_AWS_ACCESS_KEY_ID}"
             AWS_SECRET_ACCESS_KEY="${<< parameters.environment >>AWS_SECRET_ACCESS_KEY}"
-            echo "$AWS_ACCESS_KEY_ID"
-
+      - aws-cli/setup:
+          profile-name: << parameters.environment >>
+      - run:
+          name: Push Image to ECR
+          command: |
             # >> Config
             region=eu-west-2
             # Currently will always be the same account
@@ -51,11 +55,6 @@ jobs:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
-      - run:
-          name: Install Dependencies
-          command: |
-            apk add \
-               aws-cli=1.22.81-r0
       - run:
           name: Build Application Docker Image
           command: docker build -t darbylaw-production:latest .
