@@ -36,7 +36,7 @@ commands:
             # when the orb installs the cli there's a conflict with the libgcc version
             apk add --no-cache \
               aws-cli=1.22.81-r0
-      - aws-cli/setup:
+      - aws-cli/setup
       - run:
           name: Push Image to ECR
           command: |
