@@ -8,7 +8,7 @@ commands:
   ecr_push_image:
     description: |
       Push the given docker image to the specified environment
-      Assumes that the image you want to push is built and tagged "$image_name:latest"
+      Assumes that the image you want to push is built and tagged "<< parameters.image_name >>:latest"
       Assumes the following Environment Variables have been setup:
       <environment>_AWS_ACCESS_KEY_ID
       <environment>_AWS_SECRET_ACCESS_KEY
@@ -51,8 +51,12 @@ commands:
             aws ecr get-login-password --region $region | docker login --username AWS --password-stdin $ecr_endpoint
 
             # >> Tag & Push
-            docker tag "$image_name:latest" "$ecr_endpoint/$image_name:${CIRCLE_SHA1}"
-            docker push "$ecr_endpoint/$image_name:${CIRCLE_SHA1}"
+            # The format for this is:
+            # <account ecr endpoint>/<image name>:<docker tag>
+            # In our case the docker tag is the git hash so we can track down which commit is running
+            new_docker_tag="$ecr_endpoint/<< parameters.image_name >>:${CIRCLE_SHA1}"
+            docker tag "<< parameters.image_name >>:latest" $new_docker_tag
+            docker push $new_docker_tag
 
 
 # Define the jobs we want to run for this project
