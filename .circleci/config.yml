@@ -21,6 +21,7 @@ commands:
           name: Push Image to ECR
           command: |
             # >> Setup environment
+            AWS_DEFAULT_REGION=eu-west-2
             AWS_ACCESS_KEY_ID="${<< parameters.environment >>_AWS_ACCESS_KEY_ID}"
             AWS_SECRET_ACCESS_KEY="${<< parameters.environment >>AWS_SECRET_ACCESS_KEY}"
             echo "$AWS_ACCESS_KEY_ID"
