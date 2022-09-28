@@ -75,7 +75,7 @@ jobs:
       # We only push the docker image when on the `main` branch
       - when:
           condition:
-            - equal: [ main, << pipeline.git.branch >> ]
+            equal: [ main, << pipeline.git.branch >> ]
           steps:
             - ecr_push_image:
                 environment: production
