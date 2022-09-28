@@ -88,7 +88,9 @@ deploy:
     - checkout
     - run:
         name: Terraform Init
-        command: terraform init -input=false
+        command: |
+          terraform init -input=false
+          terraform workspace select production
     - run:
         name: Terraform Plan
         command: terraform plan -out tfapply -var "darbylaw_docker_tag=${CIRCLE_SHA1}"
@@ -101,6 +103,7 @@ workflows:
   build:
     jobs:
       - build_maybe_push
+      # TODO: Only `main`
       - deploy:
           requires:
             - build_maybe_push
