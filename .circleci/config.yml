@@ -90,8 +90,8 @@ jobs:
           command: docker build -t darbylaw-production:latest .
       # We only push the docker image when on the `main` branch
       - when:
-          condition:
-            equal: [ main, << pipeline.git.branch >> ]
+          condition: true
+            #equal: [ main, << pipeline.git.branch >> ]
           steps:
             - ecr_push_image:
                 environment: production
@@ -117,7 +117,7 @@ jobs:
       - run:
           name: Terraform Apply
           working_directory: ./infra/app
-          command: ls
+          command: terraform apply -auto-approve tfapply
 
 # Orchestrate our job run sequence
 workflows:
