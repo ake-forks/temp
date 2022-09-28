@@ -32,6 +32,7 @@
         thheller/shadow-cljs {:mvn/version "2.20.2"}
         binaryage/devtools {:mvn/version "1.0.6"}
         re-frisk/re-frisk {:mvn/version "1.6.0"}
+        nubank/workspaces {:mvn/version "1.1.2"}
         ;; Ajax
         ;cljs-ajax/cljs-ajax {:mvn/version "0.8.1"}
         ;;; Frontend Navigation
