@@ -5,19 +5,16 @@ orbs:
 
 # Define reusable commands that can be used as steps
 commands:
-  ecr_push_image:
+  setup_aws_cli:
     description: |
-      Push the given docker image to the specified environment
-      Assumes that the image you want to push is built and tagged "<< parameters.image_name >>:latest"
+      Install aws-cli and setup things so that commands run in the correct environment
+
       Assumes the following Environment Variables have been setup:
       <environment>_AWS_ACCESS_KEY_ID
       <environment>_AWS_SECRET_ACCESS_KEY
     parameters:
       environment:
-        description: The environment to push the image to, see command description
-        type: string
-      image_name:
-        description: The name of the image you want to push, see command description
+        description: The aws environment to setup, see command description
         type: string
     steps:
       - run:
@@ -37,6 +34,24 @@ commands:
             apk add --no-cache \
               aws-cli=1.22.81-r0
       - aws-cli/setup
+  ecr_push_image:
+    description: |
+      Push the given docker image to the specified environment
+
+      Assumes that the image you want to push is built and tagged "<< parameters.image_name >>:latest"
+      Assumes the following Environment Variables have been setup:
+      <environment>_AWS_ACCESS_KEY_ID
+      <environment>_AWS_SECRET_ACCESS_KEY
+    parameters:
+      environment:
+        description: The environment to push the image to, see command description
+        type: string
+      image_name:
+        description: The name of the image you want to push, see command description
+        type: string
+    steps:
+      - setup_aws_cli:
+          environment: << parameters.environment >>
       - run:
           name: Push Image to ECR
           command: |
@@ -86,6 +101,8 @@ jobs:
       - image: hashicorp/terraform:1.2.9
     steps:
       - checkout
+      - setup_aws_cli:
+          environment: production
       - run:
           name: Terraform Init
           working_directory: ./infra/app
