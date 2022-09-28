@@ -80,23 +80,23 @@ jobs:
             - ecr_push_image:
                 environment: production
                 image_name: darbylaw-production
-deploy:
-  working_directory: /app
-  docker:
-    - image: hashicorp/terraform:1.2.9
-  steps:
-    - checkout
-    - run:
-        name: Terraform Init
-        command: |
-          terraform init -input=false
-          terraform workspace select production
-    - run:
-        name: Terraform Plan
-        command: terraform plan -out tfapply -var "darbylaw_docker_tag=${CIRCLE_SHA1}"
-    - run:
-        name: Terraform Apply
-        command: ls
+  deploy:
+    working_directory: /app
+    docker:
+      - image: hashicorp/terraform:1.2.9
+    steps:
+      - checkout
+      - run:
+          name: Terraform Init
+          command: |
+            terraform init -input=false
+            terraform workspace select production
+      - run:
+          name: Terraform Plan
+          command: terraform plan -out tfapply -var "darbylaw_docker_tag=${CIRCLE_SHA1}"
+      - run:
+          name: Terraform Apply
+          command: ls
 
 # Orchestrate our job run sequence
 workflows:
