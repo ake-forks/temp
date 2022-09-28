@@ -25,7 +25,7 @@ FROM clojure:latest as runner
 WORKDIR /app
 
 # Copy the entire folder contents to the image
-COPY --from=build resources/public/js/compiled .
+COPY --from=build /app/resources/public/js/compiled /app/resources/public/js/compiled
 COPY . .
 
 # Set Evironment variables
