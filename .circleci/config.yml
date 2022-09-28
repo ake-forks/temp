@@ -125,7 +125,6 @@ workflows:
   build:
     jobs:
       - build_maybe_push
-      # TODO: Only `main`
       - deploy:
           filters:
             branches:
