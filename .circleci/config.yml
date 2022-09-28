@@ -61,7 +61,7 @@ commands:
 
 # Define the jobs we want to run for this project
 jobs:
-  build:
+  build_maybe_push:
     working_directory: /app
     docker:
       - image: docker:20.10.18-git
@@ -72,12 +72,35 @@ jobs:
       - run:
           name: Build Application Docker Image
           command: docker build -t darbylaw-production:latest .
-      - ecr_push_image:
-          environment: production
-          image_name: darbylaw-production
+      # We only push the docker image when on the `main` branch
+      - when:
+          condition:
+            - equal: [ main, << pipeline.git.branch >> ]
+          steps:
+            - ecr_push_image:
+                environment: production
+                image_name: darbylaw-production
+deploy:
+  working_directory: /app
+  docker:
+    - image: hashicorp/terraform:1.2.9
+  steps:
+    - checkout
+    - run:
+        name: Terraform Init
+        command: terraform init -input=false
+    - run:
+        name: Terraform Plan
+        command: terraform plan -out tfapply -var "darbylaw_docker_tag=${CIRCLE_SHA1}"
+    - run:
+        name: Terraform Apply
+        command: ls
 
 # Orchestrate our job run sequence
 workflows:
   build:
     jobs:
-      - build
+      - build_maybe_push
+      - deploy:
+          requires:
+            - build_maybe_push
