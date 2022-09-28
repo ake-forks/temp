@@ -65,6 +65,18 @@ resource "aws_iam_user_policy" "circleci" {
         Action   = "ec2:*"
         Effect   = "Allow"
         Resource = "*"
+      },
+      # For access to terraform
+      # TODO: Is this restrictive enough?
+      #       Should probably split into multiple statements
+      {
+        Sid    = "AllowTerraformStateAccess"
+        Action = "s3:*"
+        Effect = "Allow"
+        Resource = [
+          "arn:aws:s3:::${aws_s3_bucket.tf-state-bucket.bucket}",
+          "arn:aws:s3:::${aws_s3_bucket.tf-state-bucket.bucket}/env:/*/app/*"
+        ]
       }
     ]
   })
