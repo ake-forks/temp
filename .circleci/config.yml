@@ -26,6 +26,7 @@ commands:
             touch "$BASH_ENV"
             echo 'export AWS_ACCESS_KEY_ID="${<< parameters.environment >>_AWS_ACCESS_KEY_ID}"' >> "$BASH_ENV"
             echo 'export AWS_SECRET_ACCESS_KEY="${<< parameters.environment >>_AWS_SECRET_ACCESS_KEY}"' >> "$BASH_ENV"
+            echo 'export AWS_DEFAULT_REGION="eu-west-2"' >> "$BASH_ENV"
       - run:
           name: Manually Install AWS CLI
           command: |
@@ -56,7 +57,7 @@ commands:
           name: Push Image to ECR
           command: |
             # >> Config
-            region=eu-west-2
+            region="$AWS_DEFAULT_REGION"
             # Currently will always be the same account
             # If this changes just add another env variable <environment>_ACCOUNT_ID
             account_id=713170488151
