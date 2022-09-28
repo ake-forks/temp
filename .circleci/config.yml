@@ -88,14 +88,17 @@ jobs:
       - checkout
       - run:
           name: Terraform Init
+          working_directory: ./infra/app
           command: |
             terraform init -input=false
             terraform workspace select production
       - run:
           name: Terraform Plan
+          working_directory: ./infra/app
           command: terraform plan -out tfapply -var "darbylaw_docker_tag=${CIRCLE_SHA1}"
       - run:
           name: Terraform Apply
+          working_directory: ./infra/app
           command: ls
 
 # Orchestrate our job run sequence
