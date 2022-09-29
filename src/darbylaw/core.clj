@@ -1,11 +1,13 @@
 (ns darbylaw.core
   (:require
-   ;; third party libs
-   [org.httpkit.server :as app-server]
-   [taoensso.timbre :as timbre :refer [log info warn error fatal]]
+    ;; third party libs
+    [org.httpkit.server :as app-server]
+    [taoensso.timbre :as timbre :refer [log info warn error fatal]]
+    [mount.core :as mount]
 
-   ;; app specific
-   [darbylaw.handler :as handler])
+     ;; app specific
+    [darbylaw.config :as config]
+    [darbylaw.handler :as handler])
   (:gen-class))
 
 (defonce app-server-instance (atom nil))
@@ -14,8 +16,8 @@
   "Starts the backend server and logs the time of start"
   [http-port]
   (info (str "Server started on port " http-port))
-  (reset! app-server-instance (app-server/run-server
-                               handler/app {:port http-port})))
+  (reset! app-server-instance
+    (app-server/run-server handler/ring-handler {:port http-port})))
 
 (defn app-server-stop
   "Stops the backend server after waiting 100ms and logs the time of shutdown."
@@ -33,17 +35,29 @@
   (when (pos-int? port)
     (app-server-start port)))
 
-(defn -main
-  "Tries to fetch the port from either the porvided args or the system env
-   variable. If neither exists defaults to port 8888 and starts the server"
-  [& [http-port]]
-  (let [port (Integer. (or http-port (System/getenv "PORT") "8888"))]
-    (app-server-start port)))
+(mount/defstate web-server
+  :start (do
+           (app-server-start (-> config/config :web-server :port))
+           app-server-instance)
+  :stop (app-server-stop))
+
+;(defn -main
+;  "Tries to fetch the port from either the porvided args or the system env
+;   variable. If neither exists defaults to port 8888 and starts the server"
+;  [& [http-port]]
+;  (let [port (Integer. (or http-port (System/getenv "PORT") "8888"))]
+;    (app-server-start port)))
+
+(defn -main []
+  (mount/start))
 
 (comment
-  ;; start the app
-  (-main 8080)
-  ;; restart app
-  (app-server-restart 8080)
-  ;; stop the server
-  (app-server-stop))
+  ;;; start the app
+  ;(-main 8080)
+  ;;; restart app
+  ;(app-server-restart 8080)
+  ;;; stop the server
+  ;(app-server-stop)
+
+  (mount/start)
+  (mount/stop))

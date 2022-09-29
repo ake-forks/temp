@@ -27,3 +27,6 @@
 *.tfvars.json
 .terraformrc
 terraform.rc
+
+# Dev DB store
+/.xtdb/

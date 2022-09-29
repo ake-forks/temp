@@ -1,9 +1,14 @@
 {:paths ["src" "test" "resources"]
 
  :deps {org.clojure/clojure {:mvn/version "1.11.1"}
+        ;; Dev
+        org.clojure/tools.namespace {:mvn/version "1.3.0"}
         ;; HTTP Server
         http-kit/http-kit {:mvn/version "2.5.0"}
         ;;; Database
+        com.xtdb/xtdb-core {:mvn/version "1.22.0"}
+        com.xtdb/xtdb-rocksdb {:mvn/version "1.22.0"}
+        com.xtdb/xtdb-jdbc {:mvn/version "1.22.0"}
         seancorfield/next.jdbc {:mvn/version "1.1.613"}
         sqlitejdbc/sqlitejdbc {:mvn/version "0.5.6"}
         ;;; Routing
@@ -17,6 +22,8 @@
         com.taoensso/timbre {:mvn/version "5.1.0"}
         ;;; Config managment
         yogthos/config {:mvn/version "1.1.7"}
+        mount/mount {:mvn/version "0.1.16"}
+        aero/aero {:mvn/version "1.1.6"}
 
         ;; Frontend
         ;; _________________________________________________
@@ -25,6 +32,7 @@
         thheller/shadow-cljs {:mvn/version "2.20.2"}
         binaryage/devtools {:mvn/version "1.0.6"}
         re-frisk/re-frisk {:mvn/version "1.6.0"}
+        nubank/workspaces {:mvn/version "1.1.2"}
         ;; Ajax
         ;cljs-ajax/cljs-ajax {:mvn/version "0.8.1"}
         ;;; Frontend Navigation
@@ -39,12 +47,15 @@
         bidi/bidi {:mvn/version "2.1.6"}
         ;;; React and hiccup
         reagent/reagent {:mvn/version "1.1.1"}
-        re-frame/re-frame {:mvn/version "1.3.0"}}
+        re-frame/re-frame {:mvn/version "1.3.0"}
+        day8.re-frame/http-fx {:mvn/version "0.2.4"}}
         ;reagent-utils/reagent-utils {:mvn/version "0.3.3"}
         ;hiccup/hiccup {:mvn/version "2.0.0-alpha2"}}
 
  :aliases
- {:test {:extra-paths ["test"]
+ {:dev {:extra-paths ["dev"]}
+
+  :test {:extra-paths ["test"]
          :extra-deps {org.clojure/test.check {:mvn/version "1.0.0"}}}
 
   :build {:deps {io.github.clojure/tools.build {:git/tag "v0.8.3" :git/sha "0d20256"}}

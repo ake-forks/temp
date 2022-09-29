@@ -7,15 +7,21 @@
   8290 "target/browser-test"}
 
  :builds
- {:app
-  {:target     :browser
-   :output-dir "resources/public/js/compiled"
-   :asset-path "/js/compiled"
-   :modules
-   {:app {:init-fn darbylaw.web.core/init}}
-   :devtools
-   {:preloads [re-frisk.preload]}
-   :dev
-   {:compiler-options
-    {:closure-defines
-     {}}}}}}
+ {:app {:target :browser
+        :output-dir "resources/public/js/compiled"
+        :asset-path "/js/compiled"
+        :modules {:app {:init-fn darbylaw.web.core/init}}
+        :devtools {:preloads [re-frisk.preload]}
+        :dev {:compiler-options {:closure-defines {}}}}
+  :cards {:target nubank.workspaces.shadow-cljs.target
+          :ns-regexp  "-(test|cards)$"
+          :output-dir "resources/public/js/workspaces"
+          :asset-path "/js/workspaces"
+          :preloads []
+          :js-options {:resolve {"goog.debug.Logger.Level"
+                                 {:target :global
+                                  :global "goog.log.Logger.Level"}}}
+          :compiler-options {:output-feature-set :es7
+                             ;; this line is essential for workspaces compatibility
+                             ;; if using shadow-cljs >=2.15.13
+                             :global-goog-object&array true}}}}

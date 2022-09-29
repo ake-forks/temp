@@ -5,9 +5,29 @@
    [darbylaw.web.styles :as styles]
    [darbylaw.web.events :as events]
    [darbylaw.web.routes :as routes]
-   [darbylaw.web.subs :as subs]))
+   [darbylaw.web.subs :as subs]
+   [ajax.core :as ajax]
+   [darbylaw.web.create-case]))
 
 
+(re-frame/reg-event-fx ::create-case-success
+  (fn [_ _]
+    (println "success")))
+
+(re-frame/reg-event-fx ::create-case-success
+  (fn [_ _]
+    (println "failure")))
+
+(re-frame/reg-event-fx ::create-case
+  (fn [_ _]
+    {:http-xhrio
+     {:method :post
+      :uri "http://localhost:8080/api/case"
+      :timeout 8000
+      :format (ajax/json-request-format)
+      :response-format (ajax/json-response-format {:keywords? true})
+      :on-success [::create-case-success]
+      :on-failure [::create-case-failure]}}))
 
 ;; home
 
@@ -23,7 +43,10 @@
        "go to About Page"]]
      [:div
       [:h3 (str "screen-width: " @(re-frame/subscribe [::bp/screen-width]))]
-      [:h3 (str "screen: " @(re-frame/subscribe [::bp/screen]))]]]))
+      [:h3 (str "screen: " @(re-frame/subscribe [::bp/screen]))]]
+     [:button
+      {:onClick #(re-frame/dispatch [::events/navigate :create-case])}
+      "Create case"]]))
 
 
 (defmethod routes/panels :home-panel [] [home-panel])
