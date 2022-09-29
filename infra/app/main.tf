@@ -53,11 +53,16 @@ resource "aws_ecs_task_definition" "darbylaw" {
   container_definitions = jsonencode(
     [
       {
-        "name"      = "webserver"
-        "image"     = "${aws_ecr_repository.darbylaw.repository_url}:${var.darbylaw_docker_tag}"
-        "cpu"       = 1024
-        "memory"    = 2048
-        "essential" = true
+        name      = "webserver"
+        image     = "${aws_ecr_repository.darbylaw.repository_url}:${var.darbylaw_docker_tag}"
+        essential = true
+        portMappings = [
+          {
+            protocol      = "tcp"
+            containerPort = var.container_port
+            hostPort      = var.container_port
+          }
+        ]
       }
     ]
   )
