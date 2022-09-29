@@ -165,7 +165,7 @@ resource "aws_lb_target_group" "main" {
     protocol            = "HTTP"
     matcher             = "200"
     timeout             = "3"
-    path                = "/" # TODO: Add a specific healtcheck endpoint?
+    path                = "/ip" # TODO: Add a specific healtcheck endpoint?
   }
 }
 
