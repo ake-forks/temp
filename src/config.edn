@@ -1,2 +1,2 @@
 {:web-server
- {:port #or [#env PORT 8080]}}
+ {:port #long #or [#env PORT, 8080]}}
