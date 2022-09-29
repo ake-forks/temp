@@ -103,8 +103,8 @@ resource "aws_security_group" "task" {
   }
 }
 
-resource "aws_security_group" "alb" {
-  name   = "darbylaw-task-sg-${terraform.workspace}"
+resource "aws_security_group" "lb" {
+  name   = "darbylaw-lb-sg-${terraform.workspace}"
   vpc_id = data.aws_vpc.default_vpc.id
 
   ingress {
@@ -137,10 +137,10 @@ resource "aws_security_group" "alb" {
 # >> Load Balancer
 
 resource "aws_lb" "main" {
-  name               = "darbylaw-alb-${terraform.workspace}"
+  name               = "darbylaw-lb-${terraform.workspace}"
   internal           = false
   load_balancer_type = "application"
-  security_groups    = [aws_security_group.alb.id]
+  security_groups    = [aws_security_group.lb.id]
   subnets            = data.aws_subnets.public.ids
 
   enable_deletion_protection = true
