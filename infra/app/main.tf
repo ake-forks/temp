@@ -87,52 +87,127 @@ resource "aws_security_group" "task" {
   vpc_id = data.aws_vpc.default_vpc.id
 
   ingress {
-    protocol = "tcp"
-    # TODO: TSL setup?
-    from_port   = 8080
-    to_port     = 8080
-    cidr_blocks = ["0.0.0.0/0"]
+    protocol         = "tcp"
+    from_port        = var.container_port
+    to_port          = var.container_port
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
   }
 
   egress {
-    protocol    = "-1"
-    from_port   = 0
-    to_port     = 0
-    cidr_blocks = ["0.0.0.0/0"]
+    protocol         = "-1"
+    from_port        = 0
+    to_port          = 0
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
   }
 }
 
-# TODO:
-# resource "aws_security_group" "alb" {
-#   name   = "darbylaw-task-sg-${terraform.workspace}"
-#   vpc_id = data.aws_vpc.default_vpc.id
-# 
-#   ingress {
-#     protocol = "tcp"
-#     # TODO: TSL setup?
-#     from_port   = 8080
-#     to_port     = 8080
-#     cidr_blocks = ["0.0.0.0/0"]
-#   }
-# 
-#   egress {
-#     protocol    = "-1"
-#     from_port   = 0
-#     to_port     = 0
-#     cidr_blocks = ["0.0.0.0/0"]
-#   }
-# }
+resource "aws_security_group" "alb" {
+  name   = "darbylaw-task-sg-${terraform.workspace}"
+  vpc_id = data.aws_vpc.default_vpc.id
+
+  ingress {
+    protocol         = "tcp"
+    from_port        = 80
+    to_port          = 80
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+
+  ingress {
+    protocol         = "tcp"
+    from_port        = 443
+    to_port          = 443
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+
+  egress {
+    protocol         = "-1"
+    from_port        = 0
+    to_port          = 0
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+}
 
 
 
 # >> Load Balancer
 
-# resource "aws_lb" "main" {
-#   name               = "darbylaw-alb-${terraform.workspace}"
-#   internal           = false
-#   load_balancer_type = "application"
-#   security_groups    = [aws_security_group.alb.id]
-#   subnets            = data.aws_subnets.public.ids
+resource "aws_lb" "main" {
+  name               = "darbylaw-alb-${terraform.workspace}"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.alb.id]
+  subnets            = data.aws_subnets.public.ids
+
+  enable_deletion_protection = true
+}
+
+resource "aws_lb_target_group" "main" {
+  name        = "darbylaw-tg-${terraform.workspace}"
+  port        = var.container_port
+  protocol    = "HTTP"
+  vpc_id      = data.aws_vpc.default_vpc.id
+  target_type = "ip"
+
+  health_check {
+    healthy_threshold   = "3"
+    unhealthy_threshold = "2"
+    interval            = "30"
+    protocol            = "HTTP"
+    matcher             = "200"
+    timeout             = "3"
+    path                = "/" # TODO: Add a specific healtcheck endpoint?
+  }
+}
+
+resource "aws_lb_listener" "http" {
+  load_balancer_arn = aws_lb.main.id
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type = "forward"
+
+    target_group_arn = aws_lb_target_group.main.id
+  }
+}
+
+# # Redirect all HTTP traffic to use HTTPS
+# resource "aws_lb_listener" "http" {
+#   load_balancer_arn = aws_lb.main.id
+#   port              = 80
+#   protocol          = "HTTP"
+# 
+#   default_action {
+#     type = "redirect"
+# 
+#     redirect {
+#       port        = 443
+#       protocol    = "HTTPS"
+#       status_code = "HTTP_301"
+#     }
+#   }
+# }
+# 
+# # Forward HTTPS traffic onto the container
+# # Does TSL termination
+# resource "aws_lb_listener" "https" {
+#   load_balancer_arn = aws_lb.main.id
+#   port              = 443
+#   protocol          = "HTTPS"
+# 
+#   ssl_policy      = "ELBSecurityPolicy-2016-08" # NOTE: Is this right?
+#   certificate_arn = ""                          # TODO: This
+# 
+#   default_action {
+#     type = "forward"
+# 
+#     target_group_arn = aws_lb_target_group.main.id
+#   }
 # }
 
 
@@ -145,16 +220,19 @@ resource "aws_ecs_service" "darbylaw" {
   task_definition = aws_ecs_task_definition.darbylaw.arn
   launch_type     = "FARGATE"
 
-  network_configuration {
-    security_groups = [aws_security_group.task.id]
-    subnets         = data.aws_subnets.public.ids
-    # TODO: Remove when moved into a private subnet
-    assign_public_ip = true
-  }
-
   desired_count = 1
 
-  # TODO: Load balancer
+  network_configuration {
+    security_groups  = [aws_security_group.task.id]
+    subnets          = data.aws_subnets.public.ids
+    assign_public_ip = false
+  }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.main.id
+    container_name   = "webserver"
+    container_port   = var.container_port
+  }
 
   # If we add autoscaling:
   # lifecycle {
