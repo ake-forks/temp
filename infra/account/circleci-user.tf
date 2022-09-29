@@ -66,6 +66,12 @@ resource "aws_iam_user_policy" "circleci" {
         Effect   = "Allow"
         Resource = "*"
       },
+      {
+        Sid      = "AllowElasticLoadBalancingAccess"
+        Action   = "elasticloadbalancing:*"
+        Effect   = "Allow"
+        Resource = "*"
+      },
       # For access to terraform
       # TODO: Is this restrictive enough?
       #       Should probably split into multiple statements
