@@ -1,0 +1,21 @@
+# Git
+.git
+
+# CircleCI
+.circleci
+
+# Node
+node_modules
+build/Release
+
+# Shadowcljs
+.shadow-cljs
+
+# Clojure
+.cpcache
+target
+
+# Other
+README.md
+infra
+Dockerfile
