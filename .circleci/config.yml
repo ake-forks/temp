@@ -91,8 +91,9 @@ jobs:
           command: docker build -t darbylaw-production:latest .
       # We only push the docker image when on the `main` branch
       - when:
-          condition:
-            equal: [ main, << pipeline.git.branch >> ]
+          condition: true
+            # TODO:
+            # equal: [ main, << pipeline.git.branch >> ]
           steps:
             - ecr_push_image:
                 environment: production
@@ -126,8 +127,9 @@ workflows:
     jobs:
       - build_maybe_push
       - deploy:
-          filters:
-            branches:
-              only: main
+          # TODO:
+          # filters:
+          #   branches:
+          #     only: main
           requires:
             - build_maybe_push
