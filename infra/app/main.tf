@@ -230,7 +230,7 @@ resource "aws_ecs_service" "darbylaw" {
   network_configuration {
     security_groups  = [aws_security_group.task.id]
     subnets          = data.aws_subnets.public.ids
-    assign_public_ip = false
+    assign_public_ip = true # TODO: Change when we have a NAT gateway in a private subnet
   }
 
   load_balancer {
