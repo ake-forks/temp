@@ -19,22 +19,22 @@
                :jet-grey (rgba 51, 51, 51, 1)
                })
 
-;(defglobal defaults
-;  [:body
-;   {:color (root-col :jet-grey)
-;    :font-family "sans-serif"
-;    :background-color (root-col :light-grey)
-;    :padding 0
-;    :margin 0
-;    :box-sizing :border-box
-;    :height "100%"
-;
-;    }]
-;  [:div ]
-;  [:h1 {:margin 0}]
-;  [:h2 {:margin 0}]
-;  [:h3 {:margin 0}]
-;  [:h4 {:margin 0}])
+(defglobal defaults
+  [:body
+   {:color (root-col :jet-grey)
+    :font-family "sans-serif"
+    :background-color (root-col :light-grey)
+    :padding 0
+    :margin 0
+    :box-sizing :border-box
+    :height "100%"
+
+    }]
+  [:div]
+  [:h1 {:margin 0}]
+  [:h2 {:margin 0}]
+  [:h3 {:margin 0}]
+  [:h4 {:margin 0}])
 
 
 ;(defglobal global-styles
