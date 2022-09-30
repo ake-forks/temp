@@ -18,26 +18,30 @@
 
 (defn page [meta-info & body]
   (r/response
-   (h/html5 {:lang "en"}
-            [:head
-             [:title (get meta-info :title "Shadow Full Stack")]
-             [:meta {:charset "UTF-8"}]
-             [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]
-             [:link {:rel "stylesheet" :href "/css/site.css"}]]
-            (into
-              [:body
-               [:noscript "Please enable JavaScript to continue."]]
-              body))))
+    (h/html5 {:lang "en"}
+      [:head
+       [:title (get meta-info :title "Shadow Full Stack")]
+       [:meta {:charset "UTF-8"}]
+       [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]
+
+       [:link {:rel "stylesheet" :href "/semantic.css"}]
+       ;[:link {:rel "stylesheet" :href "//cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.css"}]
+       ]
+      (into
+        [:body
+         [:noscript "Please enable JavaScript to continue."]]
+        body))))
+
 
 (defn spa [_]
   (page {:title "shadow-cljs Full Stack - App"}
-        [:div#app]
-        (h/include-js "/js/compiled/app.js")))
+    [:div#app]
+    (h/include-js "/js/compiled/app.js")))
 
 ;; create muuntaja instance
 (def muuntaja-instance
   (m/create (-> m/default-options
-                (assoc :default-format "application/edn"))))
+              (assoc :default-format "application/edn"))))
 
 (defn ip-handler [request]
   {:status 200
