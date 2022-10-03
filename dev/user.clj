@@ -1,14 +1,15 @@
 (ns user
   (:require
     [mount.core :as mount]
-    [clojure.tools.namespace.repl :as ns-tools]))
+    [clojure.tools.namespace.repl :as ns-tools]
+    [spyscope.core]))
 
-(defn reset! []
+(defn go! []
   (mount/stop)
   (ns-tools/refresh :after 'mount/start))
 
 (comment
-  (reset!)
+  (go!)
   ,)
 
 

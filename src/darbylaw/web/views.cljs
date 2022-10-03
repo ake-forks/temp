@@ -6,28 +6,8 @@
    [darbylaw.web.events :as events]
    [darbylaw.web.routes :as routes]
    [darbylaw.web.subs :as subs]
-   [ajax.core :as ajax]
-   [darbylaw.web.create-case]))
-
-
-(re-frame/reg-event-fx ::create-case-success
-  (fn [_ _]
-    (println "success")))
-
-(re-frame/reg-event-fx ::create-case-success
-  (fn [_ _]
-    (println "failure")))
-
-(re-frame/reg-event-fx ::create-case
-  (fn [_ _]
-    {:http-xhrio
-     {:method :post
-      :uri "http://localhost:8080/api/case"
-      :timeout 8000
-      :format (ajax/json-request-format)
-      :response-format (ajax/json-response-format {:keywords? true})
-      :on-success [::create-case-success]
-      :on-failure [::create-case-failure]}}))
+   [darbylaw.web.ui.create-case]
+   [darbylaw.web.ui.admin]))
 
 ;; home
 

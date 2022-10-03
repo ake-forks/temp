@@ -10,9 +10,10 @@
 
 (def routes
   (atom
-    ["/app" {""      :home
+    ["/app" {"" :home
              "/about" :about
-             "/create-case" :create-case}]))
+             "/create-case" :create-case
+             "/admin" :admin}]))
 
 (defn parse
   [url]
