@@ -44,7 +44,7 @@
         net.dhleong/spade {:mvn/version "1.1.0"}
         breaking-point/breaking-point {:mvn/version "0.1.2"}
         arttuka/reagent-material-ui {:mvn/version "5.10.1-0"}
-        arttuka/reagent-lab {:mvn/version "5.0.0-alpha.95"}
+       
 
         ;;; Routing
         bidi/bidi {:mvn/version "2.1.6"}
