@@ -14,7 +14,7 @@
           })
 
 (defclass mui-default []
-  {:padding "0.2rem"}
+  {:padding "0.2rem" :font-family "Lexend, serif" :color (col :jet-grey)}
   [:.MuiCardContent-root {:padding "0.3rem"}]
   [:h1 {:font-family "Lexend, serif" :color (col :jet-grey)}]
   [:h4 {:font-family "Lexend, serif" :color (col :jet-grey)}]

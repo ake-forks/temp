@@ -13,7 +13,7 @@
 (def orange [:img {:src "/images/orange.png" :width 30 :height 30}])
 
 (defn progress-bar []
-  [stepper/stepper {:alternativeLabel true}
+  [stepper/stepper {:alternativeLabel true :className (style/mui-default)}
    [stepper/step
     [stepper/label {:icon (r/as-element green)} "Upload Will"]
     ]

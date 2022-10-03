@@ -3,22 +3,38 @@
             [re-frame.core :as rf]
             [clojure.string :as str]
             ["antd" :as antd]
+            ["@ant-design/icons" :as icon]
             [nubank.workspaces.core :as ws]
             [nubank.workspaces.card-types.react :as ct.react]))
 
 (defn asset-item [name amount]
-  [antd/Space {:direction :vertical}
-   [:h5 name]
-   [:h5 amount]
+  [:> antd/Space {:direction :horizontal}
+   [:> icon/BankOutlined {:style {:font-size :medium}}]
+   [:h5 {:style {:font-family "'Lexend', sans-serif" :font-size :medium :margin-bottom 0}} name]
+   [:h5 {:style {:font-family "'Lexend', sans-serif" :font-size :medium :margin-bottom 0}} "£" amount]
    ]
   )
 
-(defn ui
-  []
-  [:div
-   [:> antd/Card {:title "bank accounts" :headStyle {:font-weight 600}}
-    [:> antd/Divider]
-    [asset-item "Santander" 5000]]]
+(defn add-account []
+  [:> antd/Space {:direction :horizontal}
+   [:h5 {:style {:font-family "'Lexend', sans-serif" :font-size :medium :margin-bottom 0}} "add account"]
+   [:> icon/PlusCircleFilled]
+   ]
+  )
+
+(defn ui []
+
+  [:> antd/Card
+   {
+    :bodyStyle {:padding "0.5rem" :font-weight 600}}
+   [:h5 {:style {:font-family "'Lexend', sans-serif" :font-weight 600 :font-size :medium :margin-bottom 0}} "bank accounts"]
+   [:> antd/Divider {:style {:margin "0.5rem"}}]
+   [asset-item "Santander" 5000]
+   [:> antd/Divider {:style {:margin "0.5rem"}}]
+   [asset-item "HSBC" 3500]
+   [:> antd/Divider {:style {:margin "0.5rem"}}]
+   [add-account]
+   ]
 
   )
 
