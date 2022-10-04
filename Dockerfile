@@ -18,7 +18,8 @@ RUN clojure -P
 COPY . .
 RUN npx shadow-cljs release app
 # NOTE: Maybe only use for staging?
-RUN npx shadow-cljs compile cards
+# TODO: Add a deps.edn alias
+RUN clojure -J-Xss2m -m shadow.cljs.devtools.cli compile cards
 
 
 FROM base as runner
