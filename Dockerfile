@@ -16,9 +16,9 @@ COPY deps.edn .
 RUN clojure -P
 
 COPY . .
-RUN clojure -M:shadow-cljs release app
+RUN npx shadow-cljs release app
 # NOTE: Maybe only use for staging?
-RUN clojure -M:shadow-cljs release cards
+RUN npx shadow-cljs release cards
 
 
 FROM base as runner
