@@ -17,8 +17,12 @@
 
 (defn add-account []
   [:> antd/Space {:direction :horizontal}
-   [:h5 {:style {:font-family "'Lexend', sans-serif" :font-size :medium :margin-bottom 0}} "add account"]
+   [:> antd/Button {:type :text}
+    [:h5 {:style {:font-family "'Lexend', sans-serif" :font-size :medium :margin-bottom 0}} "add account"]
+
+    ]
    [:> icon/PlusCircleFilled]
+
    ]
   )
 

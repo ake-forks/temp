@@ -7,7 +7,9 @@
     [darbylaw.web.routes :as routes]
     [darbylaw.web.subs :as subs]
     [darbylaw.web.components :as c]
+   
     [darbylaw.web.antd :as a]
+
     [darbylaw.web.semantic :as s]
     [ajax.core :as ajax]
     [darbylaw.web.create-case]))
@@ -67,7 +69,7 @@
 (defn dashboard-panel []
   [:div
    [c/navbar]
- 
+
    [c/timeline {"register deceased" true, "upload will" true, "notify" false, "apply for probate" false}]
    [c/card2 "Banks" {"Santander" 15000 "Barclays" 5000 "HSBC" -2000}]
    [:div
@@ -86,16 +88,7 @@
 
 (defmethod routes/panels :test-panel [] [test-panel])
 
-;;mui components
 
-(defn mui-components-panel []
-  [:body
-   [c/nav]
-   [c/mui-tester]
-   ]
-  )
-
-(defmethod routes/panels :mui-components-panel [] [mui-components-panel])
 
 ;;antd
 

@@ -122,13 +122,44 @@
 
 (defclass mui-dashboard []
   {:padding-top "4rem" :font-family "'Lexend', sans-serif"
+
    }
-  [:h3 {:font-weight 600 :font-family "'Lexend', sans-serif"}]
+  [:h3 {:font-weight 400 :font-family "'Lexend', sans-serif"}]
   [:h4 {:font-weight 400 :font-family "'Lexend', sans-serif"}]
   [:h5 {:font-weight 600 :font-family "'Lexend', sans-serif"}]
+  [:h6 {:font-weight 400 :font-family "'Lexend', sans-serif"}]
+  [:span {:font-family "'Lexend', sans-serif"}]
   [:button {:background-color (root-col :jet-grey)
             :color (root-col :light-grey)
             :text-transform :none :font-family "'Lexend', sans-serif"
-            :border-radius 0}]
+            :border-radius 0
+            }]
+  [:.MuiSlider-colorPrimary {:color (root-col :green-pantone)}]
+  [:.MuiCheckbox-colorSecondary {:color (root-col :green-pantone)}]
+  [:.MuiSwitch-colorPrimary {:color (root-col :green-pantone)}]
+
+  [:.MuiPaper-root {:padding "1rem"}
+   [:h5 {:padding "1rem"}]
+   [:span {:padding "1rem"}]
+   ]
   )
+
+(defclass antd-dashboard []
+  {:padding-top "2rem" :font-family "'Lexend', sans-serif"
+   }
+  [:h1 {:font-weight 600 :font-family "'Lexend', sans-serif"}]
+  [:h3 {:font-weight 600 :font-family "'Lexend', sans-serif"}]
+  [:h4 {:font-weight 400 :font-family "'Lexend', sans-serif"}]
+  [:h5 {:font-weight 600 :font-family "'Lexend', sans-serif"}]
+  [:h6 {:font-weight 400 :font-family "'Lexend', sans-serif"}]
+  [:span {:font-family "'Lexend', sans-serif"}]
+  [:button {:margin "3px"}]
+  )
+
+
+(defclass antd-checkbox []
+  {:color (root-col :green-pantone)}
+  [:span
+   [::selection {:border "1px solid #58a94b" :background (root-col :green-pantone)}]])
+
 

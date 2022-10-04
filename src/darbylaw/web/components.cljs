@@ -39,6 +39,8 @@
 
 ;;MUI
 
+;TODO mui starts here
+
 
 
 (defn nav []
@@ -60,7 +62,7 @@
 
 
 
-;TODO mui starts here
+
 
 
 (defn form [title]
@@ -68,7 +70,7 @@
    [mui/typography {:variant :h5} title]
    [mui/form-control
     [mui/input-label "Title"]
-    [mui/select {:placeholder ""}
+    [mui/select {:placeholder "Mr"}
      [mui/menu-item {:value "Mr"} "Mr"]
      [mui/menu-item {:value "Ms"} "Ms"]
      [mui/menu-item {:value "Mx"} "Mx"]
@@ -101,33 +103,4 @@
     ]
    ]
   )
-(def open (atom false))
-(defn close [] (swap! open false))
-(defn open-dialog [] (swap! open true))
 
-(defn mui-tester []
-  [mui/container {:max-width :m :class (styles/mui-dashboard)}
-   [mui/typography {:variant :h3} "other components"]
-   [mui/typography {:variant :h4 :font-style "italic"} "including subtitles"]
-   [mui/typography {:variant :p} "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.
-   Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt."]
-
-   [mui/stack {:spacing 2 :direction :row}
-    [mui/stack {:spacing 1 :sx {:min-width "50%" :align-items :flex-start :margin-top "1rem"}}
-     [mui/form-control {:sx {:min-width "100%"}}
-
-      [mui/switch {:label "switch"}]
-      [mui/checkbox {:label "checkbox"}]
-      [mui/slider {:size "small" :default-value 70}]
-      ]
-     ]
-    [mui/stack {:spacing 1 :sx {:align-items :center :margin-top "1rem"}}
-     [mui/typography {:variant :h4} "column layout"]
-     [mui/button {:on-click (fn [] open-dialog) :variant "outlined" :sx {:color :black}} "modal"]
-     [mui/dialog {:variant "alert" :open (@open) :onClose (fn [] close)}
-      [mui/typography {:variant :h5} "proceed?"]
-      [mui/typography {:variant :p} "You haven't started the ID check yet.
-                                    Would you like to proceed to your dashboard?
-                                    You can always start the ID lookup later"]]
-     ]
-    ]])

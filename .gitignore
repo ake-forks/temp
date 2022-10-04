@@ -1,5 +1,6 @@
 /out/
 /resources/public/js/compiled/
+/resources/public/js/workspaces/
 /target/
 /*-init.clj
 /*.log
@@ -10,8 +11,7 @@
 
 # Node.js dependencies
 /node_modules/
-package-lock.json
-package.json
+
 
 # shadow-cljs cache, port files
 /.shadow-cljs/

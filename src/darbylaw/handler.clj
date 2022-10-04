@@ -23,8 +23,10 @@
        [:title (get meta-info :title "Shadow Full Stack")]
        [:meta {:charset "UTF-8"}]
        [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]
-
-       ;[:link {:rel "stylesheet" :href "/semantic.css"}]
+       [:link {:rel "preconnect" :href "https://fonts.googleapis.com"}]
+       [:link {:rel "preconnect" :href "https://fonts.gstatic.com" :crossorigin "true"}]
+       [:link {:href "https://fonts.googleapis.com/css2?family=Lexend:wght@300;600&display=swap" :rel "stylesheet"}]
+       [:link {:rel "stylesheet" :href "/antd.css"}]
        ;[:link {:rel "stylesheet" :href "//cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.css"}]
        ]
       (into

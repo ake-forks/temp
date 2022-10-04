@@ -7,10 +7,11 @@
     "build-report": "npx shadow-cljs run shadow.cljs.build-report app target/build-report.html"
   },
   "dependencies": {
+    "@ant-design/icons": "^4.7.0",
     "@emotion/react": "11.10.4",
     "@emotion/styled": "11.10.4",
-    "@mui/material": "5.10.1",
     "@mui/lab": "5.0.0-alpha.95",
+    "@mui/material": "5.10.1",
     "antd": "^4.23.3",
     "highlight.js": "9.18.5",
     "react": "17.0.2",

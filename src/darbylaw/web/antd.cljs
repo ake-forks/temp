@@ -46,7 +46,7 @@
    [:> antd/Form.Item [:> antd/Input {:placeholder "Postcode"}]]
    [:> antd/Form.Item [:> antd/Input {:placeholder "Telephone"}]]
    [:> antd/Form.Item [:> antd/Input {:placeholder "Email"}]]
-   [:> antd/Button {:block true :style {:background-color :#000000 :color :#ffffff}} "Next"]
+   [:> antd/Button {:block true :style {:background-color :#000000 :color :#ffffff} :on-click #(re-frame/dispatch [::events/navigate :antd-example])} "Next"]
 
    ]
   )
