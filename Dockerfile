@@ -1,38 +1,38 @@
-FROM node:18-bullseye as build
+# TODO: Specify jvm & os versions
+FROM clojure:latest as base
 
-# Install clojure & java
-RUN apt-get update && apt-get -q -y install \
-      openjdk-11-jdk \
-      curl \
-    && curl -s https://download.clojure.org/install/linux-install-1.11.1.1165.sh | bash
+
+FROM base as build
 
 WORKDIR /app
 
-COPY deps.edn .
-RUN clojure -P
+# Install npm
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && apt-get install -y nodejs
 
 COPY package.json package-lock.json ./
 RUN npm ci
 
+COPY deps.edn .
+RUN clojure -P
+
 COPY . .
-RUN npm run release
+RUN clojure -M:shadow-cljs release app
 
 
-# Fetch clojure image as the base
-FROM clojure:latest as runner
+FROM base as runner
 
 # Create a directory for the app to run from
 WORKDIR /app
-
-# Copy the entire folder contents to the image
-COPY --from=build /app/resources/public/js/compiled /app/resources/public/js/compiled
-COPY . .
 
 # Set Evironment variables
 ENV PORT=8080
 
 # Expose port to the local machine
 EXPOSE 8080
+
+# Copy the entire folder contents to the image
+COPY --from=build /app/resources/public/js/compiled /app/resources/public/js/compiled
+COPY . .
 
 # Run the container calling the main function
 CMD [ "clojure", "-M", "-m", "darbylaw.core" ]
