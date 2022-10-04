@@ -1,0 +1,133 @@
+version: 2.1
+
+orbs:
+  aws-cli: circleci/aws-cli@3.1.3
+
+# Define reusable commands that can be used as steps
+commands:
+  setup_aws_cli:
+    description: |
+      Install aws-cli and setup things so that commands run in the correct environment
+
+      Assumes the following Environment Variables have been setup:
+      <environment>_AWS_ACCESS_KEY_ID
+      <environment>_AWS_SECRET_ACCESS_KEY
+    parameters:
+      environment:
+        description: The aws environment to setup, see command description
+        type: string
+    steps:
+      - run:
+          name: Setup AWS Environment
+          command: |
+            # Environment Variables can't be passed between steps
+            # So we store them in $BASH_ENV, where they are later sourced
+            # https://circleci.com/docs/env-vars (search for "BASH_ENV")
+            touch "$BASH_ENV"
+            echo 'export AWS_ACCESS_KEY_ID="${<< parameters.environment >>_AWS_ACCESS_KEY_ID}"' >> "$BASH_ENV"
+            echo 'export AWS_SECRET_ACCESS_KEY="${<< parameters.environment >>_AWS_SECRET_ACCESS_KEY}"' >> "$BASH_ENV"
+            echo 'export AWS_DEFAULT_REGION="eu-west-2"' >> "$BASH_ENV"
+      - run:
+          name: Manually Install AWS CLI
+          command: |
+            # We manually do this rather than let the aws-cli orb do it for us because
+            # when the orb installs the cli there's a conflict with the libgcc version
+            apk add --no-cache \
+              aws-cli=1.22.81-r0
+      - aws-cli/setup
+  ecr_push_image:
+    description: |
+      Push the given docker image to the specified environment
+
+      Assumes that the image you want to push is built and tagged "<< parameters.image_name >>:latest"
+      Assumes the following Environment Variables have been setup:
+      <environment>_AWS_ACCESS_KEY_ID
+      <environment>_AWS_SECRET_ACCESS_KEY
+    parameters:
+      environment:
+        description: The environment to push the image to, see command description
+        type: string
+      image_name:
+        description: The name of the image you want to push, see command description
+        type: string
+    steps:
+      - setup_aws_cli:
+          environment: << parameters.environment >>
+      - run:
+          name: Push Image to ECR
+          command: |
+            . "$BASH_ENV"
+            # >> Config
+            region="$AWS_DEFAULT_REGION"
+            # Currently will always be the same account
+            # If this changes just add another env variable <environment>_ACCOUNT_ID
+            account_id=713170488151
+
+            # >> Login
+            ecr_endpoint="$account_id.dkr.ecr.$region.amazonaws.com"
+            aws ecr get-login-password --region $region | docker login --username AWS --password-stdin $ecr_endpoint
+
+            # >> Tag & Push
+            # The format for this is:
+            # <account ecr endpoint>/<image name>:<docker tag>
+            # In our case the docker tag is the git hash so we can track down which commit is running
+            new_docker_tag="$ecr_endpoint/<< parameters.image_name >>:${CIRCLE_SHA1}"
+            docker tag "<< parameters.image_name >>:latest" $new_docker_tag
+            docker push $new_docker_tag
+
+
+# Define the jobs we want to run for this project
+jobs:
+  build_maybe_push:
+    working_directory: /app
+    docker:
+      - image: docker:20.10.18-git
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: Build Application Docker Image
+          command: docker build -t darbylaw-production:latest .
+      # We only push the docker image when on the `main` branch
+      - when:
+          condition:
+            equal: [ main, << pipeline.git.branch >> ]
+          steps:
+            - ecr_push_image:
+                environment: production
+                image_name: darbylaw-production
+  deploy:
+    working_directory: /app
+    docker:
+      - image: hashicorp/terraform:1.2.9
+    steps:
+      - checkout
+      - setup_aws_cli:
+          environment: production
+      - run:
+          name: Terraform Init
+          working_directory: ./infra/app
+          command: |
+            terraform init -input=false
+            terraform workspace select production
+      - run:
+          name: Terraform Plan
+          working_directory: ./infra/app
+          command: terraform plan -out tfapply -var "darbylaw_docker_tag=${CIRCLE_SHA1}"
+      - run:
+          name: Terraform Apply
+          working_directory: ./infra/app
+          command: terraform apply -auto-approve tfapply
+
+# Orchestrate our job run sequence
+workflows:
+  build:
+    jobs:
+      - build_maybe_push
+      - deploy:
+          filters:
+            branches:
+              only: main
+          requires:
+            - build_maybe_push
