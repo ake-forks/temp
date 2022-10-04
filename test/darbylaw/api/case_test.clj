@@ -3,7 +3,6 @@
     [clojure.test :refer :all]
     [darbylaw.test.common :as test-common :refer [submap?]]
     [darbylaw.handler :refer [ring-handler]]
-    [darbylaw.api.case :as api.case]
     [cognitect.transit :as transit]))
 
 (use-fixtures :once
@@ -13,14 +12,14 @@
   (cond-> resp
     (:body resp) (assoc :body-str (slurp (:body resp)))))
 
-(deftest create-case
+(deftest create_and_get_cases
   (let [pr-info {:surname "Doe"
                  :forename "John"
                  :postcode "SW1W 0NY"}
         post-resp (ring-handler
                     {:request-method :post
                      :uri "/api/case"
-                     :body-params pr-info})]
+                     :body-params {:personal-representative pr-info}})]
     (is (<= 200 (:status post-resp) 299))
     (let [{get-status :status
            get-body :body} (ring-handler
@@ -33,9 +32,9 @@
       (is (= 1 (count cases)))
       (let [case (first cases)]
         (is (contains? case :id))
-        (is (submap? pr-info (get-in case [:personal-representative])))))))
+        (is (submap? pr-info (:personal-representative case)))))))
 
-(deftest create-case_validation_works
+(deftest create_case_validation_works
   (let [post-resp (ring-handler
                     {:request-method :post
                      :uri "/api/case"

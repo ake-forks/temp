@@ -20,20 +20,16 @@
 (defn get-cases [{:keys [xtdb-node]}]
   (ring/response
     (->> (xt/q (xt/db xtdb-node)
-           '{:find [(pull case [*]) (pull pr-info [*])]
-             :where [[case :type :probate.case]
-                     ; TODO: Do a left join here. This is an inner join.
-                     [case :ref/personal-representative.info.id pr-info-id]
-                     [pr-info :xt/id pr-info-id]]})
-      (map (fn [[case pr-info]]
+           '{:find [(pull case [:xt/id])
+                    (pull case [{:ref/personal-representative.info.id
+                                 [:forename
+                                  :surname
+                                  :postcode]}])]
+             :where [[case :type :probate.case]]})
+      (map (fn [[case {pr-info :ref/personal-representative.info.id}]]
              (-> case
-               (assoc :id (:xt/id case)
-                      :personal-representative (-> pr-info
-                                                 (dissoc :type
-                                                         :xt/id)))
-               (dissoc :type
-                       :xt/id
-                       :ref/personal-representative.info.id)))))))
+               (clojure.set/rename-keys {:xt/id :id})
+               (assoc :personal-representative pr-info)))))))
 
 (defn routes []
   [["/case" {:post {:handler create-case
