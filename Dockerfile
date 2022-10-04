@@ -18,7 +18,7 @@ RUN clojure -P
 COPY . .
 RUN npx shadow-cljs release app
 # NOTE: Maybe only use for staging?
-RUN npx shadow-cljs release cards
+RUN npx shadow-cljs compile cards
 
 
 FROM base as runner
