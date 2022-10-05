@@ -10,11 +10,9 @@
 
 (def routes
   (atom
-    ["/app" {"" :home
-             "/about" :about
+    ["/app" {"/about" :about
              "/create-case" :create-case
              "/admin" :admin
-             "/create-case" :create-case
              "/dashboard" :dashboard
              "/semantic-ui" :semantic-ui}]))
 

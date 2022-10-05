@@ -62,7 +62,8 @@
 
 (defn routes []
   (println "creating routes")
-  [["/" {:get (fn [_req] (r/redirect "/app"))}]
+  [["/" {:get (fn [_req] (r/redirect "/app/admin"))}]
+   ["/app" {:get (fn [_req] (r/redirect "/app/admin"))}]
 
    ["/app{*path}" {:get spa}]
 

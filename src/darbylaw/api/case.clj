@@ -9,12 +9,13 @@
         pr-info (get body-params :personal-representative)]
     (xt/await-tx xtdb-node
       (xt/submit-tx xtdb-node
-        [[::xt/put (merge pr-info
-                     {:type :probate.personal-representative.info
-                      :xt/id pr-info-id})]
-         [::xt/put {:type :probate.case
+        [[::xt/put {:type :probate.case
                     :xt/id (random-uuid)
-                    :ref/personal-representative.info.id pr-info-id}]])))
+                    :ref/personal-representative.info.id pr-info-id}]
+         [::xt/put (merge
+                     pr-info
+                     {:type :probate.personal-representative.info
+                      :xt/id pr-info-id})]])))
   {:status 204})
 
 (defn get-cases [{:keys [xtdb-node]}]

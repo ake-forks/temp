@@ -1,7 +1,11 @@
 (ns darbylaw.web.ui.admin
   (:require [darbylaw.web.routes :as routes]
+            [reagent.core :as r]
             [re-frame.core :as rf]
-            [ajax.core :as ajax]))
+            [ajax.core :as ajax]
+            [darbylaw.web.ui :as ui]
+            [reagent-mui.components :as mui]
+            [darbylaw.web.events :as events]))
 
 (rf/reg-event-fx ::load-success
   (fn [{:keys [db]} [_ response]]
@@ -28,14 +32,21 @@
 
 (defn admin-panel []
   (let [cases @(rf/subscribe [::cases])]
-    [:div
-     [:h1 "Admin panel"]
+    [mui/container
+     [mui/stack {:direction :row
+                 :justify-content :space-between
+                 :align-items :center}
+      [mui/typography {:variant :h1} "Cases"]
+      [mui/button {:startIcon (r/as-element [ui/icon-add])
+                   :onClick #(rf/dispatch [::events/navigate :create-case])}
+       "Create case"]]
      (if (nil? cases)
        "Loading cases..."
-       [:ul
-        (for [{{:keys [surname forename postcode]} :personal-representative}
-              cases]
-          [:li (str surname ", " forename ". At " postcode)])])]))
+       (for [{{:keys [surname forename postcode]} :personal-representative}
+             cases]
+         [mui/card
+          [mui/card-content
+           (str surname ", " forename ". At " postcode)]]))]))
 
 (defn panel []
   (rf/dispatch [::load!])
