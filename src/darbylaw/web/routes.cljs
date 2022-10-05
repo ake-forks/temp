@@ -14,10 +14,7 @@
              "/about" :about
              "/create-case" :create-case
              "/dashboard" :dashboard
-             "/test" :test
-             "/mui-components" :mui-components
-             "/antd" :antd
-             "/antd-example" :antd-example
+             
              "/semantic-ui" :semantic-ui}]))
 
 

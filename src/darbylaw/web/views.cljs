@@ -2,13 +2,13 @@
   (:require
     [re-frame.core :as re-frame]
     [breaking-point.core :as bp]
-    [darbylaw.web.styles :as styles]
+  
     [darbylaw.web.events :as events]
     [darbylaw.web.routes :as routes]
     [darbylaw.web.subs :as subs]
-    [darbylaw.web.components :as c]
-   
-    [darbylaw.web.antd :as a]
+
+
+
 
     [darbylaw.web.semantic :as s]
     [ajax.core :as ajax]
@@ -29,12 +29,7 @@
      [:div
       [:a {:on-click #(re-frame/dispatch [::events/navigate :dashboard])}
        "go to Dashboard Page"]]
-     [:div
-      [:a {:on-click #(re-frame/dispatch [::events/navigate :test])}
-       "go to MUI Page"]]
-     [:div
-      [:a {:on-click #(re-frame/dispatch [::events/navigate :antd])}
-       "go to antD Page"]]
+
      [:div
       [:a {:on-click #(re-frame/dispatch [::events/navigate :semantic-ui])}
        "go to Semantic Page"]]
@@ -64,44 +59,15 @@
 
 
 
-;;dashboard
 
-(defn dashboard-panel []
-  [:div
-   [c/navbar]
 
-   [c/timeline {"register deceased" true, "upload will" true, "notify" false, "apply for probate" false}]
-   [c/card2 "Banks" {"Santander" 15000 "Barclays" 5000 "HSBC" -2000}]
-   [:div
-    [:a {:on-click #(re-frame/dispatch [::events/navigate :home])}
-     "go to Home Page"]]])
 
-(defmethod routes/panels :dashboard-panel [] [dashboard-panel])
-
-;;mui sandbox
-(defn test-panel []
-  [:body
-   [c/nav]
-   [c/get-started]
-   ]
-  )
-
-(defmethod routes/panels :test-panel [] [test-panel])
 
 
 
 ;;antd
 
-(defn antd-panel []
-  [:body
-   [a/navbar]
-   [a/get-started]
 
-   ]
-
-  )
-
-(defmethod routes/panels :antd-panel [] [antd-panel])
 
 
 ;;semantic
