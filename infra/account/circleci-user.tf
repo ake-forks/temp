@@ -72,6 +72,12 @@ resource "aws_iam_user_policy" "circleci" {
         Effect   = "Allow"
         Resource = "*"
       },
+      {
+        Sid      = "AllowCloudwatchAccess"
+        Action   = "logs:*"
+        Effect   = "Allow"
+        Resource = "*"
+      },
       # For access to terraform
       # TODO: Is this restrictive enough?
       #       Should probably split into multiple statements
