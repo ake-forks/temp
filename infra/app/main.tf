@@ -225,7 +225,8 @@ resource "aws_ecs_service" "darbylaw" {
   task_definition = aws_ecs_task_definition.darbylaw.arn
   launch_type     = "FARGATE"
 
-  desired_count = 1
+  desired_count                     = 1
+  health_check_grace_period_seconds = 30
 
   network_configuration {
     security_groups  = [aws_security_group.task.id]
