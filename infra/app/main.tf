@@ -226,7 +226,7 @@ resource "aws_ecs_service" "darbylaw" {
   launch_type     = "FARGATE"
 
   desired_count                     = 1
-  health_check_grace_period_seconds = 30
+  health_check_grace_period_seconds = 30 # TODO: Time the app startup
 
   network_configuration {
     security_groups  = [aws_security_group.task.id]
