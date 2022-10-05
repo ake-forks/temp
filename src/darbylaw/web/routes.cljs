@@ -1,18 +1,22 @@
 (ns darbylaw.web.routes
   (:require
-   [bidi.bidi :as bidi]
-   [pushy.core :as pushy]
-   [re-frame.core :as re-frame]
-   [darbylaw.web.events :as events]))
+    [bidi.bidi :as bidi]
+    [pushy.core :as pushy]
+    [re-frame.core :as re-frame]
+    [darbylaw.web.events :as events]))
 
 (defmulti panels identity)
 (defmethod panels :default [] [:div "No panel found for this route."])
 
 (def routes
   (atom
-    ["/app" {""      :home
+    ["/app" {"" :home
              "/about" :about
-             "/create-case" :create-case}]))
+             "/create-case" :create-case
+             "/dashboard" :dashboard
+             
+             "/semantic-ui" :semantic-ui}]))
+
 
 (defn parse
   [url]
