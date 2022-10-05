@@ -1,4 +1,4 @@
-{:deps true
+{:deps {:aliases [:dev]}
 
  :nrepl {:port 8777}
 
@@ -11,7 +11,8 @@
         :output-dir "resources/public/js/compiled"
         :asset-path "/js/compiled"
         :modules {:app {:init-fn darbylaw.web.core/init}}
-        :devtools {:preloads [re-frisk.preload]}
+        :devtools {:preloads [re-frisk.preload
+                              spyscope.core]}
         :dev {:compiler-options {:closure-defines {}}}}
   :cards {:target nubank.workspaces.shadow-cljs.target
           :ns-regexp  "-(test|cards)$"

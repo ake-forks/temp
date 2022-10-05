@@ -4,5 +4,9 @@
     [aero.core :as aero]
     [clojure.java.io :as java-io]))
 
+(mount/defstate profile
+  :start :production)
+
 (mount/defstate config
-  :start (doto (aero/read-config (java-io/resource "config.edn"))))
+  :start (aero/read-config (java-io/resource "config.edn")
+           {:profile profile}))
