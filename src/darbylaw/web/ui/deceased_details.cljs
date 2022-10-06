@@ -189,7 +189,8 @@
     {:on-submit #(rf/dispatch [::submit! %])
      :keywordize-keys true
      :prevent-default? true
-     :initial-values {:title ""}}
+     :initial-values {:relationship ""
+                      :sex ""}}
     deceased-details-form]])
 
 
