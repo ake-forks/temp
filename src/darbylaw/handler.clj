@@ -61,28 +61,14 @@
                (assoc :xtdb-node xtdb-node)))))
 
 (defn routes []
-  (println "creating routes")
   [["/" {:get (fn [_req] (r/redirect "/app/admin"))}]
    ["/app" {:get (fn [_req] (r/redirect "/app/admin"))}]
-
    ["/app{*path}" {:get spa}]
-
    [""
     {:middleware [wrap-xtdb-node]}
     ["/healthcheck" {:get do-healthcheck}]
-    ; Kept in case current healthcheck is set up to reach the `/ip` endpoint:
-    ; TODO: remove
-    ["/ip" {:get do-healthcheck}]]
-
-   ["/math" {:get {:parameters {:query {:x int?, :y int?}}
-                   :responses {200 {:body {:total int?}}}
-                   :handler (fn [{{{:keys [x y]} :query} :parameters}]
-                              {:status 200
-                               :body {:total (+ x y)}})}}]
-
-   ["/api"
-    {:middleware [wrap-xtdb-node]}
-    (api.case/routes)]])
+    ["/api"
+     (api.case/routes)]]])
 
 (defn make-router []
   (ring/router

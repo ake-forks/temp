@@ -39,6 +39,15 @@ resource "aws_iam_role_policy_attachment" "execution_role_policy_attachment" {
 
 
 
+# >> Logs
+
+resource "aws_cloudwatch_log_group" "darbylaw-logs" {
+  name              = "/fargate/service/darbylaw-${terraform.workspace}"
+  retention_in_days = 30
+}
+
+
+
 # >> Task Definition
 
 resource "aws_ecs_task_definition" "darbylaw" {
@@ -63,6 +72,14 @@ resource "aws_ecs_task_definition" "darbylaw" {
             hostPort      = var.container_port
           }
         ]
+        logConfiguration = {
+          logDriver = "awslogs"
+          options = {
+            "awslogs-group"         = aws_cloudwatch_log_group.darbylaw-logs.name
+            "awslogs-region"        = "eu-west-2"
+            "awslogs-stream-prefix" = "ecs"
+          }
+        }
       }
     ]
   )
@@ -165,7 +182,7 @@ resource "aws_lb_target_group" "main" {
     protocol            = "HTTP"
     matcher             = "200"
     timeout             = "3"
-    path                = "/ip" # TODO: Add a specific healtcheck endpoint?
+    path                = "/healthcheck"
   }
 }
 
@@ -225,7 +242,8 @@ resource "aws_ecs_service" "darbylaw" {
   task_definition = aws_ecs_task_definition.darbylaw.arn
   launch_type     = "FARGATE"
 
-  desired_count = 1
+  desired_count                     = 1
+  health_check_grace_period_seconds = 30 # TODO: Time the app startup
 
   network_configuration {
     security_groups  = [aws_security_group.task.id]

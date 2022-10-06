@@ -20,7 +20,7 @@
   (fn [_ _]
     {:http-xhrio
      {:method :get
-      :uri "http://localhost:8080/api/cases"
+      :uri "/api/cases"
       :timeout 8000
       :response-format (ajax/transit-response-format)
       :on-success [::load-success]

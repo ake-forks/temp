@@ -18,7 +18,7 @@
   (fn [_ [_ params]]
     {:http-xhrio
      {:method :post
-      :uri "http://localhost:8080/api/case"
+      :uri "/api/case"
       :params params
       :timeout 8000
       :format (ajax/json-request-format)
