@@ -4,7 +4,7 @@
             [fork.re-frame :as fork]
             [ajax.core :as ajax]
             [reagent-mui.components :as mui]
-            [darbylaw.web.ui :as ui]))
+            ))
 
 (rf/reg-event-fx ::create-case-success
   (fn [_ [_ response]]
@@ -42,47 +42,128 @@
                            :as fork-args}]
   [:form
    {:on-submit handle-submit}
-   [mui/stack {:spacing 1}
+   [mui/stack {:spacing 1}                                  ;top
     [mui/typography {:variant :h5} "your details"]
-    [mui/form-control
+
+    [mui/form-control {:required true}
      [mui/input-label {:id :title-select} "Title"]
      [mui/select {:label "Title"
                   :labelId :title-select
                   :name :title
                   :value (:title values)
-                  :onChange (handle-change-fn fork-args)}
+                  :onChange (handle-change-fn fork-args)
+                  :variant :filled}
       [mui/menu-item {:value "Mr" :key :Mr} "Mr"]
+      [mui/menu-item {:value "Mrs" :key :Mrs} "Mrs"]
       [mui/menu-item {:value "Ms" :key :Ms} "Ms"]
       [mui/menu-item {:value "Mx" :key :Mx} "Mx"]
       [mui/menu-item {:value "Dr" :key :Dr} "Dr"]
       [mui/menu-item {:value "Other" :key :Other} "Other"]]
-     [ui/???_TO_BE_DEFINED_??? "What should be the options?"]]
+     ]
+
     [mui/stack {:direction :row
                 :spacing 1}
+
      [mui/text-field {:label "Forename"
+                      :required true
+                      :placeholder "Please enter your legal name"
                       :name :forename
                       :value (:forename values)
                       :onChange (handle-change-fn fork-args)
-                      :full-width true}]
-     [mui/text-field {:label "Surname"
-                      :name :surname
-                      :value (:surname values)
+                      :full-width true
+                      :variant :filled}]
+     [mui/text-field {:label "Middle Name(s)"
+                      :name :middlename
+                      :value (:middlename values)
                       :onChange (handle-change-fn fork-args)
-                      :full-width true}]]
-    [ui/???_TO_BE_DEFINED_??? "How do we want to split name?
-                               (Forename, MiddleName and Surname in .NET code,
-                               but Forenames in mockups)."]
-    [mui/text-field {:label "Postcode"
-                     :name :postcode
-                     :value (:postcode values)
-                     :onChange (handle-change-fn fork-args)}]
+                      :full-width true
+                      :variant :filled}]
+     ]
+    [mui/text-field {:label "Surname"
+                     :required true
+                     :name :surname
+                     :value (:surname values)
+                     :onChange (handle-change-fn fork-args)
+                     :full-width true
+                     :variant :filled
+                     }]
+
+    [mui/input-label {:id :dob-input} "Date of Birth"]
+    [mui/text-field {:label "DD/MM/YYYY"
+                     :labelId :dob-input
+                     :required true
+                     :name :dob
+                     :value (:dob values)
+                     :onChange (handle-change-fn fork-args)
+                     :full-width true
+                     :variant :filled}]
+
+
+
+    [mui/stack {:direction :row :spacing 1 :style {:margin-top "2rem"}}
+
+     [mui/text-field {:label "Flat"
+                      :name :flat
+                      :value (:flat values)
+                      :onChange (handle-change-fn fork-args)
+                      :variant :filled}]
+     [mui/text-field {:label "Building Name/No."
+                      :required true
+                      :name :building
+                      :value (:building values)
+                      :onChange (handle-change-fn fork-args)
+                      :variant :filled}]
+     [mui/text-field {:label "Street"
+                      :required true
+                      :full-width true
+                      :name :street1
+                      :value (:street1 values)
+                      :onChange (handle-change-fn fork-args)
+                      :variant :filled}]]
+    [mui/text-field {:label "Address line 2"
+                     :full-width true
+                     :name :street2
+                     :value (:street2 values)
+                     :onChange (handle-change-fn fork-args)
+                     :variant :filled}]
+    [mui/stack {:direction :row :spacing 1}
+     [mui/text-field {:label "Town/City"
+                      :required true
+                      :full-width true
+                      :name :town
+                      :value (:town values)
+                      :onChange (handle-change-fn fork-args)
+                      :variant :filled}]
+     [mui/text-field {:label "Postcode"
+                      :required true
+                      :name :postcode
+                      :value (:postcode values)
+                      :onChange (handle-change-fn fork-args)
+                      :variant :filled}]]
+    [mui/text-field {:label "Telephone"
+                     :required true
+                     :full-width true
+                     :name :town
+                     :value (:town values)
+                     :onChange (handle-change-fn fork-args)
+                     :variant :filled}]
+    [mui/text-field {:label "Email Address"
+                     :required true
+                     :full-width true
+                     :name :town
+                     :value (:town values)
+                     :onChange (handle-change-fn fork-args)
+                     :variant :filled}]
+
+
+
     [mui/button {:variant :contained
                  :type :submit
                  :disabled submitting?}
-     "Submit"]]])
+     "Next"]]])
 
 (defn panel []
-  [mui/container
+  [mui/container {:max-width :md}
    [mui/typography {:variant :h1}
     "get started"]
    [mui/typography {:variant :p}

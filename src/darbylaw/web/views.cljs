@@ -4,6 +4,7 @@
     [darbylaw.web.subs :as subs]
     [darbylaw.web.routes :as routes]
     [darbylaw.web.ui.create-case]
+    [darbylaw.web.ui.deceased-details]
     [darbylaw.web.ui.admin]))
 
 (defn main-panel []
