@@ -13,8 +13,8 @@
     ["/app" {"/about" :about
              "/create-case" :create-case
              "/admin" :admin
-             "/dashboard" :dashboard
-             "/semantic-ui" :semantic-ui}]))
+             "/dashboard" :dashboard}]))
+
 
 
 (defn parse

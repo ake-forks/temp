@@ -7,7 +7,8 @@
     [reagent-mui.components :as mui]
     [darbylaw.web.theme :as theme]
     [darbylaw.web.ui.create-case]
-    [darbylaw.web.ui.admin]))
+    [darbylaw.web.ui.admin]
+    [darbylaw.web.ui.dashboard]))
 
 (defn main-panel []
   (let [active-panel (re-frame/subscribe [::subs/active-panel])]

@@ -5,6 +5,7 @@
             [ajax.core :as ajax]
             [darbylaw.web.ui :as ui]
             [reagent-mui.components :as mui]
+            
             [darbylaw.web.events :as events]))
 
 (rf/reg-event-fx ::load-success
@@ -32,7 +33,9 @@
 
 (defn admin-panel []
   (let [cases @(rf/subscribe [::cases])]
+
     [mui/container
+
      [mui/stack {:direction :row
                  :justify-content :space-between
                  :align-items :center}
