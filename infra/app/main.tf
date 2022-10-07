@@ -1,11 +1,12 @@
 locals {
-  config = {
+  environments = {
     production = {
       hosted_zone_id   = "Z0021879STRZ8VWEL8XM"
       hosted_zone_name = "probatetree.com"
       subdomain        = "www"
     }
   }
+  config = lookup(local.environments, terraform.workspace)
 }
 
 # >> ECR
@@ -207,13 +208,13 @@ resource "aws_lb_listener" "http" {
   protocol          = "HTTP"
 
   default_action {
-    type = "forward"
+    type             = "forward"
     target_group_arn = aws_lb_target_group.probatetree.id
   }
 }
 
 resource "aws_acm_certificate" "probatetree" {
-  domain_name       = "${lookup(local.config, "${terraform.workspace}").subdomain}.${lookup(local.config, "${terraform.workspace}").hosted_zone_name}"
+  domain_name       = "${local.config.subdomain}.${local.config.hosted_zone_name}"
   validation_method = "DNS"
 
   lifecycle {
@@ -222,8 +223,8 @@ resource "aws_acm_certificate" "probatetree" {
 }
 
 resource "aws_route53_record" "probatetree" {
-  zone_id = lookup(local.config, "${terraform.workspace}").hosted_zone_id
-  name    = "${lookup(local.config, "${terraform.workspace}").subdomain}.${lookup(local.config, "${terraform.workspace}").hosted_zone_name}"
+  zone_id = local.config.hosted_zone_id
+  name    = "${local.config.subdomain}.${local.config.hosted_zone_name}"
   type    = "A"
 
   alias {
@@ -238,12 +239,12 @@ resource "aws_route53_record" "probatetree_cert_validation" {
   name            = tolist(aws_acm_certificate.probatetree.domain_validation_options)[0].resource_record_name
   records         = [tolist(aws_acm_certificate.probatetree.domain_validation_options)[0].resource_record_value]
   type            = tolist(aws_acm_certificate.probatetree.domain_validation_options)[0].resource_record_type
-  zone_id         = lookup(local.config, "${terraform.workspace}").hosted_zone_id
+  zone_id         = local.config.hosted_zone_id
   ttl             = 60
 }
 
 resource "aws_acm_certificate_validation" "probatetree" {
-  certificate_arn = aws_acm_certificate.probatetree.arn
+  certificate_arn         = aws_acm_certificate.probatetree.arn
   validation_record_fqdns = [aws_route53_record.probatetree_cert_validation.fqdn]
 }
 
