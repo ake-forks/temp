@@ -1,13 +1,18 @@
-# TODO: Specify jvm & os versions
-FROM clojure:latest as base
+# NOTE:
+# temurin-*     -> The jvm version
+# -tools-deps-* -> The clojure version
+# -bullseye     -> The debian version
+FROM clojure:temurin-17-tools-deps-1.11.1.1165-bullseye as base
 
 
 FROM base as build
 
 WORKDIR /app
 
+RUN apt-get update && apt-get install -y git
+
 # Install npm
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && apt-get install -y nodejs
+RUN clj -e '(-> "https://deb.nodesource.com/setup_18.x" slurp print)' | bash - && apt-get install -y nodejs
 
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -19,6 +24,7 @@ COPY . .
 RUN npx shadow-cljs release app
 # NOTE: Maybe only use for staging?
 # TODO: Add a deps.edn alias
+# NOTE: This stack size is needed because compiling highlight.js runs out of stack space
 RUN clojure -J-Xss2m -m shadow.cljs.devtools.cli compile cards
 
 
