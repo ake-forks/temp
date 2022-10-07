@@ -1,6 +1,5 @@
 (ns darbylaw.handler
   (:require
-    ;; third party libs
     [reitit.ring :as ring]
     [reitit.ring.coercion :as coercion]
     [reitit.ring.middleware.parameters :as parameters]
@@ -14,35 +13,29 @@
     [hiccup.page :as h]
     [xtdb.api :as xt]
     [mount.core :as mount]
-
-    ;; app specific
+    [darbylaw.web.theme :as theme]
     [darbylaw.xtdb-node :refer [xtdb-node]]
     [darbylaw.api.case :as api.case]))
 
 (defn page [meta-info & body]
   (r/response
     (h/html5 {:lang "en"}
-      [:head
-       [:title (get meta-info :title "Shadow Full Stack")]
-       [:meta {:charset "UTF-8"}]
-       [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]
-       [:link {:rel "preconnect" :href "https://fonts.googleapis.com"}]
-       [:link {:rel "preconnect" :href "https://fonts.gstatic.com" :crossorigin "true"}]
-       [:link {:href "https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" :rel "stylesheet"}]
-       [:link {:rel "stylesheet" :href "/antd.css"}]]
-
+      (into
+        [:head
+         [:title (get meta-info :title "Shadow Full Stack")]
+         [:meta {:charset "UTF-8"}]
+         [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]]
+        theme/html-header-additions)
       (into
         [:body
          [:noscript "Please enable JavaScript to continue."]]
         body))))
-
 
 (defn spa [_]
   (page {:title "shadow-cljs Full Stack - App"}
     [:div#app]
     (h/include-js "/js/compiled/app.js")))
 
-;; create muuntaja instance
 (def muuntaja-instance
   (m/create (-> m/default-options
               (assoc-in [:formats "application/transit+json"
