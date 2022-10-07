@@ -9,13 +9,18 @@
    [:link {:rel "stylesheet"
            :href "https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap"}]])
 
+(def teal "#067474")
+(def orange "#B08BBF")
+(def rich-black "#121A20")
+(def off-white "#EEEEEE")
+
 (def theme
   {:palette
-   {:primary {:main :#067474}
-    :secondary {:main :#B08BBF}
-    :btn {:main :#121A20
-          :light :#121A20
-          :dark :#121A20}}
+   {:primary {:main teal}
+    :secondary {:main orange}
+    :btn {:main rich-black
+          :light rich-black
+          :dark rich-black}}
 
    :typography
    {:font-family "'Poppins', Helvetica,sans-serif"
@@ -24,8 +29,8 @@
    :components
    {:MuiButton {:variants
                 [{:props {:variant :contained}
-                  :style {:background-color :#121A20
-                          :color :#EEEEEE
+                  :style {:background-color rich-black
+                          :color off-white
                           :border-radius 0
                           :text-transform :lowercase}}]}
     :MuiTextField {:defaultProps {:variant :filled}}
