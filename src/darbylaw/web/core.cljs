@@ -3,7 +3,6 @@
    [reagent.dom :as rdom]
    [re-frame.core :as re-frame]
    [breaking-point.core :as bp]
-   [darbylaw.web.events :as events]
    [darbylaw.web.routes :as routes]
    [darbylaw.web.views :as views]
    [darbylaw.web.config :as config]
@@ -21,7 +20,6 @@
 
 (defn init []
   (routes/start!)
-  (re-frame/dispatch-sync [::events/initialize-db])
   (re-frame/dispatch-sync [::bp/set-breakpoints
                            {:breakpoints [:mobile
                                           768

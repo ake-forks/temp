@@ -4,8 +4,7 @@
             [re-frame.core :as rf]
             [ajax.core :as ajax]
             [darbylaw.web.ui :as ui]
-            [reagent-mui.components :as mui]
-            [darbylaw.web.events :as events]))
+            [reagent-mui.components :as mui]))
 
 (rf/reg-event-fx ::load-success
   (fn [{:keys [db]} [_ response]]
@@ -38,7 +37,7 @@
                  :align-items :center}
       [mui/typography {:variant :h1} "Cases"]
       [mui/button {:startIcon (r/as-element [ui/icon-add])
-                   :onClick #(rf/dispatch [::events/navigate :create-case])}
+                   :onClick #(rf/dispatch [::ui/navigate :create-case])}
        "Create case"]]
      (if (nil? cases)
        "Loading cases..."

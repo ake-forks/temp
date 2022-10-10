@@ -2,17 +2,33 @@
   (:require [darbylaw.web.routes :as routes]
             [re-frame.core :as rf]
             [fork.re-frame :as fork]
-            [ajax.core :as ajax]
             [reagent-mui.components :as mui]
-            [darbylaw.web.ui :as ui]))
+            [darbylaw.web.ui :as ui]
+            [reagent.core :as r]))
 
+(rf/reg-event-fx ::add-to-case-success
+  (fn [{:keys [db]} [_ case-id {:keys [path]} response]]
+    {:db (fork/set-submitting db path false)
+     ::ui/navigate [:case {:case-id case-id}]}))
 
+(rf/reg-event-fx ::add-to-case-failure
+  (fn [{:keys [db]} [_ {:keys [path]} response]]
+    {:db (fork/set-submitting db path false)}))
 
-(defn handle-change-fn [{:keys [set-handle-change]}]
-  (fn [evt _]
-    (set-handle-change {:value (.. evt -target -value)
-                        :path [(keyword (.. evt -target -name))]})))
+(rf/reg-event-fx ::add-to-case
+  (fn [_ [_ case-id {:keys [values] :as fork-params}]]
+    {:http-xhrio
+     (ui/build-http
+       {:method :patch
+        :uri (str "/api/case/" case-id)
+        :params {:deceased values}
+        :on-success [::add-to-case-success case-id fork-params]
+        :on-failure [::add-to-case-failure fork-params]})}))
 
+(rf/reg-event-fx ::submit!
+  (fn [{:keys [db]} [_ case-id {:keys [path] :as fork-params}]]
+    {:db (fork/set-submitting db path true)
+     :dispatch [::add-to-case case-id fork-params]}))
 
 (defn deceased-details-form [{:keys [handle-submit
                                      submitting?
@@ -32,7 +48,7 @@
                    :labelId :relationship-select
                    :name :relationship
                    :value (:relationship values)
-                   :onChange (handle-change-fn fork-args)
+                   :onChange (ui/form-handle-change-fn fork-args)
                    :variant :filled}
        [mui/menu-item {:disabled true :value "" :key :placeholder} "I'm filling out this form on behalf of my late..."]
        [mui/menu-item {:value "Mother" :key :Mother} "Mother"]
@@ -63,13 +79,13 @@
                       :placeholder "Please enter their legal name"
                       :name :forename
                       :value (:forename values)
-                      :onChange (handle-change-fn fork-args)
+                      :onChange (ui/form-handle-change-fn fork-args)
                       :full-width true
                       :variant :filled}]
      [mui/text-field {:label "Their Middle Name(s)"
                       :name :middlename
                       :value (:middlename values)
-                      :onChange (handle-change-fn fork-args)
+                      :onChange (ui/form-handle-change-fn fork-args)
                       :full-width true
                       :variant :filled}]]
 
@@ -79,14 +95,14 @@
                       :required true
                       :name :surname
                       :value (:surname values)
-                      :onChange (handle-change-fn fork-args)
+                      :onChange (ui/form-handle-change-fn fork-args)
                       :style {:flex-grow 2}
                       :variant :filled}]
 
      [mui/text-field {:label "Maiden Name/Surname at Birth"
                       :name :birth-surname
                       :value (:birth-surname values)
-                      :onChange (handle-change-fn fork-args)
+                      :onChange (ui/form-handle-change-fn fork-args)
                       :style {:flex-grow 1}
                       :variant :filled}]]
 
@@ -102,7 +118,7 @@
                        :required true
                        :name :dob
                        :value (:dob values)
-                       :onChange (handle-change-fn fork-args)
+                       :onChange (ui/form-handle-change-fn fork-args)
                        :full-width true
                        :variant :filled}]]
      [mui/stack {:spacing 1 :sx {:width "100%"}}
@@ -112,7 +128,7 @@
                        :required true
                        :name :pob
                        :value (:pob values)
-                       :onChange (handle-change-fn fork-args)
+                       :onChange (ui/form-handle-change-fn fork-args)
                        :full-width true
                        :variant :filled}]]]
 
@@ -121,7 +137,7 @@
                       :required true
                       :name :occupation
                       :value (:occupation values)
-                      :onChange (handle-change-fn fork-args)
+                      :onChange (ui/form-handle-change-fn fork-args)
                       :style {:flex-grow 2}
                       :variant :filled}]
 
@@ -131,7 +147,7 @@
                    :labelId :sex-select
                    :name :sex
                    :value (:sex values)
-                   :onChange (handle-change-fn fork-args)
+                   :onChange (ui/form-handle-change-fn fork-args)
                    :variant :filled}
        [mui/menu-item {:value "Male" :key :Male} "Male"]
        [mui/menu-item {:value "Female" :key :Female} "Female"]]]]
@@ -141,7 +157,7 @@
     [mui/text-field {:label "Usual Address"
                      :name :address
                      :value (:address values)
-                     :onChange (handle-change-fn fork-args)
+                     :onChange (ui/form-handle-change-fn fork-args)
                      :multiline true
                      :min-rows 3
                      :variant :filled}]
@@ -156,7 +172,7 @@
                        :required true
                        :name :dod
                        :value (:dod values)
-                       :onChange (handle-change-fn fork-args)
+                       :onChange (ui/form-handle-change-fn fork-args)
                        :full-width true
                        :variant :filled}]]
      [mui/stack {:spacing 1 :sx {:width "100%"}}
@@ -166,7 +182,7 @@
                        :required true
                        :name :pod
                        :value (:pod values)
-                       :onChange (handle-change-fn fork-args)
+                       :onChange (ui/form-handle-change-fn fork-args)
                        :full-width true
                        :variant :filled}]]]
 
@@ -177,24 +193,38 @@
                  :disabled submitting?}
      "Create Case"]]])
 
-
-
-
-
+(defonce form-state (r/atom nil))
 
 (defn panel []
-  [mui/container {:max-width :md}
-
-   [fork/form
-    {:on-submit #(rf/dispatch [::submit! %])
-     :keywordize-keys true
-     :prevent-default? true
-     :initial-values {:relationship ""
-                      :sex ""}}
-    deceased-details-form]])
-
-
-
-
+  (let [route-params @(rf/subscribe [::routes/route-params])]
+   [mui/container {:max-width :md}
+    [fork/form
+     {:state form-state
+      :on-submit (do
+                   (assert (:case-id route-params))
+                   #(rf/dispatch [::submit! (:case-id route-params) %]))
+      :keywordize-keys true
+      :prevent-default? true
+      :initial-values {:relationship ""
+                       :sex ""}}
+     (fn [fork-args]
+       [deceased-details-form fork-args])]]))
 
 (defmethod routes/panels :deceased-details-panel [] [panel])
+
+(comment
+  ; To fill out the form programmatically:
+  (do
+    (def test-data
+      {:forename "Richard",
+       :sex "Male",
+       :occupation "Politician",
+       :dod "12/12/1975",
+       :relationship "Father",
+       :surname "Roe",
+       :middlename "J",
+       :dob "01/01/1905",
+       :pod "Edimbourg",
+       :pob "London"},)
+    (swap! form-state assoc :values test-data)
+    (darbylaw.web.core/mount-root)))
