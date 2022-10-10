@@ -67,7 +67,7 @@ resource "aws_ecs_task_definition" "probatetree" {
           },
           {
             "name" : "DATABASE_PORT"
-            "value" : aws_db_instance.xtdb-backend.port
+            "value" : "${aws_db_instance.xtdb-backend.port}"
           },
           {
             "name" : "DATABASE_DBNAME"
