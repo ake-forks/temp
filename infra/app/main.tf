@@ -289,7 +289,7 @@ resource "aws_ecs_service" "probatetree" {
   task_definition = aws_ecs_task_definition.probatetree.arn
   launch_type     = "FARGATE"
 
-  desired_count = 2
+  desired_count = 1
 
   # NOTE: Below is an explanation of how the grace period works
   #
