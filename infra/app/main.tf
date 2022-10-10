@@ -149,7 +149,6 @@ resource "aws_security_group" "lb" {
     ipv6_cidr_blocks = ["::/0"]
   }
 
-  # TODO: Remove?
   ingress {
     protocol         = "tcp"
     from_port        = 443
