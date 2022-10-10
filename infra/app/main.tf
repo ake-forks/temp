@@ -21,35 +21,6 @@ resource "aws_ecs_cluster" "probatetree" {
 
 
 
-# >> Execution Role
-
-# This role is used by the *task* to make AWS API calls
-# This is stuff like pulling a container & sending logs
-resource "aws_iam_role" "execution_role" {
-  name = "probatetree-exec-role-${terraform.workspace}"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
-        }
-        Effect = "Allow"
-        Sid    = ""
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "execution_role_policy_attachment" {
-  role       = aws_iam_role.execution_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-}
-
-
-
 # >> Logs
 
 resource "aws_cloudwatch_log_group" "probatetree-logs" {
@@ -86,6 +57,27 @@ resource "aws_ecs_task_definition" "probatetree" {
             protocol      = "tcp"
             containerPort = local.container_port
             hostPort      = local.container_port
+          }
+        ]
+        # TODO: Don't give the application admin access to the database?
+        environment = [
+          {
+            "name" : "DATABASE_URL"
+            "value" : aws_db_instance.xtdb-backend.address
+          },
+          {
+            "name" : "DATABASE_DB"
+            "value" : aws_db_instance.xtdb-backend.db_name
+          },
+          {
+            "name" : "DATABASE_USER"
+            "value" : local.xtdb-backend-admin-username
+          }
+        ]
+        secrets = [
+          {
+            "name" : "DATABASE_PASSWORD"
+            "valueFrom" : aws_ssm_parameter.xtdb-backend-admin-password.arn
           }
         ]
         logConfiguration = {
@@ -153,6 +145,7 @@ resource "aws_security_group" "lb" {
     ipv6_cidr_blocks = ["::/0"]
   }
 
+  # TODO: Remove?
   ingress {
     protocol         = "tcp"
     from_port        = 443
