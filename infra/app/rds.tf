@@ -26,7 +26,7 @@ resource "aws_db_instance" "xtdb-backend" {
   db_name        = "ProbatePreeXTDB${terraform.workspace}"
   engine         = "postgres"
   engine_version = "14.4"
-  instance_class = "db.t4g.small"
+  instance_class = "db.t4g.micro"
 
   allocated_storage     = 10
   max_allocated_storage = 100
