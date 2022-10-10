@@ -12,6 +12,7 @@
   (atom
     ["/app" {"/about" :about
              "/create-case" :create-case
+             "/deceased-details" :deceased-details
              "/admin" :admin
              "/dashboard" :dashboard}]))
 
