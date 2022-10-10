@@ -3,7 +3,7 @@
 resource "aws_db_subnet_group" "xtdb-backend" {
   name = "main"
   # TODO: Change to private or sepearte subnets entirely
-  subnet_ids = [data.aws_subnets.public.ids]
+  subnet_ids = data.aws_subnets.public.ids
 }
 
 locals {
