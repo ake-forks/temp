@@ -1,48 +1,30 @@
+locals {
+  environments = {
+    production = {
+      hosted_zone_id   = "Z0021879STRZ8VWEL8XM"
+      hosted_zone_name = "probatetree.com"
+      subdomain        = "www"
+    }
+  }
+  config = lookup(local.environments, terraform.workspace)
+}
+
 # >> ECR
 
-resource "aws_ecr_repository" "darbylaw" {
-  name = "darbylaw-${terraform.workspace}"
+resource "aws_ecr_repository" "probatetree" {
+  name = "probatetree-${terraform.workspace}"
 }
 
-resource "aws_ecs_cluster" "darbylaw" {
-  name = "darbylaw-${terraform.workspace}"
-}
-
-
-
-# >> Execution Role
-
-# This role is used by the *task* to make AWS API calls
-# This is stuff like pulling a container & sending logs
-resource "aws_iam_role" "execution_role" {
-  name = "darbylaw-exec-role-${terraform.workspace}"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
-        }
-        Effect = "Allow"
-        Sid    = ""
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "execution_role_policy_attachment" {
-  role       = aws_iam_role.execution_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+resource "aws_ecs_cluster" "probatetree" {
+  name = "probatetree-${terraform.workspace}"
 }
 
 
 
 # >> Logs
 
-resource "aws_cloudwatch_log_group" "darbylaw-logs" {
-  name              = "/fargate/service/darbylaw-${terraform.workspace}"
+resource "aws_cloudwatch_log_group" "probatetree-logs" {
+  name              = "/fargate/service/probatetree-${terraform.workspace}"
   retention_in_days = 30
 }
 
@@ -50,8 +32,13 @@ resource "aws_cloudwatch_log_group" "darbylaw-logs" {
 
 # >> Task Definition
 
-resource "aws_ecs_task_definition" "darbylaw" {
-  family                   = "darbylaw-${terraform.workspace}"
+locals {
+  # The port the container exposes
+  container_port = 8080
+}
+
+resource "aws_ecs_task_definition" "probatetree" {
+  family                   = "probatetree-${terraform.workspace}"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
 
@@ -63,19 +50,40 @@ resource "aws_ecs_task_definition" "darbylaw" {
     [
       {
         name      = "webserver"
-        image     = "${aws_ecr_repository.darbylaw.repository_url}:${var.darbylaw_docker_tag}"
+        image     = "${aws_ecr_repository.probatetree.repository_url}:${var.probatetree_docker_tag}"
         essential = true
         portMappings = [
           {
             protocol      = "tcp"
-            containerPort = var.container_port
-            hostPort      = var.container_port
+            containerPort = local.container_port
+            hostPort      = local.container_port
+          }
+        ]
+        # TODO: Don't give the application admin access to the database?
+        environment = [
+          {
+            "name" : "DATABASE_URL"
+            "value" : aws_db_instance.xtdb-backend.address
+          },
+          {
+            "name" : "DATABASE_DB"
+            "value" : aws_db_instance.xtdb-backend.db_name
+          },
+          {
+            "name" : "DATABASE_USER"
+            "value" : local.xtdb-backend-admin-username
+          }
+        ]
+        secrets = [
+          {
+            "name" : "DATABASE_PASSWORD"
+            "valueFrom" : aws_ssm_parameter.xtdb-backend-admin-password.arn
           }
         ]
         logConfiguration = {
           logDriver = "awslogs"
           options = {
-            "awslogs-group"         = aws_cloudwatch_log_group.darbylaw-logs.name
+            "awslogs-group"         = aws_cloudwatch_log_group.probatetree-logs.name
             "awslogs-region"        = "eu-west-2"
             "awslogs-stream-prefix" = "ecs"
           }
@@ -105,13 +113,13 @@ data "aws_subnets" "public" {
 # >> Security Groups
 
 resource "aws_security_group" "task" {
-  name   = "darbylaw-task-sg-${terraform.workspace}"
+  name   = "probatetree-task-sg-${terraform.workspace}"
   vpc_id = data.aws_vpc.default_vpc.id
 
   ingress {
     protocol         = "tcp"
-    from_port        = var.container_port
-    to_port          = var.container_port
+    from_port        = local.container_port
+    to_port          = local.container_port
     cidr_blocks      = ["0.0.0.0/0"]
     ipv6_cidr_blocks = ["::/0"]
   }
@@ -126,7 +134,7 @@ resource "aws_security_group" "task" {
 }
 
 resource "aws_security_group" "lb" {
-  name   = "darbylaw-lb-sg-${terraform.workspace}"
+  name   = "probatetree-lb-sg-${terraform.workspace}"
   vpc_id = data.aws_vpc.default_vpc.id
 
   ingress {
@@ -137,6 +145,7 @@ resource "aws_security_group" "lb" {
     ipv6_cidr_blocks = ["::/0"]
   }
 
+  # TODO: Remove?
   ingress {
     protocol         = "tcp"
     from_port        = 443
@@ -158,8 +167,8 @@ resource "aws_security_group" "lb" {
 
 # >> Load Balancer
 
-resource "aws_lb" "main" {
-  name               = "darbylaw-lb-${terraform.workspace}"
+resource "aws_lb" "ingress" {
+  name               = "probatetree-lb-${terraform.workspace}"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.lb.id]
@@ -168,17 +177,17 @@ resource "aws_lb" "main" {
   enable_deletion_protection = true
 }
 
-resource "aws_lb_target_group" "main" {
-  name        = "darbylaw-tg-${terraform.workspace}"
-  port        = var.container_port
+resource "aws_lb_target_group" "probatetree" {
+  name        = "probatetree-tg-${terraform.workspace}"
+  port        = local.container_port
   protocol    = "HTTP"
   vpc_id      = data.aws_vpc.default_vpc.id
   target_type = "ip"
 
   health_check {
-    healthy_threshold   = "3"
+    healthy_threshold   = "2"
     unhealthy_threshold = "2"
-    interval            = "30"
+    interval            = "10"
     protocol            = "HTTP"
     matcher             = "200"
     timeout             = "3"
@@ -187,26 +196,60 @@ resource "aws_lb_target_group" "main" {
 }
 
 resource "aws_lb_listener" "http" {
-  load_balancer_arn = aws_lb.main.id
+  load_balancer_arn = aws_lb.ingress.id
   port              = 80
   protocol          = "HTTP"
 
   default_action {
-    type = "forward"
-
-    target_group_arn = aws_lb_target_group.main.id
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.probatetree.id
   }
+}
+
+resource "aws_acm_certificate" "probatetree" {
+  domain_name       = "${local.config.subdomain}.${local.config.hosted_zone_name}"
+  validation_method = "DNS"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_route53_record" "probatetree" {
+  zone_id = local.config.hosted_zone_id
+  name    = "${local.config.subdomain}.${local.config.hosted_zone_name}"
+  type    = "A"
+
+  alias {
+    name                   = aws_lb.ingress.dns_name
+    zone_id                = aws_lb.ingress.zone_id
+    evaluate_target_health = false
+  }
+}
+
+resource "aws_route53_record" "probatetree_cert_validation" {
+  allow_overwrite = true
+  name            = tolist(aws_acm_certificate.probatetree.domain_validation_options)[0].resource_record_name
+  records         = [tolist(aws_acm_certificate.probatetree.domain_validation_options)[0].resource_record_value]
+  type            = tolist(aws_acm_certificate.probatetree.domain_validation_options)[0].resource_record_type
+  zone_id         = local.config.hosted_zone_id
+  ttl             = 60
+}
+
+resource "aws_acm_certificate_validation" "probatetree" {
+  certificate_arn         = aws_acm_certificate.probatetree.arn
+  validation_record_fqdns = [aws_route53_record.probatetree_cert_validation.fqdn]
 }
 
 # # Redirect all HTTP traffic to use HTTPS
 # resource "aws_lb_listener" "http" {
-#   load_balancer_arn = aws_lb.main.id
+#   load_balancer_arn = aws_lb.ingress.id
 #   port              = 80
 #   protocol          = "HTTP"
-# 
+#
 #   default_action {
 #     type = "redirect"
-# 
+#
 #     redirect {
 #       port        = 443
 #       protocol    = "HTTPS"
@@ -214,21 +257,21 @@ resource "aws_lb_listener" "http" {
 #     }
 #   }
 # }
-# 
+#
 # # Forward HTTPS traffic onto the container
 # # Does TSL termination
 # resource "aws_lb_listener" "https" {
-#   load_balancer_arn = aws_lb.main.id
+#   load_balancer_arn = aws_lb.ingress.id
 #   port              = 443
 #   protocol          = "HTTPS"
-# 
+#
 #   ssl_policy      = "ELBSecurityPolicy-2016-08" # NOTE: Is this right?
 #   certificate_arn = ""                          # TODO: This
-# 
+#
 #   default_action {
 #     type = "forward"
-# 
-#     target_group_arn = aws_lb_target_group.main.id
+#
+#     target_group_arn = aws_lb_target_group.probatetree.id
 #   }
 # }
 
@@ -236,14 +279,52 @@ resource "aws_lb_listener" "http" {
 
 # >> ECS Service
 
-resource "aws_ecs_service" "darbylaw" {
-  name            = "darbylaw-${terraform.workspace}"
-  cluster         = aws_ecs_cluster.darbylaw.id
-  task_definition = aws_ecs_task_definition.darbylaw.arn
+resource "aws_ecs_service" "probatetree" {
+  name            = "probatetree-${terraform.workspace}"
+  cluster         = aws_ecs_cluster.probatetree.id
+  task_definition = aws_ecs_task_definition.probatetree.arn
   launch_type     = "FARGATE"
 
-  desired_count                     = 1
-  health_check_grace_period_seconds = 30 # TODO: Time the app startup
+  desired_count = 2
+
+  # NOTE: Below is an explanation of how the grace period works
+  #
+  # Basically, it just tells the service to *not* stop a task based on the
+  # status of the healthcheck while the grace period is in effect.
+  # But the *target group* and *load balancer* will still function like normal.
+  # I.e. healthy tasks will still have traffic routed to them, even if the
+  # grace period is in effect.
+  #
+  # To explain with an example, say we have:
+  # - A service with one task that:
+  #   - Fails the healthcheck for the first 60 seconds
+  #   - Starts succeeding after those 60 seconds
+  # - The service has a 120 second health check grace period set
+  # - The service is attached to a load balancer via a target group
+  #
+  # 1. The service starts up a new task
+  #   - The task starts failing health checks so:
+  #     - The *target group* marks it as "unhealthy"
+  #     - The *load balancer* does not route traffic to it
+  #   - But because we are still within the grace period:
+  #     - The *service* keeps the task as "RUNNING"
+  # 2. 60 seconds pass
+  #   - The task starts succeeding health checks so:
+  #     - The *target group* marks it as "healthy"
+  #   - Even though we are still within the *service's* grace period:
+  #     - The *load balancer* starts routing traffic to it
+  #   - If (for example) the task starts failing again:
+  #     - The *target group* will mark it as "unhealthy"
+  #     - And the *load balancer* will stop routing traffic to it
+  #     - But the *service* will keep the task as "RUNNING" as we are still
+  #       within the grace period
+  # 3. 120 seconds pass
+  #   - If the task keeps succeeding the health checks, then nothing will change
+  #   - But, if the task starts failing the health checks then:
+  #     - The *target group* will mark it as "unhealthy"
+  #     - The *load balancer* will stop routing traffic to it
+  #     - And the *service* will stop the task
+  health_check_grace_period_seconds = 120
 
   network_configuration {
     security_groups  = [aws_security_group.task.id]
@@ -252,9 +333,9 @@ resource "aws_ecs_service" "darbylaw" {
   }
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.main.id
+    target_group_arn = aws_lb_target_group.probatetree.id
     container_name   = "webserver"
-    container_port   = var.container_port
+    container_port   = local.container_port
   }
 
   # If we add autoscaling:

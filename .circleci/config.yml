@@ -88,7 +88,7 @@ jobs:
           docker_layer_caching: true
       - run:
           name: Build Application Docker Image
-          command: docker build -t darbylaw-production:latest .
+          command: docker build -t probatetree-production:latest .
       # We only push the docker image when on the `main` branch
       - when:
           condition:
@@ -96,7 +96,7 @@ jobs:
           steps:
             - ecr_push_image:
                 environment: production
-                image_name: darbylaw-production
+                image_name: probatetree-production
   deploy:
     working_directory: /app
     docker:
@@ -114,7 +114,7 @@ jobs:
       - run:
           name: Terraform Plan
           working_directory: ./infra/app
-          command: terraform plan -out tfapply -var "darbylaw_docker_tag=${CIRCLE_SHA1}"
+          command: terraform plan -out tfapply -var "probatetree_docker_tag=${CIRCLE_SHA1}"
       - run:
           name: Terraform Apply
           working_directory: ./infra/app
