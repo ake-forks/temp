@@ -36,7 +36,7 @@ resource "aws_db_instance" "xtdb-backend" {
 
   db_subnet_group_name            = aws_db_subnet_group.xtdb-backend.name
   deletion_protection             = true
-  enabled_cloudwatch_logs_exports = ["postgres", "upgrade"]
+  enabled_cloudwatch_logs_exports = ["postgresql", "upgrade"]
 
   parameter_group_name = "default.mysql5.7"
 
