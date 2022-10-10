@@ -23,7 +23,7 @@ resource "aws_ssm_parameter" "xtdb-backend-admin-password" {
 
 resource "aws_db_instance" "xtdb-backend" {
   identifier     = "probatetree-xtdb-${terraform.workspace}"
-  db_name        = "probatetree-xtdb-${terraform.workspace}"
+  db_name        = "ProbatePreeXTDB${terraform.workspace}"
   engine         = "postgres"
   engine_version = "14.4"
   instance_class = "db.t4g.small"
