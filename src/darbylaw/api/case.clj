@@ -61,26 +61,27 @@
   (xt/entity (xt/db darbylaw.xtdb-node/xtdb-node) #uuid"162f1c25-ac28-45a9-9663-28e2accf11dc"))
 
 (defn get-case [{:keys [xtdb-node path-params]}]            ;is route-params in devtools the same as path-params?
-  (let [case-id (parse-uuid (:case-id path-params))]
-    (do (println "inside api case-id: " case-id)
-        (ring/response
-          (->> (xt/q (xt/db xtdb-node)
-                 '{:find [(pull case [:xt/id])
-                          (pull case [{:ref/personal-representative.info.id
-                                       [:forename
-                                        :surname
-                                        :postcode]}])
-                          (pull case [{:ref/deceased.info.id
-                                       [:forename
-                                        :surname
-                                        :relationship]}])]
-                   :where [[case :type :probate.case]
-                           [case :xt/id case-id]]})
-            (map (fn [[case {pr-info :ref/personal-representative.info.id d-info :ref/deceased.info.id}]]
-                   (-> case
-                     (clojure.set/rename-keys {:xt/id :id})
-                     (assoc :personal-representative pr-info)
-                     (assoc :deceased d-info)))))))))
+  (let [case-id (parse-uuid (:case-id path-params))
+        results (xt/q (xt/db xtdb-node)
+                  '{:find [(pull case [:xt/id
+                                       {:ref/personal-representative.info.id
+                                        [:forename
+                                         :surname
+                                         :postcode]}
+                                       {:ref/deceased.info.id
+                                        [:forename
+                                         :surname
+                                         :relationship]}])]
+                    :where [[case :type :probate.case]
+                            [case :xt/id case-id]]
+                    :in [case-id]}
+                  case-id)]
+    (assert (= 1 (count results)))
+    (ring/response
+      (clojure.set/rename-keys (ffirst results)
+        {:xt/id :id
+         :ref/personal-representative.info.id :personal-representative
+         :ref/deceased.info.id :deceased}))))
 
 (defn routes []
   [["/case" {:post {:handler create-case

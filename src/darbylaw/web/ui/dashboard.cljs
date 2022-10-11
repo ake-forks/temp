@@ -6,7 +6,6 @@
     [darbylaw.web.styles :as styles]
     [darbylaw.web.routes :as routes]
     [re-frame.core :as rf]
-    [ajax.core :as ajax]
     [clojure.pprint :as pp]))
 
 
@@ -35,21 +34,17 @@
 
 
 (rf/reg-event-fx ::load!
-  (fn []
-    (let [case-id (:case-id @(rf/subscribe [::route-params]))]
-      {:dispatch [::get-case! case-id]})))
+  (fn [_ [_ case-id]]
+    {:dispatch [::get-case! case-id]}))
 
 (rf/reg-event-fx ::get-case!
   (fn [_ [_ case-id]]
     {:http-xhrio
      (ui/build-http
        {:method :get
-        :uri (str "api/get-case/" case-id)
-
+        :uri (str "/api/case/" case-id)
         :on-success [::load-success]
         :on-failure [::load-failure case-id]})}))
-
-
 
 (enable-console-print!)
 
@@ -86,40 +81,49 @@
 
 (defn card-holder [] [mui/box {:sx {:width "100%" :height 200 :background-color "#d3d3d3" :border-radius "4px"}}])
 
+(rf/reg-sub ::current-case
+  (fn [db]
+    (:current-case db)))
+
 (defn panel []
-  (rf/dispatch [::load!])
-  [mui/container {:style {:max-width "100%"}}
-   [c/navbar]
+  (let [case-id (-> @(rf/subscribe [::route-params])
+                  :case-id)
+        current-case @(rf/subscribe [::current-case])]
+    (assert case-id)
+    (rf/dispatch [::load! case-id])
+    [mui/container {:style {:max-width "100%"}}
+     [c/navbar]
 
 
-   [mui/container {:maxWidth :xl :class (styles/main-content)}
-    [mui/button {:onClick #(get-case-id)} "case ID"]
-    [mui/stack {:spacing 3}
-     [mui/stack {:direction :row :justify-content :space-between :align-items :baseline}
-      [mui/typography {:variant :h1} "your <relative>'s estate"]
-      [mui/typography {:variant :h2} "100321"]]
-     [mui/box {:sx {:width 1100 :height 150 :background-color "#808080" :border-radius "4px"}}]]
+     [mui/container {:maxWidth :xl :class (styles/main-content)}
+      [mui/button {:onClick #(get-case-id)} "case ID"]
+      [mui/stack {:spacing 3}
+       [mui/stack {:direction :row :justify-content :space-between :align-items :baseline}
+        [mui/typography {:variant :h1} (str "hi, " (-> current-case :personal-representative :forename) "!")]
+        [mui/typography {:variant :h1} "your <relative>'s estate"]
+        [mui/typography {:variant :h2} "100321"]]
+       [mui/box {:sx {:width 1100 :height 150 :background-color "#808080" :border-radius "4px"}}]]
 
-    [mui/stack {:spacing 3 :sx {:padding-top "2rem"}}
-     [mui/typography {:variant :h3} "estate details"]
-     [mui/stack {:direction :row :spacing 2}
-      [mui/grid {:container true :spacing 2 :columns 3}
-       [mui/grid {:item true :xs 1}
-        [asset-card "bank" banks]]
-       [mui/grid {:item true :xs 1}
-        [asset-card "utility" utilities]]
-       [mui/grid {:item true :xs 1}
-        [asset-card "bank" banks]]]
-
-
-
+      [mui/stack {:spacing 3 :sx {:padding-top "2rem"}}
+       [mui/typography {:variant :h3} "estate details"]
+       [mui/stack {:direction :row :spacing 2}
+        [mui/grid {:container true :spacing 2 :columns 3}
+         [mui/grid {:item true :xs 1}
+          [asset-card "bank" banks]]
+         [mui/grid {:item true :xs 1}
+          [asset-card "utility" utilities]]
+         [mui/grid {:item true :xs 1}
+          [asset-card "bank" banks]]]
 
 
-      [mui/stack {:spacing 2}
-       [mui/box {:sx {:width 200 :height 250 :background-color "#808080" :border-radius "4px"}}]
-       [mui/box {:sx {:width 200 :height 100 :background-color "#808080" :border-radius "4px"}}]]]]]
 
-   [c/footer]])
+
+
+        [mui/stack {:spacing 2}
+         [mui/box {:sx {:width 200 :height 250 :background-color "#808080" :border-radius "4px"}}]
+         [mui/box {:sx {:width 200 :height 100 :background-color "#808080" :border-radius "4px"}}]]]]]
+
+     [c/footer]]))
 
 
 
