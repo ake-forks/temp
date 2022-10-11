@@ -14,7 +14,7 @@ resource "aws_acm_certificate" "probatetree" {
 
 resource "aws_acm_certificate_validation" "probatetree" {
   certificate_arn         = aws_acm_certificate.probatetree.arn
-  validation_record_fqdns = [aws_route53_record.probatetree_cert_validation.fqdn]
+  validation_record_fqdns = [for record in aws_route53_record.probatetree_cert_validation : record.fqdn]
 }
 
 
