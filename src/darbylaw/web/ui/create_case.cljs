@@ -2,41 +2,34 @@
   (:require [darbylaw.web.routes :as routes]
             [re-frame.core :as rf]
             [fork.re-frame :as fork]
-            [ajax.core :as ajax]
-            [reagent-mui.components :as mui]))
+            [reagent-mui.components :as mui]
+            [darbylaw.web.ui :as ui]
+            [reagent.core :as r]))
 
 (rf/reg-event-fx ::create-case-success
   (fn [{:keys [db]} [_ {:keys [path]} response]]
-    (println "success" response)
+    (assert (:id response))
     {:db (fork/set-submitting db path false)
-     :navigate :deceased-details}))
+     ::ui/navigate-no-history [:deceased-details {:case-id (:id response)}]}))
 
 (rf/reg-event-fx ::create-case-failure
   (fn [{:keys [db]} [_ {:keys [path]} response]]
-    (println "failure" response)
     {:db (fork/set-submitting db path false)}))
 
 (rf/reg-event-fx ::create-case
   (fn [_ [_ {:keys [values] :as fork-params}]]
     {:http-xhrio
-     {:method :post
-      :uri "/api/case"
-      :params {:personal-representative values}
-      :timeout 8000
-      :format (ajax/json-request-format)
-      :response-format (ajax/json-response-format {:keywords? true})
-      :on-success [::create-case-success fork-params]
-      :on-failure [::create-case-failure fork-params]}}))
+     (ui/build-http
+       {:method :post
+        :uri "/api/case"
+        :params {:personal-representative values}
+        :on-success [::create-case-success fork-params]
+        :on-failure [::create-case-failure fork-params]})}))
 
 (rf/reg-event-fx ::submit!
   (fn [{:keys [db]} [_ {:keys [path] :as fork-params}]]
     {:db (fork/set-submitting db path true)
      :dispatch [::create-case fork-params]}))
-
-(defn handle-change-fn [{:keys [set-handle-change]}]
-  (fn [evt _]
-    (set-handle-change {:value (.. evt -target -value)
-                        :path [(keyword (.. evt -target -name))]})))
 
 (defn title-field [{:keys [values] :as fork-args}]
   [mui/form-control {:required true}
@@ -45,7 +38,7 @@
                 :labelId :title-select
                 :name :title
                 :value (:title values)
-                :onChange (handle-change-fn fork-args)
+                :onChange (ui/form-handle-change-fn fork-args)
                 :variant :filled}
     [mui/menu-item {:value "Mr" :key :Mr} "Mr"]
     [mui/menu-item {:value "Mrs" :key :Mrs} "Mrs"]
@@ -62,20 +55,20 @@
                     :placeholder "Please enter your legal name"
                     :name :forename
                     :value (:forename values)
-                    :onChange (handle-change-fn fork-args)
+                    :onChange (ui/form-handle-change-fn fork-args)
                     :full-width true
                     :variant :filled}]
    [mui/text-field {:label "Middle Name(s)"
                     :name :middlename
                     :value (:middlename values)
-                    :onChange (handle-change-fn fork-args)
+                    :onChange (ui/form-handle-change-fn fork-args)
                     :full-width true
                     :variant :filled}]]
   [mui/text-field {:label "Surname"
                    :required true
                    :name :surname
                    :value (:surname values)
-                   :onChange (handle-change-fn fork-args)
+                   :onChange (ui/form-handle-change-fn fork-args)
                    :full-width true
                    :variant :filled}])
 
@@ -85,7 +78,7 @@
                    :helper-text "Please use format DD/MM/YYYY"
                    :name :dob
                    :value (:dob values)
-                   :onChange (handle-change-fn fork-args)
+                   :onChange (ui/form-handle-change-fn fork-args)
                    :full-width true
                    :variant :filled}])
 
@@ -96,26 +89,26 @@
     [mui/text-field {:label "Flat"
                      :name :flat
                      :value (:flat values)
-                     :onChange (handle-change-fn fork-args)
+                     :onChange (ui/form-handle-change-fn fork-args)
                      :variant :filled}]
     [mui/text-field {:label "Building Name/No."
                      :required true
                      :name :building
                      :value (:building values)
-                     :onChange (handle-change-fn fork-args)
+                     :onChange (ui/form-handle-change-fn fork-args)
                      :variant :filled}]
     [mui/text-field {:label "Street"
                      :required true
                      :full-width true
                      :name :street1
                      :value (:street1 values)
-                     :onChange (handle-change-fn fork-args)
+                     :onChange (ui/form-handle-change-fn fork-args)
                      :variant :filled}]]
    [mui/text-field {:label "Address line 2"
                     :full-width true
                     :name :street2
                     :value (:street2 values)
-                    :onChange (handle-change-fn fork-args)
+                    :onChange (ui/form-handle-change-fn fork-args)
                     :variant :filled}]
    [mui/stack {:direction :row :spacing 1}
     [mui/text-field {:label "Town/City"
@@ -123,13 +116,13 @@
                      :full-width true
                      :name :town
                      :value (:town values)
-                     :onChange (handle-change-fn fork-args)
+                     :onChange (ui/form-handle-change-fn fork-args)
                      :variant :filled}]
     [mui/text-field {:label "Postcode"
                      :required true
                      :name :postcode
                      :value (:postcode values)
-                     :onChange (handle-change-fn fork-args)
+                     :onChange (ui/form-handle-change-fn fork-args)
                      :variant :filled}]]])
 
 (defn phone-field [{:keys [values] :as fork-args}]
@@ -138,7 +131,7 @@
                    :full-width true
                    :name :phone
                    :value (:phone values)
-                   :onChange (handle-change-fn fork-args)
+                   :onChange (ui/form-handle-change-fn fork-args)
                    :variant :filled}])
 
 (defn email-field [{:keys [values] :as fork-args}]
@@ -147,7 +140,7 @@
                    :full-width true
                    :name :email
                    :value (:email values)
-                   :onChange (handle-change-fn fork-args)
+                   :onChange (ui/form-handle-change-fn fork-args)
                    :variant :filled}])
 
 (defn personal-info-form [{:keys [handle-submit
@@ -164,14 +157,12 @@
     [address-fields fork-args]
     [phone-field fork-args]
     [email-field fork-args]
-    [mui/button {:variant :contained
-                 :type :submit
-                 :disabled submitting?}
+    [ui/loading-button {:variant :contained
+                        :type :submit
+                        :loading submitting?}
      "Next"]]])
 
-(rf/reg-sub ::new-case
-  (fn [db]
-    (:new-case db)))
+(defonce form-state (r/atom nil))
 
 (defn panel []
   [mui/container {:max-width :md}
@@ -182,17 +173,22 @@
     Here are some quick questions about you.
     Then we will ask about the deceased and their relationship to you."]
    [fork/form
-    {:on-submit #(rf/dispatch [::submit! %])
+    {:state form-state
+     :on-submit #(rf/dispatch [::submit! %])
      :keywordize-keys true
      :prevent-default? true
-     :initial-values
-     (let [existing (:personal-representative @(rf/subscribe [::new-case]))]
-       (or
-         existing
-         {:title ""}))}
-    personal-info-form]])
+     :initial-values {:title ""}}
+    (fn [fork-args]
+      [personal-info-form fork-args])]])
 
 (defmethod routes/panels :create-case-panel [] [panel])
 
 (comment
-  (def test-data {:street1 "Sesame", :email "test@test.com", :forename "John", :building "11", :phone "888999888", :town "Bristol", :surname "Doe", :postcode "SW1W 0NY", :title "Mr", :dob "01/01/1979"}))
+  ; To fill out the form programmatically:
+  (do
+    (def test-data
+      {:street1 "Sesame", :email "test@test.com", :forename "John",
+       :building "12", :phone "888999888", :town "Bristol",
+       :surname "Doe", :postcode "SW1W 0NY", :title "Mr", :dob "01/01/1979"})
+    (swap! form-state assoc :values test-data))
+  (darbylaw.web.core/mount-root))

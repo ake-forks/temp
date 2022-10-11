@@ -1,3 +1,14 @@
+locals {
+  environments = {
+    production = {
+      hosted_zone_id   = "Z0021879STRZ8VWEL8XM"
+      hosted_zone_name = "probatetree.com"
+      subdomain        = "www"
+    }
+  }
+  config = lookup(local.environments, terraform.workspace)
+}
+
 # >> ECR
 
 resource "aws_ecr_repository" "probatetree" {
@@ -6,35 +17,6 @@ resource "aws_ecr_repository" "probatetree" {
 
 resource "aws_ecs_cluster" "probatetree" {
   name = "probatetree-${terraform.workspace}"
-}
-
-
-
-# >> Execution Role
-
-# This role is used by the *task* to make AWS API calls
-# This is stuff like pulling a container & sending logs
-resource "aws_iam_role" "execution_role" {
-  name = "probatetree-exec-role-${terraform.workspace}"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
-        }
-        Effect = "Allow"
-        Sid    = ""
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "execution_role_policy_attachment" {
-  role       = aws_iam_role.execution_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
 
@@ -75,6 +57,27 @@ resource "aws_ecs_task_definition" "probatetree" {
             protocol      = "tcp"
             containerPort = local.container_port
             hostPort      = local.container_port
+          }
+        ]
+        # TODO: Don't give the application admin access to the database?
+        environment = [
+          {
+            "name" : "DATABASE_URL"
+            "value" : aws_db_instance.xtdb-backend.address
+          },
+          {
+            "name" : "DATABASE_DB"
+            "value" : aws_db_instance.xtdb-backend.db_name
+          },
+          {
+            "name" : "DATABASE_USER"
+            "value" : local.xtdb-backend-admin-username
+          }
+        ]
+        secrets = [
+          {
+            "name" : "DATABASE_PASSWORD"
+            "valueFrom" : aws_ssm_parameter.xtdb-backend-admin-password.arn
           }
         ]
         logConfiguration = {
@@ -142,6 +145,7 @@ resource "aws_security_group" "lb" {
     ipv6_cidr_blocks = ["::/0"]
   }
 
+  # TODO: Remove?
   ingress {
     protocol         = "tcp"
     from_port        = 443
@@ -197,10 +201,44 @@ resource "aws_lb_listener" "http" {
   protocol          = "HTTP"
 
   default_action {
-    type = "forward"
-
+    type             = "forward"
     target_group_arn = aws_lb_target_group.probatetree.id
   }
+}
+
+resource "aws_acm_certificate" "probatetree" {
+  domain_name       = "${local.config.subdomain}.${local.config.hosted_zone_name}"
+  validation_method = "DNS"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_route53_record" "probatetree" {
+  zone_id = local.config.hosted_zone_id
+  name    = "${local.config.subdomain}.${local.config.hosted_zone_name}"
+  type    = "A"
+
+  alias {
+    name                   = aws_lb.ingress.dns_name
+    zone_id                = aws_lb.ingress.zone_id
+    evaluate_target_health = false
+  }
+}
+
+resource "aws_route53_record" "probatetree_cert_validation" {
+  allow_overwrite = true
+  name            = tolist(aws_acm_certificate.probatetree.domain_validation_options)[0].resource_record_name
+  records         = [tolist(aws_acm_certificate.probatetree.domain_validation_options)[0].resource_record_value]
+  type            = tolist(aws_acm_certificate.probatetree.domain_validation_options)[0].resource_record_type
+  zone_id         = local.config.hosted_zone_id
+  ttl             = 60
+}
+
+resource "aws_acm_certificate_validation" "probatetree" {
+  certificate_arn         = aws_acm_certificate.probatetree.arn
+  validation_record_fqdns = [aws_route53_record.probatetree_cert_validation.fqdn]
 }
 
 # # Redirect all HTTP traffic to use HTTPS
@@ -208,10 +246,10 @@ resource "aws_lb_listener" "http" {
 #   load_balancer_arn = aws_lb.ingress.id
 #   port              = 80
 #   protocol          = "HTTP"
-# 
+#
 #   default_action {
 #     type = "redirect"
-# 
+#
 #     redirect {
 #       port        = 443
 #       protocol    = "HTTPS"
@@ -219,20 +257,20 @@ resource "aws_lb_listener" "http" {
 #     }
 #   }
 # }
-# 
+#
 # # Forward HTTPS traffic onto the container
 # # Does TSL termination
 # resource "aws_lb_listener" "https" {
 #   load_balancer_arn = aws_lb.ingress.id
 #   port              = 443
 #   protocol          = "HTTPS"
-# 
+#
 #   ssl_policy      = "ELBSecurityPolicy-2016-08" # NOTE: Is this right?
 #   certificate_arn = ""                          # TODO: This
-# 
+#
 #   default_action {
 #     type = "forward"
-# 
+#
 #     target_group_arn = aws_lb_target_group.probatetree.id
 #   }
 # }

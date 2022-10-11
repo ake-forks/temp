@@ -23,9 +23,9 @@
     reagent-mui.material.form-control-label
     reagent-mui.material.slider
     reagent-mui.material.dialog
-    reagent-mui.material.divider
+    reagent-mui.material.divider))
 
-    ))
+
 
 (def button reagent-mui.material.button/button)
 (def grid reagent-mui.material.grid/grid)

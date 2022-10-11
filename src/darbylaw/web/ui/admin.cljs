@@ -5,7 +5,7 @@
             [ajax.core :as ajax]
             [darbylaw.web.ui :as ui]
             [reagent-mui.components :as mui]
-            
+
             [darbylaw.web.events :as events]))
 
 (rf/reg-event-fx ::load-success
@@ -41,7 +41,7 @@
                  :align-items :center}
       [mui/typography {:variant :h1} "Cases"]
       [mui/button {:startIcon (r/as-element [ui/icon-add])
-                   :onClick #(rf/dispatch [::events/navigate :create-case])}
+                   :onClick #(rf/dispatch [::ui/navigate :create-case])}
        "Create case"]]
      (if (nil? cases)
        "Loading cases..."
