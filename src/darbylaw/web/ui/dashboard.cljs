@@ -99,9 +99,9 @@
       [mui/button {:onClick #(get-case-id)} "case ID"]
       [mui/stack {:spacing 3}
        [mui/stack {:direction :row :justify-content :space-between :align-items :baseline}
-        [mui/typography {:variant :h1} (str "hi, " (-> current-case :personal-representative :forename) "!")]
-        [mui/typography {:variant :h1} "your <relative>'s estate"]
-        [mui/typography {:variant :h2} "100321"]]
+
+        [mui/typography {:variant :h1} (str "your " (clojure.string/lower-case (-> current-case :deceased :relationship)) "'s estate")]
+        [mui/typography {:variant :h2} (str "case #" (subs (.toString (-> current-case :id)) 0 6))]]
        [mui/box {:sx {:width 1100 :height 150 :background-color "#808080" :border-radius "4px"}}]]
 
       [mui/stack {:spacing 3 :sx {:padding-top "2rem"}}

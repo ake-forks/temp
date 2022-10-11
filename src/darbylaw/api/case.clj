@@ -44,23 +44,24 @@
 (defn get-cases [{:keys [xtdb-node]}]
   (ring/response
     (->> (xt/q (xt/db xtdb-node)
-           '{:find [(pull case [:xt/id])
-                    (pull case [{:ref/personal-representative.info.id
+           '{:find [(pull case [:xt/id
+                                {:ref/personal-representative.info.id
                                  [:forename
                                   :surname
                                   :postcode]}])]
              :where [[case :type :probate.case]]})
       (map (fn [[case {pr-info :ref/personal-representative.info.id}]]
              (-> case
+
                (clojure.set/rename-keys {:xt/id :id})
-               (assoc :personal-representative pr-info)))))))
+               (clojure.set/rename-keys {:ref/personal-representative.info.id :personal-representative})))))))
 
 
 (comment
   (xt/entity (xt/db darbylaw.xtdb-node/xtdb-node) #uuid"51127427-6ff1-4093-9929-c2c9990c796e")
   (xt/entity (xt/db darbylaw.xtdb-node/xtdb-node) #uuid"162f1c25-ac28-45a9-9663-28e2accf11dc"))
 
-(defn get-case [{:keys [xtdb-node path-params]}]            ;is route-params in devtools the same as path-params?
+(defn get-case [{:keys [xtdb-node path-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
         results (xt/q (xt/db xtdb-node)
                   '{:find [(pull case [:xt/id
@@ -93,7 +94,7 @@
                                           [:surname string?]
                                           [:postcode string?]]]]}}}]
    ["/case/:case-id" {:patch {:handler update-case}
-                      :get {:handler get-case}}]       ;http patch is like update -> partial modifications
+                      :get {:handler get-case}}]            ;http patch is like update -> partial modifications
    ;:coercion reitit.coercion.malli/coercion}}]
    ;:parameters {:path {:case-id uuid?}
    ;             :body [:map

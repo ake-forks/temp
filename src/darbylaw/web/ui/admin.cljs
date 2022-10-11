@@ -30,6 +30,8 @@
   (fn [db _]
     (:cases db)))
 
+
+
 (defn admin-panel []
   (let [cases @(rf/subscribe [::cases])]
 
@@ -44,11 +46,16 @@
        "Create case"]]
      (if (nil? cases)
        "Loading cases..."
-       (for [{{:keys [surname forename postcode]} :personal-representative}
+       (for [{:keys [id] {:keys [surname forename postcode]} :personal-representative}
+
              cases]
          [mui/card
           [mui/card-content
-           (str surname ", " forename ". At " postcode)]]))]))
+           (str "case id " id)]
+
+          [mui/card-content
+           (str " " surname ", " forename ". At " postcode)]
+          [mui/button {:variant :contained :onClick #(handle-click id)}]]))]))
 
 (defn panel []
   (rf/dispatch [::load!])
