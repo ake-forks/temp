@@ -4,9 +4,8 @@
             [re-frame.core :as rf]
             [ajax.core :as ajax]
             [darbylaw.web.ui :as ui]
-            [reagent-mui.components :as mui]
+            [reagent-mui.components :as mui]))
 
-            [darbylaw.web.events :as events]))
 
 (rf/reg-event-fx ::load-success
   (fn [{:keys [db]} [_ response]]

@@ -7,7 +7,7 @@
             [reagent.core :as r]))
 
 (rf/reg-event-fx ::create-case-success
-  (fn [{:keys [db]} [_ {:keys [path]} response]]
+  (fn [{:keys [db]} [_ {:keys [path]} response]]            ;response = :id "UUID"
     (assert (:id response))
     {:db (fork/set-submitting db path false)
      ::ui/navigate-no-history [:deceased-details {:case-id (:id response)}]}))
@@ -17,17 +17,18 @@
     {:db (fork/set-submitting db path false)}))
 
 (rf/reg-event-fx ::create-case
-  (fn [_ [_ {:keys [values] :as fork-params}]]
+  (fn [_ [_ {:keys [values path] :as fork-params}]]         ;fork-params = :forename, :surname, :street1 etc
     {:http-xhrio
      (ui/build-http
        {:method :post
         :uri "/api/case"
-        :params {:personal-representative values}
+        :params {:personal-representative values}           ;map = :personal-representative {:forename, :surname, :street1}
         :on-success [::create-case-success fork-params]
         :on-failure [::create-case-failure fork-params]})}))
 
-(rf/reg-event-fx ::submit!
-  (fn [{:keys [db]} [_ {:keys [path] :as fork-params}]]
+
+(rf/reg-event-fx ::submit!                                  ;:map with :state :path :values :dirty :reset provided from fork on-submit parameter
+  (fn [{:keys [db]} [_ #_(::submit!) {:keys [path] :as fork-params}]] ;what is in path? fork-params = :forename, :surname, :street1 etc
     {:db (fork/set-submitting db path true)
      :dispatch [::create-case fork-params]}))
 
@@ -63,14 +64,14 @@
                     :value (:middlename values)
                     :onChange (ui/form-handle-change-fn fork-args)
                     :full-width true
-                    :variant :filled}]]
-  [mui/text-field {:label "Surname"
-                   :required true
-                   :name :surname
-                   :value (:surname values)
-                   :onChange (ui/form-handle-change-fn fork-args)
-                   :full-width true
-                   :variant :filled}])
+                    :variant :filled}]
+   [mui/text-field {:label "Surname"
+                    :required true
+                    :name :surname
+                    :value (:surname values)
+                    :onChange (ui/form-handle-change-fn fork-args)
+                    :full-width true
+                    :variant :filled}]])
 
 (defn dob-field [{:keys [values] :as fork-args}]
   [mui/text-field {:label "Date of Birth"
@@ -174,7 +175,7 @@
     Then we will ask about the deceased and their relationship to you."]
    [fork/form
     {:state form-state
-     :on-submit #(rf/dispatch [::submit! %])
+     :on-submit #(rf/dispatch [::submit! %])                ;:on-submit lets you write your own submit logic. It gives you a map with :state :path :values :dirty :reset keys.
      :keywordize-keys true
      :prevent-default? true
      :initial-values {:title ""}}

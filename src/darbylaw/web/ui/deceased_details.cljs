@@ -21,7 +21,7 @@
      (ui/build-http
        {:method :patch
         :uri (str "/api/case/" case-id)
-        :params {:deceased values}
+        :params {:deceased values}                          ;does this only pass deceased values to update-case? where do path- and body-params come from?
         :on-success [::add-to-case-success case-id fork-params]
         :on-failure [::add-to-case-failure fork-params]})}))
 
@@ -196,19 +196,19 @@
 (defonce form-state (r/atom nil))
 
 (defn panel []
-  (let [route-params @(rf/subscribe [::routes/route-params])]
-   [mui/container {:max-width :md}
-    [fork/form
-     {:state form-state
-      :on-submit (do
-                   (assert (:case-id route-params))
-                   #(rf/dispatch [::submit! (:case-id route-params) %]))
-      :keywordize-keys true
-      :prevent-default? true
-      :initial-values {:relationship ""
-                       :sex ""}}
-     (fn [fork-args]
-       [deceased-details-form fork-args])]]))
+  (let [route-params @(rf/subscribe [::routes/route-params])] ;route-params = UUID of case
+    [mui/container {:max-width :md}
+     [fork/form
+      {:state form-state
+       :on-submit (do
+                    (assert (:case-id route-params))
+                    #(rf/dispatch [::submit! (:case-id route-params) %])) ;% = :state :path :values :dirty :reset
+       :keywordize-keys true
+       :prevent-default? true
+       :initial-values {:relationship ""
+                        :sex ""}}
+      (fn [fork-args]
+        [deceased-details-form fork-args])]]))
 
 (defmethod routes/panels :deceased-details-panel [] [panel])
 

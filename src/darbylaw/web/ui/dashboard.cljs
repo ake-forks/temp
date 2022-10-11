@@ -4,7 +4,52 @@
     [darbylaw.web.ui.components :as c]
     [darbylaw.web.ui :as ui]
     [darbylaw.web.styles :as styles]
-    [darbylaw.web.routes :as routes]))
+    [darbylaw.web.routes :as routes]
+    [re-frame.core :as rf]
+    [ajax.core :as ajax]
+    [clojure.pprint :as pp]))
+
+
+
+(rf/reg-sub ::route-params
+  (fn [db _]
+    (:route-params db)))
+
+(defn get-case-id []
+  (do
+    (pp/pprint (str "sub: " @(rf/subscribe [::route-params])))
+    (pp/pprint (str "case-id: " (:case-id @(rf/subscribe [::route-params]))))))
+
+
+
+(rf/reg-event-fx ::load-success
+  (fn [{:keys [db]} [_ response]]
+    (println "success" response)
+    {:db (assoc db :current-case response)}))
+
+(rf/reg-event-db
+  ::load-failure
+  (fn [db [_ case-id result]]
+    ;; result is a map containing details of the failure
+    (assoc db :failure-http-result result :case-id case-id)))
+
+
+(rf/reg-event-fx ::load!
+  (fn []
+    (let [case-id (:case-id @(rf/subscribe [::route-params]))]
+      {:dispatch [::get-case! case-id]})))
+
+(rf/reg-event-fx ::get-case!
+  (fn [_ [_ case-id]]
+    {:http-xhrio
+     (ui/build-http
+       {:method :get
+        :uri (str "api/get-case/" case-id)
+
+        :on-success [::load-success]
+        :on-failure [::load-failure case-id]})}))
+
+
 
 (enable-console-print!)
 
@@ -42,9 +87,13 @@
 (defn card-holder [] [mui/box {:sx {:width "100%" :height 200 :background-color "#d3d3d3" :border-radius "4px"}}])
 
 (defn panel []
+  (rf/dispatch [::load!])
   [mui/container {:style {:max-width "100%"}}
    [c/navbar]
+
+
    [mui/container {:maxWidth :xl :class (styles/main-content)}
+    [mui/button {:onClick #(get-case-id)} "case ID"]
     [mui/stack {:spacing 3}
      [mui/stack {:direction :row :justify-content :space-between :align-items :baseline}
       [mui/typography {:variant :h1} "your <relative>'s estate"]
@@ -60,8 +109,8 @@
        [mui/grid {:item true :xs 1}
         [asset-card "utility" utilities]]
        [mui/grid {:item true :xs 1}
-        [asset-card "bank" banks]]
-       ]
+        [asset-card "bank" banks]]]
+
 
 
 

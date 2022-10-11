@@ -11,10 +11,10 @@
   (atom
     ["/app" {"/about" :about
              "/create-case" :create-case
-             ["/case/" :case-id] {"" :case
+             ["/case/" :case-id] {"" :dashboard
                                   "/deceased-details" :deceased-details}
-             "/admin" :admin
-             "/dashboard" :dashboard}]))
+             "/admin" :admin}]))
+
 
 
 (defn parse [url]
