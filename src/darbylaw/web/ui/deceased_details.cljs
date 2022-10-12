@@ -21,7 +21,7 @@
      (ui/build-http
        {:method :patch
         :uri (str "/api/case/" case-id)
-        :params {:deceased values}                          ;does this only pass deceased values to update-case? where do path- and body-params come from?
+        :params {:deceased values}
         :on-success [::add-to-case-success case-id fork-params]
         :on-failure [::add-to-case-failure fork-params]})}))
 

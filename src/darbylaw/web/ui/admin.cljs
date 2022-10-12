@@ -32,6 +32,10 @@
 
 
 
+
+
+
+
 (defn admin-panel []
   (let [cases @(rf/subscribe [::cases])]
 
@@ -49,13 +53,19 @@
        (for [{:keys [id] {:keys [surname forename postcode]} :personal-representative}
 
              cases]
-         [mui/card
-          [mui/card-content
-           (str "case id " id)]
+         [mui/card {:sx {:margin "1rem"}}
+          [mui/card-action-area {:onClick #(rf/dispatch [::ui/navigate [:dashboard {:case-id (.toString id)}]])}
+           [mui/stack {:spacing 1 :direction :row :justify-content :space-between :align-items :center}
+            [mui/container
+             [mui/typography
+              (str "case id " id)]
 
-          [mui/card-content
-           (str " " surname ", " forename ". At " postcode)]
-          [mui/button {:variant :contained :onClick #(handle-click id)}]]))]))
+             [mui/typography
+              (str " " surname ", " forename ". " postcode)]]
+
+
+
+            [mui/button {:variant :text :style {:margin "1rem"} :onClick #(rf/dispatch [::ui/navigate [:dashboard {:case-id (.toString id)}]])} "Dashboard"]]]]))]))
 
 (defn panel []
   (rf/dispatch [::load!])
