@@ -65,9 +65,12 @@
                     :parameters {:body [:map
                                         [:personal-representative
                                          [:map
-                                          [:forename string?]
-                                          [:surname string?]
-                                          [:postcode string?]]]]}}}]
+                                          [:title :string]
+                                          [:forename :string]
+                                          [:middlename {:optional true} :string]
+                                          [:surname :string]
+                                          [:dob [:re #"^\d{4}-\d{2}-\d{2}$"]]]]]}}}]
+                                          ;[:postcode :string]]]]}}}]
    ["/case/:case-id" {:patch {:handler update-case}}]
                               ;:coercion reitit.coercion.malli/coercion}}]
                               ;:parameters {:path {:case-id uuid?}

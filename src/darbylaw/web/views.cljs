@@ -5,6 +5,11 @@
     [reagent-mui.styles :as mui-styles]
     [reagent-mui.components :as mui]
     [darbylaw.web.theme :as theme]
+
+    [reagent-mui.x.localization-provider :as mui-local]
+    ["@mui/x-date-pickers/AdapterDayjs" :refer [AdapterDayjs]]
+    ["dayjs/locale/en-gb"]
+
     [darbylaw.web.ui.create-case]
     [darbylaw.web.ui.deceased-details]
     [darbylaw.web.ui.admin]
@@ -15,4 +20,6 @@
     [mui-styles/theme-provider
      (mui-styles/create-theme theme/theme)
      [mui/css-baseline]
-     (routes/panels @active-panel)]))
+     [mui-local/localization-provider {:dateAdapter AdapterDayjs
+                                       :adapterLocale "en-gb"}
+      (routes/panels @active-panel)]]))
