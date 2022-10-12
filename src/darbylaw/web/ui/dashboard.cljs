@@ -1,5 +1,6 @@
 (ns darbylaw.web.ui.dashboard
   (:require
+    [clojure.string :as str]
     [reagent-mui.components :as mui]
     [darbylaw.web.ui.components :as c]
     [darbylaw.web.ui :as ui]
@@ -104,8 +105,13 @@
       [mui/stack {:spacing 3}
        [mui/stack {:direction :row :justify-content :space-between :align-items :baseline}
 
-        [mui/typography {:variant :h1} (str "your " (-> current-case :deceased :relationship)) "'s estate"]
-        [mui/typography {:variant :h2} (str "case no. " (-> current-case :id))]]
+        [mui/typography {:variant :h1}
+         (if (nil? current-case)
+           [mui/skeleton {:width "5rem"}]
+           (str "your "
+             (-> current-case :deceased :relationship str/lower-case)
+             "'s estate"))]
+        [mui/typography {:variant :h2} (if (nil? current-case) [mui/skeleton {:width "5rem"}] (str "case # " (subs (-> current-case :id .toString) 0 6)))]]
        [mui/box {:sx {:width 1100 :height 150 :background-color "#808080" :border-radius "4px"}}]]
 
       [mui/stack {:spacing 3 :sx {:padding-top "2rem"}}
