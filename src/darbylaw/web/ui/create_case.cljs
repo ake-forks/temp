@@ -6,7 +6,11 @@
             [vlad.core :as v]
             [reagent-mui.components :as mui]
             [reagent-mui.x.date-picker :as mui-date]
-            [darbylaw.web.ui :as ui]))
+            [darbylaw.web.ui :as ui]
+            ["material-ui-phone-number$default" :as MuiPhoneNumber]
+            [reagent-mui.material.text-field :as mui-text-field]
+            [darbylaw.web.util.phone :as phone]
+            [darbylaw.web.util.email :as email]))
 
 (rf/reg-event-fx ::create-case-success
   (fn [{:keys [db]} [_ {:keys [path]} response]]
@@ -22,7 +26,8 @@
   (-> data
     (update-vals #(cond-> %
                     (string? %) clojure.string/trim))
-    (update :dob #(.format % "YYYY-MM-DD"))))
+    (update :dob #(.format % "YYYY-MM-DD"))
+    (update :phone phone/format-for-storing)))
 
 (rf/reg-event-fx ::create-case
   (fn [{:keys [db]} [_ {:keys [path values] :as fork-params}]]
@@ -35,32 +40,41 @@
         :on-success [::create-case-success fork-params]
         :on-failure [::create-case-failure fork-params]})}))
 
+(defn get-error [k {:keys [touched errors attempted-submissions] :as _fork-args}]
+  (and (pos? attempted-submissions)
+       (touched k)
+       (get errors (list k))))
+
+(defn error-icon-prop []
+  {:endAdornment
+   (r/as-element
+     [mui/input-adornment {:position :end}
+      [ui/icon-error-outline {:color :error}]])})
+
 (defn common-input-field-props
   [k
-   {:keys [values touched handle-change handle-blur errors] :as _fork-args}
+   {:keys [values handle-change handle-blur] :as fork-args}
    {:keys [error-icon?] :as _options}]
-  (let [error (and (touched k)
-                (get errors (list k)))]
+  (let [error (get-error k fork-args)]
     (cond-> {:name k
              :value (get values k)
              :onChange handle-change
              :onBlur handle-blur
-             :error (boolean error)}
+             :error (boolean error)
+             :autoComplete :off}
       error-icon? (assoc :InputProps
-                          (when error
-                            {:endAdornment
-                             (r/as-element
-                               [mui/input-adornment {:position :end}
-                                [ui/icon-error-outline {:color :error}]])})))))
+                    (when error
+                      (error-icon-prop))))))
 
 (defn common-text-field-props [k fork-args]
   (common-input-field-props k fork-args {:error-icon? true}))
 
-(defn title-field [fork-args]
+(defn title-field [{:keys [values] :as fork-args}]
   [mui/form-control
    [mui/input-label {:id :title-select} "Title"]
    [mui/select (merge (common-input-field-props :title fork-args {})
-                 {:label "Title"
+                 {:value (or (get values :title) "")
+                  :label "Title"
                   :required true
                   :labelId :title-select})
     [mui/menu-item {:value "Mr" :key :Mr} "Mr"]
@@ -74,14 +88,16 @@
   [mui/stack {:direction :row
               :spacing 1}
    [mui/text-field (merge (common-text-field-props :forename fork-args)
-                     {:label "Forename"
+                     {:required true
+                      :label "Forename"
                       :placeholder "Your legal name"
                       :full-width true})]
    [mui/text-field (merge (common-text-field-props :middlename fork-args)
                      {:label "Middle Name(s)"
                       :full-width true})]
    [mui/text-field (merge (common-text-field-props :surname fork-args)
-                     {:label "Surname"
+                     {:required true
+                      :label "Surname"
                       :full-width true})]])
 
 (defn dob-text-field [fork-args]
@@ -91,7 +107,7 @@
                      :helper-text "Please use format DD/MM/YYYY"
                      :full-width true})])
 
-(defn dob-date-picker [{:keys [values set-handle-change handle-blur errors touched] :as _fork-args}]
+(defn dob-date-picker [{:keys [values set-handle-change handle-blur] :as fork-args}]
   [mui-date/date-picker
    {:value (get values :dob)
     :label "Date of Birth"
@@ -101,12 +117,10 @@
                    (r/as-element
                      [mui/text-field
                       (merge (js->clj params)
-                        (let [error (and (touched :dob)
-                                         (get errors (list :dob)))]
-                          {:name :dob
-                           :required true
-                           :error (boolean error)
-                           :onBlur handle-blur}))]))
+                        {:name :dob
+                         :required true
+                         :error (boolean (get-error :dob fork-args))
+                         :onBlur handle-blur})]))
     ; In case we want to add a helperText with the expected date pattern,
     ; (not working so far, will need some tweaking):
     ; {:helperText (-> params-clj :inputProps :placeholder)}
@@ -114,88 +128,88 @@
     :views [:year :month :day]
     :full-width true}])
 
-(defn address-fields [{:keys [values] :as _fork-args}]
+(defn address-fields [fork-args]
   [:<>
    [mui/stack {:direction :row
                :spacing 1}
-    [mui/text-field {:label "Flat"
-                     :name :flat
-                     :value (:flat values)
-                     ;:onChange (ui/form-handle-change-fn fork-args)
-                     :variant :filled}]
-    [mui/text-field {:label "Building Name/No."
-                     ;:required true
-                     :name :building
-                     :value (:building values)
-                     ;:onChange (ui/form-handle-change-fn fork-args)
-                     :variant :filled}]
-    [mui/text-field {:label "Street"
-                     ;:required true
-                     :full-width true
-                     :name :street1
-                     :value (:street1 values)
-                     ;:onChange (ui/form-handle-change-fn fork-args)
-                     :variant :filled}]]
-   [mui/text-field {:label "Address line 2"
-                    :full-width true
-                    :name :street2
-                    :value (:street2 values)
-                    ;:onChange (ui/form-handle-change-fn fork-args)
-                    :variant :filled}]
+    [mui/text-field (merge (common-text-field-props :flat fork-args)
+                      {:label "Flat"})]
+    [mui/text-field (merge (common-text-field-props :building fork-args)
+                      {:label "Building Name/No."
+                       :required true})]
+    [mui/text-field (merge (common-text-field-props :street1 fork-args)
+                      {:label "Street"
+                       :required true
+                       :full-width true})]]
+   [mui/text-field (merge (common-text-field-props :street2 fork-args)
+                     {:label "Address line 2"
+                      :full-width true})]
    [mui/stack {:direction :row :spacing 1}
-    [mui/text-field {:label "Town/City"
-                     ;:required true
-                     :full-width true
-                     :name :town
-                     :value (:town values)
-                     ;:onChange (ui/form-handle-change-fn fork-args)
-                     :variant :filled}]
-    [mui/text-field {:label "Postcode"
-                     ;:required true
-                     :name :postcode
-                     :value (:postcode values)
-                     ;:onChange (ui/form-handle-change-fn fork-args)
-                     :variant :filled}]]])
+    [mui/text-field (merge (common-text-field-props :town fork-args)
+                      {:label "Town/City"
+                       :required true
+                       :full-width true})]
+    [mui/text-field (merge (common-text-field-props :postcode fork-args)
+                      {:label "Postcode"
+                       :required true})]]])
 
-(defn phone-field [{:keys [values] :as _fork-args}]
-  [mui/text-field {:label "Phone Number"
-                   ;:required true
-                   :full-width true
-                   :name :phone
-                   :value (:phone values)
-                   ;:onChange (ui/form-handle-change-fn fork-args)
-                   :variant :filled}])
+(defn phone-field [{:keys [values set-handle-change handle-blur] :as fork-args}]
+  [:> MuiPhoneNumber
+   {:name :phone
+    :value (get values :phone)
+    :label "Phone Number"
+    :required true
+    :onChange #(set-handle-change {:value %
+                                   :path [:phone]})
+    :onBlur handle-blur
+    :InputProps (let [error (get-error :phone fork-args)]
+                  (merge
+                    {:inputComponent mui-text-field/input
+                     :error (boolean error)}
+                    (when error
+                      (error-icon-prop))))
+    :defaultCountry "gb"
+    :full-width true
+    :variant :filled}])
 
-(defn email-field [{:keys [values] :as _fork-args}]
-  [mui/text-field {:label "Email Address"
-                   ;:required true
-                   :full-width true
-                   :name :email
-                   :value (:email values)
-                   ;:onChange (ui/form-handle-change-fn fork-args)
-                   :variant :filled}])
+(defn email-field [fork-args]
+  [mui/text-field (merge (common-text-field-props :email fork-args)
+                    {:label "Email Address"
+                     :required true
+                     :full-width true})])
 
-(defn personal-info-form [{:keys [handle-submit
-                                  submitting?]
-                           :as fork-args}]
+(defn submit-button [_fork-args]
+  (let [open? (r/atom false)]
+    (fn [{:keys [handle-submit errors submitting?]}]
+      [:<>
+       ; We could be using a button of type "submit", instead of handling onclick,
+       ; but then the browser will be reacting to required fields when submitting.
+       ; (i.e. Chrome shows a popup on the first required field that is empty).
+       [ui/loading-button {:onClick (fn [& args]
+                                      (when errors
+                                        (reset! open? true))
+                                      (apply handle-submit args))
+                           :variant :contained
+                           :loading submitting?}
+        "Next"]
+       [mui/snackbar {:open @open?
+                      :autoHideDuration 6000
+                      :onClose #(reset! open? false)}
+        [mui/alert {:severity :error}
+         "There is some missing or invalid data."]]])))
+
+(defn personal-info-form [fork-args]
   [:form
    [mui/stack {:spacing 1}
     [mui/typography {:variant :h5} "your details"]
     [title-field fork-args]
     [name-fields fork-args]
-    #_[dob-text-field fork-args]
     [dob-date-picker fork-args]
     [mui/typography {:variant :h5} "your address"]
     [address-fields fork-args]
     [phone-field fork-args]
     [email-field fork-args]
-    ; We could be using a button of type "submit", instead of handling onclick,
-    ; but then the browser will be reacting to required fields when submitting.
-    ; (i.e. Chrome shows a popup on the first required field that is empty).
-    [ui/loading-button {:onClick handle-submit
-                        :variant :contained
-                        :loading submitting?}
-     "Next"]]])
+    [submit-button fork-args]]])
 
 (defonce form-state (r/atom nil))
 
@@ -219,7 +233,31 @@
 
 (defmethod v/english-translation ::valid-dayjs-date
   [{:keys [name]}]
-  (str name " must be a valid date."))
+  (str name " in not a valid date."))
+
+(defn valid-phone
+  ([]
+   (valid-phone {}))
+  ([error-data]
+   (v/predicate
+     #(not (phone/valid-phone? %))
+     (merge {:type ::valid-phone} error-data))))
+
+(defmethod v/english-translation ::valid-phone
+  [{:keys [name]}]
+  (str name " is not a valid phone."))
+
+(defn valid-email
+  ([]
+   (valid-email {}))
+  ([error-data]
+   (v/predicate
+     #(not (email/valid-email? %))
+     (merge {:type ::valid-email} error-data))))
+
+(defmethod v/english-translation ::valid-email
+  [{:keys [name]}]
+  (str name " is not a valid email."))
 
 (defn panel []
   [mui/container {:max-width :md}
@@ -234,7 +272,6 @@
      :on-submit #(rf/dispatch [::create-case %])
      :keywordize-keys true
      :prevent-default? true
-     :initial-values {:title ""}
      :validation
      (fn [data]
        (v/field-errors
@@ -244,7 +281,19 @@
            (v/attr [:surname] (v/present))
            (v/attr [:dob] (v/chain
                             (not-nil)
-                            (valid-dayjs-date))))
+                            (valid-dayjs-date)))
+
+           (v/attr [:building] (v/present))
+           (v/attr [:street1] (v/present))
+           (v/attr [:town] (v/present))
+           (v/attr [:postcode] (v/present))
+
+           (v/attr [:phone] (v/chain
+                              (v/present)
+                              (valid-phone)))
+           (v/attr [:email] (v/chain
+                              (v/present)
+                              (valid-email))))
          data))}
     (fn [fork-args]
       [personal-info-form (ui/mui-fork-args fork-args)])]])
@@ -262,6 +311,9 @@
   (darbylaw.web.core/mount-root))
 
 (comment
+  @form-state
+  (-> @form-state :values)
+  (swap! form-state assoc-in [:values :phone] "+442441231235")
   (-> @form-state :values :dob)
   (-> @form-state :values :dob .isValid)
   (-> @form-state :values :dob (.format "YYYY-MM-DD")))
