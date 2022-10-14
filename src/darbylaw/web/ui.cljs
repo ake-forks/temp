@@ -3,6 +3,9 @@
     [reagent-mui.icons.account-balance]
     [reagent-mui.icons.add]
     [reagent-mui.icons.help-outline]
+    [reagent-mui.icons.error-outline]
+    [reagent-mui.icons.edit]
+    [reagent-mui.icons.priority-high]
     [reagent-mui.icons.add-circle]
     [reagent-mui.icons.person-outline]
     [reagent-mui.components :as mui]
@@ -10,10 +13,14 @@
     [reagent.core :as r]
     [re-frame.core :as rf]
     [darbylaw.web.routes :as routes]
-    [ajax.core :as ajax]))
+    [ajax.core :as ajax]
+    [applied-science.js-interop :as j]))
 
 (def icon-add reagent-mui.icons.add/add)
 (def icon-help-outline reagent-mui.icons.help-outline/help-outline)
+(def icon-error-outline reagent-mui.icons.error-outline/error-outline)
+(def icon-edit reagent-mui.icons.edit/edit)
+(def icon-priority-high reagent-mui.icons.priority-high/priority-high)
 (def icon-add-circle reagent-mui.icons.add-circle/add-circle)
 (def icon-account-balance reagent-mui.icons.account-balance/account-balance)
 (def icon-person-outline reagent-mui.icons.person-outline/person-outline)
@@ -49,12 +56,25 @@
   (fn [_ [_ route]]
     {::navigate-no-history route}))
 
-(defn form-handle-change-fn [{:keys [set-handle-change]}]
-  "The handle-change function provided by the Fork library is not compatible
-  with Material UI. We need to provide our own."
-  (fn [evt _]
-    (set-handle-change {:value (.. evt -target -value)
-                        :path [(keyword (.. evt -target -name))]})))
+(defn- add-getAttribute!
+  "Adds .getAttribute() method to a Material UI event.
+  (Fork relies on that method, but some events don't provide it)."
+  [evt]
+  (when (nil? (j/get evt :getAttribute))
+    (let [target (j/get evt :target)]
+      (j/assoc! target :getAttribute
+        (fn [attr]
+          (j/get target (keyword attr)))))))
+
+(defn mui-fork-args [fork-args]
+  (let [{:keys [handle-change handle-blur]} fork-args]
+    (assoc fork-args
+      :handle-change (fn [evt]
+                       (add-getAttribute! evt)
+                       (handle-change evt))
+      :handle-blur (fn [evt]
+                     (add-getAttribute! evt)
+                     (handle-blur evt)))))
 
 (defn build-http [params]
   (merge

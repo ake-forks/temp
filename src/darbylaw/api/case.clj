@@ -25,7 +25,7 @@
      (when-let [e (xtdb.api/entity (xtdb.api/db ctx) eid)]
        [[::xt/put (merge e m)]])))
 
-(defn update-case [{:keys [xtdb-node path-params body-params]}] ;what are path- and body-params and where do they come from?
+(defn update-case [{:keys [xtdb-node path-params body-params]}]
   (let [deceased-info (:deceased body-params)]
     (when deceased-info
       (let [case-id (parse-uuid (:case-id path-params))
@@ -52,7 +52,6 @@
              :where [[case :type :probate.case]]})
       (map (fn [[case {pr-info :ref/personal-representative.info.id}]]
              (-> case
-
                (clojure.set/rename-keys {:xt/id :id})
                (clojure.set/rename-keys {:ref/personal-representative.info.id :personal-representative})))))))
 
@@ -90,15 +89,27 @@
                     :parameters {:body [:map
                                         [:personal-representative
                                          [:map
-                                          [:forename string?]
-                                          [:surname string?]
-                                          [:postcode string?]]]]}}}]
+                                          [:title :string]
+                                          [:forename :string]
+                                          [:middlename {:optional true} :string]
+                                          [:surname :string]
+                                          [:dob [:re #"^\d{4}-\d{2}-\d{2}$"]]
+
+                                          [:email :string]
+                                          [:phone :string]
+
+                                          [:flat {:optional true} :string]
+                                          [:building {:optional true} :string]
+                                          [:street-number {:optional true} :string]
+                                          [:street1 :string]
+                                          [:street2 {:optional true} :string]
+                                          [:town :string]
+                                          [:postcode :string]]]]}}}]
+
    ["/case/:case-id" {:patch {:handler update-case}
-                      :get {:handler get-case}}]            ;http patch is like update -> partial modifications
-   ;:coercion reitit.coercion.malli/coercion}}]
-   ;:parameters {:path {:case-id uuid?}
-   ;             :body [:map
-   ;                    [:deceased any?]]}}}]
+                      :get {:handler get-case}}]
+                     ;:coercion reitit.coercion.malli/coercion}}]
+                     ;:parameters {:path {:case-id uuid?}
+                     ;             :body [:map
+                     ;                    [:deceased any?]]}}}]
    ["/cases" {:get {:handler get-cases}}]])
-
-
