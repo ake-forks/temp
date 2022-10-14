@@ -11,11 +11,11 @@
   (atom
     ["/app" {"/about" :about
              "/create-case" :create-case
-             ["/case/" :case-id] {"" :case
+             ["/case/" :case-id] {"" :dashboard
                                   "/deceased-details" :deceased-details}
-             "/admin" :admin
-             "/dashboard" :dashboard
-             "/semantic-ui" :semantic-ui}]))
+             "/admin" :admin}]))
+
+
 
 (defn parse [url]
   (bidi/match-route @routes url))

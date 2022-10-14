@@ -7,6 +7,7 @@
     [reagent-mui.icons.edit]
     [reagent-mui.icons.priority-high]
     [reagent-mui.icons.add-circle]
+    [reagent-mui.icons.person-outline]
     [reagent-mui.components :as mui]
     [reagent-mui.lab.loading-button]
     [reagent.core :as r]
@@ -22,6 +23,7 @@
 (def icon-priority-high reagent-mui.icons.priority-high/priority-high)
 (def icon-add-circle reagent-mui.icons.add-circle/add-circle)
 (def icon-account-balance reagent-mui.icons.account-balance/account-balance)
+(def icon-person-outline reagent-mui.icons.person-outline/person-outline)
 
 (def loading-button reagent-mui.lab.loading-button/loading-button)
 

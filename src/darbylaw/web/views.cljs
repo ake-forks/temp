@@ -13,7 +13,8 @@
     [darbylaw.web.ui.create-case]
     [darbylaw.web.ui.deceased-details]
     [darbylaw.web.ui.admin]
-    [darbylaw.web.ui.case]))
+    [darbylaw.web.ui.case]
+    darbylaw.web.ui.dashboard))
 
 (defn main-panel []
   (let [active-panel (re-frame/subscribe [::routes/active-panel])]

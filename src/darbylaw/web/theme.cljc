@@ -10,17 +10,20 @@
            :href "https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap"}]])
 
 (def teal "#067474")
-(def orange "#B08BBF")
+(def orange "#E0711C")
+(def lilac "#B08BBF")
 (def rich-black "#121A20")
 (def off-white "#EEEEEE")
+(def pale-grey "#DADADA")
+
 
 (def theme
   {:palette
    {:primary {:main teal}
-    :secondary {:main orange}
-    :btn {:main rich-black
-          :light rich-black
-          :dark rich-black}}
+    :secondary {:main orange}}
+    ;:btn {:main rich-black
+    ;      :light rich-black
+    ;      :dark rich-black}}
 
    :typography
    {:font-family "'Poppins', Helvetica,sans-serif"
@@ -39,4 +42,5 @@
                           :border-radius 0
                           :text-transform :lowercase}}]}
     :MuiTextField {:defaultProps {:variant :filled}}
-    :MuiSelect {:defaultProps {:variant :filled}}}})
+    :MuiSelect {:defaultProps {:variant :filled}}
+    :MuiDivider {:defaultProps {:variant "middle" :role "presentation"}}}})
