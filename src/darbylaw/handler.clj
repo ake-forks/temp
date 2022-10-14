@@ -93,6 +93,7 @@
   (ring/ring-handler
     (make-router)
     (ring/routes
+      (ring/redirect-trailing-slash-handler) ; TODO: this is not working?
       (ring/create-resource-handler {:path "/" :root "/public"})
       (ring/create-default-handler))))
 

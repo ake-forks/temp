@@ -48,7 +48,7 @@
                    :labelId :relationship-select
                    :name :relationship
                    :value (:relationship values)
-                   :onChange (ui/form-handle-change-fn fork-args)
+                   ;:onChange (ui/form-handle-change-fn fork-args)
                    :variant :filled}
        [mui/menu-item {:disabled true :value "" :key :placeholder} "I'm filling out this form on behalf of my late..."]
        [mui/menu-item {:value "Mother" :key :Mother} "Mother"]
@@ -79,13 +79,13 @@
                       :placeholder "Please enter their legal name"
                       :name :forename
                       :value (:forename values)
-                      :onChange (ui/form-handle-change-fn fork-args)
+                      ;:onChange (ui/form-handle-change-fn fork-args)
                       :full-width true
                       :variant :filled}]
      [mui/text-field {:label "Their Middle Name(s)"
                       :name :middlename
                       :value (:middlename values)
-                      :onChange (ui/form-handle-change-fn fork-args)
+                      ;:onChange (ui/form-handle-change-fn fork-args)
                       :full-width true
                       :variant :filled}]]
 
@@ -95,14 +95,14 @@
                       :required true
                       :name :surname
                       :value (:surname values)
-                      :onChange (ui/form-handle-change-fn fork-args)
+                      ;:onChange (ui/form-handle-change-fn fork-args)
                       :style {:flex-grow 2}
                       :variant :filled}]
 
      [mui/text-field {:label "Maiden Name/Surname at Birth"
                       :name :birth-surname
                       :value (:birth-surname values)
-                      :onChange (ui/form-handle-change-fn fork-args)
+                      ;:onChange (ui/form-handle-change-fn fork-args)
                       :style {:flex-grow 1}
                       :variant :filled}]]
 
@@ -118,7 +118,7 @@
                        :required true
                        :name :dob
                        :value (:dob values)
-                       :onChange (ui/form-handle-change-fn fork-args)
+                       ;:onChange (ui/form-handle-change-fn fork-args)
                        :full-width true
                        :variant :filled}]]
      [mui/stack {:spacing 1 :sx {:width "100%"}}
@@ -128,7 +128,7 @@
                        :required true
                        :name :pob
                        :value (:pob values)
-                       :onChange (ui/form-handle-change-fn fork-args)
+                       ;:onChange (ui/form-handle-change-fn fork-args)
                        :full-width true
                        :variant :filled}]]]
 
@@ -137,7 +137,7 @@
                       :required true
                       :name :occupation
                       :value (:occupation values)
-                      :onChange (ui/form-handle-change-fn fork-args)
+                      ;:onChange (ui/form-handle-change-fn fork-args)
                       :style {:flex-grow 2}
                       :variant :filled}]
 
@@ -147,7 +147,7 @@
                    :labelId :sex-select
                    :name :sex
                    :value (:sex values)
-                   :onChange (ui/form-handle-change-fn fork-args)
+                   ;:onChange (ui/form-handle-change-fn fork-args)
                    :variant :filled}
        [mui/menu-item {:value "Male" :key :Male} "Male"]
        [mui/menu-item {:value "Female" :key :Female} "Female"]]]]
@@ -157,7 +157,7 @@
     [mui/text-field {:label "Usual Address"
                      :name :address
                      :value (:address values)
-                     :onChange (ui/form-handle-change-fn fork-args)
+                     ;:onChange (ui/form-handle-change-fn fork-args)
                      :multiline true
                      :min-rows 3
                      :variant :filled}]
@@ -172,7 +172,7 @@
                        :required true
                        :name :dod
                        :value (:dod values)
-                       :onChange (ui/form-handle-change-fn fork-args)
+                       ;:onChange (ui/form-handle-change-fn fork-args)
                        :full-width true
                        :variant :filled}]]
      [mui/stack {:spacing 1 :sx {:width "100%"}}
@@ -182,7 +182,7 @@
                        :required true
                        :name :pod
                        :value (:pod values)
-                       :onChange (ui/form-handle-change-fn fork-args)
+                       ;:onChange (ui/form-handle-change-fn fork-args)
                        :full-width true
                        :variant :filled}]]]
 
