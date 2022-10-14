@@ -8,7 +8,7 @@
             [reagent-mui.components :as mui]
             [reagent-mui.x.date-picker :as mui-date]
             [darbylaw.web.ui :as ui]
-            ["material-ui-phone-number$default" :as MuiPhoneNumber]
+            ["material-ui-phone-number-2$default" :as MuiPhoneNumber]
             [reagent-mui.material.text-field :as mui-text-field]
             [darbylaw.web.util.phone :as phone]
             [darbylaw.web.util.email :as email]
