@@ -12,7 +12,8 @@
             [reagent-mui.material.text-field :as mui-text-field]
             [darbylaw.web.util.phone :as phone]
             [darbylaw.web.util.email :as email]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [applied-science.js-interop :as j]))
 
 (rf/reg-event-fx ::create-case-success
   (fn [{:keys [db]} [_ {:keys [path]} response]]
@@ -51,7 +52,11 @@
   {:endAdornment
    (r/as-element
      [mui/input-adornment {:position :end}
-      [ui/icon-error-outline {:color :error}]])})
+      [#_ui/icon-error-outline
+       ui/icon-edit
+       #_ui/icon-priority-high
+       {:color :error
+        :sx {:opacity 0.4}}]])})
 
 (defn common-input-field-props
   [k
@@ -105,30 +110,23 @@
                       :label "Surname"
                       :full-width true})]])
 
-(defn dob-text-field [fork-args]
-  [mui/text-field (merge (common-text-field-props :dob fork-args)
-                    {:label "Date of Birth"
-                     :required true
-                     :helper-text "Please use format DD/MM/YYYY"
-                     :full-width true})])
-
 (defn dob-date-picker [{:keys [values set-handle-change handle-blur] :as fork-args}]
   [mui-date/date-picker
    {:value (get values :dob)
-    :label "Date of Birth"
     :onChange #(set-handle-change {:value %
                                    :path [:dob]})
-    :renderInput (fn [params]
-                   (r/as-element
-                     [mui/text-field
-                      (merge (js->clj params)
-                        {:name :dob
-                         :required true
-                         :error (boolean (get-error :dob fork-args))
-                         :onBlur handle-blur})]))
-    ; In case we want to add a helperText with the expected date pattern,
-    ; (not working so far, will need some tweaking):
-    ; {:helperText (-> params-clj :inputProps :placeholder)}
+    :renderInput
+    (fn [params]
+      (r/as-element
+        [mui/text-field
+         (merge (js->clj params)
+           {:name :dob
+            :label (let [date-pattern (j/get-in params [:inputProps :placeholder])]
+                     (str "Date of Birth (" date-pattern ")"))
+            :required true
+            :autoComplete :off
+            :error (boolean (get-error :dob fork-args))
+            :onBlur handle-blur})]))
     :openTo :year
     :views [:year :month :day]}])
 
@@ -340,6 +338,13 @@
                            (not-nil)
                            (valid-dayjs-date)))
 
+          (v/attr [:email] (v/chain
+                             (v/present)
+                             (valid-email)))
+          (v/attr [:phone] (v/chain
+                             (v/present)
+                             (valid-phone)))
+
           ; We show Street Number as required, but provide a hint
           ; that Building Name can be provided as an alternative.
           (present-or-alternative [:street-number] [:building])
@@ -349,14 +354,7 @@
 
           (v/attr [:street1] (v/present))
           (v/attr [:town] (v/present))
-          (v/attr [:postcode] (v/present))
-
-          (v/attr [:phone] (v/chain
-                             (v/present)
-                             (valid-phone)))
-          (v/attr [:email] (v/chain
-                             (v/present)
-                             (valid-email))))
+          (v/attr [:postcode] (v/present)))
         data))}
    (fn [fork-args]
      [personal-info-form (ui/mui-fork-args fork-args)])])

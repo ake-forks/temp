@@ -4,6 +4,8 @@
     [reagent-mui.icons.add]
     [reagent-mui.icons.help-outline]
     [reagent-mui.icons.error-outline]
+    [reagent-mui.icons.edit]
+    [reagent-mui.icons.priority-high]
     [reagent-mui.icons.add-circle]
     [reagent-mui.components :as mui]
     [reagent-mui.lab.loading-button]
@@ -16,6 +18,8 @@
 (def icon-add reagent-mui.icons.add/add)
 (def icon-help-outline reagent-mui.icons.help-outline/help-outline)
 (def icon-error-outline reagent-mui.icons.error-outline/error-outline)
+(def icon-edit reagent-mui.icons.edit/edit)
+(def icon-priority-high reagent-mui.icons.priority-high/priority-high)
 (def icon-add-circle reagent-mui.icons.add-circle/add-circle)
 (def icon-account-balance reagent-mui.icons.account-balance/account-balance)
 

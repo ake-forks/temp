@@ -71,15 +71,17 @@
                                           [:surname :string]
                                           [:dob [:re #"^\d{4}-\d{2}-\d{2}$"]]
 
+                                          [:email :string]
+                                          [:phone :string]
+
                                           [:flat {:optional true} :string]
-                                          [:building :string]
+                                          [:building {:optional true} :string]
+                                          [:street-number {:optional true} :string]
                                           [:street1 :string]
                                           [:street2 {:optional true} :string]
                                           [:town :string]
-                                          [:postcode :string]
+                                          [:postcode :string]]]]}}}]
 
-                                          [:phone :string]
-                                          [:email :string]]]]}}}]
    ["/case/:case-id" {:patch {:handler update-case}}]
                               ;:coercion reitit.coercion.malli/coercion}}]
                               ;:parameters {:path {:case-id uuid?}
