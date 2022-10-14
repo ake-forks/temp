@@ -1,4 +1,5 @@
 (ns darbylaw.web.ui.create-case
+  (:require-macros [reagent-mui.util :refer [react-component]])
   (:require [darbylaw.web.routes :as routes]
             [reagent.core :as r]
             [re-frame.core :as rf]
@@ -10,7 +11,8 @@
             ["material-ui-phone-number$default" :as MuiPhoneNumber]
             [reagent-mui.material.text-field :as mui-text-field]
             [darbylaw.web.util.phone :as phone]
-            [darbylaw.web.util.email :as email]))
+            [darbylaw.web.util.email :as email]
+            [clojure.string :as str]))
 
 (rf/reg-event-fx ::create-case-success
   (fn [{:keys [db]} [_ {:keys [path]} response]]
@@ -43,7 +45,7 @@
 (defn get-error [k {:keys [touched errors attempted-submissions] :as _fork-args}]
   (and (pos? attempted-submissions)
        (touched k)
-       (get errors (list k))))
+       (get errors [k])))
 
 (defn error-icon-prop []
   {:endAdornment
@@ -69,24 +71,27 @@
 (defn common-text-field-props [k fork-args]
   (common-input-field-props k fork-args {:error-icon? true}))
 
-(defn title-field [{:keys [values] :as fork-args}]
-  [mui/form-control
-   [mui/input-label {:id :title-select} "Title"]
-   [mui/select (merge (common-input-field-props :title fork-args {})
-                 {:value (or (get values :title) "")
-                  :label "Title"
-                  :required true
-                  :labelId :title-select})
-    [mui/menu-item {:value "Mr" :key :Mr} "Mr"]
-    [mui/menu-item {:value "Mrs" :key :Mrs} "Mrs"]
-    [mui/menu-item {:value "Ms" :key :Ms} "Ms"]
-    [mui/menu-item {:value "Mx" :key :Mx} "Mx"]
-    [mui/menu-item {:value "Dr" :key :Dr} "Dr"]
-    [mui/menu-item {:value "Other" :key :Other} "Other"]]])
+(defn title-field [{:keys [values set-handle-change handle-blur] :as fork-args}]
+  [mui/autocomplete
+   {:options ["Mr" "Mrs" "Ms" "Mx" "Dr"]
+    :inputValue (or (get values :title) "")
+    :onInputChange (fn [_evt new-value]
+                     (set-handle-change {:value new-value
+                                         :path [:title]}))
+    :renderInput (react-component [props]
+                   [mui/text-field (merge props
+                                     {:name :title
+                                      :label "Title"
+                                      :required true
+                                      :error (boolean (get-error :title fork-args))
+                                      :onBlur handle-blur})])
+    :freeSolo true
+    :disableClearable true
+    ; no filter:
+    :filterOptions identity}])
 
 (defn name-fields [fork-args]
-  [mui/stack {:direction :row
-              :spacing 1}
+  [:<>
    [mui/text-field (merge (common-text-field-props :forename fork-args)
                      {:required true
                       :label "Forename"
@@ -125,26 +130,29 @@
     ; (not working so far, will need some tweaking):
     ; {:helperText (-> params-clj :inputProps :placeholder)}
     :openTo :year
-    :views [:year :month :day]
-    :full-width true}])
+    :views [:year :month :day]}])
 
 (defn address-fields [fork-args]
   [:<>
    [mui/stack {:direction :row
-               :spacing 1}
+               :spacing 2}
     [mui/text-field (merge (common-text-field-props :flat fork-args)
                       {:label "Flat"})]
     [mui/text-field (merge (common-text-field-props :building fork-args)
-                      {:label "Building Name/No."
-                       :required true})]
+                      {:label "Building Name"})]]
+   [mui/stack {:direction :row
+               :spacing 2}
+    [mui/text-field (merge (common-text-field-props :street-number fork-args)
+                      {:label "Street Number"
+                       :helperText (get-error :street-number fork-args)})]
     [mui/text-field (merge (common-text-field-props :street1 fork-args)
                       {:label "Street"
                        :required true
                        :full-width true})]]
    [mui/text-field (merge (common-text-field-props :street2 fork-args)
-                     {:label "Address line 2"
+                     {:label "Address Line 2"
                       :full-width true})]
-   [mui/stack {:direction :row :spacing 1}
+   [mui/stack {:direction :row :spacing 2}
     [mui/text-field (merge (common-text-field-props :town fork-args)
                       {:label "Town/City"
                        :required true
@@ -157,7 +165,7 @@
   [:> MuiPhoneNumber
    {:name :phone
     :value (get values :phone)
-    :label "Phone Number"
+    :label "Mobile Phone"
     :required true
     :onChange #(set-handle-change {:value %
                                    :path [:phone]})
@@ -174,7 +182,7 @@
 
 (defn email-field [fork-args]
   [mui/text-field (merge (common-text-field-props :email fork-args)
-                    {:label "Email Address"
+                    {:label "Email"
                      :required true
                      :full-width true})])
 
@@ -190,7 +198,8 @@
                                         (reset! open? true))
                                       (apply handle-submit args))
                            :variant :contained
-                           :loading submitting?}
+                           :loading submitting?
+                           :size :large}
         "Next"]
        [mui/snackbar {:open @open?
                       :autoHideDuration 6000
@@ -200,16 +209,35 @@
 
 (defn personal-info-form [fork-args]
   [:form
-   [mui/stack {:spacing 1}
-    [mui/typography {:variant :h5} "your details"]
-    [title-field fork-args]
-    [name-fields fork-args]
-    [dob-date-picker fork-args]
-    [mui/typography {:variant :h5} "your address"]
-    [address-fields fork-args]
-    [phone-field fork-args]
-    [email-field fork-args]
-    [submit-button fork-args]]])
+   [mui/container {:max-width :sm
+                   :sx {:mb 4}}
+    [mui/stack {:spacing 4}
+     [mui/stack
+      [mui/typography {:variant :h3
+                       :sx {:pt 4 :pb 2}}
+       "get started"]
+      [mui/typography {:variant :p}
+       "It looks like you need probate.
+      Here are some quick questions about you.
+      Then we will ask about the deceased and their relationship to you."]]
+     [mui/stack {:spacing 2}
+      [mui/typography {:variant :h5}
+       "your details"]
+      [title-field fork-args]
+      [mui/stack {:direction :row
+                  :spacing 2}
+       [name-fields fork-args]]
+      [dob-date-picker fork-args]]
+     [mui/stack {:spacing 2}
+      [mui/typography {:variant :h5}
+       "your contact details"]
+      [email-field fork-args]
+      [phone-field fork-args]]
+     [mui/stack {:spacing 2}
+      [mui/typography {:variant :h5}
+       "your address"]
+      [address-fields fork-args]]
+     [submit-button fork-args]]]])
 
 (defonce form-state (r/atom nil))
 
@@ -259,44 +287,79 @@
   [{:keys [name]}]
   (str name " is not a valid email."))
 
+(defn present-or-alternative
+  ([selector alt-selector]
+   (present-or-alternative selector alt-selector {}))
+  ([selector alt-selector error-data]
+   (fn [data]
+     (when (and (str/blank? (get-in data selector))
+                (str/blank? (get-in data alt-selector)))
+       [(merge
+          {:type ::present-or-alternative
+           :selector selector
+           :alt-selector alt-selector}
+          error-data)]))))
+
+(defmethod v/english-translation ::present-or-alternative
+  [{:keys [alt-selector]}]
+  (str "...or provide " (do
+                          (assert (= 1 (count alt-selector)))
+                          (case (first alt-selector)
+                            :building "Building Name"))))
+
+(defn either-present
+  ([selectors]
+   (either-present selectors {}))
+  ([selectors error-data]
+   (fn [data]
+     (when (every? str/blank? (map #(get-in data %) selectors))
+       (->> selectors
+         (mapv #(merge
+                  {:type ::either-present
+                   :selector %}
+                  error-data)))))))
+
+(defmethod v/english-translation ::either-present
+  [{:keys [name]}]
+  (str name " is required."))
+
 (defn panel []
-  [mui/container {:max-width :md}
-   [mui/typography {:variant :h1}
-    "get started"]
-   [mui/typography {:variant :p}
-    "It looks like you need probate.
-    Here are some quick questions about you.
-    Then we will ask about the deceased and their relationship to you."]
-   [fork/form
-    {:state form-state
-     :on-submit #(rf/dispatch [::create-case %])
-     :keywordize-keys true
-     :prevent-default? true
-     :validation
-     (fn [data]
-       (v/field-errors
-         (v/join
-           (v/attr [:title] (v/present))
-           (v/attr [:forename] (v/present))
-           (v/attr [:surname] (v/present))
-           (v/attr [:dob] (v/chain
-                            (not-nil)
-                            (valid-dayjs-date)))
+  [fork/form
+   {:state form-state
+    :on-submit #(rf/dispatch [::create-case %])
+    :keywordize-keys true
+    :prevent-default? true
+    :validation
+    (fn [data]
+      (v/field-errors
+        (v/join
+          (v/attr [:title] (v/present))
+          (v/attr [:forename] (v/present))
+          (v/attr [:surname] (v/present))
+          (v/attr [:dob] (v/chain
+                           (not-nil)
+                           (valid-dayjs-date)))
 
-           (v/attr [:building] (v/present))
-           (v/attr [:street1] (v/present))
-           (v/attr [:town] (v/present))
-           (v/attr [:postcode] (v/present))
+          ; We show Street Number as required, but provide a hint
+          ; that Building Name can be provided as an alternative.
+          (present-or-alternative [:street-number] [:building])
+          ; alternative: show both fields as required when either is blank
+          #_(either-present [[:street-number]]
+                            [:building])
 
-           (v/attr [:phone] (v/chain
-                              (v/present)
-                              (valid-phone)))
-           (v/attr [:email] (v/chain
-                              (v/present)
-                              (valid-email))))
-         data))}
-    (fn [fork-args]
-      [personal-info-form (ui/mui-fork-args fork-args)])]])
+          (v/attr [:street1] (v/present))
+          (v/attr [:town] (v/present))
+          (v/attr [:postcode] (v/present))
+
+          (v/attr [:phone] (v/chain
+                             (v/present)
+                             (valid-phone)))
+          (v/attr [:email] (v/chain
+                             (v/present)
+                             (valid-email))))
+        data))}
+   (fn [fork-args]
+     [personal-info-form (ui/mui-fork-args fork-args)])])
 
 (defmethod routes/panels :create-case-panel [] [panel])
 
@@ -311,6 +374,7 @@
   (darbylaw.web.core/mount-root))
 
 (comment
+  ; playing with form-state
   @form-state
   (-> @form-state :values)
   (swap! form-state assoc-in [:values :phone] "+442441231235")

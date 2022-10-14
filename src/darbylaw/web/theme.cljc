@@ -7,7 +7,7 @@
            :href "https://fonts.gstatic.com"
            :crossorigin "true"}]
    [:link {:rel "stylesheet"
-           :href "https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap"}]])
+           :href "https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap"}]])
 
 (def teal "#067474")
 (def orange "#B08BBF")
@@ -24,7 +24,12 @@
 
    :typography
    {:font-family "'Poppins', Helvetica,sans-serif"
-    :h1 {:font-size "4rem" :font-weight 600}}
+    :h1 {:font-weight 700}
+    :h2 {:font-weight 700}
+    :h3 {:font-weight 700}
+    :h4 {:font-weight 700}
+    :h5 {:font-weight 700}
+    :button {:font-weight 600}}
 
    :components
    {:MuiButton {:variants
