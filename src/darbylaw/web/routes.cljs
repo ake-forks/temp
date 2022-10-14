@@ -2,8 +2,7 @@
   (:require
     [bidi.bidi :as bidi]
     [pushy.core :as pushy]
-    [re-frame.core :as re-frame]
-    [darbylaw.web.events :as events]))
+    [re-frame.core :as rf]))
 
 (defmulti panels identity)
 (defmethod panels :default [] [:div "No panel found for this route."])
@@ -12,36 +11,49 @@
   (atom
     ["/app" {"/about" :about
              "/create-case" :create-case
-             "/admin" :admin
-             "/dashboard" :dashboard
-             "/semantic-ui" :semantic-ui}]))
+             ["/case/" :case-id] {"" :dashboard
+                                  "/deceased-details" :deceased-details}
+             "/admin" :admin}]))
 
 
-(defn parse
-  [url]
+
+(defn parse [url]
   (bidi/match-route @routes url))
 
-(defn url-for
-  [& args]
+(defn url-for [& args]
   (apply bidi/path-for (into [@routes] args)))
 
-(defn dispatch
-  [route]
+(comment
+  (bidi/path-for @routes :deceased-details :case-id 1)
+  (bidi/path-for @routes :deceased-details {:case-id (random-uuid)})
+  (url-for :deceased-details {:case-id (random-uuid)})
+  (bidi/path-for @routes :create-case nil))
+
+(rf/reg-event-fx ::set-active-panel
+  (fn [{:keys [db]} [_ active-panel route-params]]
+    {:db (assoc db :active-panel active-panel
+                   :route-params route-params)}))
+
+(rf/reg-sub ::active-panel
+  (fn [db _]
+    (:active-panel db)))
+
+(rf/reg-sub ::route-params
+  (fn [db _]
+    (:route-params db)))
+
+(defn dispatch [route]
   (let [panel (keyword (str (name (:handler route)) "-panel"))]
-    (re-frame/dispatch [::events/set-active-panel panel])))
+    (rf/dispatch [::set-active-panel panel (:route-params route)])))
 
 (defonce history
   (pushy/pushy dispatch parse))
 
-(defn navigate!
-  [handler]
-  (pushy/set-token! history (url-for handler)))
+(defn navigate! [route-name params]
+  (pushy/set-token! history (url-for route-name params)))
 
-(defn start!
-  []
+(defn navigate-replacing! [route-name params]
+  (pushy/replace-token! history (url-for route-name params)))
+
+(defn start! []
   (pushy/start! history))
-
-(re-frame/reg-fx
-  :navigate
-  (fn [handler]
-    (navigate! handler)))
