@@ -1,3 +1,7 @@
 {:web-server
  {:port #long #profile {:default #or [#env PORT 8080]
-                        :test 38080}}}
+                        :test 38080}
+  :auth #profile {:default #edn #env AUTH_MAP
+                  :dev-auth {"admin" "admin"}
+                  :dev :none
+                  :test :none}}}

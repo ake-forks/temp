@@ -22,6 +22,20 @@ resource "aws_ecs_cluster" "probatetree" {
 
 
 
+# >> Secrets
+
+resource "aws_ssm_parameter" "auth-map" {
+  name  = "ProbateTree_AuthMap_${terraform.workspace}"
+  type  = "SecureString"
+  value = "{}"
+
+  lifecycle {
+    ignore_changes = [value]
+  }
+}
+
+
+
 # >> Logs
 
 resource "aws_cloudwatch_log_group" "probatetree-logs" {
@@ -83,6 +97,10 @@ resource "aws_ecs_task_definition" "probatetree" {
           {
             "name" : "DATABASE_PASSWORD"
             "valueFrom" : aws_ssm_parameter.xtdb-backend-admin-password.arn
+          },
+          {
+            "name" : "AUTH_MAP"
+            "valueFrom" : aws_ssm_parameter.auth-map.arn
           }
         ]
         logConfiguration = {
