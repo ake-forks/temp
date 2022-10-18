@@ -45,33 +45,51 @@
 
 ;; TODO: Clean up?
 (defn case-item
-  [{:keys [id] {:keys [surname forename postcode]} :personal-representative}]
+  [{:keys [id loading?] {:keys [surname forename postcode]} :personal-representative}]
   [mui/card
-   [mui/card-action-area {:onClick #(rf/dispatch [::ui/navigate [:dashboard {:case-id (.toString id)}]])}
+   [mui/card-action-area {:onClick (when-not loading? #(rf/dispatch [::ui/navigate [:dashboard {:case-id (.toString id)}]]))}
     [mui/card-content
      [mui/stack {:direction :row :justify-content :space-between :align-items :center}
       [mui/stack
        [mui/typography {:sx {:fontSize 14} :color :text.secondary}
-         (str "#" id)]
+        (if-not loading?
+         (str "#" id)
+         [mui/skeleton {:width 100}])]
        [mui/typography {:variant :h5}
-         surname ", " forename]
+        (if-not loading?
+          (str surname ", " forename)
+          [mui/skeleton {:width 200}])]
        [mui/typography {:variant :h6 :color :text.secondary}
-        "at " postcode]]
+        (if-not loading?
+          (str "at " postcode)
+          [mui/skeleton {:width 130}])]]
       [mui/skeleton {:variant :circular :align :right :width "5em" :height "5em"}]]]]])
+
+(defn no-cases-found
+  []
+  [mui/alert {:severity :info :sx {:z-index 999}}
+   [mui/alert-title "No Cases Found"]
+   "Maybe "
+   [mui/link {:href "#" :on-click #(rf/dispatch [::ui/navigate :create-case])} "create"]
+   " a new one?"])
 
 (defn card-list
   [cases]
-  (cond
-    ;; TODO: Improve skeleton & "no cases"
-    (nil? cases) [mui/card [mui/skeleton]]
-    (empty? cases) [mui/typography "No cases found"]
+  [mui/container {:max-width :sm}
+   [mui/stack {:spacing 2}
+    (cond
+      (empty? cases)
+      [no-cases-found]
 
-    :default
-    [mui/container {:max-width :sm}
-     [mui/stack {:spacing 2}
+      (nil? cases)
+      (for [id (range 3)]
+        ^{:key id}
+        [case-item {:loading? true}])
+
+      :default
       (for [case cases]
         ^{:key (:id case)}
-        [case-item case])]]))
+        [case-item case]))]])
 
 
 ;; >> DataGrid
@@ -102,7 +120,11 @@
                  :columns columns
                  :density :standard
                  :on-row-click #(rf/dispatch [::ui/navigate [:dashboard {:case-id (-> % .-row .-rowId str)}]])
-                 :is-row-selectable (constantly false)}]]))
+                 :is-row-selectable (constantly false)
+                 :components {:NoRowsOverlay 
+                              #(r/as-element [mui/stack {:height "100%" :align-items :center :justify-content :center}
+                                              [no-cases-found]])}
+                 :sx {"& .MuiDataGrid-row" {:cursor :pointer}}}]]))
 
 
 ;; >> Panel
@@ -123,7 +145,7 @@
       [mui/tabs {:value case-view
                  :on-change (fn [_ value] (rf/dispatch [::set-case-view (keyword value)]))}
        [mui/tab {:label "List" :value :card}]
-       [mui/tab {:label "Grid" :value :data-grid}]]]
+       [mui/tab {:label "Table" :value :data-grid}]]]
      [mui/box {:margin-top 1}
       (if (= case-view :data-grid)
         [data-grid-list cases]

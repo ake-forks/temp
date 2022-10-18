@@ -34,7 +34,7 @@
         body))))
 
 (defn spa [_]
-  (page {:title "shadow-cljs Full Stack - App"}
+  (page {:title "Probate Tree"}
     [:div#app]
     (h/include-js "/js/compiled/app.js")))
 
