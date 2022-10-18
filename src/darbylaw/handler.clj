@@ -54,16 +54,6 @@
     (handler (-> req
                (assoc :xtdb-node xtdb-node)))))
 
-(defn routes []
-  [["/" {:get (fn [_req] (r/redirect "/app/admin"))}]
-   ["/app" {:get (fn [_req] (r/redirect "/app/admin"))}]
-   ["/app{*path}" {:get spa}]
-   [""
-    {:middleware [wrap-xtdb-node]}
-    ["/healthcheck" {:get do-healthcheck}]
-    ["/api"
-     (api.case/routes)]]])
-
 (defn authenticated?
   [username password]
   (let [auth (get-in config/config [:web-server :auth])]
@@ -79,6 +69,17 @@
       handler
       (wrap-basic-authentication handler authenticated?))))
 
+(defn routes []
+  [["/healthcheck" {:middleware [wrap-xtdb-node]
+                    :get do-healthcheck}]
+   [""
+    {:middleware [[create-auth-middleware authenticated?]]}
+    ["/" {:get (fn [_req] (r/redirect "/app/admin"))}]
+    ["/app" {:get (fn [_req] (r/redirect "/app/admin"))}]
+    ["/app{*path}" {:get spa}]
+    ["/api" {:middleware [wrap-xtdb-node]}
+     (api.case/routes)]]])
+
 (defn make-router []
   (ring/router
     (routes)
@@ -90,8 +91,7 @@
 
      :data {:coercion reitit.coercion.malli/coercion
             :muuntaja muuntaja-instance
-            :middleware [[create-auth-middleware authenticated?]
-                         [wrap-cors
+            :middleware [[wrap-cors
                           :access-control-allow-origin [#".*"]
                           :access-control-allow-methods [:get :put :post :delete]]
                          parameters/parameters-middleware
