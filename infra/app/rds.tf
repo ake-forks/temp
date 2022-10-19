@@ -1,7 +1,7 @@
 # >> RDS
 
 resource "aws_db_subnet_group" "xtdb-backend" {
-  name = "main"
+  name = "xtdb-subnet-group_${terraform.workspace}"
   # TODO: Change to private or sepearte subnets entirely
   subnet_ids = data.aws_subnets.public.ids
 }
