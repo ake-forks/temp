@@ -5,6 +5,11 @@ locals {
       hosted_zone_name = "probatetree.com"
       subdomain        = "www"
     }
+    staging = {
+      hosted_zone_id   = "Z0021879STRZ8VWEL8XM"
+      hosted_zone_name = "probatetree.com"
+      subdomain        = "staging"
+    }
   }
   config = lookup(local.environments, terraform.workspace)
 }
