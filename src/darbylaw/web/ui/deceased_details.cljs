@@ -196,7 +196,7 @@
 (defonce form-state (r/atom nil))
 
 (defn panel []
-  (let [route-params @(rf/subscribe [::routes/route-params])] ;route-params = UUID of case
+  (let [route-params @(rf/subscribe [::ui/path-params])] ;route-params = UUID of case
     [mui/container {:max-width :md}
      [fork/form
       {:state form-state

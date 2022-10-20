@@ -1,25 +1,31 @@
 (ns darbylaw.web.core
   (:require
-   [reagent.dom :as rdom]
    [re-frame.core :as re-frame]
    [breaking-point.core :as bp]
-   [darbylaw.web.routes :as routes]
    [darbylaw.web.views :as views]
    [darbylaw.web.config :as config]
-   [day8.re-frame.http-fx]))
+   [day8.re-frame.http-fx]
+   [kee-frame.core :as kf]))
 
 (defn dev-setup []
   (when config/debug?
     (println "dev mode")))
 
+(defn start! []
+  (kf/start!
+    {:routes [["/app/about" :about]
+              ["/app/admin" :admin]
+              ["/app/create-case" :create-case]
+              ["/app/case/:case-id" :dashboard]
+              ["/app/case/:case-id/deceased-details" :deceased-details]]
+     :root-component [views/main-panel]
+     :debug? true}))
+
 (defn ^:dev/after-load mount-root []
   (re-frame/clear-subscription-cache!)
-  (let [root-el (.getElementById js/document "app")]
-    (rdom/unmount-component-at-node root-el)
-    (rdom/render [views/main-panel] root-el)))
+  (start!))
 
 (defn init []
-  (routes/start!)
   (re-frame/dispatch-sync [::bp/set-breakpoints
                            {:breakpoints [:mobile
                                           768

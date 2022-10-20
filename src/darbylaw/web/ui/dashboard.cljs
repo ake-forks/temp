@@ -9,18 +9,10 @@
     [clojure.pprint :as pp]
     [darbylaw.web.ui.bank :as bank]))
 
-
-
-(rf/reg-sub ::route-params
-  (fn [db _]
-    (:route-params db)))
-
 (defn get-case-id []
   (do
-    (pp/pprint (str "sub: " @(rf/subscribe [::route-params])))
-    (pp/pprint (str "case-id: " (:case-id @(rf/subscribe [::route-params]))))))
-
-
+    (pp/pprint (str "sub: " @(rf/subscribe [::ui/path-params])))
+    (pp/pprint (str "case-id: " (:case-id @(rf/subscribe [::ui/path-params]))))))
 
 (rf/reg-event-fx ::load-success
   (fn [{:keys [db]} [_ response]]
@@ -88,7 +80,7 @@
     (:current-case db)))
 
 (defn panel []
-  (let [case-id (-> @(rf/subscribe [::route-params])
+  (let [case-id (-> @(rf/subscribe [::ui/path-params])
                   :case-id)
         current-case @(rf/subscribe [::current-case])]
     (assert case-id)

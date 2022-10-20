@@ -1,6 +1,6 @@
 (ns darbylaw.web.views
   (:require
-    [re-frame.core :as re-frame]
+    [re-frame.core :as rf]
     [darbylaw.web.routes :as routes]
     [reagent-mui.styles :as mui-styles]
     [reagent-mui.components :as mui]
@@ -14,10 +14,18 @@
     [darbylaw.web.ui.deceased-details]
     [darbylaw.web.ui.admin]
     [darbylaw.web.ui.case]
-    darbylaw.web.ui.dashboard))
+    [darbylaw.web.ui.dashboard]))
+
+(defn add-panel-suffix [k]
+  (keyword (str (name k) "-panel")))
+
+(rf/reg-sub ::active-panel
+  (fn [db _]
+    (when-some [route (-> db :kee-frame/route :data :name)]
+      (add-panel-suffix route))))
 
 (defn main-panel []
-  (let [active-panel (re-frame/subscribe [::routes/active-panel])]
+  (let [active-panel (rf/subscribe [::active-panel])]
     [mui-styles/theme-provider
      (mui-styles/create-theme theme/theme)
      [mui/css-baseline]
