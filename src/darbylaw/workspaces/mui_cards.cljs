@@ -65,33 +65,112 @@
 
 
 
-(defn asset-item [name amount]
-  [mui/stack {:sx {:margin-top "0.3rem" :margin-bottom "0.2rem"} :direction :row :spacing 0.5 :justify-content :space-between :align-items :center}
-   [icon/mui-account-balance]
-   [mui/typography {:variant :h5} name]
-   [mui/typography {:variant :h5} "£" amount]])
+
+
+
+
+
 
 
 (defn add-account []
-
   [mui/stack {:sx {:padding "0.2rem"} :direction :row :spacing 0.5 :justify-content :flex-start :align-items :center}
-
    [mui/typography {:variant :h5} "add account"]
    [icon/mui-add]])
 
+(defn asset-item [icon name amount]
+  [mui/stack {:sx {:margin-top "0.3rem" :margin-bottom "0.2rem"} :direction :row :spacing 0.5 :justify-content :space-between :align-items :center}
+   [:<>
+    (case icon
+      1 [:img {:width "20rem" :src "/images/BCS.svg"}]
+      0 [:img {:width "20rem" :src "/images/SAN.svg"}])]
+   [mui/typography {:variant :h5} name]
+   [mui/typography {:variant :h5} "£" amount]])
 
 (defn asset-card []
   [mui/card {:className (style/mui-default)}
    [mui/card-content
-    [mui/typography {:variant :h5 :sx {:font-weight :bold}} "bank accounts"]
+    [mui/typography {:variant :h5 :sx {:font-weight :bold}} "banks"]
     [mui/divider {:variant :middle}]
-    [asset-item "Barclays" 5000]
+    [asset-item 1 "Barclays" 5000]
     [mui/divider {:variant :middle}]
-    [asset-item "Santander" 3500]
+    [asset-item 0 "Santander" 3500]
     [mui/divider {:variant :middle}]]
 
    [mui/card-action-area
     [add-account]]])
+
+
+;single account assets
+
+(defn account-item [icon acc-no sort-code amount]
+  [mui/stack
+   [mui/stack {:sx {:margin-top "0.3rem" :margin-bottom "0.2rem"}
+               :direction :row :spacing 0.5
+               :align-items :center
+               :justify-content :space-between}
+    [:<> (case icon
+           1 [:img {:width "20rem" :src "/images/BCS.svg"}]
+           0 [:img {:width "20rem" :src "/images/SAN.svg"}])]
+    [mui/typography {:variant :h5 :sx {:text-align :end}} "£" amount]]
+   [mui/stack {:sx {:margin-top "0.3rem" :margin-bottom "0.2rem"}
+               :direction :row :spacing 0.5
+               :align-items :center
+               :justify-content :space-between}
+    [mui/typography {:variant :h5} acc-no]
+    [mui/typography {:variant :h5} sort-code]]])
+
+
+(defn account-asset-card []
+  [mui/card {:className (style/mui-default)}
+   [mui/card-content
+    [mui/typography {:variant :h5 :sx {:font-weight :bold}} "bank accounts"]
+    [mui/divider {:variant :middle}]
+    [account-item 0 12341234 "01-02-03" 5000]
+    [mui/divider {:variant :middle}]
+    [account-item 1 14786540 "05-01-44" -300]
+    [mui/divider {:variant :middle}]
+    [account-item 1 98991231 "05-81-67" 600]
+    [mui/divider {:variant :middle}]]
+
+   [mui/card-action-area
+    [add-account]]])
+
+
+
+(defn account-with-bank-item [icon acc-no sort-code amount]
+  [mui/stack
+   [mui/stack {:sx {:margin-top "0.3rem" :margin-bottom "0.2rem"}
+               :direction :row :spacing 0.5
+               :align-items :center
+               :justify-content :space-between}
+    [:<> (case icon
+           1 [:img {:width "20rem" :src "/images/BCS.svg"}]
+           0 [:img {:width "20rem" :src "/images/SAN.svg"}])]
+    [mui/typography {:variant :h5} (if (= icon 0) "Santander" "Barclays")]
+    [mui/typography {:variant :h5 :sx {:text-align :end}} "£" amount]]
+   [mui/stack {:sx {:margin-top "0.3rem" :margin-bottom "0.2rem"}
+               :direction :row :spacing 0.5
+               :align-items :center
+               :justify-content :space-between}
+    [mui/typography {:variant :h5} acc-no]
+    [mui/typography {:variant :h5} sort-code]]])
+
+(defn account-with-bank-name []
+  [mui/card {:className (style/mui-default)}
+   [mui/card-content
+    [mui/typography {:variant :h5 :sx {:font-weight :bold}} "bank accounts"]
+    [mui/divider {:variant :middle}]
+    [account-with-bank-item 0 12341234 "01-02-03" 5000]
+    [mui/divider {:variant :middle}]
+    [account-with-bank-item 1 14786540 "05-01-44" -300]
+    [mui/divider {:variant :middle}]
+    [account-with-bank-item 1 98991231 "05-81-67" 600]
+    [mui/divider {:variant :middle}]]
+   [mui/card-action-area
+    [add-account]]])
+
+
+
 
 
 
@@ -182,6 +261,15 @@
 (ws/defcard bank-card
   (ct.react/react-card
     (reagent/as-element [asset-card])))
+
+(ws/defcard account-card
+  (ct.react/react-card
+    (reagent/as-element [account-asset-card])))
+
+(ws/defcard account-card-with-name
+  (ct.react/react-card
+    (reagent/as-element [account-with-bank-name])))
+
 
 (ws/defcard get-started-form
   (ct.react/react-card

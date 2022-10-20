@@ -16,13 +16,6 @@
   (fn [db _]
     (:route-params db)))
 
-(defn get-case-id []
-  (do
-    (pp/pprint (str "sub: " @(rf/subscribe [::route-params])))
-    (pp/pprint (str "case-id: " (:case-id @(rf/subscribe [::route-params]))))))
-
-
-
 (rf/reg-event-fx ::load-success
   (fn [{:keys [db]} [_ response]]
     (println "success" response)
@@ -50,37 +43,33 @@
 
 (enable-console-print!)
 
-(def banks {"Santander" 1500 "HSBC" 895})
-(def utilities {"British Gas" -300 "EON" 0 "three" 20})
 
-(defn asset-item [name amount]
+(defn asset-item [name]
   [mui/box
    [mui/card-action-area {:onClick #(println name) :sx {:padding-top "0.5rem" :padding-bottom "0.5rem"}}
     [mui/stack {:spacing 0.5 :direction :row :justify-content :space-between}
      [mui/typography {:variant :h6} name]
-     [mui/typography {:variant :h6} "£" amount]]]
+     [mui/typography {:variant :h6} "£100"]]]
    [mui/divider {:variant "middle"}]])
 
-(defn add-asset [type]
-  [mui/card-action-area {:onClick #(bank/add-bank-toggle) :sx {:padding-top "0.5rem"}}
+(defn add-asset [case-id]
+  [mui/card-action-area {:on-click #(rf/dispatch [::ui/navigate [:bank {:case-id case-id}]]) :sx {:padding-top "0.5rem"}}
    [mui/stack {:direction :row :spacing 2 :align-items :baseline}
-    [mui/typography {:variant :h5} "add " type]
+    [mui/typography {:variant :h5} "add bank"]
     [ui/icon-add]]])
 
 
-
-(defn asset-card [type data]
+(defn asset-card [current-case case-id]
   [mui/card
    [mui/card-content
-    [mui/typography {:variant :h5 :sx {:font-weight 600}} type " accounts"]
+    [mui/button {:on-click #(print (:banks current-case))} "test"]
+    [mui/typography {:variant :h5 :sx {:font-weight 600}} "banks"]
     [mui/divider]
-    (map (fn [[key value]] (asset-item key value)) data)
-
-    [add-asset type]]])
-
-
-
-
+    (map
+      (fn [[_ {:keys [bank-name]}]]
+        [asset-item bank-name])
+      (:banks current-case))
+    [add-asset case-id]]])
 
 (defn card-holder [] [mui/box {:sx {:width "100%" :height 200 :background-color "#d3d3d3" :border-radius "4px"}}])
 
@@ -97,11 +86,7 @@
 
     [mui/container {:style {:max-width "100%"}}
      [c/navbar]
-
-
-
      [mui/container {:maxWidth :xl :class (styles/main-content)}
-
       [mui/stack {:spacing 3}
        [mui/stack {:direction :row :justify-content :space-between :align-items :baseline}
 
@@ -109,7 +94,7 @@
          (if (nil? current-case)
            [mui/skeleton {:width "5rem"}]
            (str "your "
-             (-> current-case :deceased :relationship str/lower-case)
+             (-> current-case :deceased :relationship)
              "'s estate"))]
         [mui/typography {:variant :h2} (if (nil? current-case) [mui/skeleton {:width "5rem"}] (str "case # " (subs (-> current-case :id .toString) 0 6)))]]
        [mui/box {:sx {:width 1100 :height 150 :background-color "#808080" :border-radius "4px"}}]]
@@ -119,15 +104,7 @@
        [mui/stack {:direction :row :spacing 2}
         [mui/grid {:container true :spacing 2 :columns 3}
          [mui/grid {:item true :xs 1}
-          [asset-card "bank" banks]]
-         [mui/grid {:item true :xs 1}
-          [asset-card "utility" utilities]]
-         [mui/grid {:item true :xs 1}
-          [asset-card "bank" banks]]]
-
-
-
-
+          [asset-card current-case case-id]]]
 
         [mui/stack {:spacing 2}
          [mui/box {:sx {:width 200 :height 250 :background-color "#808080" :border-radius "4px"}}]

@@ -21,9 +21,7 @@
   {:palette
    {:primary {:main teal}
     :secondary {:main orange}}
-    ;:btn {:main rich-black
-    ;      :light rich-black
-    ;      :dark rich-black}}
+  
 
    :typography
    {:font-family "'Poppins', Helvetica,sans-serif"
@@ -37,10 +35,11 @@
    :components
    {:MuiButton {:variants
                 [{:props {:variant :contained}
-                  :style {:background-color rich-black
+                  :style {:backgroundColor rich-black
                           :color off-white
-                          :border-radius 0
-                          :text-transform :lowercase}}]}
+                          :borderRadius 0
+                          :textTransform :lowercase}}]}
     :MuiTextField {:defaultProps {:variant :filled}}
-    :MuiSelect {:defaultProps {:variant :filled}}
-    :MuiDivider {:defaultProps {:variant "middle" :role "presentation"}}}})
+    :MuiSelect {:defaultProps {:variant :filled}}}})
+
+

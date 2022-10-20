@@ -13,7 +13,11 @@
              "/create-case" :create-case
              ["/case/" :case-id] {"" :dashboard
                                   "/deceased-details" :deceased-details}
-             "/admin" :admin}]))
+             "/admin" :admin
+             ["/bank/" :case-id] {"" :bank}}]))
+
+
+
 
 
 

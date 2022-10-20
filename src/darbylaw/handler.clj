@@ -75,7 +75,7 @@
             :muuntaja muuntaja-instance
             :middleware [[wrap-cors
                           :access-control-allow-origin [#".*"]
-                          :access-control-allow-methods [:get :put :post :delete]]
+                          :access-control-allow-methods [:get :put :post :delete :patch]]
                          parameters/parameters-middleware
                          muuntaja/format-negotiate-middleware
                          muuntaja/format-response-middleware
@@ -93,7 +93,7 @@
   (ring/ring-handler
     (make-router)
     (ring/routes
-      (ring/redirect-trailing-slash-handler) ; TODO: this is not working?
+      (ring/redirect-trailing-slash-handler)                ; TODO: this is not working?
       (ring/create-resource-handler {:path "/" :root "/public"})
       (ring/create-default-handler))))
 

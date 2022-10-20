@@ -20,3 +20,14 @@
     [mui/button {:variant :text} "terms and conditions"]]])
 
 
+(def list-of-banks
+  ["HSBC Holdings"
+   "Lloyds Banking Group"
+   "Royal Bank of Scotland Group"
+   "Barclays"
+   "Standard Chartered"
+   "Santander UK"
+   "Nationwide Building Society"
+   "Schroders"
+   "Close Brothers Group plc"
+   "Coventry Building Society"])
