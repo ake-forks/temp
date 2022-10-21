@@ -7,7 +7,6 @@
             [darbylaw.web.ui :as ui]
             [clojure.string :as str]
             [re-frame.core :as rf]
-            [ajax.core :as ajax]
             [darbylaw.workspaces.workspace-icons :as icon])
   (:require-macros [reagent-mui.util :refer [react-component]]))
 
@@ -15,30 +14,24 @@
   (fn [db _]
     (:current-case db)))
 
-
 (rf/reg-sub ::route-params
   (fn [db _]
     (:route-params db)))
 
-
 (rf/reg-event-fx ::add-bank-success
   (fn [{:keys [db]} [_ {:keys [path]} response]]
-    {:db (assoc db :success response)
+    {:db (fork/set-submitting db path false)
      ::ui/navigate [:dashboard {:case-id (:id response)}]}))
-
-
-
 
 (rf/reg-event-fx ::add-bank-failure
   (fn [{:keys [db]} [_ {:keys [path]} response]]
-    {:db (assoc db :failure response)}))
-
-
+    {:db (do (assoc db :failure response)
+             (fork/set-submitting db path false))}))
 
 (rf/reg-event-fx ::add-bank
-  (fn [_ [_ case-id {:keys [values] :as fork-params}]]
-    (print "add bank " values)
-    {:http-xhrio
+  (fn [{:keys [db]} [_ case-id {:keys [path values] :as fork-params}]]
+    {:db (fork/set-submitting db path true)
+     :http-xhrio
      (ui/build-http
        {:method :patch
         :uri (str "/api/bank/" case-id)
@@ -46,26 +39,10 @@
         :on-success [::add-bank-success fork-params]
         :on-failure [::add-bank-failure fork-params]})}))
 
-
-
 (rf/reg-event-fx ::submit!
   (fn [{:keys [db]} [_ case-id {:keys [path values] :as fork-params}]]
     (print fork-params)
     {:dispatch [::add-bank case-id fork-params]}))
-
-
-(defonce saved-state (r/atom {:bank-name "" :accounts {}}))
-
-
-(defn common-input-props
-  [k
-   {:keys [values handle-change handle-blur] :as fork-args}]
-  (cond-> {:name k
-           :value (get values k)
-           :onChange handle-change
-           :onBlur handle-blur}))
-
-
 
 
 (defn bank-select [{:keys [values set-handle-change handle-blur] :as fork-args}]
@@ -82,52 +59,6 @@
                                       :required true
                                       :onBlur handle-blur})])}])
 
-
-(defn add-account [{:keys [values handle-change handle-blur] :as fork-args}]
-  [:<>
-   [mui/stack {:direction :row :spacing 1}
-    [mui/text-field (merge (common-input-props :account-number fork-args)
-                      {:label "account number"
-                       :required true
-                       :full-width true})]
-
-    [mui/text-field (merge (common-input-props :sort-code fork-args)
-                      {:label "sort code"
-                       :required true
-                       :full-width true
-                       :inputProps {:maxLength 8}})]
-
-
-    [mui/text-field (merge (common-input-props :estimated-value fork-args)
-                      {:label "estimated value"
-                       :required true
-                       :full-width true
-                       :inputProps {:maxLength 8}
-                       :InputProps {:start-adornment (r/as-element [mui/input-adornment {:position :start} "£"])}})]
-    [mui/form-group
-     [mui/form-control-label {
-                              :control (r/as-element [mui/checkbox (common-input-props :joint-checkbox fork-args)])
-                              :label "Joint Account?"}]]]
-   (if (true? (:joint-checkbox values))
-     [mui/text-field (merge (common-input-props :joint-details fork-args) {:label "Name of Other Account Holder" :full-width true})]
-     [:<>])])
-
-
-
-
-
-(defn submit-buttons [fork-args]
-  [mui/stack {:spacing 1
-              :direction :row
-              :justify-content :space-between}
-   [mui/button {:onClick #(print (:values fork-args)) :variant :contained :full-width true} "cancel"]
-   [mui/button {:type :submit :variant :contained :full-width true} "save"]])
-
-
-
-
-
-
 (defn account-array-fn
   [_props
    {:fieldarray/keys [fields
@@ -141,6 +72,9 @@
        ^{:key idx}
        [:<>
         [mui/stack {:spacing 1 :direction :row}
+         (if (> idx 0)
+           [mui/icon-button {:on-click #(when (> (count fields) 1) (remove idx))}
+            [ui/icon-delete]] [:<>])
          [mui/text-field {:name :sort-code
                           :value (get field :sort-code)
                           :label "sort code"
@@ -168,12 +102,15 @@
                                                                          :label "estimated value"
                                                                          :on-change #(handle-change % idx)}])
                                    :label "Joint Account?"}]]]
+
         (if (true? (get field :joint-check))
           [mui/text-field {:name :joint-info
                            :value (get field :joint-info)
                            :label "name of other account holder"
                            :on-change #(handle-change % idx)}]
+
           [:<>])])
+
      fields)
    [mui/button {:on-click #(insert {:sort-code "" :account-number "" :estimated-value ""})
                 :style {:text-transform "none" :align-self "baseline" :font-size "1.5rem"}
@@ -186,12 +123,17 @@
         "account"
         (str (get (:values _props) :bank-name) " account")))]])
 
-
-
-
+(defn submit-buttons [fork-args case-id]
+  [mui/stack {:spacing 1
+              :direction :row
+              :justify-content :space-between}
+   [mui/button {:onClick #(rf/dispatch [::ui/navigate [:dashboard {:case-id case-id}]]) :variant :contained :full-width true} "cancel"]
+   [mui/button {:type :submit :variant :contained :full-width true} "save"]])
 
 (defn bank-panel [{:keys [values handle-submit] :as fork-args}]
-  (let [current-case @(rf/subscribe [::current-case])]
+  (let [current-case @(rf/subscribe [::current-case])
+        case-id (-> @(rf/subscribe [::route-params]) :case-id)]
+
     [:form {:on-submit handle-submit}
      [mui/container {:style {:margin-top "4rem"}}
       [mui/stack {:spacing 1}
@@ -200,35 +142,30 @@
        [mui/typography {:variant :h6}
         (str "To the best of your knowledge, enter the details for all of your "
           (-> current-case :deceased :relationship) "'s accounts")
-
         (if (str/blank? (get values :bank-name)) "." (str " with " (get values :bank-name) "."))]
-
-
-       #_[add-account fork-args]
        [fork/field-array {:props fork-args
                           :name :account}
         account-array-fn]
-
-       [submit-buttons fork-args]]]]))
+       [submit-buttons fork-args case-id]]]]))
 
 (defonce form-state (r/atom nil))
 
 (defn panel []
-  (let [case-id (-> @(rf/subscribe [::route-params])
-                  :case-id)
-        current-case @(rf/subscribe [::current-case])]
+  (let [case-id (-> @(rf/subscribe [::route-params]) :case-id)]
     [fork/form
      {
       :state form-state
       :clean-on-unmount? true
-      :on-submit #_(cljs.pprint/pprint case-id %) #(rf/dispatch [::submit! case-id %])
+      :on-submit #(rf/dispatch [::submit! case-id %])
       :keywordize-keys true
       :prevent-default? true
-      :initial-values {:account [{:sort-code "" :account-number "" :estimated-value ""}]}}
+      :initial-values {:bank-name "" :account [{:sort-code "" :account-number "" :estimated-value ""}]}}
      (fn [fork-args]
-       [bank-panel (ui/mui-fork-args fork-args)])]))
-
-
+       [:<>
+        [c/navbar]
+        (rf/dispatch [::load! form-state])
+        [bank-panel (ui/mui-fork-args fork-args)]
+        [c/footer]])]))
 
 (defmethod routes/panels :bank-panel [] [panel])
 

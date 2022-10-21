@@ -1,14 +1,11 @@
 (ns darbylaw.web.ui.dashboard
   (:require
-    [clojure.string :as str]
     [reagent-mui.components :as mui]
     [darbylaw.web.ui.components :as c]
     [darbylaw.web.ui :as ui]
     [darbylaw.web.styles :as styles]
     [darbylaw.web.routes :as routes]
-    [re-frame.core :as rf]
-    [clojure.pprint :as pp]
-    [darbylaw.web.ui.bank :as bank]))
+    [re-frame.core :as rf]))
 
 
 
@@ -24,9 +21,7 @@
 (rf/reg-event-db
   ::load-failure
   (fn [db [_ case-id result]]
-    ;; result is a map containing details of the failure
     (assoc db :failure-http-result result :case-id case-id)))
-
 
 (rf/reg-event-fx ::load!
   (fn [_ [_ case-id]]
@@ -44,32 +39,31 @@
 (enable-console-print!)
 
 
-(defn asset-item [name]
+(defn bank-item [bank]
   [mui/box
-   [mui/card-action-area {:onClick #(println name) :sx {:padding-top "0.5rem" :padding-bottom "0.5rem"}}
+   [mui/card-action-area {:onClick #(println (val bank)) :sx {:padding-top "0.5rem" :padding-bottom "0.5rem"}}
     [mui/stack {:spacing 0.5 :direction :row :justify-content :space-between}
-     [mui/typography {:variant :h6} name]
-     [mui/typography {:variant :h6} "£100"]]]
+     [mui/typography {:variant :h6} (key bank)]
+     [mui/typography {:variant :h6} (str "£ " (reduce + (map (fn [acc] (js/parseFloat (:estimated-value acc))) (:accounts (val bank)))))]]]
    [mui/divider {:variant "middle"}]])
 
-(defn add-asset [case-id]
+(defn add-bank [case-id]
   [mui/card-action-area {:on-click #(rf/dispatch [::ui/navigate [:bank {:case-id case-id}]]) :sx {:padding-top "0.5rem"}}
    [mui/stack {:direction :row :spacing 2 :align-items :baseline}
     [mui/typography {:variant :h5} "add bank"]
     [ui/icon-add]]])
 
-
-(defn asset-card [current-case case-id]
+(defn bank-card [current-case case-id]
   [mui/card
    [mui/card-content
     [mui/button {:on-click #(print (:banks current-case))} "test"]
     [mui/typography {:variant :h5 :sx {:font-weight 600}} "banks"]
     [mui/divider]
     (map
-      (fn [[_ {:keys [bank-name]}]]
-        [asset-item bank-name])
+      (fn [bank]
+        [bank-item bank])
       (:banks current-case))
-    [add-asset case-id]]])
+    [add-bank case-id]]])
 
 (defn card-holder [] [mui/box {:sx {:width "100%" :height 200 :background-color "#d3d3d3" :border-radius "4px"}}])
 
@@ -104,7 +98,7 @@
        [mui/stack {:direction :row :spacing 2}
         [mui/grid {:container true :spacing 2 :columns 3}
          [mui/grid {:item true :xs 1}
-          [asset-card current-case case-id]]]
+          [bank-card current-case case-id]]]
 
         [mui/stack {:spacing 2}
          [mui/box {:sx {:width 200 :height 250 :background-color "#808080" :border-radius "4px"}}]
