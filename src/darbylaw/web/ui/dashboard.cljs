@@ -56,7 +56,6 @@
 (defn bank-card [current-case case-id]
   [mui/card
    [mui/card-content
-    [mui/button {:on-click #(print (:banks current-case))} "test"]
     [mui/typography {:variant :h5 :sx {:font-weight 600}} "banks"]
     [mui/divider]
     (map
