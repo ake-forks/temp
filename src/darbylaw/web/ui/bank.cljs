@@ -10,6 +10,20 @@
             [darbylaw.workspaces.workspace-icons :as icon])
   (:require-macros [reagent-mui.util :refer [react-component]]))
 
+(rf/reg-event-db
+  ::show-bank-modal
+  (fn [db _]
+    (assoc-in db [:modal/bank-modal] true)))
+
+(rf/reg-event-db
+  ::hide-bank-modal
+  (fn [db _]
+    (assoc-in db [:modal/bank-modal] false)))
+
+(rf/reg-sub ::bank-modal
+  (fn [db _]
+    (:modal/bank-modal db)))
+
 (rf/reg-sub ::current-case
   (fn [db _]
     (:current-case db)))
@@ -20,8 +34,8 @@
 
 (rf/reg-event-fx ::add-bank-success
   (fn [{:keys [db]} [_ {:keys [path]} response]]
-    {:db (fork/set-submitting db path false)
-     ::ui/navigate [:dashboard {:case-id (:id response)}]}))
+    {:db (fork/set-submitting db path false)}
+    (rf/dispatch [::hide-bank-modal])))
 
 (rf/reg-event-fx ::add-bank-failure
   (fn [{:keys [db]} [_ {:keys [path]} response]]
@@ -41,7 +55,6 @@
 
 (rf/reg-event-fx ::submit!
   (fn [{:keys [db]} [_ case-id {:keys [path values] :as fork-params}]]
-    (print fork-params)
     {:dispatch [::add-bank case-id fork-params]}))
 
 
@@ -127,16 +140,34 @@
   [mui/stack {:spacing 1
               :direction :row
               :justify-content :space-between}
-   [mui/button {:onClick #(rf/dispatch [::ui/navigate [:dashboard {:case-id case-id}]]) :variant :contained :full-width true} "cancel"]
+   [mui/button {:onClick #(rf/dispatch [::hide-bank-modal]) :variant :contained :full-width true} "cancel"]
    [mui/button {:type :submit :variant :contained :full-width true} "save"]])
 
-(defn bank-panel [{:keys [values handle-submit] :as fork-args}]
+#_(defn bank-panel [{:keys [values handle-submit] :as fork-args}]
+    (let [current-case @(rf/subscribe [::current-case])
+          case-id (-> @(rf/subscribe [::route-params]) :case-id)]
+
+      [:form {:on-submit handle-submit}
+       [mui/container {:style {:margin-top "4rem"}}
+        [mui/stack {:spacing 1}
+         [mui/typography {:variant :h3} "add a bank"]
+         [bank-select fork-args]
+         [mui/typography {:variant :h6}
+          (str "To the best of your knowledge, enter the details for all of your "
+            (-> current-case :deceased :relationship) "'s accounts")
+          (if (str/blank? (get values :bank-name)) "." (str " with " (get values :bank-name) "."))]
+         [fork/field-array {:props fork-args
+                            :name :account}
+          account-array-fn]]]]))
+
+
+(defn modal-panel [{:keys [values handle-submit] :as fork-args}]
   (let [current-case @(rf/subscribe [::current-case])
         case-id (-> @(rf/subscribe [::route-params]) :case-id)]
 
     [:form {:on-submit handle-submit}
-     [mui/container {:style {:margin-top "4rem"}}
-      [mui/stack {:spacing 1}
+     [mui/container {:style {:margin-top "4rem" :background-color :white}}
+      [mui/stack {:spacing 1 :style {:padding "1rem"}}
        [mui/typography {:variant :h3} "add a bank"]
        [bank-select fork-args]
        [mui/typography {:variant :h6}
@@ -146,11 +177,12 @@
        [fork/field-array {:props fork-args
                           :name :account}
         account-array-fn]
-       [submit-buttons fork-args case-id]]]]))
+       [submit-buttons]]]]))
+
 
 (defonce form-state (r/atom nil))
 
-(defn panel []
+(defn modal []
   (let [case-id (-> @(rf/subscribe [::route-params]) :case-id)]
     [fork/form
      {
@@ -161,11 +193,25 @@
       :prevent-default? true
       :initial-values {:bank-name "" :account [{:sort-code "" :account-number "" :estimated-value ""}]}}
      (fn [fork-args]
-       [:<>
-        [c/navbar]
-        (rf/dispatch [::load! form-state])
-        [bank-panel (ui/mui-fork-args fork-args)]
-        [c/footer]])]))
+       [modal-panel (ui/mui-fork-args fork-args)])]))
 
-(defmethod routes/panels :bank-panel [] [panel])
+
+#_(defn panel []
+    (let [case-id (-> @(rf/subscribe [::route-params]) :case-id)]
+      [fork/form
+       {
+        :state form-state
+        :clean-on-unmount? true
+        :on-submit #(rf/dispatch [::submit! case-id %])
+        :keywordize-keys true
+        :prevent-default? true
+        :initial-values {:bank-name "" :account [{:sort-code "" :account-number "" :estimated-value ""}]}}
+       (fn [fork-args]
+         [:<>
+          [c/navbar]
+
+          [bank-panel (ui/mui-fork-args fork-args)]
+          [c/footer]])]))
+
+#_(defmethod routes/panels :bank-panel [] [panel])
 
