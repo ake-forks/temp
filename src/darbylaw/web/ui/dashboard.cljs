@@ -86,7 +86,7 @@
    [mui/card-action-area {:on-click #(rf/dispatch [::ui/navigate [:go-to-bank {:case-id case-id :bank-id (get-bank-id bank)}]])
                           :sx {:padding-top "0.5rem" :padding-bottom "0.5rem"}}
     [mui/stack {:spacing 0.5 :direction :row :justify-content :space-between}
-     (print bank)
+
      [mui/typography {:variant :h6} (:name (second bank))]
      [mui/typography {:variant :h6} (str "£ " (reduce + (map (fn [acc] (js/parseFloat (:estimated-value acc))) (:accounts (val bank)))))]]]
    [mui/divider {:variant "middle"}]])
@@ -106,7 +106,6 @@
       (fn [bank]
         [bank-item bank case-id])
       (filter-asset current-case "asset.bank"))
-
     [add-bank case-id]]])
 
 
@@ -124,7 +123,10 @@
     [mui/container {:style {:max-width "100%"}}
      [c/navbar]
 
+
+
      [mui/container {:maxWidth :xl :class (styles/main-content)}
+
       [mui/stack {:spacing 3}
        [mui/stack {:direction :row :justify-content :space-between :align-items :baseline}
         [mui/typography {:variant :h1}

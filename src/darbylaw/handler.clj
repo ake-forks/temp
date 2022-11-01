@@ -7,6 +7,7 @@
     [reitit.ring.middleware.dev]
     [reitit.coercion.malli]
     [reitit.coercion]
+    [ring.middleware.basic-authentication :refer [wrap-basic-authentication]]
     [muuntaja.core :as m]
     [ring.middleware.cors :refer [wrap-cors]]
     [ring.util.response :as r]
@@ -15,7 +16,8 @@
     [mount.core :as mount]
     [darbylaw.web.theme :as theme]
     [darbylaw.xtdb-node :refer [xtdb-node]]
-    [darbylaw.api.case :as api.case]))
+    [darbylaw.api.case :as api.case]
+    [darbylaw.config :as config]))
 
 (defn page [meta-info & body]
   (r/response
@@ -32,7 +34,7 @@
         body))))
 
 (defn spa [_]
-  (page {:title "shadow-cljs Full Stack - App"}
+  (page {:title "Probate Tree"}
     [:div#app]
     (h/include-js "/js/compiled/app.js")))
 
@@ -52,14 +54,30 @@
     (handler (-> req
                (assoc :xtdb-node xtdb-node)))))
 
+(defn authenticated?
+  [username password]
+  (let [auth (get-in config/config [:web-server :auth])]
+    (if (= auth :none)
+      true
+      (and (contains? auth username)
+           (= (get auth username) password)))))
+
+(defn create-auth-middleware
+  [handler authenticated?]
+  (let [auth (get-in config/config [:web-server :auth])]
+    (if (= auth :none)
+      handler
+      (wrap-basic-authentication handler authenticated?))))
+
 (defn routes []
-  [["/" {:get (fn [_req] (r/redirect "/app/admin"))}]
-   ["/app" {:get (fn [_req] (r/redirect "/app/admin"))}]
-   ["/app{*path}" {:get spa}]
+  [["/healthcheck" {:middleware [wrap-xtdb-node]
+                    :get do-healthcheck}]
    [""
-    {:middleware [wrap-xtdb-node]}
-    ["/healthcheck" {:get do-healthcheck}]
-    ["/api"
+    {:middleware [[create-auth-middleware authenticated?]]}
+    ["/" {:get (fn [_req] (r/redirect "/app/admin"))}]
+    ["/app" {:get (fn [_req] (r/redirect "/app/admin"))}]
+    ["/app{*path}" {:get spa}]
+    ["/api" {:middleware [wrap-xtdb-node]}
      (api.case/routes)]]])
 
 (defn make-router []

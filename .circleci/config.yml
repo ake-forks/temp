@@ -88,7 +88,7 @@ jobs:
           docker_layer_caching: true
       - run:
           name: Build Application Docker Image
-          command: docker build -t probatetree-production:latest .
+          command: docker build -t probatetree-staging:latest .
       # We only push the docker image when on the `main` branch
       - when:
           condition:
@@ -96,7 +96,7 @@ jobs:
           steps:
             - ecr_push_image:
                 environment: production
-                image_name: probatetree-production
+                image_name: probatetree-staging
   deploy:
     working_directory: /app
     docker:
@@ -110,7 +110,7 @@ jobs:
           working_directory: ./infra/app
           command: |
             terraform init -input=false
-            terraform workspace select production
+            terraform workspace select staging
       - run:
           name: Terraform Plan
           working_directory: ./infra/app

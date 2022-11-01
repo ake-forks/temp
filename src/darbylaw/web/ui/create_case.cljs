@@ -8,12 +8,24 @@
             [reagent-mui.components :as mui]
             [reagent-mui.x.date-picker :as mui-date]
             [darbylaw.web.ui :as ui]
-            ["material-ui-phone-number$default" :as MuiPhoneNumber]
+            ["material-ui-phone-number-2$default" :as MuiPhoneNumber]
             [reagent-mui.material.text-field :as mui-text-field]
             [darbylaw.web.util.phone :as phone]
             [darbylaw.web.util.email :as email]
             [clojure.string :as str]
-            [applied-science.js-interop :as j]))
+            [applied-science.js-interop :as j]
+            [kee-frame.core :as kf]))
+
+(defonce form-state (r/atom nil))
+
+(kf/reg-controller :create-case
+  {:params (fn [route-data]
+             (when (= :create-case (-> route-data :data :name))
+               true))
+   :start (fn [& _]
+            (reset! form-state nil))
+   :stop (fn [& _]
+           (reset! form-state nil))})
 
 (rf/reg-event-fx ::create-case-success
   (fn [{:keys [db]} [_ {:keys [path]} response]]
@@ -237,8 +249,6 @@
       [address-fields fork-args]]
      [submit-button fork-args]]]])
 
-(defonce form-state (r/atom nil))
-
 (defn not-nil
   ([]
    (not-nil {}))
@@ -367,7 +377,7 @@
     (def test-data
       {:street1 "Sesame", :email "test@test.com", :forename "John",
        :building "12", :phone "888999888", :town "Bristol",
-       :surname "Doe", :postcode "SW1W 0NY", :title "Mr", :dob "01/01/1979"})
+       :surname "Doe", :postcode "SW1W 0NY", :title "Mr"})
     (swap! form-state assoc :values test-data))
   (darbylaw.web.core/mount-root))
 

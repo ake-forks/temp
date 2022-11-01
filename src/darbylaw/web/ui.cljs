@@ -13,9 +13,10 @@
     [reagent-mui.icons.delete-icon]
     [reagent.core :as r]
     [re-frame.core :as rf]
-    [darbylaw.web.routes :as routes]
     [ajax.core :as ajax]
-    [applied-science.js-interop :as j]))
+    [applied-science.js-interop :as j]
+    [kee-frame.router :as kf-router]
+    [accountant.core :as accountant]))
 
 (def icon-add reagent-mui.icons.add/add)
 (def icon-help-outline reagent-mui.icons.help-outline/help-outline)
@@ -34,17 +35,15 @@
               :icon (r/as-element [icon-help-outline {:fontSize :inherit}])}
    message])
 
-(defn do-navigate [nav-fn route]
+(defn coerce-route [route]
   (cond
-    (keyword? route) (nav-fn route nil)
-    (sequential? route) (let [[route-name params] route]
-                          (nav-fn route-name params))
-    :else (assert false
-            (str "Handler must be a keyword or a vector of 2, but is " route))))
+    (vector? route) route
+    (keyword? route) [route]
+    :else (assert "Route type not supported: " route)))
 
 (rf/reg-fx ::navigate
   (fn [route]
-    (do-navigate routes/navigate! route)))
+    (kf-router/goto (coerce-route route))))
 
 (rf/reg-event-fx ::navigate
   (fn [_ [_ route]]
@@ -52,11 +51,15 @@
 
 (rf/reg-fx ::navigate-no-history
   (fn [route]
-    (do-navigate routes/navigate-replacing! route)))
+    (.replaceToken accountant/history (kf-router/url (coerce-route route)))))
 
 (rf/reg-event-fx ::navigate-no-history
   (fn [_ [_ route]]
     {::navigate-no-history route}))
+
+(rf/reg-sub ::path-params
+  (fn [db _]
+    (-> db :kee-frame/route :path-params)))
 
 (defn- add-getAttribute!
   "Adds .getAttribute() method to a Material UI event.
@@ -84,7 +87,7 @@
      :format (ajax/transit-request-format)
      :response-format (ajax/transit-response-format
                         {:keywords? true
-                         ; bidi needs a cljs UUID, instead of a Transit UUID. See:
+                         ; Using a cljs UUID, instead of a Transit UUID, for no surprises. See:
                          ; https://groups.google.com/g/clojurescript/c/_B52tadgUgw/m/7r6uCh_EBgAJ
                          :handlers {"u" cljs.core/uuid}})}
     params))

@@ -5,6 +5,11 @@ locals {
       hosted_zone_name = "probatetree.com"
       subdomain        = "www"
     }
+    staging = {
+      hosted_zone_id   = "Z0021879STRZ8VWEL8XM"
+      hosted_zone_name = "probatetree.com"
+      subdomain        = "staging"
+    }
   }
   config = lookup(local.environments, terraform.workspace)
 }
@@ -18,6 +23,20 @@ resource "aws_ecr_repository" "probatetree" {
 
 resource "aws_ecs_cluster" "probatetree" {
   name = "probatetree-${terraform.workspace}"
+}
+
+
+
+# >> Secrets
+
+resource "aws_ssm_parameter" "auth-map" {
+  name  = "ProbateTree_AuthMap_${terraform.workspace}"
+  type  = "SecureString"
+  value = "{}"
+
+  lifecycle {
+    ignore_changes = [value]
+  }
 }
 
 
@@ -83,6 +102,10 @@ resource "aws_ecs_task_definition" "probatetree" {
           {
             "name" : "DATABASE_PASSWORD"
             "valueFrom" : aws_ssm_parameter.xtdb-backend-admin-password.arn
+          },
+          {
+            "name" : "AUTH_MAP"
+            "valueFrom" : aws_ssm_parameter.auth-map.arn
           }
         ]
         logConfiguration = {
