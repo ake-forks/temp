@@ -8,7 +8,8 @@
     [darbylaw.web.routes :as routes]
     [darbylaw.web.ui.bank :as bank]
     [re-frame.core :as rf]
-    [reagent.core :as r]))
+    [reagent.core :as r]
+    ))
 
 
 
@@ -40,6 +41,28 @@
         :on-success [::load-success]
         :on-failure [::load-failure case-id]})}))
 
+
+(rf/reg-event-fx ::load-banks-success
+  (fn [{:keys [db]} [_ response]]
+    (println "success" response)
+    {:db (assoc db :banks response)}))
+
+(rf/reg-event-fx ::load-banks-failure
+  (fn [{:keys [db]} [_ response]]
+    (println "failure" response)
+    {:db (assoc db :banks-failure response)}))
+
+(rf/reg-event-fx ::load-banks
+  (fn [_ _]
+    {:http-xhrio
+
+     (ui/build-http
+       {:method :get
+        :uri (str "/api/banks")
+        :on-success [::load-banks-success]
+        :on-failure [::load-banks-failure]})}))
+
+
 (rf/reg-sub ::current-case
   (fn [db]
     (:current-case db)))
@@ -48,12 +71,23 @@
   (fn [db _]
     (:modal/bank-modal db)))
 
+(rf/reg-sub ::all-banks
+  (fn [db _]
+    (:banks db)))
 
-(defn bank-item [bank]
+(defn filter-asset [current-case type]
+  (filter #(= (:type (second %)) type) (:assets current-case)))
+
+(defn get-bank-id [bank]
+  (first (key bank)))
+
+(defn bank-item [bank case-id]
   [mui/box
-   [mui/card-action-area {:onClick #(println (val bank)) :sx {:padding-top "0.5rem" :padding-bottom "0.5rem"}}
+   [mui/card-action-area {:on-click #(rf/dispatch [::ui/navigate [:go-to-bank {:case-id case-id :bank-id (get-bank-id bank)}]])
+                          :sx {:padding-top "0.5rem" :padding-bottom "0.5rem"}}
     [mui/stack {:spacing 0.5 :direction :row :justify-content :space-between}
-     [mui/typography {:variant :h6} (key bank)]
+     (print bank)
+     [mui/typography {:variant :h6} (:name (second bank))]
      [mui/typography {:variant :h6} (str "£ " (reduce + (map (fn [acc] (js/parseFloat (:estimated-value acc))) (:accounts (val bank)))))]]]
    [mui/divider {:variant "middle"}]])
 
@@ -70,8 +104,9 @@
     [mui/divider]
     (map
       (fn [bank]
-        [bank-item bank])
-      (:banks current-case))
+        [bank-item bank case-id])
+      (filter-asset current-case "asset.bank"))
+
     [add-bank case-id]]])
 
 
@@ -80,12 +115,15 @@
   (let [case-id (-> @(rf/subscribe [::route-params])
                   :case-id)
         current-case @(rf/subscribe [::current-case])
-        bank-modal-open @(rf/subscribe [::bank-modal])]
+        bank-modal-open @(rf/subscribe [::bank-modal])
+        all-banks @(rf/subscribe [::all-banks])]
     (assert case-id)
     (rf/dispatch [::load! case-id])
+    (rf/dispatch [::load-banks])
 
     [mui/container {:style {:max-width "100%"}}
      [c/navbar]
+
      [mui/container {:maxWidth :xl :class (styles/main-content)}
       [mui/stack {:spacing 3}
        [mui/stack {:direction :row :justify-content :space-between :align-items :baseline}
@@ -102,7 +140,7 @@
        [mui/modal
         {:open (if (nil? bank-modal-open) false bank-modal-open)
          :on-close nil}
-        [trap-focus/trap-focus (r/as-element [bank/modal])]]
+        [trap-focus/trap-focus (r/as-element [bank/modal all-banks])]]
        [mui/stack {:direction :row :spacing 2}
         [mui/grid {:container true :spacing 2 :columns 3}
          [mui/grid {:item true :xs 1}

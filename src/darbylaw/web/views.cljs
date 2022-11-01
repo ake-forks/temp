@@ -15,7 +15,8 @@
     [darbylaw.web.ui.admin]
     [darbylaw.web.ui.case]
     [darbylaw.web.ui.dashboard]
-    [darbylaw.web.ui.bank]))
+    [darbylaw.web.ui.bank]
+    [darbylaw.web.ui.view-bank]))
 
 (defn main-panel []
   (let [active-panel (re-frame/subscribe [::routes/active-panel])]

@@ -14,7 +14,9 @@
              ["/case/" :case-id] {"" :dashboard
                                   "/deceased-details" :deceased-details}
              "/admin" :admin
-             ["/bank/" :case-id] {"" :bank}}]))
+             ["/bank/" :case-id] {"" :bank}
+             ["/case/" :case-id "/view-bank/" :bank-id] {"" :go-to-bank}}]))
+
 
 
 

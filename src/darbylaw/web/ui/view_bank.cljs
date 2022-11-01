@@ -1,0 +1,120 @@
+(ns darbylaw.web.ui.view-bank
+  (:require [re-frame.core :as rf]
+            [reagent-mui.components :as mui]
+            [darbylaw.web.routes :as routes]
+            [darbylaw.web.ui.components :as c]
+            [darbylaw.web.styles :as styles]
+
+            [reagent.core :as r]
+            [darbylaw.web.ui :as ui]))
+
+(rf/reg-event-fx
+  ::load-success
+  (fn [{:keys [db]} [_ response]]
+    (println "success" response)
+    {:db (assoc db :current-case response)}))
+
+(rf/reg-event-db
+  ::load-failure
+  (fn [db [_ case-id result]]
+    (assoc db :failure-http-result result :case-id case-id)))
+
+(rf/reg-event-fx ::get-case!
+  (fn [_ [_ case-id]]
+    {:http-xhrio
+     (ui/build-http
+       {:method :get
+        :uri (str "/api/case/" case-id)
+        :on-success [::load-success]
+        :on-failure [::load-failure case-id]})}))
+
+(rf/reg-event-fx ::load!
+  (fn [_ [_ case-id]]
+    {:dispatch [::get-case! case-id]}))
+
+(rf/reg-sub ::route-params
+  (fn [db _]
+    (:route-params db)))
+
+(rf/reg-sub ::current-banks
+  (fn [db _]
+    (:assets (:current-case db))))
+
+(defn display-accounts [accounts]
+  [mui/stack {:spacing 1 :style {:margin-top "1rem"}}
+   (map (fn [acc]
+          (let [disabled (r/atom true)]
+            [mui/stack {:spacing 1 :direction :row :justify-content :space-between}
+             [mui/text-field {:label "sort code" :value (:sort-code acc) :disabled @disabled}]
+             [mui/text-field {:label "account number" :value (:account-number acc) :disabled @disabled}]
+             [mui/text-field {:label "estimated value" :value (:sort-code acc) :disabled @disabled}]
+             [mui/button
+              {:start-icon (r/as-element [ui/icon-edit])
+               :on-click #(reset! disabled false)}]
+             [mui/button
+              {:start-icon (r/as-element [ui/icon-delete])
+               :on-click #(print @disabled)}]]))
+     accounts)])
+
+(defn display-timeline []
+  [mui/stepper {:orientation "vertical"
+                :active-step 2}
+   [mui/step {:expanded true}
+    [mui/step-label "you have completed all account information"]
+    [mui/step-content
+     [mui/button {:variant :contained} "view summary PDF"]]]
+   [mui/step {:expanded true}
+    [mui/step-label "we have sent the notification letter"]
+    [mui/step-content
+     [mui/button {:variant :contained} "view letter sent PDF"]]]
+   [mui/step {:expanded true}
+    [mui/step-label "we are waiting to receive confirmation and valuations from the bank"]
+    [mui/step-content
+     [mui/button {:variant :contained :disabled true} "view letter received PDF"]]]
+   [mui/step {:expanded true}
+    [mui/step-label "we will confirm the finalised valuations for these accounts"]
+    [mui/step-content
+     [mui/button {:variant :contained :disabled true} "enter valuations"]]]])
+
+
+(defn display-info []
+  (let [case-id (-> @(rf/subscribe [::route-params])
+                  :case-id)
+        bank-id (:bank-id @(rf/subscribe [::route-params]))
+        current-bank (get @(rf/subscribe [::current-banks]) (list bank-id))]
+    (assert case-id)
+    (rf/dispatch [::load! case-id])
+    [mui/container {:class (styles/main-content)}
+     [mui/stack {:spacing 1}
+      [mui/stack {:direction :row :justify-content :space-between}
+       [mui/typography {:variant :h3} (:name current-bank)]
+       [mui/stack {:spacing 0.5}
+        [mui/typography {:variant :h5 :sx {:color "#B08BBF"}} (str "total estimated value £"
+                                                                (reduce + (map #(js/parseFloat (:estimated-value %)) (:accounts current-bank))))]
+        [mui/typography {:variant :h5 :sx {:color "#E0711C"}} "total confirmed value £0"]]]
+      [mui/divider]
+      [mui/stack {:spacing 5 :direction :row}
+       [mui/stack {:spacing 1 :style {:max-width "60%"}}
+        [mui/typography {:variant :h5} "progress summary"]
+        [mui/typography {:variant :p}
+         (str "On the right is an overview for the current progress you've made in finalising
+         the accounts with " (:name current-bank) ".
+         You can view and download all the correspondence and documentation sent and
+         received at each stage of the process by clicking through the steps.")]
+        [mui/typography {:variant :p}
+         "Below are all the accounts that you have informed us of, and you can edit these details up
+         until we receive the bank's valuations."]
+        [mui/typography {:variant :p :style {}}
+         "Something doesn't look right? "
+         [mui/link "Get in touch"] " for assistance."]]
+       [display-timeline]]
+      [display-accounts (:accounts current-bank)]]]))
+
+(defn panel []
+  [mui/container
+   [c/navbar]
+   [display-info]
+   [c/footer]])
+
+(defmethod routes/panels :go-to-bank-panel [] [panel])
+
