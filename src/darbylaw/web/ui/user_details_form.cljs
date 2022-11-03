@@ -36,9 +36,9 @@
       {:db (fork/set-submitting db path false)}
       (case create|edit
         :create {::ui/navigate-no-history
-                 [:deceased-details {:case-id (let [case-id (:id response)]
-                                                (assert case-id)
-                                                case-id)}]}
+                 [:create-deceased-details {:case-id (let [case-id (:id response)]
+                                                       (assert case-id)
+                                                       case-id)}]}
         :edit {::reset-form! [fork-params response]}))))
 
 (rf/reg-event-fx ::submit-failure
@@ -263,9 +263,16 @@
   ; To fill out the form programmatically:
   (do
     (def test-data
-      {:street1 "Sesame", :email "test@test.com", :forename "John",
-       :building "12", :phone "888999888", :town "Bristol",
-       :surname "Doe", :postcode "SW1W 0NY", :title "Mr"})
+      {:title "Mr",
+       :forename "John",
+       :surname "Doe",
+       :dob (dayjs/read "1979-12-13")
+       :email "test@test.com",
+       :phone "+441234123456",
+       :street-number "12",
+       :street1 "Sesame",
+       :town "Bristol",
+       :postcode "SW1W 0NY"})
     (swap! form-state assoc :values test-data))
   (darbylaw.web.core/mount-root))
 

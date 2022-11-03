@@ -29,6 +29,12 @@
 (def personal-representative--props
   (mapv first (drop 1 personal-representative--schema)))
 
+(def deceased--schema
+  [:map
+   [:relationship :string]
+   [:forename :string]
+   [:surname :string]])
+
 (defn create-case [{:keys [xtdb-node body-params]}]
   (let [case-id (random-uuid)
         pr-info-id (random-uuid)
@@ -50,21 +56,16 @@
      (when-let [e (xtdb.api/entity (xtdb.api/db ctx) eid)]
        [[::xt/put (merge e m)]])))
 
-(defn update-case [{:keys [xtdb-node path-params body-params]}]
-  (let [deceased-info (:deceased body-params)]
-    (when deceased-info
-      (let [case-id (parse-uuid (:case-id path-params))
-            deceased-info-id (random-uuid)]
-        (xt/await-tx xtdb-node
-          (xt/submit-tx xtdb-node
-            [[::xt/put {:xt/id ::merge
-                        :xt/fn merge__txn-fn}]
-             [::xt/fn ::merge case-id {:ref/deceased.info.id deceased-info-id}]
-             [::xt/put (merge
-                         deceased-info
-                         {:type :probate.deceased.info
-                          :xt/id deceased-info-id})]])))
-      {:status 204})))
+(defn update-deceased-info [{:keys [xtdb-node path-params body-params]}]
+  (let [case-id (parse-uuid (:case-id path-params))
+        deceased-info body-params]
+    (xt/await-tx xtdb-node
+      (xt/submit-tx xtdb-node
+        [[::xt/put {:xt/id ::merge
+                    :xt/fn merge__txn-fn}]
+         [::xt/fn ::merge case-id {:deceased.info deceased-info}]]))
+    {:status 200
+     :body deceased-info}))
 
 (def update-ref__txn-fn
   '(fn [ctx eid ref-k m]
@@ -149,16 +150,16 @@
                                         [:personal-representative
                                          personal-representative--schema]]}}}]
 
-   ["/case/:case-id" {:patch {:handler update-case}
-                      :get {:handler get-case}}]
-                     ;:coercion reitit.coercion.malli/coercion}}]
-                     ;:parameters {:path {:case-id uuid?}
-                     ;             :body [:map
-                     ;                    [:deceased any?]]}}}]
+   ["/case/:case-id" {:get {:handler get-case}}]
 
    ["/case/:case-id/personal-representative"
     {:put {:handler update-pr-info
            :coercion reitit.coercion.malli/coercion
            :parameters {:body personal-representative--schema}}}]
+
+   ["/case/:case-id/deceased"
+    {:put {:handler update-deceased-info
+           :coercion reitit.coercion.malli/coercion
+           :parameters {:body deceased--schema}}}]
 
    ["/cases" {:get {:handler get-cases}}]])

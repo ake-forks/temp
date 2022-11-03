@@ -11,11 +11,11 @@
     ["dayjs/locale/en-gb"]
 
     [darbylaw.web.ui.create-case]
-    [darbylaw.web.ui.deceased-details]
+    [darbylaw.web.ui.create-deceased-details]
     [darbylaw.web.ui.admin]
     [darbylaw.web.ui.case]
     [darbylaw.web.ui.dashboard]
-    [darbylaw.web.ui.user-details]))
+    [darbylaw.web.ui.settings]))
 
 (defn add-panel-suffix [k]
   (keyword (str (name k) "-panel")))

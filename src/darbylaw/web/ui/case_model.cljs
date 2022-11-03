@@ -15,6 +15,10 @@
   :<- [::current-case]
   #(-> % :personal-representative :forename))
 
+(rf/reg-sub ::relationship
+  :<- [::current-case]
+  #(-> % :deceased :relationship))
+
 (rf/reg-event-fx ::load-case!
   (fn [_ [_ case-id]]
     {:http-xhrio
