@@ -2,8 +2,11 @@
   (:require [darbylaw.web.routes :as routes]
             [re-frame.core :as rf]
             [fork.re-frame :as fork]
+            [vlad.core :as v]
             [reagent-mui.components :as mui]
             [darbylaw.web.ui :as ui]
+            [darbylaw.web.util.form :as form]
+            [darbylaw.web.util.vlad :as v-utils]
             [reagent.core :as r]))
 
 (rf/reg-event-fx ::add-to-case-success
@@ -30,185 +33,209 @@
     {:db (fork/set-submitting db path true)
      :dispatch [::add-to-case case-id fork-params]}))
 
-(defn deceased-details-form [{:keys [handle-submit
-                                     submitting?
-                                     values]
+(def relationships
+  ["Mother"
+   "Father"
+   "Grandmother"
+   "Grandfather"
+   "Wife"
+   "Husband"
+   "Sister"
+   "Brother"
+   "Child"
+   "Cousin"
+   "Aunt"
+   "Uncle"
+   "Stepparent"
+   "Friend"
+   "Other"])
+
+(defn relationship-field [fork-args]
+  ;; TODO: Fix so that it actually searches it's options
+  [form/autocomplete-field fork-args
+    {:name :relationship
+     :label "Your relationship with the deceased"
+     :options relationships
+     ;; Disable freeSolo?
+     :inner-config {:required true}}])
+
+(defn name-fields [fork-args]
+  [:<>
+   [form/text-field fork-args
+    {:name :forename
+     :label "Forename"
+     :required true
+     :full-width true}]
+   [form/text-field fork-args
+    {:name :middlename
+     :label "Middle Name(s)"
+     :full-width true}]
+   [form/text-field fork-args
+    {:name :surname
+     :label "Surname"
+     :required true
+     :full-width true}]])
+
+(defn deceased-details-form [{:keys [handle-submit submitting?]
                               :as fork-args}]
   [:form
-   {:on-submit handle-submit}
-   [mui/stack {:spacing 1}
+   [mui/container {:max-width :sm :sx {:mb 4}}
+    [mui/stack {:spacing 4}
+     [mui/stack
+      [mui/typography {:variant :h3 :sx {:pt 4 :pb 2}}
+       "deceased's details"]
+      [mui/typography {:variant :p}
+       "We need these details so that we can... {TODO}"]]
 
+     [mui/accordion {:sx {:backgroundColor "rgb(255, 244, 229)"}}
+      [mui/accordion-summary
+       [mui/typography "Notes"]]
+      [mui/accordion-details
+       [ui/???_TO_BE_DEFINED_??? "Add a helper to point to locations on Death Certificate? Like on Credit Card"]
+       [ui/???_TO_BE_DEFINED_??? "Or at least an explanation of what some fields mean"]
+       [ui/???_TO_BE_DEFINED_??? "Maybe an example of valid input?"]]]
 
-    [mui/stack {:direction :row :spacing 1}
+     [mui/stack {:spacing 2}
 
-     [mui/typography {:variant :h6} "Who was the deceased to you?"]
-     [mui/form-control {:required true :full-width true}
-      [mui/input-label {:id :relationship-select} "Relationship"]
-      [mui/select {:label "Relationship"
-                   :labelId :relationship-select
-                   :name :relationship
-                   :value (:relationship values)
-                   ;:onChange (ui/form-handle-change-fn fork-args)
-                   :variant :filled}
-       [mui/menu-item {:disabled true :value "" :key :placeholder} "I'm filling out this form on behalf of my late..."]
-       [mui/menu-item {:value "Mother" :key :Mother} "Mother"]
-       [mui/menu-item {:value "Father" :key :Father} "Father"]
-       [mui/menu-item {:value "Grandmother" :key :Grandmother} "Grandmother"]
-       [mui/menu-item {:value "Grandfather" :key :Grandfather} "Grandfather"]
+      [mui/typography {:variant :h5}
+       "you"]
 
-       [mui/menu-item {:value "Wife" :key :Wife} "Wife"]
-       [mui/menu-item {:value "Husband" :key :Husband} "Husband"]
-       [mui/menu-item {:value "Sister" :key :Sister} "Sister"]
-       [mui/menu-item {:value "Brother" :key :Brother} "Brother"]
-       [mui/menu-item {:value "Child" :key :Child} "Child"]
-       [mui/menu-item {:value "Cousin" :key :Cousin} "Cousin"]
-       [mui/menu-item {:value "Aunt" :key :Aunt} "Aunt"]
-       [mui/menu-item {:value "Uncle" :key :Uncle} "Uncle"]
-       [mui/menu-item {:value "Stepparent" :key :Stepparent} "Step-parent"]
-       [mui/menu-item {:value "Friend" :key :Friend} "Friend"]
-       [mui/menu-item {:value "Other" :key :Other} "Other"]]]]
+      [relationship-field fork-args]
 
+      [mui/typography {:variant :h5}
+       "the deceased"]
 
-    [mui/typography {:variant :h5} "deceased's details"]
+      [mui/stack {:direction :row :spacing 2}
+       [name-fields fork-args]]
 
-    [mui/stack {:direction :row
-                :spacing 1}
+      [form/text-field fork-args
+       {:name :maiden-name
+        :label "Maiden Name (if applicable)"}]
 
-     [mui/text-field {:label "Their Forename"
-                      :required true
-                      :placeholder "Please enter their legal name"
-                      :name :forename
-                      :value (:forename values)
-                      ;:onChange (ui/form-handle-change-fn fork-args)
-                      :full-width true
-                      :variant :filled}]
-     [mui/text-field {:label "Their Middle Name(s)"
-                      :name :middlename
-                      :value (:middlename values)
-                      ;:onChange (ui/form-handle-change-fn fork-args)
-                      :full-width true
-                      :variant :filled}]]
+      [ui/???_TO_BE_DEFINED_??? "Add a little (i) here linking to gov.uk?"]
+      ;; `You can only apply to be recognised as male or female. Non-binary genders are not legally recognised in the UK.`
+      ;; https://www.gov.uk/apply-gender-recognition-certificate
+      [form/autocomplete-field fork-args
+       {:name :sex
+        :label "Legal Sex"
+        :options ["Female" "Male"]
+        :freeSolo false
+        :inner-config {:required true}}]
 
-    [mui/stack {:direction :row
-                :spacing 1}
-     [mui/text-field {:label "Their Surname"
-                      :required true
-                      :name :surname
-                      :value (:surname values)
-                      ;:onChange (ui/form-handle-change-fn fork-args)
-                      :style {:flex-grow 2}
-                      :variant :filled}]
+      [mui/stack {:direction :row :spacing 1}
+       [form/date-picker fork-args
+        {:name :date-of-birth
+         :inner-config {:label-prefix "Date of Birth"
+                        :required true}}]
 
-     [mui/text-field {:label "Maiden Name/Surname at Birth"
-                      :name :birth-surname
-                      :value (:birth-surname values)
-                      ;:onChange (ui/form-handle-change-fn fork-args)
-                      :style {:flex-grow 1}
-                      :variant :filled}]]
+       [form/date-picker fork-args
+        {:name :date-of-death
+         :inner-config {:label-prefix "Date of Death"
+                        :required true}}]]
 
+      [form/text-field fork-args
+       {:name :occupation
+        :label "Occupation"
+        :required true}]
 
+      [form/text-field fork-args
+       {:name :place-of-death
+        :label "Place of Death"
+        :required true}]
 
-    [mui/stack {:direction :row
-                :spacing 1}
-     [mui/stack {:spacing 1 :sx {:width "100%"}}
+      [form/text-field fork-args
+       {:name :cause-of-death
+        :label "Cause of Death"
+        :required true}]
 
-      [mui/text-field {:label "Date of Birth"
-                       :helper-text "Please use format DD/MM/YYYY"
+      [mui/typography {:variant :h5}
+       "the death certificate"]
 
-                       :required true
-                       :name :dob
-                       :value (:dob values)
-                       ;:onChange (ui/form-handle-change-fn fork-args)
-                       :full-width true
-                       :variant :filled}]]
-     [mui/stack {:spacing 1 :sx {:width "100%"}}
+      [mui/stack {:direction :row :spacing 2}
 
+       [form/text-field fork-args
+        {:name :registration-district
+         :label "Registration District"
+         :required true
+         :sx {:width "65%"}}]
 
-      [mui/text-field {:label "Place of Birth"
-                       :required true
-                       :name :pob
-                       :value (:pob values)
-                       ;:onChange (ui/form-handle-change-fn fork-args)
-                       :full-width true
-                       :variant :filled}]]]
+       [form/text-field fork-args
+        {:name :entry-number
+         :label "Entry Number"
+         :required true
+         :sx {:width "35%"}}]]
 
-    [mui/stack {:direction :row :spacing 1}
-     [mui/text-field {:label "Deceased's Occupation"
-                      :required true
-                      :name :occupation
-                      :value (:occupation values)
-                      ;:onChange (ui/form-handle-change-fn fork-args)
-                      :style {:flex-grow 2}
-                      :variant :filled}]
+      [form/text-field fork-args
+       {:name :administrative-area
+        :label "Parish (if specified) and County"
+        :required true}]
 
-     [mui/form-control {:style {:flex-grow 1}}
-      [mui/input-label {:id :sex-select} "Legal Sex"]
-      [mui/select {:label "Legal Sex"
-                   :labelId :sex-select
-                   :name :sex
-                   :value (:sex values)
-                   ;:onChange (ui/form-handle-change-fn fork-args)
-                   :variant :filled}
-       [mui/menu-item {:value "Male" :key :Male} "Male"]
-       [mui/menu-item {:value "Female" :key :Female} "Female"]]]]
+      [mui/stack {:spacing 1}
+       [form/text-field fork-args
+        {:name :name-of-doctor-certifying
+         :label "Name of Doctor Certifying Death"
+         :required true}]
 
+       [form/text-field fork-args
+        {:name :name-of-informant
+         :label "Name of Informant"
+         :required true}]
 
+       [form/text-field fork-args
+        {:name :name-of-registrar
+         :label "Name of Registrar"
+         :required true}]]
 
-    [mui/text-field {:label "Usual Address"
-                     :name :address
-                     :value (:address values)
-                     ;:onChange (ui/form-handle-change-fn fork-args)
-                     :multiline true
-                     :min-rows 3
-                     :variant :filled}]
-
-
-    [mui/stack {:direction :row
-                :spacing 1}
-     [mui/stack {:spacing 1 :sx {:width "100%"}}
-      [mui/input-label {:id :dod-input} "Deceased's Date of Death"]
-      [mui/text-field {:label "DD/MM/YYYY"
-                       :labelId :dod-input
-                       :required true
-                       :name :dod
-                       :value (:dod values)
-                       ;:onChange (ui/form-handle-change-fn fork-args)
-                       :full-width true
-                       :variant :filled}]]
-     [mui/stack {:spacing 1 :sx {:width "100%"}}
-      [mui/input-label {:id :pod-input} "Place of Death"]
-      [mui/text-field {:label "Place of Death"
-                       :labelId :pod-input
-                       :required true
-                       :name :pod
-                       :value (:pod values)
-                       ;:onChange (ui/form-handle-change-fn fork-args)
-                       :full-width true
-                       :variant :filled}]]]
-
-    [ui/???_TO_BE_DEFINED_??? "do we need? occupation, sex, address."]
-    [ui/???_TO_BE_DEFINED_??? "do we add? cause of death, date registered, death certificate number"]
-    [mui/button {:variant :contained
-                 :type :submit
-                 :disabled submitting?}
-     "Create Case"]]])
+      [form/submit-button fork-args
+       {:button {:text "Create Case"
+                 :variant :contained}}]]]]])
 
 (defonce form-state (r/atom nil))
 
 (defn panel []
-  (let [route-params @(rf/subscribe [::ui/path-params])] ;route-params = UUID of case
+  (let [route-params @(rf/subscribe [::ui/path-params])]
     [mui/container {:max-width :md}
      [fork/form
       {:state form-state
-       :on-submit (do
-                    (assert (:case-id route-params))
-                    #(rf/dispatch [::submit! (:case-id route-params) %])) ;% = :state :path :values :dirty :reset
+       :on-submit (let [case-id (:case-id route-params)]
+                    ;; NOTE: Can we use a kf/reg-controller to ensure this?
+                    ;;       Maybe redirect if not set properly
+                    (assert case-id)
+                    #(rf/dispatch [::submit! case-id %]))
        :keywordize-keys true
        :prevent-default? true
-       :initial-values {:relationship ""
-                        :sex ""}}
+       :initial-values {:relationship "" :sex ""}
+       :validation
+       (fn [data]
+         (v/field-errors
+           (v/join
+             (v/attr [:relationship] (v/present))
+             (v/attr [:forename] (v/present))
+             (v/attr [:surname] (v/present))
+             (v/attr [:sex]
+                     (v/chain
+                       (v/present)
+                       (v/one-of #{"Male" "Female"})))
+             (v/attr [:date-of-birth] 
+                     (v/chain
+                       (v-utils/not-nil)
+                       (v-utils/valid-dayjs-date)))
+             (v/attr [:date-of-death] 
+                     (v/chain
+                       (v-utils/not-nil)
+                       (v-utils/valid-dayjs-date)))
+             (v/attr [:occupation] (v/present))
+             (v/attr [:place-of-death] (v/present))
+             (v/attr [:cause-of-death] (v/present))
+             (v/attr [:registration-district] (v/present))
+             (v/attr [:entry-number] (v/present))
+             (v/attr [:administrative-area] (v/present))
+             (v/attr [:name-of-doctor-certifying] (v/present))
+             (v/attr [:name-of-informant] (v/present))
+             (v/attr [:name-of-registrar] (v/present)))
+           data))}
       (fn [fork-args]
-        [deceased-details-form fork-args])]]))
+        [deceased-details-form (ui/mui-fork-args fork-args)])]]))
 
 (defmethod routes/panels :deceased-details-panel [] [panel])
 

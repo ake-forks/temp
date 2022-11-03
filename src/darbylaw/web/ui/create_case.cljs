@@ -10,9 +10,9 @@
             [darbylaw.web.ui :as ui]
             ["material-ui-phone-number-2$default" :as MuiPhoneNumber]
             [reagent-mui.material.text-field :as mui-text-field]
+            [darbylaw.web.util.form :as form]
             [darbylaw.web.util.phone :as phone]
-            [darbylaw.web.util.email :as email]
-            [clojure.string :as str]
+            [darbylaw.web.util.vlad :as v-utils]
             [applied-science.js-interop :as j]
             [kee-frame.core :as kf]))
 
@@ -55,69 +55,24 @@
         :on-success [::create-case-success fork-params]
         :on-failure [::create-case-failure fork-params]})}))
 
-(defn get-error [k {:keys [touched errors attempted-submissions] :as _fork-args}]
-  (and (pos? attempted-submissions)
-       (touched k)
-       (get errors [k])))
-
-(defn error-icon-prop []
-  {:endAdornment
-   (r/as-element
-     [mui/input-adornment {:position :end}
-      [#_ui/icon-error-outline
-       ui/icon-edit
-       #_ui/icon-priority-high
-       {:color :error
-        :sx {:opacity 0.4}}]])})
-
-(defn common-input-field-props
-  [k
-   {:keys [values handle-change handle-blur] :as fork-args}
-   {:keys [error-icon?] :as _options}]
-  (let [error (get-error k fork-args)]
-    (cond-> {:name k
-             :value (get values k)
-             :onChange handle-change
-             :onBlur handle-blur
-             :error (boolean error)
-             :autoComplete :off}
-      error-icon? (assoc :InputProps
-                    (when error
-                      (error-icon-prop))))))
-
-(defn common-text-field-props [k fork-args]
-  (common-input-field-props k fork-args {:error-icon? true}))
-
-(defn title-field [{:keys [values set-handle-change handle-blur] :as fork-args}]
-  [mui/autocomplete
-   {:options ["Mr" "Mrs" "Ms" "Mx" "Dr"]
-    :inputValue (or (get values :title) "")
-    :onInputChange (fn [_evt new-value]
-                     (set-handle-change {:value new-value
-                                         :path [:title]}))
-    :renderInput (react-component [props]
-                   [mui/text-field (merge props
-                                     {:name :title
-                                      :label "Title"
-                                      :required true
-                                      :error (boolean (get-error :title fork-args))
-                                      :onBlur handle-blur})])
-    :freeSolo true
-    :disableClearable true
-    ; no filter:
-    :filterOptions identity}])
+(defn title-field [fork-args]
+  [form/autocomplete-field fork-args
+    {:name :title
+     :label "Title"
+     :options ["Mr" "Mrs" "Ms" "Mx" "Dr"]
+     :inner-config {:required true}}])
 
 (defn name-fields [fork-args]
   [:<>
-   [mui/text-field (merge (common-text-field-props :forename fork-args)
+   [mui/text-field (merge (form/common-text-field-props :forename fork-args)
                      {:required true
                       :label "Forename"
                       :placeholder "Your legal name"
                       :full-width true})]
-   [mui/text-field (merge (common-text-field-props :middlename fork-args)
+   [mui/text-field (merge (form/common-text-field-props :middlename fork-args)
                      {:label "Middle Name(s)"
                       :full-width true})]
-   [mui/text-field (merge (common-text-field-props :surname fork-args)
+   [mui/text-field (merge (form/common-text-field-props :surname fork-args)
                      {:required true
                       :label "Surname"
                       :full-width true})]])
@@ -137,7 +92,7 @@
                      (str "Date of Birth (" date-pattern ")"))
             :required true
             :autoComplete :off
-            :error (boolean (get-error :dob fork-args))
+            :error (boolean (form/get-error :dob fork-args))
             :onBlur handle-blur})]))
     :openTo :year
     :views [:year :month :day]}])
@@ -146,28 +101,28 @@
   [:<>
    [mui/stack {:direction :row
                :spacing 2}
-    [mui/text-field (merge (common-text-field-props :flat fork-args)
+    [mui/text-field (merge (form/common-text-field-props :flat fork-args)
                       {:label "Flat"})]
-    [mui/text-field (merge (common-text-field-props :building fork-args)
+    [mui/text-field (merge (form/common-text-field-props :building fork-args)
                       {:label "Building Name"})]]
    [mui/stack {:direction :row
                :spacing 2}
-    [mui/text-field (merge (common-text-field-props :street-number fork-args)
+    [mui/text-field (merge (form/common-text-field-props :street-number fork-args)
                       {:label "Street Number"
-                       :helperText (get-error :street-number fork-args)})]
-    [mui/text-field (merge (common-text-field-props :street1 fork-args)
+                       :helperText (form/get-error :street-number fork-args)})]
+    [mui/text-field (merge (form/common-text-field-props :street1 fork-args)
                       {:label "Street"
                        :required true
                        :full-width true})]]
-   [mui/text-field (merge (common-text-field-props :street2 fork-args)
+   [mui/text-field (merge (form/common-text-field-props :street2 fork-args)
                      {:label "Address Line 2"
                       :full-width true})]
    [mui/stack {:direction :row :spacing 2}
-    [mui/text-field (merge (common-text-field-props :town fork-args)
+    [mui/text-field (merge (form/common-text-field-props :town fork-args)
                       {:label "Town/City"
                        :required true
                        :full-width true})]
-    [mui/text-field (merge (common-text-field-props :postcode fork-args)
+    [mui/text-field (merge (form/common-text-field-props :postcode fork-args)
                       {:label "Postcode"
                        :required true})]]])
 
@@ -180,18 +135,18 @@
     :onChange #(set-handle-change {:value %
                                    :path [:phone]})
     :onBlur handle-blur
-    :InputProps (let [error (get-error :phone fork-args)]
+    :InputProps (let [error (form/get-error :phone fork-args)]
                   (merge
                     {:inputComponent mui-text-field/input
                      :error (boolean error)}
                     (when error
-                      (error-icon-prop))))
+                      (form/error-icon-prop))))
     :defaultCountry "gb"
     :full-width true
     :variant :filled}])
 
 (defn email-field [fork-args]
-  [mui/text-field (merge (common-text-field-props :email fork-args)
+  [mui/text-field (merge (form/common-text-field-props :email fork-args)
                     {:label "Email"
                      :required true
                      :full-width true})])
@@ -249,88 +204,6 @@
       [address-fields fork-args]]
      [submit-button fork-args]]]])
 
-(defn not-nil
-  ([]
-   (not-nil {}))
-  ([error-data]
-   (v/predicate nil? (merge {:type ::not-nil} error-data))))
-
-(defmethod v/english-translation ::not-nil
-  [{:keys [name]}]
-  (str name " is required."))
-
-(defn valid-dayjs-date
-  ([]
-   (valid-dayjs-date {}))
-  ([error-data]
-   (v/predicate
-     #(not (.isValid %))
-     (merge {:type ::valid-dayjs-date} error-data))))
-
-(defmethod v/english-translation ::valid-dayjs-date
-  [{:keys [name]}]
-  (str name " in not a valid date."))
-
-(defn valid-phone
-  ([]
-   (valid-phone {}))
-  ([error-data]
-   (v/predicate
-     #(not (phone/valid-phone? %))
-     (merge {:type ::valid-phone} error-data))))
-
-(defmethod v/english-translation ::valid-phone
-  [{:keys [name]}]
-  (str name " is not a valid phone."))
-
-(defn valid-email
-  ([]
-   (valid-email {}))
-  ([error-data]
-   (v/predicate
-     #(not (email/valid-email? %))
-     (merge {:type ::valid-email} error-data))))
-
-(defmethod v/english-translation ::valid-email
-  [{:keys [name]}]
-  (str name " is not a valid email."))
-
-(defn present-or-alternative
-  ([selector alt-selector]
-   (present-or-alternative selector alt-selector {}))
-  ([selector alt-selector error-data]
-   (fn [data]
-     (when (and (str/blank? (get-in data selector))
-                (str/blank? (get-in data alt-selector)))
-       [(merge
-          {:type ::present-or-alternative
-           :selector selector
-           :alt-selector alt-selector}
-          error-data)]))))
-
-(defmethod v/english-translation ::present-or-alternative
-  [{:keys [alt-selector]}]
-  (str "...or provide " (do
-                          (assert (= 1 (count alt-selector)))
-                          (case (first alt-selector)
-                            :building "Building Name"))))
-
-(defn either-present
-  ([selectors]
-   (either-present selectors {}))
-  ([selectors error-data]
-   (fn [data]
-     (when (every? str/blank? (map #(get-in data %) selectors))
-       (->> selectors
-         (mapv #(merge
-                  {:type ::either-present
-                   :selector %}
-                  error-data)))))))
-
-(defmethod v/english-translation ::either-present
-  [{:keys [name]}]
-  (str name " is required."))
-
 (defn panel []
   [fork/form
    {:state form-state
@@ -345,21 +218,21 @@
           (v/attr [:forename] (v/present))
           (v/attr [:surname] (v/present))
           (v/attr [:dob] (v/chain
-                           (not-nil)
-                           (valid-dayjs-date)))
+                           (v-utils/not-nil)
+                           (v-utils/valid-dayjs-date)))
 
           (v/attr [:email] (v/chain
                              (v/present)
-                             (valid-email)))
+                             (v-utils/valid-email)))
           (v/attr [:phone] (v/chain
                              (v/present)
-                             (valid-phone)))
+                             (v-utils/valid-phone)))
 
           ; We show Street Number as required, but provide a hint
           ; that Building Name can be provided as an alternative.
-          (present-or-alternative [:street-number] [:building])
+          (v-utils/present-or-alternative [:street-number] [:building])
           ; alternative: show both fields as required when either is blank
-          #_(either-present [[:street-number]]
+          #_(v-utils/either-present [[:street-number]]
                             [:building])
 
           (v/attr [:street1] (v/present))
