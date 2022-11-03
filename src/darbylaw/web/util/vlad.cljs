@@ -2,7 +2,8 @@
   (:require [vlad.core :as v]
             [clojure.string :as str]
             [darbylaw.web.util.phone :as phone]
-            [darbylaw.web.util.email :as email]))
+            [darbylaw.web.util.email :as email]
+            [darbylaw.web.util.dayjs :as dayjs]))
 
 
 (defn not-nil
@@ -25,12 +26,13 @@
    (valid-dayjs-date {}))
   ([error-data]
    (v/predicate
-     #(not (.isValid %))
+     #(not (and (dayjs/date? %)
+                (dayjs/valid? %)))
      (merge {:type ::valid-dayjs-date} error-data))))
 
 (defmethod v/english-translation ::valid-dayjs-date
   [{:keys [name]}]
-  (str name " in not a valid date."))
+  (str name " is not a valid date."))
 
 
 

@@ -8,18 +8,28 @@
 (use-fixtures :once
   test-common/use-ring-handler)
 
-(defn add-body-as-str [resp]
+(defn read-body [resp]
   (cond-> resp
-    (:body resp) (assoc :body-str (slurp (:body resp)))))
+    (:body resp)
+    (update :body #(transit/read (transit/reader % :json)))))
 
 (deftest create_and_get_cases
-  (let [pr-info {:surname "Doe"
+  (let [pr-info {:title "Mr"
                  :forename "John"
+                 :surname "Doe"
+                 :dob "1980-01-21"
+                 :email "john.doe@test.com"
+                 :phone "+441234123456"
+                 :street-number "16"
+                 :street1 "A Street"
+                 :town "London"
                  :postcode "SW1W 0NY"}
-        post-resp (ring-handler
-                    {:request-method :post
-                     :uri "/api/case"
-                     :body-params {:personal-representative pr-info}})]
+        post-resp (read-body
+                    (ring-handler
+                      {:request-method :post
+                       :uri "/api/case"
+                       :body-params {:personal-representative pr-info}
+                       :headers {"accept" "application/transit+json"}}))]
     (is (<= 200 (:status post-resp) 299))
     (let [{get-status :status
            get-body :body} (ring-handler
@@ -32,7 +42,60 @@
       (is (= 1 (count cases)))
       (let [case (first cases)]
         (is (contains? case :id))
-        (is (submap? pr-info (:personal-representative case)))))))
+        (is (submap? pr-info (:personal-representative case)))))
+    (let [case-id (-> post-resp :body :id)
+          updated-data (assoc pr-info
+                         :forename "Joe")]
+      (let [update-resp (ring-handler
+                          {:request-method :put
+                           :uri (str "/api/case/"
+                                  case-id
+                                  "/personal-representative")
+                           :body-params updated-data})]
+        (is (<= 200 (:status update-resp) 299)))
+      (let [{cases :body} (read-body
+                            (ring-handler
+                              {:request-method :get
+                               :uri "/api/cases"
+                               :headers {"accept" "application/transit+json"}}))]
+        (is (= 1 (count cases)))
+        (let [case (first cases)]
+          (is (contains? case :id))
+          (is (submap? updated-data (:personal-representative case)))))
+      (let [{case :body} (read-body
+                           (ring-handler
+                             {:request-method :get
+                              :uri (str "/api/case/" case-id)
+                              :headers {"accept" "application/transit+json"}}))]
+        (is (submap? updated-data (:personal-representative case)))))))
+
+(comment
+  (read-body
+    (ring-handler
+      {:request-method :get
+       :uri "/api/cases"
+       :headers {"accept" "application/transit+json"}}))
+
+  (ring-handler
+    {:request-method :put
+     :uri (str "/api/case/"
+            "be757deb-9cda-4424-a1a2-00e7176dc579"
+            "/personal-representative")
+     :body-params {:street1 "s2",
+                   :email "s@s.com",
+                   :forename "e",
+                   :phone "+441234132412",
+                   :town "t",
+                   :surname "e",
+                   :postcode "pc",
+                   :title "t",
+                   :dob "1919-01-01",
+                   :street-number "1"}})
+
+  (xtdb.api/entity
+    (xtdb.api/db darbylaw.xtdb-node/xtdb-node)
+    :darbylaw.api.case/update-ref)
+  ,)
 
 (deftest create_case_validation_works
   (let [post-resp (ring-handler
@@ -43,6 +106,3 @@
                                     :forename "John"})})]
     (transit/read (transit/reader (:body post-resp) :json))
     (is (= 400 (:status post-resp)))))
-
-
-

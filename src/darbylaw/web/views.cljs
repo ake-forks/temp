@@ -14,7 +14,8 @@
     [darbylaw.web.ui.deceased-details]
     [darbylaw.web.ui.admin]
     [darbylaw.web.ui.case]
-    [darbylaw.web.ui.dashboard]))
+    [darbylaw.web.ui.dashboard]
+    [darbylaw.web.ui.user-details]))
 
 (defn add-panel-suffix [k]
   (keyword (str (name k) "-panel")))
