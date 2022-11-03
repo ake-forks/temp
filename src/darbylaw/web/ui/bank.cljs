@@ -31,7 +31,7 @@
 
 (rf/reg-sub ::route-params
   (fn [db _]
-    (:route-params db)))
+    (:path-params (:kee-frame/route db))))
 
 (rf/reg-event-fx ::add-bank-success
   (fn [{:keys [db]} [_ {:keys [path]} response]]
@@ -61,7 +61,6 @@
 (defn generate-banks [banks]
   (mapv
     (fn [bank] assoc {} :id (:id bank) :label (:common-name bank)) banks))
-
 
 (defn bank-select [{:keys [values set-handle-change handle-blur] :as fork-args} banks]
   [mui/autocomplete
@@ -172,7 +171,7 @@
        [bank-select fork-args banks]
        [mui/typography {:variant :h6}
         (str "To the best of your knowledge, enter the details for all of your "
-          (-> current-case :deceased :relationship) "'s accounts")
+          (-> current-case :deceased :relationship (clojure.string/lower-case)) "'s accounts")
         (if (str/blank? (get values :bank-name)) "." (str " with " (get values :bank-name) "."))]
        [fork/field-array {:props fork-args
                           :name :account}

@@ -4,7 +4,6 @@
             [darbylaw.web.routes :as routes]
             [darbylaw.web.ui.components :as c]
             [darbylaw.web.styles :as styles]
-
             [reagent.core :as r]
             [darbylaw.web.ui :as ui]))
 
@@ -34,7 +33,7 @@
 
 (rf/reg-sub ::route-params
   (fn [db _]
-    (:route-params db)))
+    (:path-params (:kee-frame/route db))))
 
 (rf/reg-sub ::current-banks
   (fn [db _]
@@ -116,5 +115,5 @@
    [display-info]
    [c/footer]])
 
-(defmethod routes/panels :go-to-bank-panel [] [panel])
+(defmethod routes/panels :view-bank-panel [] [panel])
 

@@ -7,15 +7,16 @@
     [darbylaw.web.styles :as styles]
     [darbylaw.web.routes :as routes]
     [darbylaw.web.ui.bank :as bank]
+    [darbylaw.web.util.bank :as bank-util]
     [re-frame.core :as rf]
-    [reagent.core :as r]
-    ))
+    [reagent.core :as r]))
+
 
 
 
 (rf/reg-sub ::route-params
   (fn [db _]
-    (:route-params db)))
+    (:path-params (:kee-frame/route db))))
 
 (rf/reg-event-fx
   ::load-success
@@ -42,38 +43,40 @@
         :on-failure [::load-failure case-id]})}))
 
 
-(rf/reg-event-fx ::load-banks-success
-  (fn [{:keys [db]} [_ response]]
-    (println "success" response)
-    {:db (assoc db :banks response)}))
-
-(rf/reg-event-fx ::load-banks-failure
-  (fn [{:keys [db]} [_ response]]
-    (println "failure" response)
-    {:db (assoc db :banks-failure response)}))
-
-(rf/reg-event-fx ::load-banks
-  (fn [_ _]
-    {:http-xhrio
-
-     (ui/build-http
-       {:method :get
-        :uri (str "/api/banks")
-        :on-success [::load-banks-success]
-        :on-failure [::load-banks-failure]})}))
+;(rf/reg-event-fx ::load-banks-success
+;  (fn [{:keys [db]} [_ response]]
+;    (println "success" response)
+;    {:db (assoc db :banks response)}))
+;
+;(rf/reg-event-fx ::load-banks-failure
+;  (fn [{:keys [db]} [_ response]]
+;    (println "failure" response)
+;    {:db (assoc db :banks-failure response)}))
+;
+;(rf/reg-event-fx ::load-banks
+;  (fn [_ _]
+;
+;    {:http-xhrio
+;
+;     (ui/build-http
+;       {:method :get
+;        :uri (str "/api/banks")
+;        :on-success [::load-banks-success]
+;        :on-failure [::load-banks-failure]})}))
 
 
 (rf/reg-sub ::current-case
   (fn [db]
     (:current-case db)))
 
+
 (rf/reg-sub ::bank-modal
   (fn [db _]
     (:modal/bank-modal db)))
 
-(rf/reg-sub ::all-banks
-  (fn [db _]
-    (:banks db)))
+;(rf/reg-sub ::all-banks
+;  (fn [db _]
+;    (:banks db)))
 
 (defn filter-asset [current-case type]
   (filter #(= (:type (second %)) type) (:assets current-case)))
@@ -83,7 +86,7 @@
 
 (defn bank-item [bank case-id]
   [mui/box
-   [mui/card-action-area {:on-click #(rf/dispatch [::ui/navigate [:go-to-bank {:case-id case-id :bank-id (get-bank-id bank)}]])
+   [mui/card-action-area {:on-click #(rf/dispatch [::ui/navigate [:view-bank {:case-id case-id :bank-id (get-bank-id bank)}]])
                           :sx {:padding-top "0.5rem" :padding-bottom "0.5rem"}}
     [mui/stack {:spacing 0.5 :direction :row :justify-content :space-between}
 
@@ -115,27 +118,23 @@
                   :case-id)
         current-case @(rf/subscribe [::current-case])
         bank-modal-open @(rf/subscribe [::bank-modal])
-        all-banks @(rf/subscribe [::all-banks])]
+        all-banks (bank-util/get-banks)]
     (assert case-id)
     (rf/dispatch [::load! case-id])
     (rf/dispatch [::load-banks])
 
     [mui/container {:style {:max-width "100%"}}
      [c/navbar]
-
-
-
      [mui/container {:maxWidth :xl :class (styles/main-content)}
-
       [mui/stack {:spacing 3}
        [mui/stack {:direction :row :justify-content :space-between :align-items :baseline}
-        [mui/typography {:variant :h1}
+        [mui/typography {:variant :h2}
          (if (nil? current-case)
            [mui/skeleton {:width "5rem"}]
            (str "your "
-             (-> current-case :deceased :relationship)
+             (-> current-case :deceased :relationship (clojure.string/lower-case))
              "'s estate"))]
-        [mui/typography {:variant :h2} (if (nil? current-case) [mui/skeleton {:width "5rem"}] (str "case # " (subs (-> current-case :id .toString) 0 6)))]]
+        [mui/typography {:variant :h3} (if (nil? current-case) [mui/skeleton {:width "5rem"}] (str "case # " (subs (-> current-case :id .toString) 0 6)))]]
        [mui/box {:sx {:width 1100 :height 150 :background-color "#808080" :border-radius "4px"}}]]
       [mui/stack {:spacing 3 :sx {:padding-top "2rem"}}
        [mui/typography {:variant :h3} "estate details"]

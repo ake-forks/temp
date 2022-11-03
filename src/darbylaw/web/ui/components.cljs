@@ -9,9 +9,9 @@
 (defn navbar []
   [mui/app-bar
    [mui/toolbar {:variant :dense :class (styles/navbar)}
-    [mui/typography {:variant :h5} "probate-tree"]
-    [mui/button {:start-icon (r/as-element [ui/icon-person-outline])} "my account"]]
-   #_(ui/???_TO_BE_DEFINED_??? "do we replace probate-tree with a logo img? black or colourful?")])
+    [:img {:src "/images/Probate-tree-narrow.png"}]
+    [mui/button {:start-icon (r/as-element [ui/icon-person-outline])} "my account"]]])
+
 
 (defn footer []
   [mui/app-bar {:position :fixed :sx {:top "auto" :bottom 0}}

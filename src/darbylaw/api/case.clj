@@ -2,7 +2,8 @@
   (:require [xtdb.api :as xt]
             [reitit.coercion]
             [reitit.coercion.malli]
-            [ring.util.response :as ring]))
+            [ring.util.response :as ring]
+            [darbylaw.web.util.bank :as bank-util]))
 
 (defn create-case [{:keys [xtdb-node body-params]}]
   (let [case-id (random-uuid)
@@ -44,17 +45,7 @@
                           :xt/id deceased-info-id})]])))
       {:status 204})))
 
-(defn get-bank-id [bank-name xtdb-node]
-  (->> (xt/q (xt/db xtdb-node)
-         '{:find [(pull case [:xt/id])]
-           :where [[case :common-name bank-name]]
-           :in [bank-name]}
-         bank-name)
-    (map (fn [[case _]]
-           (-> case
-             (clojure.set/rename-keys {:xt/id :id})
-             (apply :id case)
-             (str))))))
+
 
 
 (comment
@@ -77,7 +68,8 @@
   (let [bank-info (get body-params :bank-info)
         bank-name (:bank-name bank-info)
         accounts (:account bank-info)
-        case-id (parse-uuid (:case-id path-params))]
+        case-id (parse-uuid (:case-id path-params))
+        bank-data (bank-util/get-bank-by-common-name bank-name)]
     (when bank-info
       (xt/await-tx xtdb-node
         (xt/submit-tx xtdb-node
@@ -85,8 +77,8 @@
                       :xt/fn update-in__txn-fn}]
            [::xt/put {:xt/id ::merge-in
                       :xt/fn merge-in__txn-fn}]
-           [::xt/fn ::update-in case-id [:assets (get-bank-id bank-name xtdb-node) :accounts] accounts]
-           [::xt/fn ::merge-in case-id [:assets (get-bank-id bank-name xtdb-node)] {:type "asset.bank" :name bank-name}]]))
+           [::xt/fn ::update-in case-id [:assets (:id bank-data) :accounts] accounts]
+           [::xt/fn ::merge-in case-id [:assets (:id bank-data)] {:type "asset.bank" :name bank-name}]]))
       {:status 200
        :body {:id case-id :data bank-info}})))
 
@@ -105,14 +97,7 @@
                (clojure.set/rename-keys {:xt/id :id})
                (clojure.set/rename-keys {:ref/personal-representative.info.id :personal-representative})))))))
 
-(defn get-banks [{:keys [xtdb-node]}]
-  (ring/response
-    (->> (xt/q (xt/db xtdb-node)
-           '{:find [(pull asset [*])]
-             :where [[asset :type "asset.bank"]]})
-      (map (fn [[case _]]
-             (-> case
-               (clojure.set/rename-keys {:xt/id :id})))))))
+
 
 
 (comment
@@ -137,8 +122,8 @@
       (-> (clojure.set/rename-keys (ffirst results)
             {:xt/id :id
              :ref/personal-representative.info.id :personal-representative
-             :ref/deceased.info.id :deceased})
-        #_(update-in results [:banks] (clojure.set/rename-keys :xt/id :id))))))
+             :ref/deceased.info.id :deceased})))))
+
 
 
 
@@ -187,5 +172,5 @@
    ;:parameters {:path {:case-id uuid?}
    ;             :body [:map
    ;                    [:deceased any?]]}}}]
-   ["/cases" {:get {:handler get-cases}}]
-   ["/banks" {:get {:handler get-banks}}]])
+   ["/cases" {:get {:handler get-cases}}]])
+
