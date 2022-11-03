@@ -12,8 +12,6 @@
     [reagent.core :as r]))
 
 
-
-
 (rf/reg-sub ::route-params
   (fn [db _]
     (:path-params (:kee-frame/route db))))
@@ -42,60 +40,31 @@
         :on-success [::load-success]
         :on-failure [::load-failure case-id]})}))
 
-
-;(rf/reg-event-fx ::load-banks-success
-;  (fn [{:keys [db]} [_ response]]
-;    (println "success" response)
-;    {:db (assoc db :banks response)}))
-;
-;(rf/reg-event-fx ::load-banks-failure
-;  (fn [{:keys [db]} [_ response]]
-;    (println "failure" response)
-;    {:db (assoc db :banks-failure response)}))
-;
-;(rf/reg-event-fx ::load-banks
-;  (fn [_ _]
-;
-;    {:http-xhrio
-;
-;     (ui/build-http
-;       {:method :get
-;        :uri (str "/api/banks")
-;        :on-success [::load-banks-success]
-;        :on-failure [::load-banks-failure]})}))
-
-
 (rf/reg-sub ::current-case
   (fn [db]
     (:current-case db)))
-
 
 (rf/reg-sub ::bank-modal
   (fn [db _]
     (:modal/bank-modal db)))
 
-;(rf/reg-sub ::all-banks
-;  (fn [db _]
-;    (:banks db)))
-
 (defn filter-asset [current-case type]
   (filter #(= (:type (second %)) type) (:assets current-case)))
 
-(defn get-bank-id [bank]
-  (first (key bank)))
-
 (defn bank-item [bank case-id]
   [mui/box
-   [mui/card-action-area {:on-click #(rf/dispatch [::ui/navigate [:view-bank {:case-id case-id :bank-id (get-bank-id bank)}]])
+   [mui/card-action-area {:on-click #(rf/dispatch [::ui/navigate [:view-bank {:case-id case-id :bank-id (key bank)}]])
                           :sx {:padding-top "0.5rem" :padding-bottom "0.5rem"}}
     [mui/stack {:spacing 0.5 :direction :row :justify-content :space-between}
-
      [mui/typography {:variant :h6} (:name (second bank))]
      [mui/typography {:variant :h6} (str "£ " (reduce + (map (fn [acc] (js/parseFloat (:estimated-value acc))) (:accounts (val bank)))))]]]
    [mui/divider {:variant "middle"}]])
 
-(defn add-bank []
-  [mui/card-action-area {:on-click #(rf/dispatch [::bank/show-bank-modal]) :sx {:padding-top "0.5rem"}}
+(defn add-bank [current-case]
+  [mui/card-action-area {:on-click #(if (some? (get-in current-case [:deceased :relationship]))
+                                      (rf/dispatch [::bank/show-bank-modal])
+                                      (print "add decased details"))
+                         :sx {:padding-top "0.5rem"}}
    [mui/stack {:direction :row :spacing 2 :align-items :baseline}
     [mui/typography {:variant :h5} "add bank"]
     [ui/icon-add]]])
@@ -109,9 +78,7 @@
       (fn [bank]
         [bank-item bank case-id])
       (filter-asset current-case "asset.bank"))
-    [add-bank case-id]]])
-
-
+    [add-bank current-case case-id]]])
 
 (defn panel []
   (let [case-id (-> @(rf/subscribe [::route-params])
@@ -121,16 +88,14 @@
         all-banks (bank-util/get-banks)]
     (assert case-id)
     (rf/dispatch [::load! case-id])
-    (rf/dispatch [::load-banks])
-
     [mui/container {:style {:max-width "100%"}}
      [c/navbar]
      [mui/container {:maxWidth :xl :class (styles/main-content)}
       [mui/stack {:spacing 3}
        [mui/stack {:direction :row :justify-content :space-between :align-items :baseline}
         [mui/typography {:variant :h2}
-         (if (nil? current-case)
-           [mui/skeleton {:width "5rem"}]
+         (if (nil? (:deceased current-case))
+           (str "welcome")
            (str "your "
              (-> current-case :deceased :relationship (clojure.string/lower-case))
              "'s estate"))]

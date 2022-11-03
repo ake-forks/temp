@@ -21,8 +21,6 @@
   {:palette
    {:primary {:main teal}
     :secondary {:main orange}}
-  
-
    :typography
    {:font-family "'Poppins', Helvetica,sans-serif"
     :h1 {:font-weight 700}
