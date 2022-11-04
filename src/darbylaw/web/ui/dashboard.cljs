@@ -3,13 +3,15 @@
     [reagent-mui.components :as mui]
     [reagent-mui.base.trap-focus :as trap-focus]
     [darbylaw.web.ui.components :as c]
+    [darbylaw.web.ui.progress-bar :as bar]
     [darbylaw.web.ui :as ui]
     [darbylaw.web.styles :as styles]
     [darbylaw.web.routes :as routes]
     [darbylaw.web.ui.bank :as bank]
     [darbylaw.web.util.bank :as bank-util]
     [re-frame.core :as rf]
-    [reagent.core :as r]))
+    [reagent.core :as r]
+    [darbylaw.web.theme :as theme]))
 
 
 
@@ -43,27 +45,6 @@
         :on-failure [::load-failure case-id]})}))
 
 
-;(rf/reg-event-fx ::load-banks-success
-;  (fn [{:keys [db]} [_ response]]
-;    (println "success" response)
-;    {:db (assoc db :banks response)}))
-;
-;(rf/reg-event-fx ::load-banks-failure
-;  (fn [{:keys [db]} [_ response]]
-;    (println "failure" response)
-;    {:db (assoc db :banks-failure response)}))
-;
-;(rf/reg-event-fx ::load-banks
-;  (fn [_ _]
-;
-;    {:http-xhrio
-;
-;     (ui/build-http
-;       {:method :get
-;        :uri (str "/api/banks")
-;        :on-success [::load-banks-success]
-;        :on-failure [::load-banks-failure]})}))
-
 
 (rf/reg-sub ::current-case
   (fn [db]
@@ -73,10 +54,6 @@
 (rf/reg-sub ::bank-modal
   (fn [db _]
     (:modal/bank-modal db)))
-
-;(rf/reg-sub ::all-banks
-;  (fn [db _]
-;    (:banks db)))
 
 (defn filter-asset [current-case type]
   (filter #(= (:type (second %)) type) (:assets current-case)))
@@ -123,33 +100,34 @@
     (rf/dispatch [::load! case-id])
     (rf/dispatch [::load-banks])
 
-    [mui/container {:style {:max-width "100%"}}
-     [c/navbar]
-     [mui/container {:maxWidth :xl :class (styles/main-content)}
-      [mui/stack {:spacing 3}
-       [mui/stack {:direction :row :justify-content :space-between :align-items :baseline}
-        [mui/typography {:variant :h2}
-         (if (nil? current-case)
-           [mui/skeleton {:width "5rem"}]
-           (str "your "
-             (-> current-case :deceased :relationship (clojure.string/lower-case))
-             "'s estate"))]
-        [mui/typography {:variant :h3} (if (nil? current-case) [mui/skeleton {:width "5rem"}] (str "case # " (subs (-> current-case :id .toString) 0 6)))]]
-       [mui/box {:sx {:width 1100 :height 150 :background-color "#808080" :border-radius "4px"}}]]
-      [mui/stack {:spacing 3 :sx {:padding-top "2rem"}}
-       [mui/typography {:variant :h3} "estate details"]
-       [mui/modal
-        {:open (if (nil? bank-modal-open) false bank-modal-open)
-         :on-close nil}
-        [trap-focus/trap-focus (r/as-element [bank/modal all-banks])]]
-       [mui/stack {:direction :row :spacing 2}
-        [mui/grid {:container true :spacing 2 :columns 3}
-         [mui/grid {:item true :xs 1}
-          [bank-card current-case case-id]]]
-        [mui/stack {:spacing 2}
-         [mui/box {:sx {:width 200 :height 250 :background-color "#808080" :border-radius "4px"}}]
-         [mui/box {:sx {:width 200 :height 100 :background-color "#808080" :border-radius "4px"}}]]]]]
-     [c/footer]]))
+    [:<>
+     [mui/container {:style {:max-width "100%" :background-color theme/off-white :padding "5rem"}}
+      [c/navbar]
+      [mui/container {:maxWidth :xl}
+       [mui/stack {:spacing 3 :style {:width "100%"}}
+        [mui/stack {:direction :row :justify-content :space-between :align-items :baseline}
+
+         [mui/typography {:variant :h2} (if (some? current-case) (str "your " (-> current-case :deceased :relationship) "'s estate") "")]
+
+         [mui/typography {:variant :h3} (str "case no. 51345")]]
+        (r/as-element [bar/progress-bar])]]]
+     [mui/container {:style {:max-width "100%"}}
+      [mui/container {:maxWidth :xl}
+       [mui/stack {:spacing 3 :sx {:padding-top "2rem"}}
+        [mui/typography {:variant :h3} "estate details"]
+        [mui/modal
+         {:open (if (nil? bank-modal-open) false bank-modal-open)
+          :on-close nil}
+         [trap-focus/trap-focus (r/as-element [bank/modal all-banks])]]
+        [mui/stack {:direction :row :spacing 2}
+         [mui/grid {:container true :spacing 2 :columns 3}
+          [mui/grid {:item true :xs 1}
+           [bank-card current-case case-id]]]
+         [mui/stack {:spacing 2}
+          [mui/box {:sx {:width 200 :height 250 :background-color "#808080" :border-radius "4px"}}]
+          [mui/box {:sx {:width 200 :height 100 :background-color "#808080" :border-radius "4px"}}]]]]]
+      [c/footer]]]))
+
 
 (defmethod routes/panels :dashboard-panel [] [panel])
 

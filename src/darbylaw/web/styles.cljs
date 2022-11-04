@@ -26,7 +26,6 @@
 
 (defclass footer []
   {:justify-content :space-between
-
    :color theme/pale-grey
    :background-color :white
    :padding-left "3rem"
@@ -34,8 +33,11 @@
   [:button {:color theme/pale-grey :text-transform "lowercase"}])
 
 (defclass main-content []
-  {:padding-top "4rem"
-   })
+  {:padding-top "4rem"})
+
+
+
+
 
 
 
