@@ -10,7 +10,6 @@
 
 (rf/reg-event-db ::load-success
   (fn [db [_ response]]
-    (println "success" response)
     (assoc db :cases response)))
 
 (rf/reg-event-fx ::load-failure

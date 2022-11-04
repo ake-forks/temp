@@ -8,12 +8,12 @@
 (def dev-states
   {#'profile {:start (fn [] :dev)}})
 
-(defn go! []
+(defn start-dev! []
   (mount/start-with-states dev-states))
 
-(defn reset! []
+(defn go! []
   (mount/stop)
-  (ns-tools/refresh :after 'user/go!))
+  (ns-tools/refresh :after 'user/start-dev!))
 
 (comment
   (reset!)

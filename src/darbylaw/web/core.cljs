@@ -16,7 +16,9 @@
     {:routes [["/app/about" :about]
               ["/app/admin" :admin]
               ["/app/create-case" :create-case]
+              ["/app/case/:case-id/create-deceased-details" :create-deceased-details]
               ["/app/case/:case-id" :dashboard]
+              ["/app/case/:case-id/user-details" :user-details]
               ["/app/case/:case-id/deceased-details" :deceased-details]]
      :root-component [views/main-panel]
      :debug? true}))
