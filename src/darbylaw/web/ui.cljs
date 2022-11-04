@@ -2,6 +2,7 @@
   (:require
     [reagent-mui.icons.account-balance]
     [reagent-mui.icons.add]
+    [reagent-mui.icons.arrow-back-sharp]
     [reagent-mui.icons.help-outline]
     [reagent-mui.icons.error-outline]
     [reagent-mui.icons.edit]
@@ -19,6 +20,7 @@
     [accountant.core :as accountant]))
 
 (def icon-add reagent-mui.icons.add/add)
+(def icon-arrow-back-sharp reagent-mui.icons.arrow-back-sharp/arrow-back-sharp)
 (def icon-help-outline reagent-mui.icons.help-outline/help-outline)
 (def icon-error-outline reagent-mui.icons.error-outline/error-outline)
 (def icon-edit reagent-mui.icons.edit/edit)
