@@ -22,13 +22,14 @@
 
 (defn common-input-field-props
   [k
-   {:keys [values handle-change handle-blur] :as fork-args}
+   {:keys [values handle-change handle-blur submitting?] :as fork-args}
    {:keys [error-icon?] :as _options}]
   (let [error (get-error k fork-args)]
     (cond-> {:name k
              :value (get values k)
              :onChange handle-change
              :onBlur handle-blur
+             :disabled submitting?
              :error (boolean error)
              :autoComplete :off}
       error-icon? (assoc :InputProps
@@ -65,7 +66,7 @@
     :options [:aa :ab :ba :bc :ca :cd]
     :inner-config {:required true}
     :groupBy (cljs-js first)}]"
-  [{:keys [values set-handle-change handle-blur] :as fork-args}
+  [{:keys [values set-handle-change handle-blur submitting?] :as fork-args}
    {:keys [name label options inner-config] :as config}]
   (assert name "Missing required arg :name")
   (let [autocomplete-props 
@@ -82,6 +83,7 @@
                                  :error (boolean (get-error name fork-args))
                                  :onBlur handle-blur}
                                 inner-config)])
+         :disabled submitting?
          ;; Allow free text input
          :freeSolo true
          ;; Don't allow clearing input

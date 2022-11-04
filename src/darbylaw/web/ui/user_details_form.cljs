@@ -85,11 +85,12 @@
                       :label "Surname"
                       :full-width true})]])
 
-(defn dob-date-picker [{:keys [values set-handle-change handle-blur] :as fork-args}]
+(defn dob-date-picker [{:keys [values set-handle-change handle-blur submitting?] :as fork-args}]
   [mui-date/date-picker
    {:value (get values :dob)
     :onChange #(set-handle-change {:value %
                                    :path [:dob]})
+    :disabled submitting?
     :renderInput
     (fn [params]
       (r/as-element
@@ -134,7 +135,7 @@
                       {:label "Postcode"
                        :required true})]]])
 
-(defn phone-field [{:keys [values set-handle-change handle-blur] :as fork-args}]
+(defn phone-field [{:keys [values set-handle-change handle-blur submitting?] :as fork-args}]
   [:> MuiPhoneNumber
    {:name :phone
     :value (get values :phone)
@@ -142,6 +143,7 @@
     :required true
     :onChange #(set-handle-change {:value %
                                    :path [:phone]})
+    :disabled submitting?
     :onBlur handle-blur
     :InputProps (let [error (form/get-error :phone fork-args)]
                   (merge
