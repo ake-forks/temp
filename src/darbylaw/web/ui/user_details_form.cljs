@@ -15,11 +15,6 @@
             [darbylaw.web.ui.case-model :as case-model]
             [darbylaw.web.util.dayjs :as dayjs]))
 
-(defonce form-state (r/atom nil))
-
-(defn dispose []
-  (reset! form-state nil))
-
 (defn adapt-initial-values [initial-values]
   (-> initial-values
     (update :dob dayjs/read)))
@@ -237,9 +232,12 @@
     (v/attr [:town] (v/present))
     (v/attr [:postcode] (v/present))))
 
+(defonce form-state (r/atom nil))
+
 (defn personal-info-form [create|edit {:keys [initial-values]}]
   [fork/form
    {:state form-state
+    :clean-on-unmount? true
     :on-submit (let [case-id (when (= create|edit :edit)
                                @(rf/subscribe [::case-model/case-id]))]
                  #(rf/dispatch [::submit create|edit case-id %]))

@@ -20,17 +20,21 @@
   #(-> % :deceased :relationship))
 
 (rf/reg-event-fx ::load-case!
-  (fn [_ [_ case-id]]
+  (fn [_ [_ case-id opts]]
     {:http-xhrio
      (ui/build-http
        {:method :get
         :uri (str "/api/case/" case-id)
-        :on-success [::load-success]
+        :on-success [::load-success opts]
         :on-failure [::load-failure case-id]})}))
 
 (rf/reg-event-fx ::load-success
-  (fn [{:keys [db]} [_ response]]
-    {:db (assoc db :current-case response)}))
+  (fn [{:keys [db]} [_ {:keys [on-success]} response]]
+    (merge
+      {:db (assoc db :current-case response)}
+      (when on-success
+        (assert (vector? on-success))
+        {:dispatch (conj on-success response)}))))
 
 (rf/reg-event-fx ::load-failure
   (fn [_ [_ case-id result]]
