@@ -96,7 +96,7 @@
              (-> current-case :deceased :relationship (clojure.string/lower-case))
              "'s estate"))]
         [mui/typography {:variant :h3} (if (nil? current-case) [mui/skeleton {:width "5rem"}] (str "case # " (subs (-> current-case :id .toString) 0 6)))]]
-       [mui/box {:sx {:width 1100 :height 150 :background-color "#808080" :border-radius "4px"}}]]
+       [mui/box {:sx {:width 1100 :height 150 :background-color "#808080" :borderRadius "4px"}}]]
       [mui/stack {:spacing 3 :sx {:padding-top "2rem"}}
        [mui/typography {:variant :h3} "estate details"]
        [mui/modal
@@ -108,8 +108,8 @@
          [mui/grid {:item true :xs 1}
           [bank-card current-case case-id]]]
         [mui/stack {:spacing 2}
-         [mui/box {:sx {:width 200 :height 250 :background-color "#808080" :border-radius "4px"}}]
-         [mui/box {:sx {:width 200 :height 100 :background-color "#808080" :border-radius "4px"}}]]]]]
+         [mui/box {:sx {:width 200 :height 250 :background-color "#808080" :borderRadius "4px"}}]
+         [mui/box {:sx {:width 200 :height 100 :background-color "#808080" :borderRadius "4px"}}]]]]]
      [c/footer]]))
 
 (defmethod routes/panels :dashboard-panel [] [panel])

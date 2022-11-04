@@ -123,7 +123,7 @@
     (when bank-info
       (xt/await-tx xtdb-node
         (xt/submit-tx xtdb-node
-          [[::xt/put {:xt/id ::update-in
+          [[::xt/put {:xt/id ::concat-in
                       :xt/fn concat-in__txn-fn}]
            [::xt/put {:xt/id ::merge-in
                       :xt/fn merge-in__txn-fn}]

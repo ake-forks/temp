@@ -22,13 +22,13 @@
    {:primary {:main teal}
     :secondary {:main orange}}
    :typography
-   {:font-family "'Poppins', Helvetica,sans-serif"
-    :h1 {:font-weight 700}
-    :h2 {:font-weight 700}
-    :h3 {:font-weight 700}
-    :h4 {:font-weight 700}
-    :h5 {:font-weight 700}
-    :button {:font-weight 600}}
+   {:fontFamily "'Poppins', Helvetica,sans-serif"
+    :h1 {:fontWeight 700}
+    :h2 {:fontWeight 700}
+    :h3 {:fontWeight 700}
+    :h4 {:fontWeight 700}
+    :h5 {:fontWeight 700}
+    :button {:fontWeight 600}}
 
    :components
    {:MuiButton {:variants
