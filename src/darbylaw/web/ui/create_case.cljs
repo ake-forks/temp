@@ -4,14 +4,6 @@
             [darbylaw.web.ui.user-details-form :as form]
             [reagent-mui.components :as mui]))
 
-(kf/reg-controller ::dispose
-  {:params (fn [route-data]
-             (when (= :create-case (-> route-data :data :name))
-               true))
-   :start (fn [& _])
-   :stop (fn [& _]
-           (form/dispose))})
-
 (defn panel []
   [mui/container {:max-width :sm
                   :sx {:mb 4}}
