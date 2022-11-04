@@ -102,8 +102,7 @@
   (xt/submit-tx darbylaw.xtdb-node/xtdb-node
     [[::xt/evict ::update-ref]])
 
-  (xt/entity (xt/db darbylaw.xtdb-node/xtdb-node) #uuid"be757deb-9cda-4424-a1a2-00e7176dc579")
-  ,)
+  (xt/entity (xt/db darbylaw.xtdb-node/xtdb-node) #uuid"be757deb-9cda-4424-a1a2-00e7176dc579"),)
 
 (def concat-in__txn-fn
   '(fn [ctx eid ks value]
@@ -155,8 +154,8 @@
   (let [case-id (parse-uuid (:case-id path-params))
         results (xt/q (xt/db xtdb-node)
                   {:find [(list 'pull 'case [:xt/id
-                                                   {:ref/personal-representative.info.id}
-                                              personal-representative--props
+                                             {:ref/personal-representative.info.id
+                                              personal-representative--props}
                                              :deceased.info])]
                    :where '[[case :type :probate.case]
                             [case :xt/id case-id]]
