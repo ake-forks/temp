@@ -160,9 +160,11 @@
        [mui/typography {:variant :h3} "add bank accounts"]
        [bank-select fork-args banks]
        [mui/typography {:variant :h6}
-        (str "To the best of your knowledge, enter the details for all of your "
-          (-> current-case :deceased :relationship (clojure.string/lower-case))
-          "'s accounts")
+        (if (some? (-> current-case :deceased :relationship))
+          (str "To the best of your knowledge, enter the details for all of your "
+            (-> current-case :deceased :relationship (clojure.string/lower-case))
+            "'s accounts")
+          "To the best of your knowledge, enter the details for all of the deceased's accounts")
         (if (str/blank? (get values :bank-name))
           "."
           (str " with " (get values :bank-name) "."))]

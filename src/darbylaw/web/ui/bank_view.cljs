@@ -80,7 +80,7 @@
   (let [case-id (-> @(rf/subscribe [::route-params])
                   :case-id)
         bank-id (:bank-id @(rf/subscribe [::route-params]))
-        current-bank (get @(rf/subscribe [::current-banks]) (list bank-id))]
+        current-bank (get @(rf/subscribe [::current-banks]) (keyword bank-id))]
     (assert case-id)
     (rf/dispatch [::load! case-id])
     [mui/container {:class (styles/main-content)}

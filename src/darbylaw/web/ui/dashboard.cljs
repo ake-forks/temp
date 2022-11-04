@@ -60,11 +60,8 @@
      [mui/typography {:variant :h6} (str "£ " (reduce + (map (fn [acc] (js/parseFloat (:estimated-value acc))) (:accounts (val bank)))))]]]
    [mui/divider {:variant "middle"}]])
 
-(defn add-bank [current-case]
-  [mui/card-action-area {:on-click #(if (some? (get-in current-case [:deceased :relationship]))
-                                      (rf/dispatch [::bank/show-bank-modal])
-                                      (print "add decased details"))
-                         :sx {:padding-top "0.5rem"}}
+(defn add-bank []
+  [mui/card-action-area {:on-click #(rf/dispatch [::bank/show-bank-modal]) :sx {:padding-top "0.5rem"}}
    [mui/stack {:direction :row :spacing 2 :align-items :baseline}
     [mui/typography {:variant :h5} "add bank account"]
     [ui/icon-add]]])
@@ -78,7 +75,7 @@
       (fn [bank]
         [bank-item bank case-id])
       (filter-asset current-case "asset.bank"))
-    [add-bank current-case case-id]]])
+    [add-bank]]])
 
 (defn panel []
   (let [case-id (-> @(rf/subscribe [::route-params])
