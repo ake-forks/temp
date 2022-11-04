@@ -16,7 +16,6 @@
 
 (rf/reg-event-fx ::load-success
   (fn [{:keys [db]} [_ response]]
-    (println "success" response)
     {:db (assoc db :current-case response)}))
 
 (rf/reg-event-db
