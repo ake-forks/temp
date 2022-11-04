@@ -1,7 +1,6 @@
-(ns darbylaw.web.ui.bank
+(ns darbylaw.web.ui.bank-add
   (:require [reagent-mui.components :as mui]
             [reagent.core :as r]
-
             [fork.re-frame :as fork]
             [darbylaw.web.ui :as ui]
             [clojure.string :as str]
@@ -158,7 +157,7 @@
     [:form {:on-submit handle-submit}
      [mui/container {:style {:margin-top "4rem" :background-color :white}}
       [mui/stack {:spacing 1 :style {:padding "1rem"}}
-       [mui/typography {:variant :h3} "add a bank"]
+       [mui/typography {:variant :h3} "add bank accounts"]
        [bank-select fork-args banks]
        [mui/typography {:variant :h6}
         (str "To the best of your knowledge, enter the details for all of your "

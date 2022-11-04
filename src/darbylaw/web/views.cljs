@@ -15,8 +15,8 @@
     [darbylaw.web.ui.admin]
     [darbylaw.web.ui.case]
     [darbylaw.web.ui.dashboard]
-    [darbylaw.web.ui.bank]
-    [darbylaw.web.ui.view-bank]
+    [darbylaw.web.ui.bank-add]
+    [darbylaw.web.ui.bank-view]
     [darbylaw.web.ui.dashboard]))
 
 (defn add-panel-suffix [k]

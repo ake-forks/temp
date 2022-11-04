@@ -2,11 +2,11 @@
   (:require
     [reagent-mui.components :as mui]
     [reagent-mui.base.trap-focus :as trap-focus]
-    [darbylaw.web.ui.components :as c]
+    [darbylaw.web.ui.app-layout :as c]
     [darbylaw.web.ui :as ui]
     [darbylaw.web.styles :as styles]
     [darbylaw.web.routes :as routes]
-    [darbylaw.web.ui.bank :as bank]
+    [darbylaw.web.ui.bank-add :as bank]
     [darbylaw.web.util.bank :as bank-util]
     [re-frame.core :as rf]
     [reagent.core :as r]))
@@ -66,13 +66,13 @@
                                       (print "add decased details"))
                          :sx {:padding-top "0.5rem"}}
    [mui/stack {:direction :row :spacing 2 :align-items :baseline}
-    [mui/typography {:variant :h5} "add bank"]
+    [mui/typography {:variant :h5} "add bank account"]
     [ui/icon-add]]])
 
 (defn bank-card [current-case case-id]
   [mui/card
    [mui/card-content
-    [mui/typography {:variant :h5 :sx {:font-weight 600}} "banks"]
+    [mui/typography {:variant :h5 :sx {:font-weight 600}} "bank accounts"]
     [mui/divider]
     (map
       (fn [bank]

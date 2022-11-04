@@ -1,4 +1,4 @@
-(ns darbylaw.web.ui.components
+(ns darbylaw.web.ui.app-layout
   (:require
     [reagent-mui.components :as mui]
     [darbylaw.web.ui :as ui]

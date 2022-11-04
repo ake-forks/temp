@@ -61,13 +61,14 @@
         ;hiccup/hiccup {:mvn/version "2.0.0-alpha2"}}
         ;;; Data
         vlad/vlad {:mvn/version "3.3.2"}
-        nberger/libphonenumber-cljs {:mvn/version "7.1.0"}
-        org.clojure/data.csv {:mvn/version "1.0.1"}}
+        nberger/libphonenumber-cljs {:mvn/version "7.1.0"}}
+
 
 
  :aliases
  {:dev {:extra-paths ["dev"]
-        :extra-deps {;spyscope/spyscope {:mvn/version "0.1.6"} ; no cljs support
+        :extra-deps {org.clojure/data.csv {:mvn/version "1.0.1"}
+                     ;spyscope/spyscope {:mvn/version "0.1.6"} ; no cljs support
                      com.github.den1k/spyscope {:git/sha "83f9a19939378f83e6fbc108b02288c4eb7d5552"}}}
 
   :test {:extra-paths ["test"]

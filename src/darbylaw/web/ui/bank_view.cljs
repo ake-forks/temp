@@ -1,8 +1,8 @@
-(ns darbylaw.web.ui.view-bank
+(ns darbylaw.web.ui.bank-view
   (:require [re-frame.core :as rf]
             [reagent-mui.components :as mui]
             [darbylaw.web.routes :as routes]
-            [darbylaw.web.ui.components :as c]
+            [darbylaw.web.ui.app-layout :as c]
             [darbylaw.web.styles :as styles]
             [reagent.core :as r]
             [darbylaw.web.ui :as ui]))
