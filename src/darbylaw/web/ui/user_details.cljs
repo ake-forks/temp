@@ -1,7 +1,5 @@
 (ns darbylaw.web.ui.user-details
-  (:require [darbylaw.web.ui.components :as c]
-            [reagent-mui.components :as mui]
-            [darbylaw.web.ui :as ui]
+  (:require [reagent-mui.components :as mui]
             [re-frame.core :as rf]
             [darbylaw.web.ui.case-model :as case-model]
             [kee-frame.core :as kf]
@@ -36,42 +34,3 @@
      [form/personal-info-form :edit
       {:initial-values (:personal-representative current-case)}]
      [mui/circular-progress])])
-
-(defn panel [panel-k]
-  [:<>
-   [c/navbar]
-   [mui/toolbar]
-   [mui/drawer {:variant :permanent
-                :anchor :left}
-    [mui/toolbar]
-    [mui/list
-     [mui/list-item {:key :back-to-case}
-      [mui/list-item-button {:onClick #(rf/dispatch
-                                         [::ui/navigate
-                                          [:dashboard
-                                           {:case-id @(rf/subscribe [::case-model/case-id])}]])}
-       [mui/list-item-icon [ui/icon-arrow-back-sharp]]
-       [mui/list-item-text {:primary "Back to case dashboard"}]]]
-     [mui/list-subheader
-      "Your case"]
-     [mui/list-item {:key :user-details}
-      [mui/list-item-button {:selected (= panel-k :user-details-panel)
-                             :onClick #(rf/dispatch
-                                         [::ui/navigate
-                                          [:user-details
-                                           {:case-id @(rf/subscribe [::case-model/case-id])}]])}
-       [mui/list-item-text {:primary "Your details"}]]]
-     [mui/list-item {:key :user-details}
-      [mui/list-item-button {:selected (= panel-k :deceased-details-panel)
-                             :onClick #(rf/dispatch
-                                         [::ui/navigate
-                                          [:deceased-details
-                                           {:case-id @(rf/subscribe [::case-model/case-id])}]])}
-       [mui/list-item-text
-        {:primary (if-let [rel @(rf/subscribe [::case-model/relationship])]
-                    (str "Your " rel "'s details")
-                    "Deceased details")}]]]]]
-   [user-details-panel]
-   [mui/toolbar]
-   [c/footer]])
-

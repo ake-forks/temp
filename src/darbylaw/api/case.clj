@@ -128,10 +128,7 @@
                   {:find [(list 'pull 'case [:xt/id
                                              {:ref/personal-representative.info.id
                                               personal-representative--props}
-                                             {:ref/deceased.info.id
-                                              [:forename
-                                               :surname
-                                               :relationship]}])]
+                                             :deceased.info])]
                    :where '[[case :type :probate.case]
                             [case :xt/id case-id]]
                    :in '[case-id]}
@@ -141,7 +138,7 @@
       (clojure.set/rename-keys (ffirst results)
         {:xt/id :id
          :ref/personal-representative.info.id :personal-representative
-         :ref/deceased.info.id :deceased}))))
+         :deceased.info :deceased}))))
 
 (defn routes []
   [["/case" {:post {:handler create-case
