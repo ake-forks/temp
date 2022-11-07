@@ -32,7 +32,8 @@
       {:db (fork/set-submitting db path false)}
       (case create|edit
         :create {::ui/navigate-no-history [:dashboard {:case-id case-id}]}
-        :edit {::reset-form! [fork-params response]}))))
+        :edit {::reset-form! [fork-params response]
+               :dispatch [::case-model/load-case! case-id]}))))
 
 (rf/reg-event-fx ::submit-failure
   (fn [{:keys [db]} [_ {:keys [path]} _response]]
