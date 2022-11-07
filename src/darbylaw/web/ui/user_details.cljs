@@ -12,7 +12,7 @@
                       :sx {:pt 4 :pb 2}}
       "your details"]
      (if @case-loaded?
-       [form/personal-info-form :edit
+       [form/user-details-form :edit
         {:initial-values (:personal-representative
                            @(rf/subscribe [::case-model/current-case]))}]
        [mui/circular-progress])]))

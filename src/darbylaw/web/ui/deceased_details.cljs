@@ -12,6 +12,6 @@
                       :sx {:pt 4 :pb 2}}
       "deceased's details"]
      (if @case-loaded?
-       [form/panel :edit
+       [form/deceased-details-form :edit
         {:initial-values (:deceased @(rf/subscribe [::case-model/current-case]))}]
        [mui/circular-progress])]))

@@ -236,28 +236,31 @@
 
 (defonce form-state (r/atom nil))
 
-(defn personal-info-form [create|edit {:keys [initial-values]}]
-  [fork/form
-   {:state form-state
-    :clean-on-unmount? true
-    :on-submit (let [case-id (when (= create|edit :edit)
-                               @(rf/subscribe [::case-model/case-id]))]
-                 #(rf/dispatch [::submit create|edit case-id %]))
-    :keywordize-keys true
-    :prevent-default? true
-    :initial-values (adapt-initial-values initial-values)
-    :validation (fn [data]
-                  (try
-                    (v/field-errors data-validation data)
-                    (catch :default e
-                      (js/console.error "Error during validation: " e)
-                      [{:type ::validation-error :error e}])))}
-   (fn [fork-args]
-     (let [fork-args (ui/mui-fork-args fork-args)]
-       [:form
-        [mui/stack {:spacing 4}
-         [personal-info-form-fields create|edit fork-args]
-         [submit-button create|edit fork-args]]]))])
+(defn user-details-form [create|edit {:keys [initial-values]}]
+  (r/with-let []
+    [fork/form
+     {:state form-state
+      :clean-on-unmount? true
+      :on-submit (let [case-id (when (= create|edit :edit)
+                                 @(rf/subscribe [::case-model/case-id]))]
+                   #(rf/dispatch [::submit create|edit case-id %]))
+      :keywordize-keys true
+      :prevent-default? true
+      :initial-values (adapt-initial-values initial-values)
+      :validation (fn [data]
+                    (try
+                      (v/field-errors data-validation data)
+                      (catch :default e
+                        (js/console.error "Error during validation: " e)
+                        [{:type ::validation-error :error e}])))}
+     (fn [fork-args]
+       (let [fork-args (ui/mui-fork-args fork-args)]
+         [:form
+          [mui/stack {:spacing 4}
+           [personal-info-form-fields create|edit fork-args]
+           [submit-button create|edit fork-args]]]))]
+    (finally
+      (js/console.info "form unmounted"))))
 
 (comment
   ; To fill out the form programmatically:

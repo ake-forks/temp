@@ -8,4 +8,4 @@
    [mui/typography {:variant :h3
                     :sx {:pt 4 :pb 2}}
     "deceased's details"]
-   [form/panel :create {}]])
+   [form/deceased-details-form :create {}]])

@@ -6,7 +6,8 @@
             [darbylaw.web.ui :as ui]
             [darbylaw.web.util.form :as form]
             [darbylaw.web.util.vlad :as v-utils]
-            [reagent.core :as r]))
+            [reagent.core :as r]
+            [darbylaw.web.ui.case-model :as case-model]))
 
 (defonce form-state (r/atom nil))
 
@@ -90,7 +91,7 @@
      :required true
      :full-width true}]])
 
-(defn deceased-details-form [create|edit {:keys [dirty] :as fork-args}]
+(defn deceased-details-form* [create|edit {:keys [dirty] :as fork-args}]
   [:form
    [mui/stack {:spacing 4}
     [mui/typography {:variant :p}
@@ -204,7 +205,7 @@
                 :disabled (and (= create|edit :edit)
                                (not dirty))}}]]]])
 
-(defn panel [create|edit {:keys [initial-values]}]
+(defn deceased-details-form [create|edit {:keys [initial-values]}]
   (let [route-params @(rf/subscribe [::ui/path-params])]
     [fork/form
      {:state form-state
@@ -245,7 +246,7 @@
           ;(v/attr [:name-of-registrar] (v/present)))
           data))}
      (fn [fork-args]
-       [deceased-details-form create|edit (ui/mui-fork-args fork-args)])]))
+       [deceased-details-form* create|edit (ui/mui-fork-args fork-args)])]))
 
 (comment
   ; To fill out the form programmatically:
