@@ -58,8 +58,9 @@
     {::navigate-no-history route}))
 
 (rf/reg-sub ::path-params
-  (fn [db _]
-    (-> db :kee-frame/route :path-params)))
+  :<- [:kee-frame/route]
+  (fn [route]
+    (:path-params route)))
 
 (defn- add-getAttribute!
   "Adds .getAttribute() method to a Material UI event.
