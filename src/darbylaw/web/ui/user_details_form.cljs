@@ -17,7 +17,7 @@
 
 (defn adapt-initial-values [initial-values]
   (-> initial-values
-    (update :dob dayjs/read)))
+    (update :dob dayjs/maybe-read)))
 
 (rf/reg-fx ::reset-form!
   (fn [[{:keys [reset]} response]]
@@ -44,7 +44,7 @@
   (-> data
     (update-vals #(cond-> %
                     (string? %) clojure.string/trim))
-    (update :dob #(.format % "YYYY-MM-DD"))
+    (update :dob dayjs/format-date-for-store)
     (update :phone phone/format-for-storing)))
 
 (rf/reg-event-fx ::submit
@@ -68,7 +68,11 @@
    {:name :title
     :label "Title"
     :options ["Mr" "Mrs" "Ms" "Mx" "Dr"]
-    :inner-config {:required true}}])
+    :inner-config {:required true}
+    :freeSolo true
+    :disableClearable true
+    ;; Don't filter results
+    :filterOptions identity}])
 
 (defn name-fields [fork-args]
   [:<>

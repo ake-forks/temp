@@ -4,7 +4,8 @@
             [reagent-mui.components :as mui]))
 
 (defmethod routes/panels :create-deceased-details-panel []
-  [mui/container {:max-width :sm}
+  [mui/container {:max-width :sm
+                  :sx {:mb 4}}
    [mui/typography {:variant :h3
                     :sx {:pt 4 :pb 2}}
     "deceased's details"]

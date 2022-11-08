@@ -6,7 +6,8 @@
             [reagent-mui.components :as mui]
             [darbylaw.web.ui :as ui]
             [re-frame.core :as rf]
-            [darbylaw.web.ui.case-model :as case-model]))
+            [darbylaw.web.ui.case-model :as case-model]
+            [reagent.core :as r]))
 
 (defn panel [panel-k]
   (let [case-id @(rf/subscribe [::case-model/case-id])]
@@ -18,11 +19,9 @@
       [mui/toolbar]
       [mui/list
        [mui/list-item {:key :back-to-case}
-        [mui/list-item-button {:onClick #(rf/dispatch
-                                           [::ui/navigate
-                                            [:dashboard {:case-id case-id}]])}
-         [mui/list-item-icon [ui/icon-arrow-back-sharp]]
-         [mui/list-item-text {:primary "Back to case dashboard"}]]]
+        [mui/button {:variant :outlined
+                     :startIcon (r/as-element [ui/icon-arrow-back-sharp])}
+         "Back to dashboard"]]
        [mui/list-subheader
         "Your case"]
        [mui/list-item {:key :user-details}

@@ -44,11 +44,7 @@
 ;; >> Wrapped MUI Fields
 
 (defn autocomplete-field
-  "A wrapped version of mui/autocomplete with the following features:
-  - Support for fork forms
-  - Free text input enabled
-  - Clearing desabled
-  - No auto-filtering options
+  "A wrapped version of mui/autocomplete with support for fork forms.
   To set more just add them to the config, see: https://mui.com/material-ui/react-autocomplete/
 
   Config Options:
@@ -69,31 +65,26 @@
   [{:keys [values set-handle-change handle-blur submitting?] :as fork-args}
    {:keys [name label options inner-config] :as config}]
   (assert name "Missing required arg :name")
-  (let [autocomplete-props 
-        {:options options
-         :inputValue (or (get values name) "")
-         :onInputChange (fn [_evt new-value]
-                          (set-handle-change {:value new-value
-                                              :path [name]}))
-         :renderInput (react-component [props]
-                        [mui/text-field 
-                         (merge props
-                                {:name name
-                                 :label label
-                                 :error (boolean (get-error name fork-args))
-                                 :onBlur handle-blur}
-                                inner-config)])
-         :disabled submitting?
-         ;; Allow free text input
-         :freeSolo true
-         ;; Don't allow clearing input
-         :disableClearable true
-         ;; Don't filter results
-         :filterOptions identity}
-
-        prop-overrides
-        (dissoc config :name :options :inner-config)]
-    [mui/autocomplete (merge autocomplete-props prop-overrides)]))
+  [mui/autocomplete
+   (merge
+     (let [v (or (get values name) "")]
+       (if (:freeSolo config)
+         {:inputValue v}
+         {:value v}))
+     {:options options
+      :onInputChange (fn [_evt new-value]
+                       (set-handle-change {:value new-value
+                                           :path [name]}))
+      :renderInput (react-component [props]
+                     [mui/text-field
+                      (merge props
+                        {:name name
+                         :label label
+                         :error (boolean (get-error name fork-args))
+                         :onBlur handle-blur}
+                        inner-config)])
+      :disabled submitting?}
+     (dissoc config :name :options :inner-config))])
 
 (defn text-field
   "A wrapper for mui/text-field with support for fork forms and errors
@@ -101,7 +92,7 @@
   Config Options:
   :name    The name of the text field and input wrt fork
   <other>  Merged ontop of the built-in config"
-  [{:keys [values handle-change handle-blur] :as fork-args}
+  [{:keys [values handle-change handle-blur submitting?] :as fork-args}
    {:keys [name] :as config}]
   (assert name "Missing required arg :name")
   (let [error (get-error name fork-args)
@@ -111,7 +102,8 @@
                :onBlur handle-blur
                :error (boolean error)
                :autoComplete :off
-               :InputProps (when error (error-icon-prop))}
+               :InputProps (when error (error-icon-prop))
+               :disabled submitting?}
         prop-overrides (dissoc config :name)]
     [mui/text-field (merge props prop-overrides)]))
 
@@ -156,10 +148,7 @@
 
 (defn date-picker
   "A wrapper to the MUI date picker with support for fork forms.
-  Has the followoing set by default:
-  - Open to year
-  - Show year, month then day
-  - Don't auto-complete manual input
+  It doesn't auto-complete manual input.
 
   All config can be overridden using the `config` and `inner-config` options.
 
@@ -174,7 +163,7 @@
   [date-picker fork-args
    {:name :test
     :inner-config {:label-prefix \"Test Date\"}}]"
-  [{:keys [values set-handle-change handle-blur] :as fork-args}
+  [{:keys [values set-handle-change handle-blur submitting?] :as fork-args}
    {:keys [name inner-config] :as config}]
   (let [{:keys [label-prefix]} inner-config
         inner-config (dissoc inner-config :label-prefix)
@@ -182,6 +171,7 @@
         date-picker-props
         {:value (get values name)
          :onChange #(set-handle-change {:value % :path [name]})
+         :disabled submitting?
          :renderInput
          (react-component [props]
            [mui/text-field
@@ -193,9 +183,7 @@
                :autoComplete :off
                :error (-> name (get-error fork-args) boolean)
                :onBlur handle-blur}
-              inner-config)])
-         :openTo :year
-         :views [:year :month :day]}
+              inner-config)])}
 
         prop-overrides (dissoc config :name :inner-config)]
     [mui-date/date-picker
