@@ -36,11 +36,13 @@
 
    :components
    {:MuiButton {:variants
-                [{:props {:variant :contained}
-                  :style {:background-color rich-black
+                [{:props {}
+                  :style {:textTransform :lowercase}}
+                 {:props {:variant :contained}
+                  :style {:backgroundColor rich-black
                           :color off-white
-                          :border-radius 0
-                          :text-transform :lowercase}}]}
+                          :borderRadius 0
+                          :textTransform :lowercase}}]}
     :MuiTextField {:defaultProps {:variant :filled}}
     :MuiSelect {:defaultProps {:variant :filled}}
     :MuiDivider {:defaultProps {:variant "middle" :role "presentation"}}}})

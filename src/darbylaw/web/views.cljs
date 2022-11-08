@@ -4,6 +4,7 @@
     [darbylaw.web.routes :as routes]
     [reagent-mui.styles :as mui-styles]
     [reagent-mui.components :as mui]
+    [darbylaw.web.ui :as ui]
     [darbylaw.web.theme :as theme]
 
     [reagent-mui.x.localization-provider :as mui-local]
@@ -28,7 +29,7 @@
 (defn main-panel []
   (let [active-panel (rf/subscribe [::active-panel])]
     [mui-styles/theme-provider
-     (mui-styles/create-theme theme/theme)
+     (ui/create-theme theme/theme)
      [mui/css-baseline]
      [mui-local/localization-provider {:dateAdapter AdapterDayjs
                                        :adapterLocale "en-gb"}

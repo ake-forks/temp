@@ -17,7 +17,7 @@
 
 (defn adapt-initial-values [initial-values]
   (-> initial-values
-    (update :dob dayjs/maybe-read)))
+    (update :date-of-birth dayjs/maybe-read)))
 
 (rf/reg-fx ::reset-form!
   (fn [[{:keys [reset]} response]]
@@ -44,7 +44,7 @@
   (-> data
     (update-vals #(cond-> %
                     (string? %) clojure.string/trim))
-    (update :dob dayjs/format-date-for-store)
+    (update :date-of-birth dayjs/format-date-for-store)
     (update :phone phone/format-for-storing)))
 
 (rf/reg-event-fx ::submit
@@ -89,23 +89,23 @@
                       :label "Surname"
                       :full-width true})]])
 
-(defn dob-date-picker [{:keys [values set-handle-change handle-blur submitting?] :as fork-args}]
+(defn date-of-birth-picker [{:keys [values set-handle-change handle-blur submitting?] :as fork-args}]
   [mui-date/date-picker
-   {:value (get values :dob)
+   {:value (get values :date-of-birth)
     :onChange #(set-handle-change {:value %
-                                   :path [:dob]})
+                                   :path [:date-of-birth]})
     :disabled submitting?
     :renderInput
     (fn [params]
       (r/as-element
         [mui/text-field
          (merge (js->clj params)
-           {:name :dob
+           {:name :date-of-birth
             :label (let [date-pattern (j/get-in params [:inputProps :placeholder])]
                      (str "Date of Birth (" date-pattern ")"))
             :required true
             :autoComplete :off
-            :error (boolean (form/get-error :dob fork-args))
+            :error (boolean (form/get-error :date-of-birth fork-args))
             :onBlur handle-blur})]))
     :openTo :year
     :views [:year :month :day]}])
@@ -200,7 +200,7 @@
     [mui/stack {:direction :row
                 :spacing 2}
      [name-fields fork-args]]
-    [dob-date-picker fork-args]]
+    [date-of-birth-picker fork-args]]
    [mui/stack {:spacing 2}
     [mui/typography {:variant :h5}
      "your contact details"]
@@ -216,9 +216,9 @@
     (v/attr [:title] (v/present))
     (v/attr [:forename] (v/present))
     (v/attr [:surname] (v/present))
-    (v/attr [:dob] (v/chain
-                     (v-utils/not-nil)
-                     (v-utils/valid-dayjs-date)))
+    (v/attr [:date-of-birth] (v/chain
+                               (v-utils/not-nil)
+                               (v-utils/valid-dayjs-date)))
 
     (v/attr [:email] (v/chain
                        (v/present)
@@ -273,7 +273,7 @@
       {:title "Mr",
        :forename "John",
        :surname "Doe",
-       :dob (dayjs/read "1979-12-13")
+       :date-of-birth (dayjs/read "1979-12-13")
        :email "test@test.com",
        :phone "+441234123456",
        :street-number "12",
@@ -288,6 +288,6 @@
   @form-state
   (-> @form-state :values)
   (swap! form-state assoc-in [:values :phone] "+442441231235")
-  (-> @form-state :values :dob)
-  (-> @form-state :values :dob .isValid)
-  (-> @form-state :values :dob (.format "YYYY-MM-DD")))
+  (-> @form-state :values :date-of-birth)
+  (-> @form-state :values :date-of-birth .isValid)
+  (-> @form-state :values :date-of-birth (.format "YYYY-MM-DD")))
