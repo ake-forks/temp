@@ -13,7 +13,7 @@
    [:forename :string]
    [:middlename {:optional true} :string]
    [:surname :string]
-   [:dob date--schema]
+   [:date-of-birth date--schema]
 
    [:email :string]
    [:phone :string]
