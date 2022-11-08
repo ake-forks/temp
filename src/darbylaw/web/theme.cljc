@@ -36,7 +36,9 @@
 
    :components
    {:MuiButton {:variants
-                [{:props {:variant :contained}
+                [{:props {}
+                  :style {:textTransform :lowercase}}
+                 {:props {:variant :contained}
                   :style {:backgroundColor rich-black
                           :color off-white
                           :borderRadius 0
