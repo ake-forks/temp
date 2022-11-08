@@ -16,7 +16,9 @@
     [ajax.core :as ajax]
     [applied-science.js-interop :as j]
     [kee-frame.router :as kf-router]
-    [accountant.core :as accountant]))
+    [accountant.core :as accountant]
+    ["@mui/material/styles" :as mui-styles]
+    [reagent-mui.util]))
 
 (def icon-add reagent-mui.icons.add/add)
 (def icon-arrow-back-sharp reagent-mui.icons.arrow-back-sharp/arrow-back-sharp)
@@ -92,3 +94,8 @@
                          ; https://groups.google.com/g/clojurescript/c/_B52tadgUgw/m/7r6uCh_EBgAJ
                          :handlers {"u" cljs.core/uuid}})}
     params))
+
+; Fix reagent-mui.styles/create-theme
+; See https://github.com/arttuka/reagent-material-ui/issues/41
+(defn create-theme [options]
+  (js->clj (mui-styles/createTheme (reagent-mui.util/clj->js' options))))
