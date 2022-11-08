@@ -20,7 +20,10 @@
       [mui/list
        [mui/list-item {:key :back-to-case}
         [mui/button {:variant :outlined
-                     :startIcon (r/as-element [ui/icon-arrow-back-sharp])}
+                     :startIcon (r/as-element [ui/icon-arrow-back-sharp])
+                     :onClick #(rf/dispatch
+                                 [::ui/navigate
+                                  [:dashboard {:case-id case-id}]])}
          "Back to dashboard"]]
        [mui/list-subheader
         "Your case"]
