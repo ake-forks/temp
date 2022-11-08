@@ -47,17 +47,19 @@
   (fn [db _]
     (:modal/bank-modal db)))
 
-(defn filter-asset [current-case type]
-  (filter #(= (:type (second %)) type) (:assets current-case)))
 
 (defn bank-item [bank case-id]
-  [mui/box
-   [mui/card-action-area {:on-click #(rf/dispatch [::ui/navigate [:view-bank {:case-id case-id :bank-id (key bank)}]])
-                          :sx {:padding-top "0.5rem" :padding-bottom "0.5rem"}}
-    [mui/stack {:spacing 0.5 :direction :row :justify-content :space-between}
-     [mui/typography {:variant :h6} (:name (second bank))]
-     [mui/typography {:variant :h6} (str "£ " (reduce + (map (fn [acc] (js/parseFloat (:estimated-value acc))) (:accounts (val bank)))))]]]
-   [mui/divider {:variant "middle"}]])
+  (let [bank-data (bank-util/get-bank-by-id (:id bank))
+        bank-name (:common-name bank-data)
+        accounts (:accounts bank)]
+    
+    [mui/box
+     [mui/card-action-area {:on-click #(rf/dispatch [::ui/navigate [:view-bank {:case-id case-id :bank-id (:id bank)}]])
+                            :sx {:padding-top "0.5rem" :padding-bottom "0.5rem"}}
+      [mui/stack {:spacing 0.5 :direction :row :justify-content :space-between}
+       [mui/typography {:variant :h6} bank-name]
+       [mui/typography {:variant :h6} (str "£" (reduce + (map (fn [account] (js/parseFloat (:estimated-value account))) accounts)))]]]
+     [mui/divider {:variant "middle"}]]))
 
 (defn add-bank []
   [mui/card-action-area {:on-click #(rf/dispatch [::bank/show-bank-modal]) :sx {:padding-top "0.5rem"}}
@@ -70,10 +72,12 @@
    [mui/card-content
     [mui/typography {:variant :h5 :sx {:font-weight 600}} "bank accounts"]
     [mui/divider]
-    (map
-      (fn [bank]
-        [bank-item bank case-id])
-      (filter-asset current-case "asset.bank"))
+    (if (some? (:bank-accounts current-case))
+      (do
+        (map
+          (fn [bank]
+            (r/as-element [bank-item bank case-id]))
+          (:bank-accounts current-case))))
     [add-bank]]])
 
 (defn panel []
@@ -102,15 +106,17 @@
        [mui/modal
         {:open (if (nil? bank-modal-open) false bank-modal-open)
          :on-close nil}
-        [trap-focus/trap-focus (r/as-element [bank/modal all-banks])]]
+        [trap-focus/trap-focus {:tabIndex nil} [bank/modal all-banks]]]
        [mui/stack {:direction :row :spacing 2}
         [mui/grid {:container true :spacing 2 :columns 3}
          [mui/grid {:item true :xs 1}
-          [bank-card current-case case-id]]]
+          (if (some? (:bank-accounts current-case)) (r/as-element [bank-card current-case case-id]))]]
+
         [mui/stack {:spacing 2}
          [mui/box {:sx {:width 200 :height 250 :background-color "#808080" :borderRadius "4px"}}]
          [mui/box {:sx {:width 200 :height 100 :background-color "#808080" :borderRadius "4px"}}]]]]]
      [c/footer]]))
+
 
 (defmethod routes/panels :dashboard-panel [] [panel])
 
