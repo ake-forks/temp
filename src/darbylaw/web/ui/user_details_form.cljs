@@ -15,14 +15,9 @@
             [darbylaw.web.ui.case-model :as case-model]
             [darbylaw.web.util.dayjs :as dayjs]))
 
-(defonce form-state (r/atom nil))
-
-(defn dispose []
-  (reset! form-state nil))
-
 (defn adapt-initial-values [initial-values]
   (-> initial-values
-    (update :dob dayjs/read)))
+    (update :dob dayjs/maybe-read)))
 
 (rf/reg-fx ::reset-form!
   (fn [[{:keys [reset]} response]]
@@ -49,7 +44,7 @@
   (-> data
     (update-vals #(cond-> %
                     (string? %) clojure.string/trim))
-    (update :dob #(.format % "YYYY-MM-DD"))
+    (update :dob dayjs/format-date-for-store)
     (update :phone phone/format-for-storing)))
 
 (rf/reg-event-fx ::submit
@@ -73,7 +68,11 @@
    {:name :title
     :label "Title"
     :options ["Mr" "Mrs" "Ms" "Mx" "Dr"]
-    :inner-config {:required true}}])
+    :inner-config {:required true}
+    :freeSolo true
+    :disableClearable true
+    ;; Don't filter results
+    :filterOptions identity}])
 
 (defn name-fields [fork-args]
   [:<>
@@ -90,11 +89,12 @@
                       :label "Surname"
                       :full-width true})]])
 
-(defn dob-date-picker [{:keys [values set-handle-change handle-blur] :as fork-args}]
+(defn dob-date-picker [{:keys [values set-handle-change handle-blur submitting?] :as fork-args}]
   [mui-date/date-picker
    {:value (get values :dob)
     :onChange #(set-handle-change {:value %
                                    :path [:dob]})
+    :disabled submitting?
     :renderInput
     (fn [params]
       (r/as-element
@@ -139,7 +139,7 @@
                       {:label "Postcode"
                        :required true})]]])
 
-(defn phone-field [{:keys [values set-handle-change handle-blur] :as fork-args}]
+(defn phone-field [{:keys [values set-handle-change handle-blur submitting?] :as fork-args}]
   [:> MuiPhoneNumber
    {:name :phone
     :value (get values :phone)
@@ -147,6 +147,7 @@
     :required true
     :onChange #(set-handle-change {:value %
                                    :path [:phone]})
+    :disabled submitting?
     :onBlur handle-blur
     :InputProps (let [error (form/get-error :phone fork-args)]
                   (merge
@@ -237,27 +238,33 @@
     (v/attr [:town] (v/present))
     (v/attr [:postcode] (v/present))))
 
-(defn personal-info-form [create|edit {:keys [initial-values]}]
-  [fork/form
-   {:state form-state
-    :on-submit (let [case-id (when (= create|edit :edit)
-                               @(rf/subscribe [::case-model/case-id]))]
-                 #(rf/dispatch [::submit create|edit case-id %]))
-    :keywordize-keys true
-    :prevent-default? true
-    :initial-values (adapt-initial-values initial-values)
-    :validation (fn [data]
-                  (try
-                    (v/field-errors data-validation data)
-                    (catch :default e
-                      (js/console.error "Error during validation: " e)
-                      [{:type ::validation-error :error e}])))}
-   (fn [fork-args]
-     (let [fork-args (ui/mui-fork-args fork-args)]
-       [:form
-        [mui/stack {:spacing 4}
-         [personal-info-form-fields create|edit fork-args]
-         [submit-button create|edit fork-args]]]))])
+(defonce form-state (r/atom nil))
+
+(defn user-details-form [create|edit {:keys [initial-values]}]
+  (r/with-let []
+    [fork/form
+     {:state form-state
+      :clean-on-unmount? true
+      :on-submit (let [case-id (when (= create|edit :edit)
+                                 @(rf/subscribe [::case-model/case-id]))]
+                   #(rf/dispatch [::submit create|edit case-id %]))
+      :keywordize-keys true
+      :prevent-default? true
+      :initial-values (adapt-initial-values initial-values)
+      :validation (fn [data]
+                    (try
+                      (v/field-errors data-validation data)
+                      (catch :default e
+                        (js/console.error "Error during validation: " e)
+                        [{:type ::validation-error :error e}])))}
+     (fn [fork-args]
+       (let [fork-args (ui/mui-fork-args fork-args)]
+         [:form
+          [mui/stack {:spacing 4}
+           [personal-info-form-fields create|edit fork-args]
+           [submit-button create|edit fork-args]]]))]
+    (finally
+      (js/console.info "form unmounted"))))
 
 (comment
   ; To fill out the form programmatically:

@@ -1,16 +1,7 @@
 (ns darbylaw.web.ui.create-case
   (:require [darbylaw.web.routes :as routes]
-            [kee-frame.core :as kf]
             [darbylaw.web.ui.user-details-form :as form]
             [reagent-mui.components :as mui]))
-
-(kf/reg-controller ::dispose
-  {:params (fn [route-data]
-             (when (= :create-case (-> route-data :data :name))
-               true))
-   :start (fn [& _])
-   :stop (fn [& _]
-           (form/dispose))})
 
 (defn panel []
   [mui/container {:max-width :sm
@@ -24,6 +15,6 @@
       "It looks like you need probate.
       Here are some quick questions about you.
       Then we will ask about the deceased and their relationship to you."]]
-    [form/personal-info-form :create]]])
+    [form/user-details-form :create]]])
 
 (defmethod routes/panels :create-case-panel [] [panel])
