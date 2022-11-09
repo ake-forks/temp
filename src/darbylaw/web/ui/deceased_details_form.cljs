@@ -233,24 +233,27 @@
     (v/attr [:name-of-registrar] (v/present))))
 
 (defn deceased-details-form [create|edit {:keys [initial-values]}]
-  (let [route-params @(rf/subscribe [::ui/path-params])]
-    [fork/form
-     {:state form-state
-      :clean-on-unmount? true
-      :on-submit (let [case-id (:case-id route-params)]
-                   (assert case-id)
-                   #(rf/dispatch [::submit create|edit case-id %]))
-      :keywordize-keys true
-      :prevent-default? true
-      :initial-values (adapt-initial-values initial-values)
-      :validation (fn [data]
-                    (try
-                      (v/field-errors data-validation data)
-                      (catch :default e
-                        (js/console.error "Error during validation: " e)
-                        [{:type ::validation-error :error e}])))}
-     (fn [fork-args]
-       [deceased-details-form* create|edit (ui/mui-fork-args fork-args)])]))
+  (r/with-let []
+    (let [route-params @(rf/subscribe [::ui/path-params])]
+      [fork/form
+       {:state form-state
+        :clean-on-unmount? true
+        :on-submit (let [case-id (:case-id route-params)]
+                     (assert case-id)
+                     #(rf/dispatch [::submit create|edit case-id %]))
+        :keywordize-keys true
+        :prevent-default? true
+        :initial-values (adapt-initial-values initial-values)
+        :validation (fn [data]
+                      (try
+                        (v/field-errors data-validation data)
+                        (catch :default e
+                          (js/console.error "Error during validation: " e)
+                          [{:type ::validation-error :error e}])))}
+       (fn [fork-args]
+         [deceased-details-form* create|edit (ui/mui-fork-args fork-args)])])
+    (finally
+      (reset! form-state nil))))
 
 (comment
   ; To fill out the form programmatically:

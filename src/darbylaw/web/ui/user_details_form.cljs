@@ -264,7 +264,7 @@
            [personal-info-form-fields create|edit fork-args]
            [submit-button create|edit fork-args]]]))]
     (finally
-      (js/console.info "form unmounted"))))
+      (reset! form-state nil))))
 
 (comment
   ; To fill out the form programmatically:
