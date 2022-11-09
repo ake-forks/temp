@@ -266,22 +266,25 @@
     (finally
       (reset! form-state nil))))
 
+(defn dev-auto-fill []
+  "Fill out the form programmatically.
+  For development purposes only."
+  (let [test-data {:title "Mr",
+                   :forename "John",
+                   :surname "Doe",
+                   :date-of-birth (dayjs/read "1979-12-13")
+                   :email "test@test.com",
+                   :phone "+441234123456",
+                   :street-number "12",
+                   :street1 "Sesame",
+                   :town "Bristol",
+                   :postcode "SW1W 0NY"}]
+   (swap! form-state assoc :values test-data)))
+
 (comment
-  ; To fill out the form programmatically:
   (do
-    (def test-data
-      {:title "Mr",
-       :forename "John",
-       :surname "Doe",
-       :date-of-birth (dayjs/read "1979-12-13")
-       :email "test@test.com",
-       :phone "+441234123456",
-       :street-number "12",
-       :street1 "Sesame",
-       :town "Bristol",
-       :postcode "SW1W 0NY"})
-    (swap! form-state assoc :values test-data))
-  (darbylaw.web.core/mount-root))
+    (dev-auto-fill)
+    (darbylaw.web.core/mount-root)))
 
 (comment
   ; playing with form-state
