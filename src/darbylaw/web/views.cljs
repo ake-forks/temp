@@ -14,7 +14,7 @@
     [darbylaw.web.ui.create-case]
     [darbylaw.web.ui.create-deceased-details]
     [darbylaw.web.ui.admin]
-    [darbylaw.web.ui.case]
+    [darbylaw.web.ui.history]
     [darbylaw.web.ui.dashboard]
     [darbylaw.web.ui.settings]))
 

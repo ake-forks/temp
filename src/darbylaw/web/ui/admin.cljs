@@ -5,8 +5,7 @@
             [ajax.core :as ajax]
             [darbylaw.web.ui :as ui]
             [reagent-mui.components :as mui]
-            [reagent-mui.x.data-grid :refer [data-grid]]
-            [reagent-mui.util :refer [wrap-clj-function]]))
+            [reagent-mui.x.data-grid :refer [data-grid]]))
 
 (rf/reg-event-db ::load-success
   (fn [db [_ response]]
@@ -42,18 +41,22 @@
 
 ;; >> Cards
 
-;; TODO: Clean up?
 (defn case-item
-  [{:keys [id loading?] {:keys [surname forename postcode]} :personal-representative}]
+  [{:keys [id loading?]
+    {:keys [surname forename postcode]} :personal-representative}]
   [mui/card
-   [mui/card-action-area {:onClick (when-not loading? #(rf/dispatch [::ui/navigate [:dashboard {:case-id (.toString id)}]]))}
-    [mui/card-content
-     [mui/stack {:direction :row :justify-content :space-between :align-items :center}
+   [mui/card-content
+    [mui/stack {:direction :row
+                :justify-content :space-between
+                :align-items :center}
+     [mui/card-action-area {:onClick (when-not loading?
+                                       #(rf/dispatch [::ui/navigate
+                                                      [:dashboard {:case-id id}]]))}
       [mui/stack
        [mui/typography {:sx {:fontSize 14} :color :text.secondary}
         (if-not loading?
-         (str "#" id)
-         [mui/skeleton {:width 100}])]
+          (str "case #" id)
+          [mui/skeleton {:width 100}])]
        [mui/typography {:variant :h5}
         (if-not loading?
           (str surname ", " forename)
@@ -61,8 +64,12 @@
        [mui/typography {:variant :h6 :color :text.secondary}
         (if-not loading?
           (str "at " postcode)
-          [mui/skeleton {:width 130}])]]
-      [mui/skeleton {:variant :circular :align :right :width "5em" :height "5em"}]]]]])
+          [mui/skeleton {:width 130}])]]]
+     [mui/stack
+      [mui/tooltip {:title "See history"
+                    :onClick #(rf/dispatch [::ui/navigate
+                                            [:case-history {:case-id id}]])}
+       [mui/icon-button [ui/icon-history]]]]]]])
 
 (defn no-cases-found
   []
@@ -72,8 +79,7 @@
    [mui/link {:href "#" :on-click #(rf/dispatch [::ui/navigate :create-case])} "create"]
    " a new one?"])
 
-(defn card-list
-  [cases]
+(defn card-list [cases]
   [mui/container {:max-width :sm}
    [mui/stack {:spacing 2}
     (cond
