@@ -76,7 +76,7 @@
 (defn relationship-field [fork-args]
   [form/autocomplete-field fork-args
    {:name :relationship
-    :label "Your relationship with the deceased"
+    :label "Who was the deceased to you?"
     :options relationships
     :inner-config {:required true}
     :disableClearable true}])
@@ -102,22 +102,10 @@
   [:form
    [mui/stack {:spacing 4}
     [mui/stack {:spacing 2}
-     [mui/typography {:variant :p}
-      "We need these details so that we can... {TODO}"]
-
-     [mui/accordion {:sx {:backgroundColor "rgb(255, 244, 229)"}}
-      [mui/accordion-summary
-       [mui/typography "Notes"]]
-      [mui/accordion-details
-       [ui/???_TO_BE_DEFINED_??? "Add a helper to point to locations on Death Certificate? Like on Credit Card"]
-       [ui/???_TO_BE_DEFINED_??? "Or at least an explanation of what some fields mean"]
-       [ui/???_TO_BE_DEFINED_??? "Maybe an example of valid input?"]]]]
-
-    [mui/stack {:spacing 2}
      [relationship-field fork-args]]
+    [mui/typography {:variant :p}
+     "Please fill out the below form using the exact details from the death certificate."]
     [mui/stack {:spacing 2}
-     [mui/typography {:variant :h5}
-      "the deceased"]
      [form/text-field fork-args
       {:name :registration-district
        :label "Registration District"
@@ -158,7 +146,6 @@
        {:name :maiden-name
         :label "Maiden Name (if applicable)"
         :full-width true}]]
-     [ui/???_TO_BE_DEFINED_??? "Add a little (i) here linking to gov.uk?"]
      [form/date-picker fork-args
       {:name :date-of-birth
        :inner-config {:label-prefix "Date of Birth"
