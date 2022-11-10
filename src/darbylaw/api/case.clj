@@ -194,9 +194,11 @@
 (defn get-case-history [{:keys [xtdb-node path-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
         results (xt/q (xt/db xtdb-node)
-                  '{:find [(pull event [*])]
+                  '{:find [(pull event [*]) timestamp]
                     :where [[event :type :event]
-                            [event :ref/probate.case.id case-id]]
+                            [event :ref/probate.case.id case-id]
+                            [event :timestamp timestamp]]
+                    :order-by [[timestamp :asc]]
                     :in [case-id]}
                   case-id)]
     (ring/response
