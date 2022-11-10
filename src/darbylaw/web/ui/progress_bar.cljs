@@ -1,11 +1,8 @@
 (ns darbylaw.web.ui.progress-bar
   (:require
     [reagent-mui.components :as mui]
-    [darbylaw.web.ui.bank :as bank]
-    [darbylaw.web.ui :as ui]
     [reagent.core :as r]
-    [re-frame.core :as rf]
-    [darbylaw.web.styles :as styles]))
+    [re-frame.core :as rf]))
 
 (rf/reg-sub ::current-case
   (fn [db]
@@ -28,8 +25,6 @@
     2 (r/as-element orange)
     3 (r/as-element loading)
     4 (r/as-element green)))
-
-
 
 (defn progress-bar []
   (let [current-case @(rf/subscribe [::current-case])
@@ -57,6 +52,3 @@
       [mui/tooltip {:title "Not available until all valuations have been received." :position "top"}
        [mui/step {:completed (if (> grant 0) true false)}
         [mui/step-label {:icon (get-icon grant)} "Grant of Probate"]]]]]))
-
-
-
