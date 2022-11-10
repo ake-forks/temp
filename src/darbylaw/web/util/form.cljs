@@ -31,7 +31,9 @@
              :onBlur handle-blur
              :disabled submitting?
              :error (boolean error)
-             :autoComplete :off}
+             :autoComplete :off
+             ; Labels are not being shrinked when filled programmatically:
+             :InputLabelProps {:shrink (not (clojure.string/blank? (get values k)))}}
       error-icon? (assoc :InputProps
                     (when error
                       (error-icon-prop))))))
@@ -103,7 +105,9 @@
                :error (boolean error)
                :autoComplete :off
                :InputProps (when error (error-icon-prop))
-               :disabled submitting?}
+               :disabled submitting?
+               ; Labels are not being shrinked when filled programmatically:
+               :InputLabelProps {:shrink (not (clojure.string/blank? (get values name)))}}
         prop-overrides (dissoc config :name)]
     [mui/text-field (merge props prop-overrides)]))
 

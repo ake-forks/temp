@@ -242,27 +242,30 @@
     (finally
       (reset! form-state nil))))
 
+(defn dev-auto-fill []
+  "Fill out the form programmatically.
+  For development purposes only."
+  (let [test-data {:forename "forename",
+                   :sex "female",
+                   :entry-number "entry-number",
+                   :name-of-informant "informant",
+                   :date-of-death (dayjs/read "2022-11-05"),
+                   :registration-district "registration district",
+                   :occupation "occupation",
+                   :relationship "mother",
+                   :surname "surname",
+                   :date-of-birth (dayjs/read "1982-01-06"),
+                   :middlename "middlename",
+                   :cause-of-death "cause of death",
+                   :name-of-doctor-certifying "doctor",
+                   :name-of-registrar "registrar",
+                   :maiden-name "maiden name",
+                   :place-of-death "place of death",
+                   :place-of-birth "place of birth",
+                   :administrative-area "parish"}]
+    (swap! form-state assoc :values test-data)))
+
 (comment
-  ; To fill out the form programmatically:
   (do
-    (def test-data
-      {:forename "forename",
-       :sex "female",
-       :entry-number "entry-number",
-       :name-of-informant "informant",
-       :date-of-death (dayjs/read "2022-11-05"),
-       :registration-district "registration district",
-       :occupation "occupation",
-       :relationship "mother",
-       :surname "surname",
-       :date-of-birth (dayjs/read "1982-01-06"),
-       :middlename "middlename",
-       :cause-of-death "cause of death",
-       :name-of-doctor-certifying "doctor",
-       :name-of-registrar "registrar",
-       :maiden-name "maiden name",
-       :place-of-death "place of death",
-       :place-of-birth "place of birth",
-       :administrative-area "parish"})
-    (swap! form-state assoc :values test-data)
+    (def test-data)
     (darbylaw.web.core/mount-root)))
