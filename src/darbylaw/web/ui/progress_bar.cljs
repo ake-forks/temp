@@ -48,13 +48,13 @@
       [mui/tooltip {:title "Add bank and utility assets via the dashboard." :position "top"}
        [mui/step {:completed (if (> assets 0) true false)}
         [mui/step-label {:icon (get-icon assets)} "Complete Assets"]]]
-      [mui/tooltip {:title "Not available until one or more assets are complete." :position "top"}
+      [mui/tooltip {:title "We will trigger notification when one or more assets are complete." :position "top"}
        [mui/step {:completed (if (> notify 0) true false)}
         [mui/step-label {:icon (get-icon notify)} "Notify Institutions"]]]
-      [mui/tooltip {:title "Not availabe until one or more institutions have been notified." :position "top"}
+      [mui/tooltip {:title "Not available until one or more institutions have been notified." :position "top"}
        [mui/step {:completed (if (> valuations 0) true false)}
         [mui/step-label {:icon (get-icon valuations)} "Receive Valuations"]]]
-      [mui/tooltip {:title "Not availabe until all valuations have been received." :position "top"}
+      [mui/tooltip {:title "Not available until all valuations have been received." :position "top"}
        [mui/step {:completed (if (> grant 0) true false)}
         [mui/step-label {:icon (get-icon grant)} "Grant of Probate"]]]]]))
 
