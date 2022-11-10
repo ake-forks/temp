@@ -13,7 +13,8 @@
             [darbylaw.web.util.vlad :as v-utils]
             [applied-science.js-interop :as j]
             [darbylaw.web.ui.case-model :as case-model]
-            [darbylaw.web.util.dayjs :as dayjs]))
+            [darbylaw.web.util.dayjs :as dayjs]
+            [clojure.string :as str]))
 
 (defn adapt-initial-values [initial-values]
   (-> initial-values
@@ -45,7 +46,10 @@
     (update-vals #(cond-> %
                     (string? %) clojure.string/trim))
     (update :date-of-birth dayjs/format-date-for-store)
-    (update :phone phone/format-for-storing)))
+    (update :phone phone/format-for-storing)
+    (->>
+      (remove (comp str/blank? val))
+      (into {}))))
 
 (rf/reg-event-fx ::submit
   (fn [{:keys [db]} [_ create|edit case-id {:keys [path values] :as fork-params}]]

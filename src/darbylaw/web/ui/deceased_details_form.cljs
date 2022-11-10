@@ -8,7 +8,8 @@
             [darbylaw.web.util.vlad :as v-utils]
             [reagent.core :as r]
             [darbylaw.web.ui.case-model :as case-model]
-            [darbylaw.web.util.dayjs :as dayjs]))
+            [darbylaw.web.util.dayjs :as dayjs]
+            [clojure.string :as str]))
 
 (defonce form-state (r/atom nil))
 
@@ -44,7 +45,10 @@
     (update-vals #(cond-> %
                     (string? %) clojure.string/trim))
     (update :date-of-death dayjs/format-date-for-store)
-    (update :date-of-birth dayjs/format-date-for-store)))
+    (update :date-of-birth dayjs/format-date-for-store)
+    (->>
+      (remove (comp str/blank? val))
+      (into {}))))
 
 (rf/reg-event-fx ::submit
   (fn [{:keys [db]} [_ create|edit case-id {:keys [path values] :as fork-params}]]
