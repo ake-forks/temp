@@ -46,9 +46,9 @@
     {:db (fork/set-submitting db path true)
      :http-xhrio
      (ui/build-http
-       {:method :patch
-        :uri (str "/api/case/" case-id "/add-bank")
-        :params {:bank-info values}
+       {:method :post
+        :uri (str "/api/case/" case-id "/add-bank-accounts")
+        :params values
         :on-success [::add-bank-success fork-params]
         :on-failure [::add-bank-failure fork-params]})}))
 
@@ -169,7 +169,7 @@
           "."
           (str " with " (get values :bank-name) "."))]
        [fork/field-array {:props fork-args
-                          :name :account}
+                          :name :accounts}
         account-array-fn]
        [submit-buttons]]]]))
 
@@ -189,7 +189,10 @@
       :on-submit #(rf/dispatch [::submit! case-id %])
       :keywordize-keys true
       :prevent-default? true
-      :initial-values {:bank-name "" :account [{:sort-code "" :account-number "" :estimated-value ""}]}}
+      :initial-values {:bank-name ""
+                       :accounts [{:sort-code ""
+                                   :account-number ""
+                                   :estimated-value ""}]}}
      (fn [fork-args]
        [modal-panel (ui/mui-fork-args fork-args) banks])]))
 

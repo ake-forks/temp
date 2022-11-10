@@ -180,9 +180,8 @@
        [[::xt/put (update-in e [:bank-accounts] conj {:id bank-id :accounts accounts})]])))
 
 (defn add-bank [{:keys [xtdb-node path-params body-params]}]
-  (let [bank-info (get body-params :bank-info)
-        bank-name (:bank-name bank-info)
-        accounts (:account bank-info)
+  (let [bank-name (:bank-name body-params)
+        accounts (:accounts body-params)
         case-id (parse-uuid (:case-id path-params))
         bank-data (bank-util/get-bank-by-common-name bank-name)
         e (xt/entity (xt/db xtdb-node) case-id)]
@@ -199,7 +198,7 @@
                       :xt/fn update-bank-txn}]
            [::xt/fn ::update-bank-txn case-id accounts (:id bank-data)]])))
     {:status 200
-     :body {:bank-data bank-info}}))
+     :body {:bank-data body-params}}))
 
 
 (comment
@@ -378,20 +377,18 @@
            :coercion reitit.coercion.malli/coercion
            :parameters {:body deceased--schema}}}]
 
-   ["/case/:case-id/add-bank" {:patch {:handler add-bank
-                                       :coercion reitit.coercion.malli/coercion
-                                       :parameters {:body
-                                                    [:map
-                                                     [:bank-info
-                                                      [:map
-                                                       [:account
-                                                        [:vector
-                                                         [:map
-                                                          [:sort-code string?]
-                                                          [:account-number string?]
-                                                          [:estimated-value string?]
-                                                          [:joint-check {:optional true} boolean?]
-                                                          [:joint-info {:optional true} string?]]]]
-                                                       [:bank-name string?]]]]}}}]
+   ["/case/:case-id/add-bank-accounts" {:post {:handler add-bank
+                                               :coercion reitit.coercion.malli/coercion
+                                               :parameters {:body
+                                                            [:map
+                                                             [:bank-name :string]
+                                                             [:accounts
+                                                              [:vector
+                                                               [:map
+                                                                [:sort-code :string]
+                                                                [:account-number :string]
+                                                                [:estimated-value :string]
+                                                                [:joint-check {:optional true} :boolean]
+                                                                [:joint-info {:optional true} :string]]]]]}}}]
 
    ["/cases" {:get {:handler get-cases}}]])
