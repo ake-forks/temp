@@ -52,7 +52,7 @@
   (let [bank-data (bank-util/get-bank-by-id (:id bank))
         bank-name (:common-name bank-data)
         accounts (:accounts bank)]
-    
+
     [mui/box
      [mui/card-action-area {:on-click #(rf/dispatch [::ui/navigate [:view-bank {:case-id case-id :bank-id (:id bank)}]])
                             :sx {:padding-top "0.5rem" :padding-bottom "0.5rem"}}
@@ -110,7 +110,7 @@
        [mui/stack {:direction :row :spacing 2}
         [mui/grid {:container true :spacing 2 :columns 3}
          [mui/grid {:item true :xs 1}
-          (if (some? (:bank-accounts current-case)) (r/as-element [bank-card current-case case-id]))]]
+          (r/as-element [bank-card current-case case-id])]]
 
         [mui/stack {:spacing 2}
          [mui/box {:sx {:width 200 :height 250 :background-color "#808080" :borderRadius "4px"}}]
