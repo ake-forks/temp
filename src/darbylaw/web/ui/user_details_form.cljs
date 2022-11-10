@@ -15,14 +15,9 @@
             [darbylaw.web.ui.case-model :as case-model]
             [darbylaw.web.util.dayjs :as dayjs]))
 
-(defonce form-state (r/atom nil))
-
-(defn dispose []
-  (reset! form-state nil))
-
 (defn adapt-initial-values [initial-values]
   (-> initial-values
-    (update :dob dayjs/read)))
+    (update :date-of-birth dayjs/maybe-read)))
 
 (rf/reg-fx ::reset-form!
   (fn [[{:keys [reset]} response]]
@@ -49,7 +44,7 @@
   (-> data
     (update-vals #(cond-> %
                     (string? %) clojure.string/trim))
-    (update :dob #(.format % "YYYY-MM-DD"))
+    (update :date-of-birth dayjs/format-date-for-store)
     (update :phone phone/format-for-storing)))
 
 (rf/reg-event-fx ::submit
@@ -73,7 +68,11 @@
    {:name :title
     :label "Title"
     :options ["Mr" "Mrs" "Ms" "Mx" "Dr"]
-    :inner-config {:required true}}])
+    :inner-config {:required true}
+    :freeSolo true
+    :disableClearable true
+    ;; Don't filter results
+    :filterOptions identity}])
 
 (defn name-fields [fork-args]
   [:<>
@@ -90,22 +89,23 @@
                       :label "Surname"
                       :full-width true})]])
 
-(defn dob-date-picker [{:keys [values set-handle-change handle-blur] :as fork-args}]
+(defn date-of-birth-picker [{:keys [values set-handle-change handle-blur submitting?] :as fork-args}]
   [mui-date/date-picker
-   {:value (get values :dob)
+   {:value (get values :date-of-birth)
     :onChange #(set-handle-change {:value %
-                                   :path [:dob]})
+                                   :path [:date-of-birth]})
+    :disabled submitting?
     :renderInput
     (fn [params]
       (r/as-element
         [mui/text-field
          (merge (js->clj params)
-           {:name :dob
+           {:name :date-of-birth
             :label (let [date-pattern (j/get-in params [:inputProps :placeholder])]
                      (str "Date of Birth (" date-pattern ")"))
             :required true
             :autoComplete :off
-            :error (boolean (form/get-error :dob fork-args))
+            :error (boolean (form/get-error :date-of-birth fork-args))
             :onBlur handle-blur})]))
     :openTo :year
     :views [:year :month :day]}])
@@ -139,7 +139,7 @@
                       {:label "Postcode"
                        :required true})]]])
 
-(defn phone-field [{:keys [values set-handle-change handle-blur] :as fork-args}]
+(defn phone-field [{:keys [values set-handle-change handle-blur submitting?] :as fork-args}]
   [:> MuiPhoneNumber
    {:name :phone
     :value (get values :phone)
@@ -147,6 +147,7 @@
     :required true
     :onChange #(set-handle-change {:value %
                                    :path [:phone]})
+    :disabled submitting?
     :onBlur handle-blur
     :InputProps (let [error (form/get-error :phone fork-args)]
                   (merge
@@ -199,7 +200,7 @@
     [mui/stack {:direction :row
                 :spacing 2}
      [name-fields fork-args]]
-    [dob-date-picker fork-args]]
+    [date-of-birth-picker fork-args]]
    [mui/stack {:spacing 2}
     [mui/typography {:variant :h5}
      "your contact details"]
@@ -215,9 +216,9 @@
     (v/attr [:title] (v/present))
     (v/attr [:forename] (v/present))
     (v/attr [:surname] (v/present))
-    (v/attr [:dob] (v/chain
-                     (v-utils/not-nil)
-                     (v-utils/valid-dayjs-date)))
+    (v/attr [:date-of-birth] (v/chain
+                               (v-utils/not-nil)
+                               (v-utils/valid-dayjs-date)))
 
     (v/attr [:email] (v/chain
                        (v/present)
@@ -237,27 +238,33 @@
     (v/attr [:town] (v/present))
     (v/attr [:postcode] (v/present))))
 
-(defn personal-info-form [create|edit {:keys [initial-values]}]
-  [fork/form
-   {:state form-state
-    :on-submit (let [case-id (when (= create|edit :edit)
-                               @(rf/subscribe [::case-model/case-id]))]
-                 #(rf/dispatch [::submit create|edit case-id %]))
-    :keywordize-keys true
-    :prevent-default? true
-    :initial-values (adapt-initial-values initial-values)
-    :validation (fn [data]
-                  (try
-                    (v/field-errors data-validation data)
-                    (catch :default e
-                      (js/console.error "Error during validation: " e)
-                      [{:type ::validation-error :error e}])))}
-   (fn [fork-args]
-     (let [fork-args (ui/mui-fork-args fork-args)]
-       [:form
-        [mui/stack {:spacing 4}
-         [personal-info-form-fields create|edit fork-args]
-         [submit-button create|edit fork-args]]]))])
+(defonce form-state (r/atom nil))
+
+(defn user-details-form [create|edit {:keys [initial-values]}]
+  (r/with-let []
+    [fork/form
+     {:state form-state
+      :clean-on-unmount? true
+      :on-submit (let [case-id (when (= create|edit :edit)
+                                 @(rf/subscribe [::case-model/case-id]))]
+                   #(rf/dispatch [::submit create|edit case-id %]))
+      :keywordize-keys true
+      :prevent-default? true
+      :initial-values (adapt-initial-values initial-values)
+      :validation (fn [data]
+                    (try
+                      (v/field-errors data-validation data)
+                      (catch :default e
+                        (js/console.error "Error during validation: " e)
+                        [{:type ::validation-error :error e}])))}
+     (fn [fork-args]
+       (let [fork-args (ui/mui-fork-args fork-args)]
+         [:form
+          [mui/stack {:spacing 4}
+           [personal-info-form-fields create|edit fork-args]
+           [submit-button create|edit fork-args]]]))]
+    (finally
+      (reset! form-state nil))))
 
 (comment
   ; To fill out the form programmatically:
@@ -266,7 +273,7 @@
       {:title "Mr",
        :forename "John",
        :surname "Doe",
-       :dob (dayjs/read "1979-12-13")
+       :date-of-birth (dayjs/read "1979-12-13")
        :email "test@test.com",
        :phone "+441234123456",
        :street-number "12",
@@ -281,6 +288,6 @@
   @form-state
   (-> @form-state :values)
   (swap! form-state assoc-in [:values :phone] "+442441231235")
-  (-> @form-state :values :dob)
-  (-> @form-state :values :dob .isValid)
-  (-> @form-state :values :dob (.format "YYYY-MM-DD")))
+  (-> @form-state :values :date-of-birth)
+  (-> @form-state :values :date-of-birth .isValid)
+  (-> @form-state :values :date-of-birth (.format "YYYY-MM-DD")))

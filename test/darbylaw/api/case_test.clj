@@ -17,7 +17,7 @@
   (let [pr-info {:title "Mr"
                  :forename "John"
                  :surname "Doe"
-                 :dob "1980-01-21"
+                 :date-of-birth "1980-01-21"
                  :email "john.doe@test.com"
                  :phone "+441234123456"
                  :street-number "16"
@@ -89,7 +89,7 @@
                    :surname "e",
                    :postcode "pc",
                    :title "t",
-                   :dob "1919-01-01",
+                   :date-of-birth "1919-01-01",
                    :street-number "1"}})
 
   (xtdb.api/entity

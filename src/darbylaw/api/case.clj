@@ -14,7 +14,7 @@
    [:forename :string]
    [:middlename {:optional true} :string]
    [:surname :string]
-   [:dob date--schema]
+   [:date-of-birth date--schema]
 
    [:email :string]
    [:phone :string]
@@ -33,8 +33,27 @@
 (def deceased--schema
   [:map
    [:relationship :string]
+
+   [:registration-district :string]
+   [:administrative-area :string]
+   [:entry-number :string]
+
+   [:date-of-death date--schema]
+   [:place-of-death :string]
+
    [:forename :string]
-   [:surname :string]])
+   [:middlename {:optional true} :string]
+   [:surname :string]
+   [:sex [:enum "male" "female"]]
+   [:maiden-name :string]
+   [:date-of-birth date--schema]
+   [:place-of-birth :string]
+   [:occupation :string]
+
+   [:name-of-informant :string]
+   [:cause-of-death :string]
+   [:name-of-doctor-certifying :string]
+   [:name-of-registrar :string]])
 
 (defn create-case [{:keys [xtdb-node body-params]}]
   (let [case-id (random-uuid)
