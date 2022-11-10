@@ -155,7 +155,7 @@
 (defn modal-panel [{:keys [values handle-submit] :as fork-args} banks]
   (let [current-case @(rf/subscribe [::current-case])]
     [:form {:on-submit handle-submit}
-     [mui/container {:style {:margin-top "4rem" :background-color :white}}
+     [mui/container {:style {:margin-top "4rem" :padding "1rem" :background-color :white}}
       [mui/stack {:spacing 1 :style {:padding "1rem"}}
        [mui/typography {:variant :h3} "add bank accounts"]
        [bank-select fork-args banks]
