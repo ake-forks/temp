@@ -1,5 +1,4 @@
-(ns darbylaw.api.local-bank-data)
-
+(ns darbylaw.api.bank-list)
 
 (def bank-list
   [{:id :aberdeen-standard-investments,

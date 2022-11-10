@@ -179,27 +179,24 @@
      (let [e (xtdb.api/entity (xtdb.api/db ctx) eid)]
        [[::xt/put (update-in e [:bank-accounts] conj {:id bank-id :accounts accounts})]])))
 
-(defn add-bank [{:keys [xtdb-node path-params body-params]}]
-  (let [bank-name (:bank-name body-params)
+(defn add-bank-accounts [{:keys [xtdb-node path-params body-params]}]
+  (let [bank-id (:bank-id body-params)
         accounts (:accounts body-params)
         case-id (parse-uuid (:case-id path-params))
-        bank-data (bank-util/get-bank-by-common-name bank-name)
         e (xt/entity (xt/db xtdb-node) case-id)]
     ;check if id exists in bank-accounts
-    (if (empty? (filter #(= (:id bank-data) (:id %)) (:bank-accounts e)))
+    (if (empty? (filter #(= bank-id (:id %)) (:bank-accounts e)))
       (xt/await-tx xtdb-node
         (xt/submit-tx xtdb-node
           [[::xt/put {:xt/id ::add-bank-txn
                       :xt/fn add-bank-txn}]
-           [::xt/fn ::add-bank-txn case-id accounts (:id bank-data)]]))
+           [::xt/fn ::add-bank-txn case-id accounts bank-id]]))
       (xt/await-tx xtdb-node
         (xt/submit-tx xtdb-node
           [[::xt/put {:xt/id ::update-bank-txn
                       :xt/fn update-bank-txn}]
-           [::xt/fn ::update-bank-txn case-id accounts (:id bank-data)]])))
-    {:status 200
-     :body {:bank-data body-params}}))
-
+           [::xt/fn ::update-bank-txn case-id accounts bank-id]])))
+    {:status 204}))
 
 (comment
   (xt/entity (xt/db darbylaw.xtdb-node/xtdb-node) "test123")
@@ -377,11 +374,11 @@
            :coercion reitit.coercion.malli/coercion
            :parameters {:body deceased--schema}}}]
 
-   ["/case/:case-id/add-bank-accounts" {:post {:handler add-bank
+   ["/case/:case-id/add-bank-accounts" {:post {:handler add-bank-accounts
                                                :coercion reitit.coercion.malli/coercion
                                                :parameters {:body
                                                             [:map
-                                                             [:bank-name :string]
+                                                             [:bank-id :keyword]
                                                              [:accounts
                                                               [:vector
                                                                [:map

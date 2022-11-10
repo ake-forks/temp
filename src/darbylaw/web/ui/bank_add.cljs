@@ -6,7 +6,8 @@
             [clojure.string :as str]
             [re-frame.core :as rf]
             [darbylaw.workspaces.workspace-icons :as icon]
-            [vlad.core :as v])
+            [vlad.core :as v]
+            [darbylaw.api.bank-list :as bank-list])
   (:require-macros [reagent-mui.util :refer [react-component]]))
 
 (rf/reg-event-db
@@ -41,6 +42,10 @@
     {:db (do (assoc db :failure response)
              (fork/set-submitting db path false))}))
 
+(defn transform-on-submit [data]
+  (-> data
+    (update :bank-id (comp keyword :id))))
+
 (rf/reg-event-fx ::add-bank
   (fn [{:keys [db]} [_ case-id {:keys [path values] :as fork-params}]]
     {:db (fork/set-submitting db path true)
@@ -48,7 +53,7 @@
      (ui/build-http
        {:method :post
         :uri (str "/api/case/" case-id "/add-bank-accounts")
-        :params values
+        :params (transform-on-submit values)
         :on-success [::add-bank-success fork-params]
         :on-failure [::add-bank-failure fork-params]})}))
 
@@ -56,26 +61,26 @@
   (fn [{:keys [db]} [_ case-id {:keys [path values] :as fork-params}]]
     {:dispatch [::add-bank case-id fork-params]}))
 
-(defn generate-banks [banks]
-  (mapv
-    (fn [bank] assoc {} :id (:id bank) :label (:common-name bank)) banks))
-
-(defn bank-select [{:keys [values set-handle-change handle-blur] :as fork-args} banks]
+(defn bank-select [{:keys [values set-handle-change handle-blur] :as fork-args}]
   [mui/autocomplete
-   {:options (generate-banks banks)
-    :inputValue (or (get values :bank-name) "")
-    :onInputChange (fn [_evt new-value]
-                     (set-handle-change {:value new-value
-                                         :path [:bank-name]}))
+   {:options (for [bank bank-list/bank-list]
+               (-> bank
+                 (select-keys [:id :common-name])
+                 (clojure.set/rename-keys {:common-name :label})))
+    :value (get values :bank-id)
+    :onChange (fn [_evt new-value]
+                (set-handle-change {:value (js->clj new-value
+                                             :keywordize-keys true)
+                                    :path [:bank-id]}))
     :renderInput (react-component [props]
                    [mui/text-field (merge props
-                                     {:name :bank-name
+                                     {:name :bank-id
                                       :label "Bank Name"
                                       :required true
                                       :onBlur handle-blur})])}])
 
 (defn account-array-fn
-  [{:keys [values errors] :as _props}
+  [{:keys [values errors] :as props}
    {:fieldarray/keys [fields
                       insert
                       remove
@@ -140,9 +145,10 @@
                 :full-width false
                 :start-icon (r/as-element [icon/mui-add])}
     (str "add another "
-      (if (str/blank? (get (:values _props) :bank-name))
-        "account"
-        (str (get (:values _props) :bank-name) " account")))]])
+      (let [bank-name (get-in props [:values :bank-id :label])]
+        (if (str/blank? bank-name)
+          "account"
+          (str bank-name " account"))))]])
 
 (defn submit-buttons []
   [mui/stack {:spacing 1
@@ -152,22 +158,23 @@
                 :variant :contained :full-width true} "cancel"]
    [mui/button {:type :submit :variant :contained :full-width true} "save"]])
 
-(defn modal-panel [{:keys [values handle-submit] :as fork-args} banks]
+(defn modal-panel [{:keys [values handle-submit] :as fork-args}]
   (let [current-case @(rf/subscribe [::current-case])]
     [:form {:on-submit handle-submit}
      [mui/container {:style {:margin-top "4rem" :padding "1rem" :background-color :white}}
       [mui/stack {:spacing 1 :style {:padding "1rem"}}
        [mui/typography {:variant :h3} "add bank accounts"]
-       [bank-select fork-args banks]
+       [bank-select fork-args]
        [mui/typography {:variant :h6}
         (if (some? (-> current-case :deceased :relationship))
           (str "To the best of your knowledge, enter the details for all of your "
             (-> current-case :deceased :relationship (clojure.string/lower-case))
             "'s accounts")
           "To the best of your knowledge, enter the details for all of the deceased's accounts")
-        (if (str/blank? (get values :bank-name))
-          "."
-          (str " with " (get values :bank-name) "."))]
+        (let [bank-name (get-in values [:bank-id :label])]
+          (if (str/blank? bank-name)
+            "."
+            (str " with " bank-name ".")))]
        [fork/field-array {:props fork-args
                           :name :accounts}
         account-array-fn]
@@ -180,7 +187,7 @@
 
 (defonce form-state (r/atom nil))
 
-(defn modal [banks]
+(defn modal []
   (let [case-id (-> @(rf/subscribe [::route-params]) :case-id)]
     [fork/form
      {
@@ -189,10 +196,7 @@
       :on-submit #(rf/dispatch [::submit! case-id %])
       :keywordize-keys true
       :prevent-default? true
-      :initial-values {:bank-name ""
-                       :accounts [{:sort-code ""
-                                   :account-number ""
-                                   :estimated-value ""}]}}
+      :initial-values {:accounts [{}]}} ; placeholder for entering first account
      (fn [fork-args]
-       [modal-panel (ui/mui-fork-args fork-args) banks])]))
+       [modal-panel (ui/mui-fork-args fork-args)])]))
 

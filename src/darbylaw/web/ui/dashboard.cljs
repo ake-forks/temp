@@ -84,8 +84,7 @@
   (let [case-id (-> @(rf/subscribe [::route-params])
                   :case-id)
         current-case @(rf/subscribe [::current-case])
-        bank-modal-open @(rf/subscribe [::bank-modal])
-        all-banks (bank-util/get-banks)]
+        bank-modal-open @(rf/subscribe [::bank-modal])]
     (assert case-id)
     (rf/dispatch [::load! case-id])
     [mui/container {:style {:max-width "100%"}}
@@ -106,7 +105,7 @@
        [mui/modal
         {:open (if (nil? bank-modal-open) false bank-modal-open)
          :on-close nil}
-        [trap-focus/trap-focus {:tabIndex nil} [bank/modal all-banks]]]
+        [trap-focus/trap-focus {:tabIndex nil} [bank/modal]]]
        [mui/stack {:direction :row :spacing 2}
         [mui/grid {:container true :spacing 2 :columns 3}
          [mui/grid {:item true :xs 1}

@@ -1,6 +1,6 @@
 (ns darbylaw.web.util.bank
   (:require
-    [darbylaw.api.local-bank-data :refer [bank-list]]))
+    [darbylaw.api.bank-list :refer [bank-list]]))
 
 (defn get-banks []
   bank-list)
