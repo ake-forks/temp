@@ -127,7 +127,8 @@
 (defn panel []
   (let [case-id @(rf/subscribe [::case-model/case-id])
         history @(rf/subscribe [::case-history case-id])]
-    [mui/container {:max-width :sm}
+    [mui/container {:max-width :sm
+                    :sx {:mt 4 :mb 4}}
      [mui/stack {:spacing 2}
       [mui/typography {:variant :h3}
        (str "case history")]
