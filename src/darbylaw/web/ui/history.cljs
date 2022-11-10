@@ -6,7 +6,8 @@
             [kee-frame.core :as kf]
             [darbylaw.web.ui :as ui]
             [reagent.core :as r]
-            [lambdaisland.deep-diff2 :as diff]))
+            [lambdaisland.deep-diff2 :as diff]
+            [clojure.string :as str]))
 
 (rf/reg-event-fx ::load-success
   (fn [{:keys [db]} [_ case-id response]]
@@ -81,7 +82,10 @@
                           {:style {:background-color :lightsalmon}})]
             (if (map? v*)
               [k* " " [:div v-style (diff-to-list v*)]]
-              [k* " " [:span v-style v*]])))))))
+              [k* " " [:span v-style (cond
+                                       (nil? v*) [:i "<none>"]
+                                       (str/blank? v*) [:i "<blank>"]
+                                       :else v*)]])))))))
 
 (comment
   (diff-to-list

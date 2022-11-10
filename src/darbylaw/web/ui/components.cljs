@@ -16,10 +16,11 @@
     [mui/typography {:variant :h5} "probate-tree"]
     [mui/button {:start-icon (r/as-element [ui/icon-person-outline])
                  :style {:textTransform :none}
-                 :onClick #(rf/dispatch
-                             [::ui/navigate
-                              [:user-details
-                               {:case-id @(rf/subscribe [::case-model/case-id])}]])}
+                 :onClick (let [case-id @(rf/subscribe [::case-model/case-id])]
+                            #(rf/dispatch
+                               [::ui/navigate
+                                [:user-details
+                                 {:case-id case-id}]]))}
      @(rf/subscribe [::case-model/nickname])]]
    #_(ui/???_TO_BE_DEFINED_??? "do we replace probate-tree with a logo img? black or colourful?")])
 
