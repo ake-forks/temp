@@ -72,26 +72,30 @@
   (xt/tx-committed? darbylaw.xtdb-node/xtdb-node res)
   (xt/entity (xt/db darbylaw.xtdb-node/xtdb-node) :my-event))
 
+(defn put-event [txns event case-id]
+  (into txns
+    [[::xt/put {:xt/id ::put-with-tx-data
+                :xt/fn put-with-tx-data__txn-fn}]
+     [::xt/fn ::put-with-tx-data {:xt/id (random-uuid)
+                                  :type :event
+                                  :subject-type :probate.case
+                                  :event event
+                                  :ref/probate.case.id case-id}]]))
+
 (defn create-case [{:keys [xtdb-node body-params]}]
   (let [case-id (random-uuid)
         pr-info-id (random-uuid)
         pr-info (get body-params :personal-representative)]
     (xt/await-tx xtdb-node
       (xt/submit-tx xtdb-node
-        [[::xt/put {:type :probate.case
-                    :xt/id case-id
-                    :ref/personal-representative.info.id pr-info-id}]
-         [::xt/put (merge
-                     pr-info
-                     {:type :probate.personal-representative.info
-                      :xt/id pr-info-id})]
-         [::xt/put {:xt/id ::put-with-tx-data
-                    :xt/fn put-with-tx-data__txn-fn}]
-         [::xt/fn ::put-with-tx-data {:xt/id (random-uuid)
-                                      :type :event
-                                      :subject-type :probate.case
-                                      :event :created
-                                      :ref/probate.case.id case-id}]]))
+        (-> [[::xt/put {:type :probate.case
+                        :xt/id case-id
+                        :ref/personal-representative.info.id pr-info-id}]
+             [::xt/put (merge
+                         pr-info
+                         {:type :probate.personal-representative.info
+                          :xt/id pr-info-id})]]
+          (put-event :created case-id))))
     {:status 200
      :body {:id case-id}}))
 
@@ -105,9 +109,10 @@
         deceased-info body-params]
     (xt/await-tx xtdb-node
       (xt/submit-tx xtdb-node
-        [[::xt/put {:xt/id ::merge
-                    :xt/fn merge__txn-fn}]
-         [::xt/fn ::merge case-id {:deceased.info deceased-info}]]))
+        (-> [[::xt/put {:xt/id ::merge
+                        :xt/fn merge__txn-fn}]
+             [::xt/fn ::merge case-id {:deceased.info deceased-info}]]
+          (put-event :updated.deceased.info case-id))))
     {:status 200
      :body deceased-info}))
 
@@ -127,9 +132,10 @@
         pr-info body-params]
     (xt/await-tx xtdb-node
       (xt/submit-tx xtdb-node
-        [[::xt/put {:xt/id ::update-ref
-                    :xt/fn update-ref__txn-fn}]
-         [::xt/fn ::update-ref case-id :ref/personal-representative.info.id pr-info]]))
+        (-> [[::xt/put {:xt/id ::update-ref
+                        :xt/fn update-ref__txn-fn}]
+             [::xt/fn ::update-ref case-id :ref/personal-representative.info.id pr-info]]
+          (put-event :updated.personal-representative.info case-id))))
     {:status 200
      :body pr-info}))
 
