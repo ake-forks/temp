@@ -44,7 +44,7 @@
    [:middlename {:optional true} :string]
    [:surname :string]
    [:sex [:enum "male" "female"]]
-   [:maiden-name :string]
+   [:maiden-name {:optional true} :string]
    [:date-of-birth date--schema]
    [:place-of-birth :string]
    [:occupation :string]
