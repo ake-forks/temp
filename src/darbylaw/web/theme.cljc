@@ -1,7 +1,9 @@
 (ns darbylaw.web.theme)
 
 (def html-header-additions
-  [[:link {:rel "preconnect"
+  [[:link {:rel "icon"
+           :href "/images/favicon-bg.png"}]
+   [:link {:rel "preconnect"
            :href "https://fonts.googleapis.com"}]
    [:link {:rel "preconnect"
            :href "https://fonts.gstatic.com"
@@ -22,13 +24,13 @@
    {:primary {:main teal}
     :secondary {:main orange}}
    :typography
-   {:fontFamily "'Poppins', Helvetica,sans-serif"
-    :h1 {:fontWeight 700}
-    :h2 {:fontWeight 700}
-    :h3 {:fontWeight 700}
-    :h4 {:fontWeight 700}
-    :h5 {:fontWeight 700}
-    :button {:fontWeight 600}}
+   {:font-family "'Poppins', Helvetica,sans-serif"
+    :h1 {:font-weight 700}
+    :h2 {:font-weight 700}
+    :h3 {:font-weight 700}
+    :h4 {:font-weight 700}
+    :h5 {:font-weight 700}
+    :button {:font-weight 600}}
 
    :components
    {:MuiButton {:variants
@@ -39,5 +41,3 @@
                           :textTransform :lowercase}}]}
     :MuiTextField {:defaultProps {:variant :filled}}
     :MuiSelect {:defaultProps {:variant :filled}}}})
-
-

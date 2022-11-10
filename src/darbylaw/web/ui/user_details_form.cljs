@@ -13,7 +13,8 @@
             [darbylaw.web.util.vlad :as v-utils]
             [applied-science.js-interop :as j]
             [darbylaw.web.ui.case-model :as case-model]
-            [darbylaw.web.util.dayjs :as dayjs]))
+            [darbylaw.web.util.dayjs :as dayjs]
+            [clojure.string :as str]))
 
 (defn adapt-initial-values [initial-values]
   (-> initial-values
@@ -45,7 +46,10 @@
     (update-vals #(cond-> %
                     (string? %) clojure.string/trim))
     (update :date-of-birth dayjs/format-date-for-store)
-    (update :phone phone/format-for-storing)))
+    (update :phone phone/format-for-storing)
+    (->>
+      (remove (comp str/blank? val))
+      (into {}))))
 
 (rf/reg-event-fx ::submit
   (fn [{:keys [db]} [_ create|edit case-id {:keys [path values] :as fork-params}]]
@@ -266,22 +270,25 @@
     (finally
       (reset! form-state nil))))
 
+(defn dev-auto-fill []
+  "Fill out the form programmatically.
+  For development purposes only."
+  (let [test-data {:title "Mr",
+                   :forename "John",
+                   :surname "Doe",
+                   :date-of-birth (dayjs/read "1979-12-13")
+                   :email "test@test.com",
+                   :phone "+441234123456",
+                   :street-number "12",
+                   :street1 "Sesame",
+                   :town "Bristol",
+                   :postcode "SW1W 0NY"}]
+   (swap! form-state assoc :values test-data)))
+
 (comment
-  ; To fill out the form programmatically:
   (do
-    (def test-data
-      {:title "Mr",
-       :forename "John",
-       :surname "Doe",
-       :date-of-birth (dayjs/read "1979-12-13")
-       :email "test@test.com",
-       :phone "+441234123456",
-       :street-number "12",
-       :street1 "Sesame",
-       :town "Bristol",
-       :postcode "SW1W 0NY"})
-    (swap! form-state assoc :values test-data))
-  (darbylaw.web.core/mount-root))
+    (dev-auto-fill)
+    (darbylaw.web.core/mount-root)))
 
 (comment
   ; playing with form-state

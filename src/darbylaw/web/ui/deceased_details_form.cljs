@@ -8,7 +8,8 @@
             [darbylaw.web.util.vlad :as v-utils]
             [reagent.core :as r]
             [darbylaw.web.ui.case-model :as case-model]
-            [darbylaw.web.util.dayjs :as dayjs]))
+            [darbylaw.web.util.dayjs :as dayjs]
+            [clojure.string :as str]))
 
 (defonce form-state (r/atom nil))
 
@@ -44,7 +45,10 @@
     (update-vals #(cond-> %
                     (string? %) clojure.string/trim))
     (update :date-of-death dayjs/format-date-for-store)
-    (update :date-of-birth dayjs/format-date-for-store)))
+    (update :date-of-birth dayjs/format-date-for-store)
+    (->>
+      (remove (comp str/blank? val))
+      (into {}))))
 
 (rf/reg-event-fx ::submit
   (fn [{:keys [db]} [_ create|edit case-id {:keys [path values] :as fork-params}]]
@@ -242,27 +246,30 @@
     (finally
       (reset! form-state nil))))
 
+(defn dev-auto-fill []
+  "Fill out the form programmatically.
+  For development purposes only."
+  (let [test-data {:forename "forename",
+                   :sex "female",
+                   :entry-number "entry-number",
+                   :name-of-informant "informant",
+                   :date-of-death (dayjs/read "2022-11-05"),
+                   :registration-district "registration district",
+                   :occupation "occupation",
+                   :relationship "mother",
+                   :surname "surname",
+                   :date-of-birth (dayjs/read "1982-01-06"),
+                   :middlename "middlename",
+                   :cause-of-death "cause of death",
+                   :name-of-doctor-certifying "doctor",
+                   :name-of-registrar "registrar",
+                   :maiden-name "maiden name",
+                   :place-of-death "place of death",
+                   :place-of-birth "place of birth",
+                   :administrative-area "parish"}]
+    (swap! form-state assoc :values test-data)))
+
 (comment
-  ; To fill out the form programmatically:
   (do
-    (def test-data
-      {:forename "forename",
-       :sex "female",
-       :entry-number "entry-number",
-       :name-of-informant "informant",
-       :date-of-death (dayjs/read "2022-11-05"),
-       :registration-district "registration district",
-       :occupation "occupation",
-       :relationship "mother",
-       :surname "surname",
-       :date-of-birth (dayjs/read "1982-01-06"),
-       :middlename "middlename",
-       :cause-of-death "cause of death",
-       :name-of-doctor-certifying "doctor",
-       :name-of-registrar "registrar",
-       :maiden-name "maiden name",
-       :place-of-death "place of death",
-       :place-of-birth "place of birth",
-       :administrative-area "parish"})
-    (swap! form-state assoc :values test-data)
+    (def test-data)
     (darbylaw.web.core/mount-root)))

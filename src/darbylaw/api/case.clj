@@ -45,7 +45,7 @@
    [:middlename {:optional true} :string]
    [:surname :string]
    [:sex [:enum "male" "female"]]
-   [:maiden-name :string]
+   [:maiden-name {:optional true} :string]
    [:date-of-birth date--schema]
    [:place-of-birth :string]
    [:occupation :string]
@@ -55,19 +55,48 @@
    [:name-of-doctor-certifying :string]
    [:name-of-registrar :string]])
 
+(def put-with-tx-data__txn-fn
+  '(fn [ctx m]
+     (let [tx (xtdb.api/indexing-tx ctx)]
+       [[::xt/put (assoc m
+                    :timestamp (::xt/tx-time tx)
+                    :tx-id (::xt/tx-id tx))]])))
+
+(comment
+  (def res (xt/submit-tx darbylaw.xtdb-node/xtdb-node
+             [[::xt/put {:xt/id ::put-with-tx-data
+                         :xt/fn put-with-tx-data__txn-fn}]
+              [::xt/fn ::put-with-tx-data {:xt/id :my-event
+                                           :type :event}]]))
+  res
+  (xt/await-tx darbylaw.xtdb-node/xtdb-node res)
+  (xt/tx-committed? darbylaw.xtdb-node/xtdb-node res)
+  (xt/entity (xt/db darbylaw.xtdb-node/xtdb-node) :my-event))
+
+(defn put-event [txns event case-id]
+  (into txns
+    [[::xt/put {:xt/id ::put-with-tx-data
+                :xt/fn put-with-tx-data__txn-fn}]
+     [::xt/fn ::put-with-tx-data {:xt/id (random-uuid)
+                                  :type :event
+                                  :subject-type :probate.case
+                                  :event event
+                                  :ref/probate.case.id case-id}]]))
+
 (defn create-case [{:keys [xtdb-node body-params]}]
   (let [case-id (random-uuid)
         pr-info-id (random-uuid)
         pr-info (get body-params :personal-representative)]
     (xt/await-tx xtdb-node
       (xt/submit-tx xtdb-node
-        [[::xt/put {:type :probate.case
-                    :xt/id case-id
-                    :ref/personal-representative.info.id pr-info-id}]
-         [::xt/put (merge
-                     pr-info
-                     {:type :probate.personal-representative.info
-                      :xt/id pr-info-id})]]))
+        (-> [[::xt/put {:type :probate.case
+                        :xt/id case-id
+                        :ref/personal-representative.info.id pr-info-id}]
+             [::xt/put (merge
+                         pr-info
+                         {:type :probate.personal-representative.info
+                          :xt/id pr-info-id})]]
+          (put-event :created case-id))))
     {:status 200
      :body {:id case-id}}))
 
@@ -81,9 +110,10 @@
         deceased-info body-params]
     (xt/await-tx xtdb-node
       (xt/submit-tx xtdb-node
-        [[::xt/put {:xt/id ::merge
-                    :xt/fn merge__txn-fn}]
-         [::xt/fn ::merge case-id {:deceased.info deceased-info}]]))
+        (-> [[::xt/put {:xt/id ::merge
+                        :xt/fn merge__txn-fn}]
+             [::xt/fn ::merge case-id {:deceased.info deceased-info}]]
+          (put-event :updated.deceased.info case-id))))
     {:status 200
      :body deceased-info}))
 
@@ -103,9 +133,10 @@
         pr-info body-params]
     (xt/await-tx xtdb-node
       (xt/submit-tx xtdb-node
-        [[::xt/put {:xt/id ::update-ref
-                    :xt/fn update-ref__txn-fn}]
-         [::xt/fn ::update-ref case-id :ref/personal-representative.info.id pr-info]]))
+        (-> [[::xt/put {:xt/id ::update-ref
+                        :xt/fn update-ref__txn-fn}]
+             [::xt/fn ::update-ref case-id :ref/personal-representative.info.id pr-info]]
+          (put-event :updated.personal-representative.info case-id))))
     {:status 200
      :body pr-info}))
 
@@ -256,24 +287,74 @@
   (xt/entity (xt/db darbylaw.xtdb-node/xtdb-node) #uuid"51127427-6ff1-4093-9929-c2c9990c796e")
   (xt/entity (xt/db darbylaw.xtdb-node/xtdb-node) #uuid"162f1c25-ac28-45a9-9663-28e2accf11dc"))
 
+(def get-case__query
+  {:find [(list 'pull 'case [:xt/id
+                             {:ref/personal-representative.info.id
+                              personal-representative--props}
+                             :deceased.info
+                             :bank-accounts])]
+   :where '[[case :type :probate.case]
+            [case :xt/id case-id]]
+   :in '[case-id]})
+
 (defn get-case [{:keys [xtdb-node path-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
-        results (xt/q (xt/db xtdb-node)
-                  {:find [(list 'pull 'case [:xt/id
-                                             {:ref/personal-representative.info.id
-                                              personal-representative--props}
-                                             :deceased.info
-                                             :bank-accounts])]
-                   :where '[[case :type :probate.case]
-                            [case :xt/id case-id]]
-                   :in '[case-id]}
-                  case-id)]
+        results (xt/q (xt/db xtdb-node) get-case__query case-id)]
     (assert (= 1 (count results)))
     (ring/response
       (clojure.set/rename-keys (ffirst results)
         {:xt/id :id
          :ref/personal-representative.info.id :personal-representative
          :deceased.info :deceased}))))
+
+(defn get-case-history [{:keys [xtdb-node path-params]}]
+  (let [case-id (parse-uuid (:case-id path-params))
+        results (xt/q (xt/db xtdb-node)
+                  '{:find [(pull event [*]) timestamp]
+                    :where [[event :type :event]
+                            [event :ref/probate.case.id case-id]
+                            [event :timestamp timestamp]]
+                    :order-by [[timestamp :asc]]
+                    :in [case-id]}
+                  case-id)]
+    (ring/response
+      (->> results
+        (map #(-> %
+                first
+                (select-keys [:xt/id
+                              :timestamp
+                              :event])
+                (clojure.set/rename-keys
+                  {:xt/id :id})))))))
+
+(defn get-event [{:keys [xtdb-node path-params]}]
+  (let [event-id (parse-uuid (:event-id path-params))
+        event (xt/q (xt/db xtdb-node)
+                '{:find [(pull event [:tx-id
+                                      :ref/probate.case.id])]
+                  :where [[event :type :event]
+                          [event :xt/id event-id]]
+                  :in [event-id]}
+                event-id)
+        {:keys [tx-id]
+         case-id :ref/probate.case.id} (ffirst event)
+        db-before (xt/db xtdb-node {::xt/tx {::xt/tx-id (dec tx-id)}})
+        case-before (xt/q db-before get-case__query case-id)
+        db-after (xt/db xtdb-node {::xt/tx {::xt/tx-id tx-id}})
+        case-after (xt/q db-after get-case__query case-id)]
+    (ring/response
+      {:case-before (ffirst case-before)
+       :case-after (ffirst case-after)})))
+
+(comment
+  (xt/q (xt/db darbylaw.xtdb-node/xtdb-node)
+    '{:find [(pull event [*])]
+      :where [[event :type :event]]})
+  (xt/q (xt/db darbylaw.xtdb-node/xtdb-node {::xt/tx {::xt/tx-id -1}})
+    '{:find [(pull event [*])]
+      :where [[event :type :event]]})
+  (xt/submit-tx darbylaw.xtdb-node/xtdb-node
+    [[::xt/delete #uuid"b32ecf9a-7f9e-45cd-89f7-3a9abecdfddd"]]))
 
 (defn routes []
   [["/case" {:post {:handler create-case
@@ -283,6 +364,9 @@
                                          personal-representative--schema]]}}}]
 
    ["/case/:case-id" {:get {:handler get-case}}]
+
+   ["/case/:case-id/history" {:get {:handler get-case-history}}]
+   ["/event/:event-id" {:get {:handler get-event}}]
 
    ["/case/:case-id/personal-representative"
     {:put {:handler update-pr-info

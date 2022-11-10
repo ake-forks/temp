@@ -18,6 +18,7 @@
               ["/app/create-case" :create-case]
               ["/app/case/:case-id/create-deceased-details" :create-deceased-details]
               ["/app/case/:case-id" :dashboard]
+              ["/app/case/:case-id/history" :case-history]
               ["/app/case/:case-id/user-details" :user-details]
               ["/app/case/:case-id/deceased-details" :deceased-details]
               ["/app/case/:case-id/view-bank/:bank-id" :view-bank]]
