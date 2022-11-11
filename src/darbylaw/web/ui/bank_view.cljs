@@ -4,7 +4,7 @@
             [darbylaw.web.routes :as routes]
             [darbylaw.web.ui.app-layout :as c]
             [darbylaw.web.styles :as styles]
-            [darbylaw.web.util.bank :as bank-util]
+            [darbylaw.api.bank-list :as bank-list]
             [reagent.core :as r]
             [darbylaw.web.ui :as ui]))
 
@@ -102,7 +102,7 @@
         bank-id (-> @(rf/subscribe [::route-params])
                   :bank-id
                   keyword)
-        current-bank-static-data (bank-util/get-bank-by-id bank-id)
+        current-bank-static-data (bank-list/bank-by-id bank-id)
         all-user-banks @(rf/subscribe [::user-banks])
         current-user-bank (filter #(= (:id %) bank-id) all-user-banks)]
     (assert case-id)

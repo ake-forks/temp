@@ -93,4 +93,5 @@
     :common-name "Yorkshire Building Society",
     :org-name "Yorkshire Building Society"}])
 
-
+(def bank-by-id
+  (into {} (map (juxt :id identity) bank-list)))

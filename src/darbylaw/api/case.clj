@@ -2,8 +2,7 @@
   (:require [xtdb.api :as xt]
             [reitit.coercion]
             [reitit.coercion.malli]
-            [ring.util.response :as ring]
-            [darbylaw.web.util.bank :as bank-util]))
+            [ring.util.response :as ring]))
 
 (def date--schema
   [:re #"^\d{4}-\d{2}-\d{2}$"])
@@ -154,17 +153,6 @@
 
   (xt/entity (xt/db darbylaw.xtdb-node/xtdb-node) #uuid"be757deb-9cda-4424-a1a2-00e7176dc579"),)
 
-(def concat-in__txn-fn
-  '(fn [ctx eid ks value]
-     (let [e (xtdb.api/entity (xtdb.api/db ctx) eid)]
-       [[::xt/put (update-in e ks concat value)]])))
-
-(def merge-in__txn-fn
-  '(fn [ctx eid ks value]
-     (let [e (xtdb.api/entity (xtdb.api/db ctx) eid)]
-       [[::xt/put (update-in e ks merge value)]])))
-
-
 (def update-bank-txn
   '(fn [ctx eid accounts bank-id]
      (let [e (xtdb.api/entity (xtdb.api/db ctx) eid)
@@ -198,73 +186,6 @@
            [::xt/fn ::update-bank-txn case-id accounts bank-id]])))
     {:status 204}))
 
-(comment
-  (xt/entity (xt/db darbylaw.xtdb-node/xtdb-node) "test123")
-  (add-bank-test darbylaw.xtdb-node/xtdb-node
-    "test123"
-    "Santander"
-    [{:sort-code "5" :account-number "5" :estimated-value "7"}])
-
-  (let [e (xt/entity (xt/db darbylaw.xtdb-node/xtdb-node) "test123")
-        id :santander]
-    (empty? (filter #(= id (:id %)) (:bank-accounts e))))
-
-
-  (let [e (xt/entity (xt/db darbylaw.xtdb-node/xtdb-node) "test123")
-        bank-id :santander
-        accounts [{:sort-code "3" :account-number "3" :estimated-value "300"}]]
-    (assoc e :bank-accounts (mapv #(if (= (:id %) bank-id)
-                                     (update % :accounts concat accounts) %) (:bank-accounts e))))
-
-
-  ;CREATE
-  (let [xtdb-node darbylaw.xtdb-node/xtdb-node]
-    (xt/await-tx xtdb-node
-      (xt/submit-tx xtdb-node
-        [[::xt/put {:xt/id "test123"
-                    :bank-accounts []}]])))
-
-
-
-
-
-  (defn add-first-bank [xtdb-node id bank-name values]
-    (let [bank-data (bank-util/get-bank-by-common-name bank-name)]
-      (xt/await-tx xtdb-node
-        (xt/submit-tx xtdb-node
-          [[::xt/put {:xt/id id
-                      :bank-accounts (vector {:id (:id bank-data) :accounts values})}]]))))
-
-  (add-first-bank darbylaw.xtdb-node/xtdb-node "test123"
-    "Santander" [{:sort-code "222" :account-number "222" :estimated-value "200"}])
-
-
-
-
-  (xt/entity (xt/db darbylaw.xtdb-node/xtdb-node) #uuid"57984cd9-c386-4682-9c59-80694eea67ff")
-  (def entry
-    {:id 1234
-     :bank-accounts [{:id :aberdeen-standard-investments, :accounts
-                      [{:sort-code "5", :account-number "5", :estimated-value "5"}]}
-                     {:id :charter-savings-bank, :accounts
-                      [{:sort-code "1", :account-number "1", :estimated-value "1"}]}]})
-  (def accs (:bank-accounts entry))
-  (print (update-in entry [:bank-accounts] (some
-                                             #(if (= :aberdeen-standard-investments (:id %)))
-                                             accs)
-           {:id :aberdeen-standard-investments :accounts {:new "values"}}))
-  (def new-entry (mapv
-                   #(if (= :aberdeen-standard-investments (:id %))
-                      (update % :accounts conj {:new "vals"})
-                      %)
-                   (:bank-accounts entry)))
-  (identity new-entry)
-
-  ())
-
-
-
-
 (defn get-cases [{:keys [xtdb-node]}]
   (ring/response
     (->> (xt/q (xt/db xtdb-node)
@@ -278,10 +199,8 @@
                (clojure.set/rename-keys {:xt/id :id})
                (clojure.set/rename-keys {:ref/personal-representative.info.id :personal-representative})))))))
 
-
 (comment
-  (xt/entity (xt/db darbylaw.xtdb-node/xtdb-node) #uuid"51127427-6ff1-4093-9929-c2c9990c796e")
-  (xt/entity (xt/db darbylaw.xtdb-node/xtdb-node) #uuid"162f1c25-ac28-45a9-9663-28e2accf11dc"))
+  (xt/entity (xt/db darbylaw.xtdb-node/xtdb-node) #uuid"51127427-6ff1-4093-9929-c2c9990c796e"))
 
 (def get-case__query
   {:find [(list 'pull 'case [:xt/id

@@ -7,7 +7,7 @@
     [darbylaw.web.styles :as styles]
     [darbylaw.web.routes :as routes]
     [darbylaw.web.ui.bank-add :as bank]
-    [darbylaw.web.util.bank :as bank-util]
+    [darbylaw.api.bank-list :as bank-list]
     [re-frame.core :as rf]
     [reagent.core :as r]))
 
@@ -49,7 +49,7 @@
 
 
 (defn bank-item [bank case-id]
-  (let [bank-data (bank-util/get-bank-by-id (:id bank))
+  (let [bank-data (bank-list/bank-by-id (:id bank))
         bank-name (:common-name bank-data)
         accounts (:accounts bank)]
 
