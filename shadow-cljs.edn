@@ -18,7 +18,8 @@
           :ns-regexp  "-(test|cards)$"
           :output-dir "resources/public/js/workspaces"
           :asset-path "/js/workspaces"
-          :preloads [spyscope.core]
+          :preloads []
+          :devtools {:preloads [spyscope.core]}
           :js-options {:resolve {"goog.debug.Logger.Level"
                                  {:target :global
                                   :global "goog.log.Logger.Level"}}}
