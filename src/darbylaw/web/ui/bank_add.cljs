@@ -99,7 +99,7 @@
                [mui/icon-button {:on-click #(when (> (count fields) 1) (remove idx))}
                 [ui/icon-delete]] [:<>])
              [mui/text-field {:name :sort-code
-                              :value (get field :sort-code)
+                              :value (or (get field :sort-code) "")
                               :label "sort code"
                               :placeholder "00-00-00"
                               :on-change #(handle-change % idx)
@@ -107,7 +107,7 @@
                               :full-width true
                               :helper-text (when (touched idx :sort-code))}]
              [mui/text-field {:name :account-number
-                              :value (get field :account-number)
+                              :value (or (get field :account-number) "")
                               :label "account number"
                               :placeholder "00000000"
                               :on-change #(handle-change % idx)
@@ -115,7 +115,7 @@
                               :required true
                               :full-width true}]
              [mui/text-field {:name :estimated-value
-                              :value (get field :estimated-value)
+                              :value (or (get field :estimated-value) "")
                               :label "estimated value"
                               :on-change #(handle-change % idx)
                               :on-blur #(handle-blur % idx)
@@ -126,14 +126,14 @@
              [mui/form-group
               [mui/form-control-label {
                                        :control (r/as-element [mui/checkbox {:name :joint-check
-                                                                             :value (get field :joint-check)
+                                                                             :value (boolean (get field :joint-check))
                                                                              :label "estimated value"
                                                                              :on-change #(handle-change % idx)}])
                                        :label "Joint Account?"}]]]
 
             (if (true? (get field :joint-check))
               [mui/text-field {:name :joint-info
-                               :value (get field :joint-info)
+                               :value (or (get field :joint-info) "")
                                :label "name of other account holder"
                                :on-change #(handle-change % idx)}]
 
@@ -161,7 +161,7 @@
 (defn modal-panel [{:keys [values handle-submit] :as fork-args}]
   (let [current-case @(rf/subscribe [::current-case])]
     [:form {:on-submit handle-submit}
-     [mui/container {:style {:margin-top "4rem" :padding "1rem" :background-color :white}}
+     [mui/container {:style {:padding "1rem" :background-color :white}}
       [mui/stack {:spacing 1 :style {:padding "1rem"}}
        [mui/typography {:variant :h3} "add bank accounts"]
        [bank-select fork-args]
