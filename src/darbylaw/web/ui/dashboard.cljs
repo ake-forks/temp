@@ -1,7 +1,6 @@
 (ns darbylaw.web.ui.dashboard
   (:require
     [reagent-mui.components :as mui]
-    [reagent-mui.base.trap-focus :as trap-focus]
     [darbylaw.web.ui.app-layout :as c]
     [darbylaw.web.ui :as ui]
     [darbylaw.web.styles :as styles]
@@ -99,10 +98,11 @@
        [mui/box {:sx {:width 1100 :height 150 :background-color "#808080" :borderRadius "4px"}}]]
       [mui/stack {:spacing 3 :sx {:padding-top "2rem"}}
        [mui/typography {:variant :h3} "estate details"]
-       [mui/modal
-        {:open (if (nil? bank-modal-open) false bank-modal-open)
-         :on-close nil}
-        [trap-focus/trap-focus {:tabIndex nil} [bank/modal]]]
+       [mui/dialog
+        {:open (boolean bank-modal-open)
+         :maxWidth :md
+         :fullWidth true}
+        [bank/modal]]
        [mui/stack {:direction :row :spacing 2}
         [mui/grid {:container true :spacing 2 :columns 3}
          [mui/grid {:item true :xs 1}
