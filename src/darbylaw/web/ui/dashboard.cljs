@@ -72,12 +72,9 @@
    [mui/card-content
     [mui/typography {:variant :h5 :sx {:font-weight 600}} "bank accounts"]
     [mui/divider]
-    (if (some? (:bank-accounts current-case))
-      (do
-        (map
-          (fn [bank]
-            (r/as-element [bank-item bank case-id]))
-          (:bank-accounts current-case))))
+    (for [bank (:bank-accounts current-case)]
+      ^{:key (:id bank)}
+      [bank-item bank case-id])
     [add-bank]]])
 
 (defn panel []
