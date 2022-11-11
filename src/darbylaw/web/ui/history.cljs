@@ -7,7 +7,8 @@
             [darbylaw.web.ui :as ui]
             [reagent.core :as r]
             [lambdaisland.deep-diff2 :as diff]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [darbylaw.web.ui.error-boundary :refer [error-boundary]]))
 
 (rf/reg-event-fx ::load-success
   (fn [{:keys [db]} [_ case-id response]]
@@ -121,12 +122,13 @@
        [mui/collapse {:in @open?
                       :unmountOnExit true}
         (let [{:keys [case-before case-after]} @(rf/subscribe [::history-event id])]
-          [mui/box {:sx {:fontFamily :monospace}}
-           (diff-to-list
-             ; `diff` won't do a good job for nil
-             (diff/diff
-               (or case-before {})
-               (or case-after {})))])]]]]))
+          [error-boundary
+           [mui/box {:sx {:fontFamily :monospace}}
+            (diff-to-list
+              ; `diff` won't do a good job for nil
+              (diff/diff
+                (or case-before {})
+                (or case-after {})))]])]]]]))
 
 (defn panel []
   (let [case-id @(rf/subscribe [::case-model/case-id])
