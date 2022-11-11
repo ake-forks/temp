@@ -176,14 +176,16 @@
     (if (empty? (filter #(= bank-id (:id %)) (:bank-accounts e)))
       (xt/await-tx xtdb-node
         (xt/submit-tx xtdb-node
-          [[::xt/put {:xt/id ::add-bank-txn
-                      :xt/fn add-bank-txn}]
-           [::xt/fn ::add-bank-txn case-id accounts bank-id]]))
+          (-> [[::xt/put {:xt/id ::add-bank-txn
+                          :xt/fn add-bank-txn}]
+               [::xt/fn ::add-bank-txn case-id accounts bank-id]]
+            (put-event :updated.bank-accounts case-id))))
       (xt/await-tx xtdb-node
         (xt/submit-tx xtdb-node
-          [[::xt/put {:xt/id ::update-bank-txn
-                      :xt/fn update-bank-txn}]
-           [::xt/fn ::update-bank-txn case-id accounts bank-id]])))
+          (-> [[::xt/put {:xt/id ::update-bank-txn
+                          :xt/fn update-bank-txn}]
+               [::xt/fn ::update-bank-txn case-id accounts bank-id]]
+            (put-event :updated.bank-accounts case-id)))))
     {:status 204}))
 
 (defn get-cases [{:keys [xtdb-node]}]
