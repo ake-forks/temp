@@ -188,15 +188,17 @@
 (defonce form-state (r/atom nil))
 
 (defn modal []
-  (let [case-id (-> @(rf/subscribe [::route-params]) :case-id)]
-    [fork/form
-     {
-      :state form-state
-      :clean-on-unmount? true
-      :on-submit #(rf/dispatch [::submit! case-id %])
-      :keywordize-keys true
-      :prevent-default? true
-      :initial-values {:accounts [{}]}} ; placeholder for entering first account
-     (fn [fork-args]
-       [modal-panel (ui/mui-fork-args fork-args)])]))
+  (r/with-let []
+    (let [case-id (-> @(rf/subscribe [::route-params]) :case-id)]
+      [fork/form
+       {:state form-state
+        :clean-on-unmount? true
+        :on-submit #(rf/dispatch [::submit! case-id %])
+        :keywordize-keys true
+        :prevent-default? true
+        :initial-values {:accounts [{}]}} ; placeholder for entering first account
+       (fn [fork-args]
+         [modal-panel (ui/mui-fork-args fork-args)])])
+    (finally
+      (reset! form-state nil))))
 
