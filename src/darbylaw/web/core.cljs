@@ -22,7 +22,9 @@
               ["/app/case/:case-id/user-details" :user-details]
               ["/app/case/:case-id/deceased-details" :deceased-details]]
      :root-component [views/main-panel]
-     :debug? true}))
+     :log (merge {:level :debug}
+            (when-not config/debug?
+              {:ns-blacklist ["kee-frame.event-logger"]}))}))
 
 (defn ^:dev/after-load mount-root []
   (re-frame/clear-subscription-cache!)
