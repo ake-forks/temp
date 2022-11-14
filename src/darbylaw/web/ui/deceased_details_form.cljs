@@ -105,8 +105,8 @@
      :full-width true}]])
 
 (def section-divider
-  [mui/box {:sx {:py 1}}
-   [mui/divider {:sx {:m 0}}]])
+  [mui/box {:style {:height "1rem"}}
+   #_[mui/divider {:sx {:m 0}}]])
 
 (defn deceased-details-form* [create|edit {:keys [dirty] :as fork-args}]
   [:form
@@ -115,7 +115,7 @@
      [relationship-field fork-args]]
     [mui/typography {:variant :p :style {:padding-left "10%" :padding-right "10%"}}
      "Please fill out the below form using the exact details from the death certificate.
-     Hover over " [ui/icon-search] " for information on where to find each detail, or " [ui/icon-help-outline] " to learn why we need it."]
+     Hover over " [ui/icon-search] " for information on where to find each detail, or " [ui/icon-help-outline] " for more information."]
     [mui/divider {:style {:padding-top "1rem"}}]
 
     [mui/stack {:spacing 1 :style {:margin-top "1rem"}}
@@ -150,13 +150,6 @@
       {:name :registration-district
        :label "Registration District"
        :required true}]
-     [mui/stack {:direction :row :spacing 2}
-      [form/text-field fork-args
-       {:name :administrative-area
-        :label "Parish (if specified) and County"
-        :required true
-        :sx {:width "65%"}}]
-      [ui/???_TO_BE_DEFINED_??? "what are parish and county?"]]
      (r/as-element section-divider)
 
      [form/date-picker fork-args
@@ -231,7 +224,7 @@
         :multiline true
         :rows 2}]
       [mui/tooltip
-       {:title "why do we need this?"}
+       {:title "We need this information because in rare cases the cause of an individual's death can have implications on the processing of their estate. "}
        [ui/icon-help-outline]]]
      [mui/stack {:spacing 0.5 :direction :row}
       [form/text-field fork-args
@@ -255,7 +248,7 @@
       [mui/tooltip
        {:title
         (r/as-element [mui/box
-                       [:img {:src "/images/tooltips/registrar.png"
+                       [:img {:src "/images/tooltips/name-of-registrar.png"
                               :width "200px"}]])}
        [ui/icon-search]]]
 
