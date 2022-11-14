@@ -4,6 +4,7 @@
     [darbylaw.web.routes :as routes]
     [reagent-mui.styles :as mui-styles]
     [reagent-mui.components :as mui]
+    [darbylaw.web.ui :as ui]
     [darbylaw.web.theme :as theme]
 
     [reagent-mui.x.localization-provider :as mui-local]
@@ -11,13 +12,13 @@
     ["dayjs/locale/en-gb"]
 
     [darbylaw.web.ui.create-case]
-    [darbylaw.web.ui.deceased-details]
+    [darbylaw.web.ui.create-deceased-details]
     [darbylaw.web.ui.admin]
-    [darbylaw.web.ui.case]
+    [darbylaw.web.ui.history]
+    [darbylaw.web.ui.bank-add]
+    [darbylaw.web.ui.bank-view]
     [darbylaw.web.ui.dashboard]
-    [darbylaw.web.ui.bank]
-    [darbylaw.web.ui.view-bank]
-    [darbylaw.web.ui.dashboard]))
+    [darbylaw.web.ui.settings]))
 
 (defn add-panel-suffix [k]
   (keyword (str (name k) "-panel")))
@@ -30,7 +31,7 @@
 (defn main-panel []
   (let [active-panel (rf/subscribe [::active-panel])]
     [mui-styles/theme-provider
-     (mui-styles/create-theme theme/theme)
+     (ui/create-theme theme/theme)
      [mui/css-baseline]
      [mui-local/localization-provider {:dateAdapter AdapterDayjs
                                        :adapterLocale "en-gb"}

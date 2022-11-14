@@ -1,17 +1,18 @@
-(ns darbylaw.web.ui.deceased-details
+(ns darbylaw.web.ui.user-details
   (:require [reagent-mui.components :as mui]
             [reagent.core :as r]
             [re-frame.core :as rf]
             [darbylaw.web.ui.case-model :as case-model]
-            [darbylaw.web.ui.deceased-details-form :as form]))
+            [darbylaw.web.ui.user-details-form :as form]))
 
-(defn panel []
+(defn user-details-panel []
   (r/with-let [case-loaded? (case-model/await-load-case!)]
     [mui/container {:max-width :sm}
      [mui/typography {:variant :h3
                       :sx {:pt 4 :pb 2}}
-      "deceased's details"]
+      "your details"]
      (if @case-loaded?
-       [form/deceased-details-form :edit
-        {:initial-values (:deceased @(rf/subscribe [::case-model/current-case]))}]
+       [form/user-details-form :edit
+        {:initial-values (:personal-representative
+                           @(rf/subscribe [::case-model/current-case]))}]
        [mui/circular-progress])]))

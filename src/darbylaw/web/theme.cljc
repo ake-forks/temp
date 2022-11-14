@@ -1,7 +1,9 @@
 (ns darbylaw.web.theme)
 
 (def html-header-additions
-  [[:link {:rel "preconnect"
+  [[:link {:rel "icon"
+           :href "/images/favicon-bg.png"}]
+   [:link {:rel "preconnect"
            :href "https://fonts.googleapis.com"}]
    [:link {:rel "preconnect"
            :href "https://fonts.gstatic.com"
@@ -21,7 +23,7 @@
   {:palette
    {:primary {:main teal}
     :secondary {:main orange}}
-
+  
 
    :typography
    {:font-family "'Poppins', Helvetica,sans-serif"

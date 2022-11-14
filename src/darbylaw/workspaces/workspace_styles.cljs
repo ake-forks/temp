@@ -72,7 +72,7 @@
             :color (col :light-grey)
             :background-color (col :jet-grey)
             :text-transform :none :font-family "'Lexend', sans-serif"
-            :border-radius 0}
+            :borderRadius 0}
 
    [:&:hover {:background-color :#525252 :border "1px solid #525252"}]]
 
@@ -102,6 +102,6 @@
                           :color (col :light-grey)
                           :background-color (col :jet-grey)
                           :text-transform :none :font-family "'Lexend', sans-serif"
-                          :border-radius 0}
+                          :borderRadius 0}
 
    [:&:hover {:background-color :#525252}]])

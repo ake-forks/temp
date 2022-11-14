@@ -2,9 +2,13 @@
   (:require
     [reagent-mui.icons.account-balance]
     [reagent-mui.icons.add]
+    [reagent-mui.icons.arrow-back-sharp]
     [reagent-mui.icons.help-outline]
     [reagent-mui.icons.error-outline]
     [reagent-mui.icons.edit]
+    [reagent-mui.icons.history]
+    [reagent-mui.icons.keyboard-arrow-up]
+    [reagent-mui.icons.keyboard-arrow-down]
     [reagent-mui.icons.priority-high]
     [reagent-mui.icons.add-circle]
     [reagent-mui.icons.person-outline]
@@ -16,12 +20,18 @@
     [ajax.core :as ajax]
     [applied-science.js-interop :as j]
     [kee-frame.router :as kf-router]
-    [accountant.core :as accountant]))
+    [accountant.core :as accountant]
+    ["@mui/material/styles" :as mui-styles]
+    [reagent-mui.util]))
 
 (def icon-add reagent-mui.icons.add/add)
+(def icon-arrow-back-sharp reagent-mui.icons.arrow-back-sharp/arrow-back-sharp)
 (def icon-help-outline reagent-mui.icons.help-outline/help-outline)
 (def icon-error-outline reagent-mui.icons.error-outline/error-outline)
 (def icon-edit reagent-mui.icons.edit/edit)
+(def icon-history reagent-mui.icons.history/history)
+(def icon-keyboard-arrow-up reagent-mui.icons.keyboard-arrow-up/keyboard-arrow-up)
+(def icon-keyboard-arrow-down reagent-mui.icons.keyboard-arrow-down/keyboard-arrow-down)
 (def icon-priority-high reagent-mui.icons.priority-high/priority-high)
 (def icon-add-circle reagent-mui.icons.add-circle/add-circle)
 (def icon-account-balance reagent-mui.icons.account-balance/account-balance)
@@ -58,8 +68,9 @@
     {::navigate-no-history route}))
 
 (rf/reg-sub ::path-params
-  (fn [db _]
-    (-> db :kee-frame/route :path-params)))
+  :<- [:kee-frame/route]
+  (fn [route]
+    (:path-params route)))
 
 (defn- add-getAttribute!
   "Adds .getAttribute() method to a Material UI event.
@@ -91,3 +102,12 @@
                          ; https://groups.google.com/g/clojurescript/c/_B52tadgUgw/m/7r6uCh_EBgAJ
                          :handlers {"u" cljs.core/uuid}})}
     params))
+
+; Fix reagent-mui.styles/create-theme
+; See https://github.com/arttuka/reagent-material-ui/issues/41
+(defn create-theme [options]
+  (js->clj (mui-styles/createTheme (reagent-mui.util/clj->js' options))))
+
+(defn theme-spacing [arg]
+  (fn [theme]
+    (.spacing theme arg)))
