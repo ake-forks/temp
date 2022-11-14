@@ -3,11 +3,10 @@
             [reagent.core :as r]
             [fork.re-frame :as fork]
             [darbylaw.web.ui :as ui]
-            [clojure.string :as str]
             [re-frame.core :as rf]
             [darbylaw.workspaces.workspace-icons :as icon]
             [vlad.core :as v]
-            [darbylaw.api.bank-list :as bank-list])
+            [darbylaw.api.bank-list :as banks])
   (:require-macros [reagent-mui.util :refer [react-component]]))
 
 (rf/reg-event-db
@@ -61,16 +60,17 @@
   (fn [{:keys [db]} [_ case-id {:keys [path values] :as fork-params}]]
     {:dispatch [::add-bank case-id fork-params]}))
 
+(defn bank-label [bank-id-str]
+  (assert (string? bank-id-str))
+  (banks/bank-label (keyword bank-id-str)))
+
 (defn bank-select [{:keys [values set-handle-change handle-blur] :as fork-args}]
   [mui/autocomplete
-   {:options (for [bank bank-list/bank-list]
-               (-> bank
-                 (select-keys [:id :common-name])
-                 (clojure.set/rename-keys {:common-name :label})))
+   {:options (banks/all-bank-ids)
     :value (get values :bank-id)
+    :getOptionLabel bank-label
     :onChange (fn [_evt new-value]
-                (set-handle-change {:value (js->clj new-value
-                                             :keywordize-keys true)
+                (set-handle-change {:value new-value
                                     :path [:bank-id]}))
     :renderInput (react-component [props]
                    [mui/text-field (merge props
@@ -145,10 +145,9 @@
                 :full-width false
                 :start-icon (r/as-element [icon/mui-add])}
     (str "add another "
-      (let [bank-name (get-in props [:values :bank-id :label])]
-        (if (str/blank? bank-name)
-          "account"
-          (str bank-name " account"))))]])
+      (if-let [bank-id (get-in props [:values :bank-id])]
+        (str (bank-label bank-id) " account")
+        "account"))]])
 
 (defn submit-buttons []
   [mui/stack {:spacing 1
@@ -171,10 +170,9 @@
             (-> current-case :deceased :relationship (clojure.string/lower-case))
             "'s accounts")
           "To the best of your knowledge, enter the details for all of the deceased's accounts")
-        (let [bank-name (get-in values [:bank-id :label])]
-          (if (str/blank? bank-name)
-            "."
-            (str " with " bank-name ".")))]
+        (when-let [bank-id (:bank-id values)]
+          (str " with " (bank-label bank-id)))
+        "."]
        [fork/field-array {:props fork-args
                           :name :accounts}
         account-array-fn]

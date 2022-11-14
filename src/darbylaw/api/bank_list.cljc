@@ -95,3 +95,9 @@
 
 (def bank-by-id
   (into {} (map (juxt :id identity) bank-list)))
+
+(defn all-bank-ids []
+  (map :id bank-list))
+
+(defn bank-label [bank-id]
+  (get-in bank-by-id [bank-id :common-name]))
