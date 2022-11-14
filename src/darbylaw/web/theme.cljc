@@ -23,6 +23,8 @@
   {:palette
    {:primary {:main teal}
     :secondary {:main orange}}
+  
+
    :typography
    {:font-family "'Poppins', Helvetica,sans-serif"
     :h1 {:font-weight 700}
@@ -38,6 +40,10 @@
                   :style {:backgroundColor rich-black
                           :color off-white
                           :borderRadius 0
-                          :textTransform :lowercase}}]}
+                          :textTransform :lowercase}}
+                 {:props {:variant :text}
+                  :style {:textTransform :lowercase}}]}
     :MuiTextField {:defaultProps {:variant :filled}}
     :MuiSelect {:defaultProps {:variant :filled}}}})
+
+

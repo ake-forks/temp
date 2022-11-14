@@ -7,6 +7,7 @@
     [darbylaw.web.routes :as routes]
     [darbylaw.web.ui.bank-add :as bank]
     [darbylaw.api.bank-list :as bank-list]
+    [darbylaw.web.ui.progress-bar :as progress-bar]
     [re-frame.core :as rf]
     [reagent.core :as r]))
 
@@ -46,6 +47,11 @@
   (fn [db _]
     (:modal/bank-modal db)))
 
+(defn filter-asset [current-case type]
+  (filter #(= (:type (second %)) type) (:assets current-case)))
+
+(defn get-bank-id [bank]
+  (first (key bank)))
 
 (defn bank-item [bank case-id]
   (let [bank-data (bank-list/bank-by-id (:id bank))
@@ -95,7 +101,7 @@
              (-> current-case :deceased :relationship (clojure.string/lower-case))
              "'s estate"))]
         [mui/typography {:variant :h3} (if (nil? current-case) [mui/skeleton {:width "5rem"}] (str "case # " (subs (-> current-case :id .toString) 0 6)))]]
-       [mui/box {:sx {:width 1100 :height 150 :background-color "#808080" :borderRadius "4px"}}]]
+       [progress-bar/progress-bar]]
       [mui/stack {:spacing 3 :sx {:padding-top "2rem"}}
        [mui/typography {:variant :h3} "estate details"]
        [mui/dialog
@@ -109,10 +115,9 @@
           (r/as-element [bank-card current-case case-id])]]
 
         [mui/stack {:spacing 2}
-         [mui/box {:sx {:width 200 :height 250 :background-color "#808080" :borderRadius "4px"}}]
-         [mui/box {:sx {:width 200 :height 100 :background-color "#808080" :borderRadius "4px"}}]]]]]
+         [mui/box {:sx {:width 200 :height 250 :background-color "#808080" :border-radius "4px"}}]
+         [mui/box {:sx {:width 200 :height 100 :background-color "#808080" :border-radius "4px"}}]]]]]
      [c/footer]]))
-
 
 (defmethod routes/panels :dashboard-panel [] [panel])
 
