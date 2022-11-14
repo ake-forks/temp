@@ -2,7 +2,7 @@
   (:require [darbylaw.web.routes :as routes]
             [darbylaw.web.ui.user-details :as user-details]
             [darbylaw.web.ui.deceased-details :as deceased-details]
-            [darbylaw.web.ui.components :as c]
+            [darbylaw.web.ui.app-layout :as c]
             [reagent-mui.components :as mui]
             [darbylaw.web.ui :as ui]
             [re-frame.core :as rf]

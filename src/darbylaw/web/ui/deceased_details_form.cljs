@@ -336,7 +336,9 @@
                    :place-of-death "place of death",
                    :place-of-birth "place of birth",
                    :administrative-area "parish"}]
-    (swap! form-state assoc :values test-data)))
+    (swap! form-state assoc
+      :values test-data
+      :touched (set (keys test-data)))))
 
 (comment
   (do

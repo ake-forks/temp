@@ -15,6 +15,7 @@
     [reagent-mui.icons.search]
     [reagent-mui.components :as mui]
     [reagent-mui.lab.loading-button]
+    [reagent-mui.icons.delete-icon]
     [reagent.core :as r]
     [re-frame.core :as rf]
     [ajax.core :as ajax]
@@ -36,7 +37,6 @@
 (def icon-add-circle reagent-mui.icons.add-circle/add-circle)
 (def icon-account-balance reagent-mui.icons.account-balance/account-balance)
 (def icon-person-outline reagent-mui.icons.person-outline/person-outline)
-(def icon-search reagent-mui.icons.search/search)
 
 (def loading-button reagent-mui.lab.loading-button/loading-button)
 

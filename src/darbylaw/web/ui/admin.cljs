@@ -147,7 +147,7 @@
                    :onClick #(rf/dispatch [::ui/navigate :create-case])}
        "Create case"]]
      [mui/box {:border-bottom 1 :border-color :divider}
-      [mui/tabs {:value case-view
+      [mui/tabs {:value (or case-view :card)
                  :on-change (fn [_ value] (rf/dispatch [::set-case-view (keyword value)]))}
        [mui/tab {:label "List" :value :card}]
        [mui/tab {:label "Table" :value :data-grid}]]]

@@ -151,8 +151,42 @@
   (xt/submit-tx darbylaw.xtdb-node/xtdb-node
     [[::xt/evict ::update-ref]])
 
-  (xt/entity (xt/db darbylaw.xtdb-node/xtdb-node) #uuid"be757deb-9cda-4424-a1a2-00e7176dc579")
-  ,)
+  (xt/entity (xt/db darbylaw.xtdb-node/xtdb-node) #uuid"be757deb-9cda-4424-a1a2-00e7176dc579"),)
+
+(def update-bank-txn
+  '(fn [ctx eid accounts bank-id]
+     (let [e (xtdb.api/entity (xtdb.api/db ctx) eid)
+           new-data (mapv #(if (= (:id %) bank-id)
+                             (update % :accounts (comp vec concat) accounts)
+                             %)
+                      (:bank-accounts e))]
+       [[::xt/put (assoc e :bank-accounts new-data)]])))
+
+(def add-bank-txn
+  '(fn [ctx eid accounts bank-id]
+     (let [e (xtdb.api/entity (xtdb.api/db ctx) eid)]
+       [[::xt/put (update-in e [:bank-accounts] conj {:id bank-id :accounts accounts})]])))
+
+(defn add-bank-accounts [{:keys [xtdb-node path-params body-params]}]
+  (let [bank-id (:bank-id body-params)
+        accounts (:accounts body-params)
+        case-id (parse-uuid (:case-id path-params))
+        e (xt/entity (xt/db xtdb-node) case-id)]
+    ;check if id exists in bank-accounts
+    (if (empty? (filter #(= bank-id (:id %)) (:bank-accounts e)))
+      (xt/await-tx xtdb-node
+        (xt/submit-tx xtdb-node
+          (-> [[::xt/put {:xt/id ::add-bank-txn
+                          :xt/fn add-bank-txn}]
+               [::xt/fn ::add-bank-txn case-id accounts bank-id]]
+            (put-event :updated.bank-accounts case-id))))
+      (xt/await-tx xtdb-node
+        (xt/submit-tx xtdb-node
+          (-> [[::xt/put {:xt/id ::update-bank-txn
+                          :xt/fn update-bank-txn}]
+               [::xt/fn ::update-bank-txn case-id accounts bank-id]]
+            (put-event :updated.bank-accounts case-id)))))
+    {:status 204}))
 
 (defn get-cases [{:keys [xtdb-node]}]
   (ring/response
@@ -167,16 +201,15 @@
                (clojure.set/rename-keys {:xt/id :id})
                (clojure.set/rename-keys {:ref/personal-representative.info.id :personal-representative})))))))
 
-
 (comment
-  (xt/entity (xt/db darbylaw.xtdb-node/xtdb-node) #uuid"51127427-6ff1-4093-9929-c2c9990c796e")
-  (xt/entity (xt/db darbylaw.xtdb-node/xtdb-node) #uuid"162f1c25-ac28-45a9-9663-28e2accf11dc"))
+  (xt/entity (xt/db darbylaw.xtdb-node/xtdb-node) #uuid"51127427-6ff1-4093-9929-c2c9990c796e"))
 
 (def get-case__query
   {:find [(list 'pull 'case [:xt/id
                              {:ref/personal-representative.info.id
                               personal-representative--props}
-                             :deceased.info])]
+                             :deceased.info
+                             :bank-accounts])]
    :where '[[case :type :probate.case]
             [case :xt/id case-id]]
    :in '[case-id]})
@@ -261,5 +294,19 @@
     {:put {:handler update-deceased-info
            :coercion reitit.coercion.malli/coercion
            :parameters {:body deceased--schema}}}]
+
+   ["/case/:case-id/add-bank-accounts" {:post {:handler add-bank-accounts
+                                               :coercion reitit.coercion.malli/coercion
+                                               :parameters {:body
+                                                            [:map
+                                                             [:bank-id :keyword]
+                                                             [:accounts
+                                                              [:vector
+                                                               [:map
+                                                                [:sort-code :string]
+                                                                [:account-number :string]
+                                                                [:estimated-value :string]
+                                                                [:joint-check {:optional true} :boolean]
+                                                                [:joint-info {:optional true} :string]]]]]}}}]
 
    ["/cases" {:get {:handler get-cases}}]])

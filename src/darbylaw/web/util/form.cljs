@@ -26,14 +26,12 @@
    {:keys [error-icon?] :as _options}]
   (let [error (get-error k fork-args)]
     (cond-> {:name k
-             :value (get values k)
+             :value (or (get values k) "")
              :onChange handle-change
              :onBlur handle-blur
              :disabled submitting?
              :error (boolean error)
-             :autoComplete :off
-             ; Labels are not being shrinked when filled programmatically:
-             :InputLabelProps {:shrink (not (clojure.string/blank? (get values k)))}}
+             :autoComplete :off}
       error-icon? (assoc :InputProps
                     (when error
                       (error-icon-prop))))))
@@ -99,15 +97,13 @@
   (assert name "Missing required arg :name")
   (let [error (get-error name fork-args)
         props {:name name
-               :value (get values name)
+               :value (or (get values name) "")
                :onChange handle-change
                :onBlur handle-blur
                :error (boolean error)
                :autoComplete :off
                :InputProps (when error (error-icon-prop))
-               :disabled submitting?
-               ; Labels are not being shrinked when filled programmatically:
-               :InputLabelProps {:shrink (not (clojure.string/blank? (get values name)))}}
+               :disabled submitting?}
         prop-overrides (dissoc config :name)]
     [mui/text-field (merge props prop-overrides)]))
 

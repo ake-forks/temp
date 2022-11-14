@@ -6,8 +6,8 @@
             [kee-frame.core :as kf]
             [darbylaw.web.ui :as ui]
             [reagent.core :as r]
-            [lambdaisland.deep-diff2 :as diff]
-            [clojure.string :as str]))
+            [darbylaw.web.ui.error-boundary :refer [error-boundary]]
+            [darbylaw.web.ui.diff :as diff]))
 
 (rf/reg-event-fx ::load-success
   (fn [{:keys [db]} [_ case-id response]]
@@ -64,44 +64,6 @@
 (comment
   (format-timestamp (js/Date.)))
 
-(defn diff-to-list [m]
-  (into [:ul {:style {:list-style-type :none}}]
-    (for [[k v] (seq m)]
-      (let [inserted-k (get k :+)
-            deleted-k (get k :-)
-            modified-v (get v :+)]
-        (into [:li {:style (merge {:width :fit-content}
-                             (cond
-                               inserted-k {:border-style :solid
-                                           :border-color :green
-                                           :background-color :lightgreen}
-                               deleted-k {:text-decoration :line-through}))}]
-          (let [k* [:b (str (or inserted-k deleted-k k))]
-                v* (or modified-v v)
-                v-style (when modified-v
-                          {:style {:background-color :lightsalmon}})]
-            (if (map? v*)
-              [k* " " [:div v-style (diff-to-list v*)]]
-              [k* " " [:span v-style (cond
-                                       (nil? v*) [:i "<none>"]
-                                       (str/blank? v*) [:i "<blank>"]
-                                       :else v*)]])))))))
-
-(comment
-  (diff-to-list
-    (diff/diff
-      {:a 1
-       :b {:c 1
-           :d 2
-           :e 1}
-       :c {:a 1
-           :b 2}}
-      {:a 1
-       :b {:a 0
-           :d 3
-           :e 1}
-       :d {:new 0}})))
-
 (defn row [{:keys [id timestamp event]}]
   (r/with-let [open? (r/atom false)]
     [:<>
@@ -121,12 +83,9 @@
        [mui/collapse {:in @open?
                       :unmountOnExit true}
         (let [{:keys [case-before case-after]} @(rf/subscribe [::history-event id])]
-          [mui/box {:sx {:fontFamily :monospace}}
-           (diff-to-list
-             ; `diff` won't do a good job for nil
-             (diff/diff
-               (or case-before {})
-               (or case-after {})))])]]]]))
+          [error-boundary
+           [mui/box {:sx {:fontFamily :monospace}}
+            (diff/diff case-before case-after)]])]]]]))
 
 (defn panel []
   (let [case-id @(rf/subscribe [::case-model/case-id])

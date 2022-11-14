@@ -283,7 +283,9 @@
                    :street1 "Sesame",
                    :town "Bristol",
                    :postcode "SW1W 0NY"}]
-   (swap! form-state assoc :values test-data)))
+   (swap! form-state assoc
+     :values test-data
+     :touched (set (keys test-data)))))
 
 (comment
   (do
