@@ -20,8 +20,8 @@
    :padding-left "3rem"
    :padding-right "3rem"}
   [:h5 {:font-weight 600}]
-  [:button {:text-transform "lowercase"
-            :font-weight 600
+  [:button {:textTransform "lowercase"
+            :fontWeight 600
             :font-size "large"}])
 
 (defclass footer []

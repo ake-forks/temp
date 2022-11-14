@@ -15,6 +15,8 @@
     [darbylaw.web.ui.create-deceased-details]
     [darbylaw.web.ui.admin]
     [darbylaw.web.ui.history]
+    [darbylaw.web.ui.bank-add]
+    [darbylaw.web.ui.bank-view]
     [darbylaw.web.ui.dashboard]
     [darbylaw.web.ui.settings]))
 
