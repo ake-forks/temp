@@ -115,7 +115,7 @@
      [relationship-field fork-args]]
     [mui/typography {:variant :p :style {:padding-left "10%" :padding-right "10%"}}
      "Please fill out the below form using the exact details from the death certificate.
-     Hover over " [ui/icon-search] " for information on where to find each detail, or " [ui/icon-help-outline] " for more information."]
+     Hover over " [ui/icon-search] " for a guide on where to find each field, or " [ui/icon-help-outline] " for more information."]
     [mui/divider {:style {:padding-top "1rem"}}]
 
     [mui/stack {:spacing 1 :style {:margin-top "1rem"}}
