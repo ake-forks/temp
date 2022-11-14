@@ -43,7 +43,7 @@
 
 (defn transform-on-submit [data]
   (-> data
-    (update :bank-id (comp keyword :id))))
+    (update :bank-id keyword)))
 
 (rf/reg-event-fx ::add-bank
   (fn [{:keys [db]} [_ case-id {:keys [path values] :as fork-params}]]
