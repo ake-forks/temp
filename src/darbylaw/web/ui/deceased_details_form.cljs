@@ -81,8 +81,10 @@
   [form/autocomplete-field fork-args
    {:name :relationship
     :label "Who was the deceased to you?"
+
     :options relationships
-    :inner-config {:required true}
+    :inner-config {:required true
+                   :placeholder "I'm completing this form on behalf of my late..."}
     :disableClearable true}])
 
 (defn name-fields [fork-args]
@@ -102,14 +104,48 @@
      :required true
      :full-width true}]])
 
+(def section-divider
+  [mui/box {:sx {:py 1}}
+   [mui/divider {:sx {:m 0}}]])
+
 (defn deceased-details-form* [create|edit {:keys [dirty] :as fork-args}]
   [:form
    [mui/stack {:spacing 4}
-    [mui/stack {:spacing 2}
+    [mui/stack {:spacing 2 :style {:padding-left "10%" :padding-right "10%"}}
      [relationship-field fork-args]]
-    [mui/typography {:variant :p}
-     "Please fill out the below form using the exact details from the death certificate."]
-    [mui/stack {:spacing 2}
+    [mui/typography {:variant :p :style {:padding-left "10%" :padding-right "10%"}}
+     "Please fill out the below form using the exact details from the death certificate.
+     Hover over " [ui/icon-search] " for information on where to find each detail, or " [ui/icon-help-outline] " to learn why we need it."]
+    [mui/divider {:style {:padding-top "1rem"}}]
+
+    [mui/stack {:spacing 1 :style {:margin-top "1rem"}}
+     [mui/stack {:spacing 0.5
+                 :direction :row
+                 :justify-content :end}
+      [form/text-field fork-args
+       {:name :certificate-number
+        :label "Certificate Number"
+        :required true}]
+      [mui/tooltip
+       {:title
+        (r/as-element [mui/box
+                       [:p "Format AAA12321"]
+                       [:img {:src "/images/tooltips/cert-number.png"
+                              :width "200px"}]])}
+       [ui/icon-search]]]
+     [mui/stack {:direction :row :spacing 0.5 :justify-content :end}
+      [form/text-field fork-args
+       {:name :entry-number
+        :label "Entry Number"
+        :required true}]
+      [mui/tooltip
+       {:title
+        (r/as-element [mui/box
+                       [:img {:src "/images/tooltips/entry-number.png"
+                              :width "200px"}]])}
+       [ui/icon-search]]]
+     (r/as-element section-divider)
+
      [form/text-field fork-args
       {:name :registration-district
        :label "Registration District"
@@ -120,36 +156,48 @@
         :label "Parish (if specified) and County"
         :required true
         :sx {:width "65%"}}]
-      [form/text-field fork-args
-       {:name :entry-number
-        :label "Entry Number"
-        :required true
-        :sx {:width "35%"}}]]
+      [ui/???_TO_BE_DEFINED_??? "what are parish and county?"]]
+     (r/as-element section-divider)
+
      [form/date-picker fork-args
       {:name :date-of-death
        :inner-config {:label-prefix "Date of Death"
                       :required true}}]
      [form/text-field fork-args
-           {:name :place-of-death
-            :label "Place of Death"
-            :required true}]]
-    [mui/stack {:spacing 2}
+      {:name :place-of-death
+       :label "Place of Death"
+       :required true}]
+     (r/as-element section-divider)
+
      [mui/stack {:direction :row :spacing 2}
-      [name-fields fork-args]]
-     [mui/stack {:direction :row :spacing 2}
-      ;; `You can only apply to be recognised as male or female. Non-binary genders are not legally recognised in the UK.`
-      ;; https://www.gov.uk/apply-gender-recognition-certificate
-      [form/autocomplete-field fork-args
-       {:name :sex
-        :label "Legal Sex"
-        :options ["female" "male"]
-        :inner-config {:required true}
-        :disableClearable true
-        :full-width true}]
-      [form/text-field fork-args
-       {:name :maiden-name
-        :label "Maiden Name (if applicable)"
-        :full-width true}]]
+      [mui/stack {:spacing 1 :sx {:width "65%"}}
+       [form/text-field fork-args
+        {:name :first-name
+         :label "First Name"
+         :full-width true}]
+       [form/text-field fork-args
+        {:name :first-name
+         :label "Surname"
+         :full-width true}]]
+      [mui/stack {:spacing 1 :sx {:width "35%"}}
+       [mui/stack {:spacing 0.5 :direction :row}
+        [form/autocomplete-field fork-args
+         {:name :sex
+          :label "Legal Sex"
+          :options ["female" "male"]
+          :inner-config {:required true}
+          :disableClearable true
+          :full-width true}]
+        [mui/tooltip
+         {:title "Please refer to the individual's sex as written on the death certificate.
+         Non-binary genders are not legally recognised in the UK."}
+         [ui/icon-help-outline]]]
+       [form/text-field fork-args
+        {:name :maiden-name
+         :label "Maiden Name (if applicable)"
+         :full-width true}]]]
+     (r/as-element section-divider)
+
      [form/date-picker fork-args
       {:name :date-of-birth
        :inner-config {:label-prefix "Date of Birth"
@@ -160,37 +208,65 @@
       {:name :place-of-birth
        :label "Place of Birth"
        :required true}]
+     (r/as-element section-divider)
+
      [form/text-field fork-args
       {:name :occupation
        :label "Occupation"
-       :required true}]]
+       :required true}]
+     [form/text-field fork-args
+      {:name :address
+       :label "Usual Address"
+       :required true
+       :multiline true
+       :rows 2}]
+     (r/as-element section-divider)
 
-    [mui/stack {:spacing 2}
-     [form/text-field fork-args
-      {:name :name-of-informant
-       :label "Name of Informant"
-       :required true}]
-     [form/text-field fork-args
-      {:name :cause-of-death
-       :label "Cause of Death"
-       :required true}]
-     [form/text-field fork-args
-      {:name :name-of-doctor-certifying
-       :label "Name of Doctor Certifying Death"
-       :required true}]
-     [form/text-field fork-args
-      {:name :name-of-registrar
-       :label "Name of Registrar"
-       :required true}]]
+     [mui/stack {:spacing 0.5 :direction :row}
+      [form/text-field fork-args
+       {:name :cause-of-death
+        :label "Cause of Death"
+        :required true
+        :full-width true
+        :multiline true
+        :rows 2}]
+      [mui/tooltip
+       {:title "why do we need this?"}
+       [ui/icon-help-outline]]]
+     [mui/stack {:spacing 0.5 :direction :row}
+      [form/text-field fork-args
+       {:name :name-of-doctor-certifying
+        :label "Certified By"
+        :required true
+        :full-width true}]
+      [mui/tooltip
+       {:title
+        (r/as-element [mui/box
+                       [:img {:src "/images/tooltips/certified-by.png"
+                              :width "200px"}]])}
+       [ui/icon-search]]]
+     (r/as-element section-divider)
 
-    [form/submit-button fork-args
-     {:button {:text (case create|edit
-                       :create "Create Case"
-                       :edit "Save")
-               :variant :contained
-               :size :large
-               :disabled (and (= create|edit :edit)
-                              (not dirty))}}]]])
+     [mui/stack {:spacing 0.5 :direction :row :justify-content :end}
+      [form/text-field fork-args
+       {:name :name-of-registrar
+        :label "Name of Registrar"
+        :required true}]
+      [mui/tooltip
+       {:title
+        (r/as-element [mui/box
+                       [:img {:src "/images/tooltips/registrar.png"
+                              :width "200px"}]])}
+       [ui/icon-search]]]
+
+     [form/submit-button fork-args
+      {:button {:text (case create|edit
+                        :create "Create Case"
+                        :edit "Save")
+                :variant :contained
+                :size :large
+                :disabled (and (= create|edit :edit)
+                            (not dirty))}}]]]])
 
 (def data-validation
   (v/join
@@ -214,7 +290,7 @@
       (v/chain
         (v-utils/not-nil)
         (v-utils/valid-dayjs-date)))
-    (v/attr [:place-of-birth]  (v/present))
+    (v/attr [:place-of-birth] (v/present))
 
     (v/attr [:occupation] (v/present))
 
