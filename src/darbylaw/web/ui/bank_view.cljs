@@ -44,26 +44,26 @@
   (print accounts)
   [mui/stack {:spacing 1 :style {:margin-top "1rem"}}
    (map (fn [acc]
-
           [mui/stack {:spacing 1}
            [mui/stack {:spacing 1 :direction :row :justify-content :space-between}
             [mui/text-field {:label "sort code" :value (:sort-code acc) :disabled true}]
             [mui/text-field {:label "account number" :value (:account-number acc) :disabled true}]
-            [mui/text-field {:label "estimated value" :value (:sort-code acc) :disabled true}]
-
+            [mui/text-field {:label "estimated value" :value (:estimated-value acc) :disabled true}]
             [mui/button
              {:start-icon (r/as-element [ui/icon-edit])}]
-
             [mui/button
              {:start-icon (r/as-element [ui/icon-delete])}]]
-           [mui/stack {:spacing 1 :direction :row}
+           [mui/stack {:spacing 1 :direction :row :style {:width "80%"}}
             (if (some? (:joint-check acc))
-              [mui/form-control-label {:label "joint account" :control (r/as-element [mui/checkbox {:defaultChecked true}])}])
+              [mui/form-control-label {:label "joint account"
+                                       :control (r/as-element [mui/checkbox {:defaultChecked true
+                                                                             :disabled true}])}])
+
             (if (some? (:joint-info acc))
               [mui/text-field {:label "joint account info"
                                :value (:joint-info acc)
+                               :disabled true
                                :full-width true}])]])
-
      accounts)])
 
 (defn display-timeline []
