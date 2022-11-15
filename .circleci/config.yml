@@ -88,7 +88,41 @@ jobs:
           docker_layer_caching: true
       - run:
           name: Build Application Docker Image
-          command: docker build -t probatetree-staging:latest .
+          command: |
+            diff_fmt() {
+              diff=$1
+              
+              mins=$(($diff / 60))
+              secs=$(($diff % 60))
+
+              out=""
+              [ $mins != "0" ] && {
+                out="${mins}m "
+              }
+              out="$out${secs}s"
+
+              printf '%7s' "$out"
+            }
+
+            time_diff() {
+              curr=$1
+              prev=$2
+
+              echo "$(($curr - $prev))"
+            }
+
+            START_TIME="$(date +%s)"
+            PREV_TIME=$START_TIME
+
+            echo "  start(   prev) | log line"
+            docker build -t probatetree-staging:latest . | \
+              while read line ; do \
+                now="$(date +%s)"; \
+                since_start="$(diff_fmt $(time_diff $now $START_TIME))"; \
+                since_last_print="$(diff_fmt $(time_diff $now $PREV_TIME))"; \
+                echo "$since_start($since_last_print) | $line"; \
+                PREV_TIME="$now"; \
+              done
       # We only push the docker image when on the `main` branch
       - when:
           condition:
