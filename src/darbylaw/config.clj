@@ -6,11 +6,17 @@
     [clojure.tools.reader.edn :as edn]
     [clojure.string :as str]))
 
+(some-> nil
+        str/lower-case
+        keyword)
+
 (mount/defstate profile
-  :start (or (-> (System/getenv "PROFILE")
-                 str/lower-case
-                 keyword)
+  :start (or (some-> (System/getenv "PROFILE")
+                     str/lower-case
+                     keyword)
              :staging))
+
+
 
 ;; NOTE: Probably should just call out to secrets manager ourselves
 ;;       Fine for now while we are just using basic auth though
