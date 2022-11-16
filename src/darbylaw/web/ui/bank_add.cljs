@@ -33,12 +33,14 @@
 
 (rf/reg-event-fx ::add-bank-success
   (fn [{:keys [db]} [_ {:keys [path]} response]]
+    (print response)
     {:db (fork/set-submitting db path false)}
     (rf/dispatch [::hide-bank-modal])))
 
 (rf/reg-event-fx ::add-bank-failure
   (fn [{:keys [db]} [_ {:keys [path]} response]]
     {:db (do (assoc db :failure response)
+             (print response)
              (fork/set-submitting db path false))}))
 
 (defn transform-on-submit [data]
@@ -97,9 +99,7 @@
            ^{:key idx}
            [:<>
             [mui/stack {:spacing 1 :direction :row}
-             (if (> idx 0)
-               [mui/icon-button {:on-click #(when (> (count fields) 1) (remove idx))}
-                [ui/icon-delete]] [:<>])
+
              [mui/text-field {:name :sort-code
                               :value (or (get field :sort-code) "")
                               :label "sort code"
@@ -125,17 +125,22 @@
                               :InputProps
                               {:start-adornment
                                (r/as-element [mui/input-adornment {:position :start} "£"])}}]
+
              [mui/form-group
               [mui/form-control-label {
                                        :control (r/as-element [mui/checkbox {:name :joint-check
-                                                                             :value (boolean (get field :joint-check))
+                                                                             :value (get field :joint-check)
+                                                                             :checked (get field :joint-check)
                                                                              :label "estimated value"
                                                                              :on-change #(handle-change % idx)}])
-                                       :label "Joint Account?"}]]]
+                                       :label "Joint Account?"}]]
+             (if (> idx 0)
+               [mui/icon-button {:on-click #(when (> (count fields) 1) (remove idx))}
+                [ui/icon-delete]] [:<>])]
 
             (if (true? (get field :joint-check))
               [mui/text-field {:name :joint-info
-                               :value (or (get field :joint-info) "")
+                               :value (if (true? (get field :joint-check)) (get field :joint-info) "")
                                :label "name of other account holder"
                                :on-change #(handle-change % idx)}]
 
@@ -182,7 +187,7 @@
        [fork/field-array {:props fork-args
                           :name :accounts}
         account-array-fn]
-       [mui/button {:on-click #(print values)} "values"]
+       [mui/button {:on-click #(print values)} "args"]
        [submit-buttons]]]]))
 
 
@@ -210,11 +215,12 @@
 
 (defn modal-with-values [values]
   (r/with-let []
-    (let [case-id (-> @(rf/subscribe [::route-params]) :case-id)]
+    (let [case-id (-> @(rf/subscribe [::route-params]) :case-id)
+          modal-value (peek @(rf/subscribe [::bank-modal]))]
       [fork/form
        {:state form-state
         :clean-on-unmount? true
-        :on-submit #(rf/dispatch [::submit! case-id %])
+        :on-submit #(rf/dispatch [::submit! case-id modal-value %])
         :keywordize-keys true
         :prevent-default? true
         :initial-values values}

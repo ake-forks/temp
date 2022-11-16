@@ -39,19 +39,30 @@
                           :xt/fn update-bank-txn}]
                [::xt/fn ::update-bank-txn case-id accounts bank-id]]
             (case-api/put-event :updated.bank-accounts case-id)))))
-    {:status 204}))
+    {:status 200
+     :body body-params}))
 
+(def edit-bank-txn
+  '(fn [ctx eid accounts bank-id]
+     (let [e (xtdb.api/entity (xtdb.api/db ctx) eid)
+           new-data (mapv #(if (= (:id %) bank-id)
+                             (assoc % :accounts accounts)
+                             %)
+                      (:bank-accounts e))]
+       [[::xt/put (assoc-in e [:bank-accounts] new-data)]])))
 
 (defn update-bank-accounts [{:keys [xtdb-node path-params body-params]}]
   (let [bank-id (:bank-id body-params)
-        accounts {:account body-params}
+        accounts (:accounts body-params)
         case-id (parse-uuid (:case-id path-params))
         e (xt/entity (xt/db xtdb-node) case-id)]
     (xt/await-tx xtdb-node
       (xt/submit-tx xtdb-node
-        (-> [::xt/put (update-in e [:bank-accounts] conj {:id bank-id :accounts accounts})]
-          (case-api/put-event :updated.bank-accounts case-id))))
-    {:status 204}))
+        (-> [[::xt/put {:xt/id ::edit-bank-txn
+                        :xt/fn edit-bank-txn}]
+             [::xt/fn ::edit-bank-txn case-id accounts bank-id]])))
+    {:status 200
+     :body (:accounts body-params)}))
 
 (defn routes []
   [["/:case-id/add-bank-accounts" {:post {:handler add-bank-accounts
@@ -67,7 +78,7 @@
                                                            [:estimated-value :string]
                                                            [:joint-check {:optional true} :boolean]
                                                            [:joint-info {:optional true} :string]]]]]}}}]
-   ["/:case-id/update-bank-accounts" {:post {:handler add-bank-accounts
+   ["/:case-id/update-bank-accounts" {:post {:handler update-bank-accounts
                                              :coercion reitit.coercion.malli/coercion
                                              :parameters {:body
                                                           [:map

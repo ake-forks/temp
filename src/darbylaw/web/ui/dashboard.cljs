@@ -114,7 +114,6 @@
         [mui/grid {:container true :spacing 2 :columns 3}
          [mui/grid {:item true :xs 1}
           (r/as-element [bank-card current-case])]]
-
         [mui/stack {:spacing 2}
          [mui/box {:sx {:width 200 :height 250 :background-color "#808080" :border-radius "4px"}}]
          [mui/box {:sx {:width 200 :height 100 :background-color "#808080" :border-radius "4px"}}]]]]]
