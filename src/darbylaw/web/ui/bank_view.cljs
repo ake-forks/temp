@@ -6,7 +6,8 @@
             [darbylaw.web.styles :as styles]
             [darbylaw.api.bank-list :as bank-list]
             [reagent.core :as r]
-            [darbylaw.web.ui :as ui]))
+            [darbylaw.web.ui :as ui]
+            [darbylaw.web.ui.case-model :as case-model]))
 
 (rf/reg-event-fx
   ::load-success
@@ -76,7 +77,13 @@
    [mui/step {:expanded true}
     [mui/step-label "we have sent the notification letter"]
     [mui/step-content
-     [mui/button {:variant :contained} "view letter sent PDF"]]]
+     [mui/button {:href (let [case-id @(rf/subscribe [::case-model/case-id])
+                              bank-id (-> @(rf/subscribe [::route-params]) :bank-id keyword)]
+                          (str "/api/case/" case-id "/bank-accounts/" bank-id "/notification-doc"))
+                  :target "_blank"
+                  :variant :contained
+                  :endIcon (r/as-element [ui/icon-open-in-new])}
+      "view letter sent pdf"]]]
    [mui/step {:expanded true}
     [mui/step-label "we are waiting to receive confirmation and valuations from the bank"]
     [mui/step-content

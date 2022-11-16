@@ -8,7 +8,7 @@ FROM clojure:temurin-17-tools-deps-1.11.1.1165-bullseye as base
 WORKDIR /app
 
 # Build & runtime deps
-RUN apt-get update && apt-get install -y git
+RUN apt-get update && apt-get install -y git libreoffice
 
 
 

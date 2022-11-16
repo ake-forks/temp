@@ -27,6 +27,9 @@
         aero/aero {:mvn/version "1.1.6"}
         ;;; Authentication
         ring-basic-authentication/ring-basic-authentication {:mvn/version "1.1.1"}
+        ;; Documents
+        org.jodconverter/jodconverter-local {:mvn/version "4.4.4"}
+        io.github.erdos/stencil-core {:mvn/version "0.4.7"}
 
         ;; Frontend
         ;; _________________________________________________

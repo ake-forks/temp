@@ -18,6 +18,7 @@
     [darbylaw.xtdb-node :refer [xtdb-node]]
     [darbylaw.api.case :as api.case]
     [darbylaw.api.bank :as api.bank]
+    [darbylaw.api.bank-notification :as bank-notification]
     [darbylaw.config :as config]))
 
 (defn page [meta-info & body]
@@ -79,7 +80,8 @@
     ["/app" {:get (fn [_req] (r/redirect "/app/admin"))}]
     ["/app{*path}" {:get spa}]
     ["/api" {:middleware [wrap-xtdb-node]}
-     (api.case/routes)]
+     (api.case/routes)
+     (bank-notification/routes)]
     ["/bank-api" {:middleware [wrap-xtdb-node]}
      (api.bank/routes)]]])
 
