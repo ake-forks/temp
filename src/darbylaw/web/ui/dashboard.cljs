@@ -47,39 +47,39 @@
   (fn [db _]
     (:modal/bank-modal db)))
 
-(defn filter-asset [current-case type]
-  (filter #(= (:type (second %)) type) (:assets current-case)))
-
-(defn get-bank-id [bank]
-  (first (key bank)))
-
-(defn bank-item [bank case-id]
+(defn bank-item [bank]
   (let [bank-data (bank-list/bank-by-id (:id bank))
-        bank-name (:common-name bank-data)
-        accounts (:accounts bank)]
-
+        bank-id (:id bank)
+        accounts (:accounts bank)
+        modal @(rf/subscribe [::bank-modal])]
     [mui/box
-     [mui/card-action-area {:on-click #(rf/dispatch [::ui/navigate [:view-bank {:case-id case-id :bank-id (:id bank)}]])
+     [mui/card-action-area {:on-click #(rf/dispatch [::bank/show-bank-modal bank-id])
                             :sx {:padding-top "0.5rem" :padding-bottom "0.5rem"}}
       [mui/stack {:spacing 0.5 :direction :row :justify-content :space-between}
-       [mui/typography {:variant :h6} bank-name]
+       [mui/typography {:variant :h6} (:common-name bank-data)]
        [mui/typography {:variant :h6} (str "£" (reduce + (map (fn [account] (js/parseFloat (:estimated-value account))) accounts)))]]]
+     [mui/dialog
+      {:open (if (= (peek modal) bank-id) true false)
+       :maxWidth :md
+       :fullWidth true}
+      [bank/modal-with-values
+       {:accounts accounts :bank-id (name (:id bank))}]]
      [mui/divider {:variant "middle"}]]))
 
 (defn add-bank []
-  [mui/card-action-area {:on-click #(rf/dispatch [::bank/show-bank-modal]) :sx {:padding-top "0.5rem"}}
+  [mui/card-action-area {:on-click #(rf/dispatch [::bank/show-bank-modal :add-bank]) :sx {:padding-top "0.5rem"}}
    [mui/stack {:direction :row :spacing 2 :align-items :baseline}
     [mui/typography {:variant :h5} "add bank account"]
     [ui/icon-add]]])
 
-(defn bank-card [current-case case-id]
+(defn bank-card [current-case]
   [mui/card
    [mui/card-content
     [mui/typography {:variant :h5 :sx {:font-weight 600}} "bank accounts"]
     [mui/divider]
     (for [bank (:bank-accounts current-case)]
       ^{:key (:id bank)}
-      [bank-item bank case-id])
+      [bank-item bank])
     [add-bank]]])
 
 (defn panel []
@@ -105,14 +105,15 @@
       [mui/stack {:spacing 3 :sx {:padding-top "2rem"}}
        [mui/typography {:variant :h3} "estate details"]
        [mui/dialog
-        {:open (boolean bank-modal-open)
+        {:open (= (peek bank-modal-open) :add-bank)
          :maxWidth :md
          :fullWidth true}
         [bank/modal]]
+
        [mui/stack {:direction :row :spacing 2}
         [mui/grid {:container true :spacing 2 :columns 3}
          [mui/grid {:item true :xs 1}
-          (r/as-element [bank-card current-case case-id])]]
+          (r/as-element [bank-card current-case])]]
 
         [mui/stack {:spacing 2}
          [mui/box {:sx {:width 200 :height 250 :background-color "#808080" :border-radius "4px"}}]

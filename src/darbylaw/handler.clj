@@ -17,6 +17,7 @@
     [darbylaw.web.theme :as theme]
     [darbylaw.xtdb-node :refer [xtdb-node]]
     [darbylaw.api.case :as api.case]
+    [darbylaw.api.bank :as api.bank]
     [darbylaw.config :as config]))
 
 (defn page [meta-info & body]
@@ -60,7 +61,7 @@
     (if (= auth :none)
       true
       (and (contains? auth username)
-           (= (get auth username) password)))))
+        (= (get auth username) password)))))
 
 (defn create-auth-middleware
   [handler authenticated?]
@@ -78,7 +79,9 @@
     ["/app" {:get (fn [_req] (r/redirect "/app/admin"))}]
     ["/app{*path}" {:get spa}]
     ["/api" {:middleware [wrap-xtdb-node]}
-     (api.case/routes)]]])
+     (api.case/routes)]
+    ["/bank-api" {:middleware [wrap-xtdb-node]}
+     (api.bank/routes)]]])
 
 (defn make-router []
   (ring/router
