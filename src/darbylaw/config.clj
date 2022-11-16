@@ -3,10 +3,14 @@
     [mount.core :as mount]
     [aero.core :as aero]
     [clojure.java.io :as java-io]
-    [clojure.tools.reader.edn :as edn]))
+    [clojure.tools.reader.edn :as edn]
+    [clojure.string :as str]))
 
 (mount/defstate profile
-  :start :production)
+  :start (or (-> (System/getenv "PROFILE")
+                 str/lower-case
+                 keyword)
+             :staging))
 
 ;; NOTE: Probably should just call out to secrets manager ourselves
 ;;       Fine for now while we are just using basic auth though

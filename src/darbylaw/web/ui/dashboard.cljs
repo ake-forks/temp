@@ -100,7 +100,7 @@
            (str "your "
              (-> current-case :deceased :relationship (clojure.string/lower-case))
              "'s estate"))]
-        [mui/typography {:variant :h3} (if (nil? current-case) [mui/skeleton {:width "5rem"}] (str "case # " (subs (-> current-case :id .toString) 0 6)))]]
+        [mui/typography {:variant :h3} (if (nil? current-case) [mui/skeleton {:width "5rem"}] (str "case #" (:reference current-case :reference)))]]
        [progress-bar/progress-bar]]
       [mui/stack {:spacing 3 :sx {:padding-top "2rem"}}
        [mui/typography {:variant :h3} "estate details"]

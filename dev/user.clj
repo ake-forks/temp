@@ -16,5 +16,5 @@
   (ns-tools/refresh :after 'user/start-dev!))
 
 (comment
-  (reset!)
+  (go!)
   ,)

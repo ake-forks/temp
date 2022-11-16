@@ -2,7 +2,8 @@
   (:require [xtdb.api :as xt]
             [reitit.coercion]
             [reitit.coercion.malli]
-            [ring.util.response :as ring]))
+            [ring.util.response :as ring]
+            [darbylaw.config :as config]))
 
 (def date--schema
   [:re #"^\d{4}-\d{2}-\d{2}$"])
@@ -82,15 +83,36 @@
                                   :event event
                                   :ref/probate.case.id case-id}]]))
 
+(def initialise-case_txn-fn
+  '(fn [ctx case-id pr-info-id is-test]
+     (let [db (xtdb.api/db ctx)
+           last-case-ref (xtdb.api/entity db ::last-case-ref)
+           new-case-ref (if (nil? last-case-ref)
+                          1
+                          (inc (:value last-case-ref))) 
+           ref-suffix (if is-test "99" "00")
+           ;; Pad `new-case-ref` so that it's at least 6 digits total
+           reference (str (format "%04d" new-case-ref) ref-suffix)]
+       ;; Update/initialise the last-case-ref
+       [[::xt/put {:xt/id ::last-case-ref
+                   :value new-case-ref}]
+        ;; Initialise the probate-case
+        [::xt/put {:type :probate.case
+                   :xt/id case-id
+                   :ref/personal-representative.info.id pr-info-id
+                   :is-test is-test
+                   :reference reference}]])))
+
 (defn create-case [{:keys [xtdb-node body-params]}]
   (let [case-id (random-uuid)
         pr-info-id (random-uuid)
-        pr-info (get body-params :personal-representative)]
+        pr-info (get body-params :personal-representative)
+        is-test (not= config/profile :production)]
     (xt/await-tx xtdb-node
       (xt/submit-tx xtdb-node
-        (-> [[::xt/put {:type :probate.case
-                        :xt/id case-id
-                        :ref/personal-representative.info.id pr-info-id}]
+        (-> [[::xt/put {:xt/id ::initialise-case
+                        :xt/fn initialise-case_txn-fn}]
+             [::xt/fn ::initialise-case case-id pr-info-id is-test]
              [::xt/put (merge
                          pr-info
                          {:type :probate.personal-representative.info
@@ -158,6 +180,7 @@
     (->> (xt/q (xt/db xtdb-node)
            {:find [(list 'pull 'case
                      [:xt/id
+                      :reference
                       {:ref/personal-representative.info.id
                        personal-representative--props}])]
             :where '[[case :type :probate.case]]})
@@ -171,10 +194,11 @@
 
 (def get-case__query
   {:find [(list 'pull 'case [:xt/id
-                             {:ref/personal-representative.info.id
-                              personal-representative--props}
+                             :reference
                              :deceased.info
-                             :bank-accounts])]
+                             :bank-accounts
+                             {:ref/personal-representative.info.id
+                              personal-representative--props}])]
    :where '[[case :type :probate.case]
             [case :xt/id case-id]]
    :in '[case-id]})

@@ -42,7 +42,7 @@
 ;; >> Cards
 
 (defn case-item
-  [{:keys [id loading?]
+  [{:keys [id reference loading?] :as case
     {:keys [surname forename postcode]} :personal-representative}]
   [mui/card
    [mui/card-content
@@ -55,7 +55,7 @@
       [mui/stack
        [mui/typography {:sx {:fontSize 14} :color :text.secondary}
         (if-not loading?
-          (str "case #" id)
+          (str "case #" reference)
           [mui/skeleton {:width 100}])]
        [mui/typography {:variant :h5}
         (if-not loading?
@@ -102,15 +102,17 @@
 (def columns
   [{:field :rowId :hide true}
    {:field :id :headerName "ID"}
+   {:field :reference :headerName "Reference"}
    {:field :surname :headerName "Surname"}
    {:field :forename :headerName "Forename"}
    {:field :postcode :headerName "Post Code"}])
 
 (defn to-rows
   [cases]
-  (map (fn [{:keys [id] {:keys [surname forename postcode]} :personal-representative}]
+  (map (fn [{:keys [id reference] {:keys [surname forename postcode]} :personal-representative}]
          {:rowId id
           :id (str "#" id) ;; NOTE: The id must be a string for react
+          :reference reference
           :surname surname
           :forename forename
           :postcode postcode})
