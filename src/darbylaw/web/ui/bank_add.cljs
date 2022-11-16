@@ -134,9 +134,9 @@
                                                                              :label "estimated value"
                                                                              :on-change #(handle-change % idx)}])
                                        :label "Joint Account?"}]]
-             (if (> idx 0)
-               [mui/icon-button {:on-click #(when (> (count fields) 1) (remove idx))}
-                [ui/icon-delete]] [:<>])]
+
+             [mui/icon-button {:on-click #(remove idx)}
+              [ui/icon-delete]]]
 
             (if (true? (get field :joint-check))
               [mui/text-field {:name :joint-info

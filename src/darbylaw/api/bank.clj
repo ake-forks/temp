@@ -2,9 +2,7 @@
   (:require [xtdb.api :as xt]
             [darbylaw.api.case :as case-api]
             [reitit.coercion]
-            [reitit.coercion.malli]
-            [ring.util.response :as ring]))
-
+            [reitit.coercion.malli]))
 
 (def update-bank-txn
   '(fn [ctx eid accounts bank-id]
@@ -25,20 +23,25 @@
         accounts (:accounts body-params)
         case-id (parse-uuid (:case-id path-params))
         e (xt/entity (xt/db xtdb-node) case-id)]
-    ;check if id exists in bank-accounts
-    (if (empty? (filter #(= bank-id (:id %)) (:bank-accounts e)))
-      (xt/await-tx xtdb-node
-        (xt/submit-tx xtdb-node
-          (-> [[::xt/put {:xt/id ::add-bank-txn
-                          :xt/fn add-bank-txn}]
-               [::xt/fn ::add-bank-txn case-id accounts bank-id]]
-            (case-api/put-event :updated.bank-accounts case-id))))
-      (xt/await-tx xtdb-node
-        (xt/submit-tx xtdb-node
-          (-> [[::xt/put {:xt/id ::update-bank-txn
-                          :xt/fn update-bank-txn}]
-               [::xt/fn ::update-bank-txn case-id accounts bank-id]]
-            (case-api/put-event :updated.bank-accounts case-id)))))
+    (if (empty? accounts)
+      ;if no accounts are sent then abort transaction
+      nil
+      ;otherwise, check if id exists in bank-accounts
+      (if (empty? (filter #(= bank-id (:id %)) (:bank-accounts e)))
+        ;if bank-id does not exist, add new entry under that id
+        (xt/await-tx xtdb-node
+          (xt/submit-tx xtdb-node
+            (-> [[::xt/put {:xt/id ::add-bank-txn
+                            :xt/fn add-bank-txn}]
+                 [::xt/fn ::add-bank-txn case-id accounts bank-id]]
+              (case-api/put-event :updated.bank-accounts case-id))))
+        ;if it does, update existing entry for that id
+        (xt/await-tx xtdb-node
+          (xt/submit-tx xtdb-node
+            (-> [[::xt/put {:xt/id ::update-bank-txn
+                            :xt/fn update-bank-txn}]
+                 [::xt/fn ::update-bank-txn case-id accounts bank-id]]
+              (case-api/put-event :updated.bank-accounts case-id))))))
     {:status 200
      :body body-params}))
 
@@ -48,8 +51,9 @@
            new-data (mapv #(if (= (:id %) bank-id)
                              (assoc % :accounts accounts)
                              %)
-                      (:bank-accounts e))]
-       [[::xt/put (assoc-in e [:bank-accounts] new-data)]])))
+                      (:bank-accounts e))
+           filtered-data (filterv #(not-empty (:accounts %)) new-data)]
+       [[::xt/put (assoc-in e [:bank-accounts] filtered-data)]])))
 
 (defn update-bank-accounts [{:keys [xtdb-node path-params body-params]}]
   (let [bank-id (:bank-id body-params)
