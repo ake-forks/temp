@@ -187,7 +187,6 @@
        [fork/field-array {:props fork-args
                           :name :accounts}
         account-array-fn]
-       [mui/button {:on-click #(print values)} "args"]
        [submit-buttons]]]]))
 
 
