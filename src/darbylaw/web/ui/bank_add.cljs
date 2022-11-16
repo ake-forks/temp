@@ -11,13 +11,13 @@
 
 (rf/reg-event-db
   ::show-bank-modal
-  (fn [db _]
-    (assoc-in db [:modal/bank-modal] true)))
+  (fn [db value]
+    (assoc-in db [:modal/bank-modal] value)))
 
 (rf/reg-event-db
   ::hide-bank-modal
   (fn [db _]
-    (assoc-in db [:modal/bank-modal] false)))
+    (assoc-in db [:modal/bank-modal] nil)))
 
 (rf/reg-sub ::bank-modal
   (fn [db _]
@@ -33,12 +33,14 @@
 
 (rf/reg-event-fx ::add-bank-success
   (fn [{:keys [db]} [_ {:keys [path]} response]]
+    (print response)
     {:db (fork/set-submitting db path false)}
     (rf/dispatch [::hide-bank-modal])))
 
 (rf/reg-event-fx ::add-bank-failure
   (fn [{:keys [db]} [_ {:keys [path]} response]]
     {:db (do (assoc db :failure response)
+             (print response)
              (fork/set-submitting db path false))}))
 
 (defn transform-on-submit [data]
@@ -46,38 +48,40 @@
     (update :bank-id keyword)))
 
 (rf/reg-event-fx ::add-bank
-  (fn [{:keys [db]} [_ case-id {:keys [path values] :as fork-params}]]
+  (fn [{:keys [db]} [_ case-id modal-value {:keys [path values] :as fork-params}]]
     {:db (fork/set-submitting db path true)
      :http-xhrio
      (ui/build-http
        {:method :post
-        :uri (str "/api/case/" case-id "/add-bank-accounts")
+        :uri (str "/bank-api/" case-id (if (= modal-value :add-bank) "/add-bank-accounts" "/update-bank-accounts"))
         :params (transform-on-submit values)
         :on-success [::add-bank-success fork-params]
         :on-failure [::add-bank-failure fork-params]})}))
 
 (rf/reg-event-fx ::submit!
-  (fn [{:keys [db]} [_ case-id {:keys [path values] :as fork-params}]]
-    {:dispatch [::add-bank case-id fork-params]}))
+  (fn [{:keys [db]} [_ case-id modal-value fork-params]]
+    {:dispatch [::add-bank case-id modal-value fork-params]}))
 
 (defn bank-label [bank-id-str]
   (assert (string? bank-id-str))
   (banks/bank-label (keyword bank-id-str)))
 
 (defn bank-select [{:keys [values set-handle-change handle-blur] :as fork-args}]
-  [mui/autocomplete
-   {:options (banks/all-bank-ids)
-    :value (get values :bank-id)
-    :getOptionLabel bank-label
-    :onChange (fn [_evt new-value]
-                (set-handle-change {:value new-value
-                                    :path [:bank-id]}))
-    :renderInput (react-component [props]
-                   [mui/text-field (merge props
-                                     {:name :bank-id
-                                      :label "Bank Name"
-                                      :required true
-                                      :onBlur handle-blur})])}])
+  (let [bank-modal @(rf/subscribe [::bank-modal])]
+    [mui/autocomplete
+     {:options (banks/all-bank-ids)
+      :value (get values :bank-id)
+      :disabled (not= (peek bank-modal) :add-bank)
+      :getOptionLabel bank-label
+      :onChange (fn [_evt new-value]
+                  (set-handle-change {:value new-value
+                                      :path [:bank-id]}))
+      :renderInput (react-component [props]
+                     [mui/text-field (merge props
+                                       {:name :bank-id
+                                        :label "Bank Name"
+                                        :required true
+                                        :onBlur handle-blur})])}]))
 
 (defn account-array-fn
   [{:keys [values errors] :as props}
@@ -95,9 +99,7 @@
            ^{:key idx}
            [:<>
             [mui/stack {:spacing 1 :direction :row}
-             (if (> idx 0)
-               [mui/icon-button {:on-click #(when (> (count fields) 1) (remove idx))}
-                [ui/icon-delete]] [:<>])
+
              [mui/text-field {:name :sort-code
                               :value (or (get field :sort-code) "")
                               :label "sort code"
@@ -123,17 +125,22 @@
                               :InputProps
                               {:start-adornment
                                (r/as-element [mui/input-adornment {:position :start} "£"])}}]
+
              [mui/form-group
               [mui/form-control-label {
                                        :control (r/as-element [mui/checkbox {:name :joint-check
-                                                                             :value (boolean (get field :joint-check))
+                                                                             :value (get field :joint-check)
+                                                                             :checked (get field :joint-check)
                                                                              :label "estimated value"
                                                                              :on-change #(handle-change % idx)}])
-                                       :label "Joint Account?"}]]]
+                                       :label "Joint Account?"}]]
+
+             [mui/icon-button {:on-click #(remove idx)}
+              [ui/icon-delete]]]
 
             (if (true? (get field :joint-check))
               [mui/text-field {:name :joint-info
-                               :value (or (get field :joint-info) "")
+                               :value (if (true? (get field :joint-check)) (get field :joint-info) "")
                                :label "name of other account holder"
                                :on-change #(handle-change % idx)}]
 
@@ -158,11 +165,15 @@
    [mui/button {:type :submit :variant :contained :full-width true} "save"]])
 
 (defn modal-panel [{:keys [values handle-submit] :as fork-args}]
-  (let [current-case @(rf/subscribe [::current-case])]
+  (let [current-case @(rf/subscribe [::current-case])
+        bank-modal @(rf/subscribe [::bank-modal])]
     [:form {:on-submit handle-submit}
      [mui/container {:style {:padding "1rem" :background-color :white}}
       [mui/stack {:spacing 1 :style {:padding "1rem"}}
-       [mui/typography {:variant :h3} "add bank accounts"]
+       (if (= (peek bank-modal) :add-bank)
+         [mui/typography {:variant :h3} "add bank accounts"]
+         [mui/typography {:variant :h3} "edit accounts"])
+
        [bank-select fork-args]
        [mui/typography {:variant :h6}
         (if (some? (-> current-case :deceased :relationship))
@@ -187,16 +198,34 @@
 
 (defn modal []
   (r/with-let []
-    (let [case-id (-> @(rf/subscribe [::route-params]) :case-id)]
+    (let [case-id (-> @(rf/subscribe [::route-params]) :case-id)
+          modal-value (peek @(rf/subscribe [::bank-modal]))]
       [fork/form
        {:state form-state
         :clean-on-unmount? true
-        :on-submit #(rf/dispatch [::submit! case-id %])
+        :on-submit #(rf/dispatch [::submit! case-id modal-value %])
         :keywordize-keys true
         :prevent-default? true
-        :initial-values {:accounts [{}]}} ; placeholder for entering first account
+        :initial-values {:accounts [{}]}}                   ; placeholder for entering first account
        (fn [fork-args]
          [modal-panel (ui/mui-fork-args fork-args)])])
     (finally
       (reset! form-state nil))))
+
+(defn modal-with-values [values]
+  (r/with-let []
+    (let [case-id (-> @(rf/subscribe [::route-params]) :case-id)
+          modal-value (peek @(rf/subscribe [::bank-modal]))]
+      [fork/form
+       {:state form-state
+        :clean-on-unmount? true
+        :on-submit #(rf/dispatch [::submit! case-id modal-value %])
+        :keywordize-keys true
+        :prevent-default? true
+        :initial-values values}
+       (fn [fork-args]
+         [modal-panel (ui/mui-fork-args fork-args)])])
+    (finally
+      (reset! form-state nil))))
+
 
