@@ -111,7 +111,6 @@
      "Please fill out the form below using the exact details as printed in the death certificate.
      We need an accurate duplication because the death certificate is a legal document, and ensuring that all
      fields are correct now will make the rest of the probate process smoother."]
-
     [mui/typography {:variant :p :style {:padding-left "10%" :margin-top "1rem"}}
      "Hover over " [ui/icon-search] " to see where you will find each field on the death certificate."]
     [mui/divider {:style {:margin-top "0.5rem"}}]
@@ -140,7 +139,6 @@
       [form/date-picker fork-args
        {:name :date-of-death
         :disableOpenPicker true
-
         :inner-config {:label-prefix "Date of Death"
                        :required true
                        :full-width true}}]
@@ -158,11 +156,10 @@
        "pod.png"
        fork-args)
      (r/as-element section-divider)
-
      [mui/stack {:direction :row :spacing 2}
       [mui/stack {:spacing 1 :sx {:width "65%"}}
        (textfield-with-tooltip
-         {:name :first-name
+         {:name :forename
           :label "First Name"
           :required true
           :full-width true}
@@ -174,8 +171,6 @@
           :full-width true}
          "surname.png" fork-args)]
       [mui/stack {:spacing 1 :sx {:width "35%"}}
-
-
        [mui/stack {:spacing 0.5 :direction :row}
         [form/autocomplete-field fork-args
          {:name :sex
@@ -190,7 +185,6 @@
                          [:img {:src "/images/tooltips/sex.png"
                                 :width "200px"}]])}
          [ui/icon-search]]]
-
        (textfield-with-tooltip
          {:name :maiden-name
           :label "Maiden Name (if applicable)"
@@ -198,7 +192,6 @@
          "maiden.png"
          fork-args)]]
      (r/as-element section-divider)
-
      [mui/stack {:direction :row :spacing 0.5 :justify-content :end}
       [form/date-picker fork-args
        {:name :date-of-birth
@@ -212,7 +205,6 @@
                        [:img {:src "/images/tooltips/dob.png"
                               :width "200px"}]])}
        [ui/icon-search]]]
-
      (textfield-with-tooltip
        {:name :place-of-birth
         :label "Place of Birth"
@@ -221,7 +213,6 @@
        "pob.png"
        fork-args)
      (r/as-element section-divider)
-
      (textfield-with-tooltip
        {:name :occupation
         :label "Occupation"
@@ -239,9 +230,6 @@
        "address.png"
        fork-args)
      (r/as-element section-divider)
-
-
-
      (textfield-with-tooltip
        {:name :cause-of-death
         :label "Cause of Death"
@@ -279,30 +267,24 @@
 (def data-validation
   (v/join
     (v/attr [:relationship] (v/present))
-
+    (v/attr [:certificate-number] (v/present))
     (v/attr [:registration-district] (v/present))
-    (v/attr [:administrative-area] (v/present))
     (v/attr [:entry-number] (v/present))
-
     (v/attr [:date-of-death]
       (v/chain
         (v-utils/not-nil)
         (v-utils/valid-dayjs-date)))
     (v/attr [:place-of-death] (v/present))
-
     (v/attr [:forename] (v/present))
     (v/attr [:surname] (v/present))
     (v/attr [:sex] (v/present))
-
     (v/attr [:date-of-birth]
       (v/chain
         (v-utils/not-nil)
         (v-utils/valid-dayjs-date)))
     (v/attr [:place-of-birth] (v/present))
-
     (v/attr [:occupation] (v/present))
-
-    (v/attr [:name-of-informant] (v/present))
+    (v/attr [:address] (v/present))
     (v/attr [:cause-of-death] (v/present))
     (v/attr [:name-of-doctor-certifying] (v/present))
     (v/attr [:name-of-registrar] (v/present))))
@@ -335,8 +317,8 @@
   For development purposes only."
   (let [test-data {:forename "forename",
                    :sex "female",
+                   :certificate-number "certificate-number"
                    :entry-number "entry-number",
-                   :name-of-informant "informant",
                    :date-of-death (dayjs/read "2022-11-05"),
                    :registration-district "registration district",
                    :occupation "occupation",
@@ -348,7 +330,8 @@
                    :name-of-registrar "registrar",
                    :maiden-name "maiden name",
                    :place-of-death "place of death",
-                   :place-of-birth "place of birth",}]
+                   :place-of-birth "place of birth",
+                   :address "123 address"}]
 
     (swap! form-state assoc
       :values test-data

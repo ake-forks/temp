@@ -34,14 +34,13 @@
    [:relationship :string]
 
    [:registration-district :string]
-   [:administrative-area :string]
+   [:certificate-number :string]
    [:entry-number :string]
 
    [:date-of-death date--schema]
    [:place-of-death :string]
 
    [:forename :string]
-   [:middlename {:optional true} :string]
    [:surname :string]
    [:sex [:enum "male" "female"]]
    [:maiden-name {:optional true} :string]
@@ -49,7 +48,6 @@
    [:place-of-birth :string]
    [:occupation :string]
 
-   [:name-of-informant :string]
    [:cause-of-death :string]
    [:name-of-doctor-certifying :string]
    [:name-of-registrar :string]])
