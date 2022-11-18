@@ -9,6 +9,7 @@
     [darbylaw.api.bank-list :as bank-list]
     [darbylaw.web.ui.progress-bar :as progress-bar]
     [darbylaw.web.ui.overview-tile :as overview]
+    [darbylaw.web.ui.tasks-tile :as tasks]
     [re-frame.core :as rf]
     [reagent.core :as r]
     [darbylaw.web.theme :as theme]))
@@ -106,20 +107,21 @@
          [mui/typography {:variant :h3} (if (nil? current-case) [mui/skeleton {:width "5rem"}] (str "case #" (:reference current-case :reference)))]]
         [progress-bar/progress-bar]]]]
      [mui/container {:maxWidth :xl}
-      [mui/stack {:spacing 3 :sx {:padding-top "2rem"}}
-       [mui/typography {:variant :h3} "estate details"]
+      [mui/stack {:spacing 2 :sx {:pt "1rem" :pb "2rem"}}
+       [mui/typography {:variant :h4} "estate details"]
        [mui/dialog
         {:open (= (peek bank-modal-open) :add-bank)
          :maxWidth :md
          :fullWidth true}
         [bank/modal]]
 
-       [mui/stack {:direction :row :spacing 1}
+       [mui/stack {:direction :row :spacing 1 :style {:margin-top "0.5rem"}}
         [mui/grid {:container true :spacing 1 :columns 3
                    :style {:width "70%"}}
          [mui/grid {:item true :xs 1}
           (r/as-element [bank-card current-case])]]
         [mui/stack {:spacing 2 :style {:width "30%"}}
+         [tasks/tasks-tile]
          [overview/overview-card]]]]
 
       [c/footer]]]))
