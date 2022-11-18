@@ -1,7 +1,6 @@
 (ns darbylaw.web.ui.overview-tile
   (:require
     [reagent-mui.components :as mui]
-    [darbylaw.web.ui.app-layout :as c]
     [re-frame.core :as rf]
     [reagent.core :as r]
     [reagent.format :as format]
