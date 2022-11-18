@@ -1,0 +1,31 @@
+(ns darbylaw.web.ui.overview-tile
+  (:require
+    [reagent-mui.components :as mui]
+    [darbylaw.web.ui.app-layout :as c]
+    [re-frame.core :as rf]
+    [reagent.core :as r]
+    [reagent.format :as format]
+    [darbylaw.web.theme :as theme]))
+
+(rf/reg-sub ::current-case
+  (fn [db]
+    (:current-case db)))
+
+(defn get-value []
+  (let [bank-accounts (:bank-accounts @(rf/subscribe [::current-case]))]
+    (reduce + (map
+                (fn [bank]
+                  (reduce + (map (fn [account] (js/parseFloat (:estimated-value account)))
+                              (:accounts bank))))
+                bank-accounts))))
+
+
+
+(defn overview-card []
+  [mui/card {:style {:width "large" :background-color theme/off-white}}
+   [mui/card-content
+    [mui/typography {:variant :h5 :sx {:font-weight 600 :mb 1}} "estimated value"]
+    [mui/typography {:variant :h3}
+     "£" (format/format "%.2f" (get-value))]]])
+
+

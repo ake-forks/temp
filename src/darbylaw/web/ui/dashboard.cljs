@@ -8,6 +8,7 @@
     [darbylaw.web.ui.bank-add :as bank]
     [darbylaw.api.bank-list :as bank-list]
     [darbylaw.web.ui.progress-bar :as progress-bar]
+    [darbylaw.web.ui.overview-tile :as overview]
     [re-frame.core :as rf]
     [reagent.core :as r]))
 
@@ -110,13 +111,14 @@
          :fullWidth true}
         [bank/modal]]
 
-       [mui/stack {:direction :row :spacing 2}
-        [mui/grid {:container true :spacing 2 :columns 3}
+       [mui/stack {:direction :row :spacing 1}
+        [mui/grid {:container true :spacing 1 :columns 3
+                   :style {:width "70%"}}
          [mui/grid {:item true :xs 1}
           (r/as-element [bank-card current-case])]]
-        [mui/stack {:spacing 2}
-         [mui/box {:sx {:width 200 :height 250 :background-color "#808080" :border-radius "4px"}}]
-         [mui/box {:sx {:width 200 :height 100 :background-color "#808080" :border-radius "4px"}}]]]]]
+        [mui/stack {:spacing 2 :style {:width "30%"}}
+         [overview/overview-card]]]]]
+
      [c/footer]]))
 
 (defmethod routes/panels :dashboard-panel [] [panel])
