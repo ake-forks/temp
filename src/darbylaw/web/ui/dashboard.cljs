@@ -10,7 +10,8 @@
     [darbylaw.web.ui.progress-bar :as progress-bar]
     [darbylaw.web.ui.overview-tile :as overview]
     [re-frame.core :as rf]
-    [reagent.core :as r]))
+    [reagent.core :as r]
+    [darbylaw.web.theme :as theme]))
 
 
 (rf/reg-sub ::route-params
@@ -90,19 +91,21 @@
         bank-modal-open @(rf/subscribe [::bank-modal])]
     (assert case-id)
     (rf/dispatch [::load! case-id])
-    [mui/container {:style {:max-width "100%"}}
-     [c/navbar]
-     [mui/container {:maxWidth :xl :class (styles/main-content)}
-      [mui/stack {:spacing 3}
-       [mui/stack {:direction :row :justify-content :space-between :align-items :baseline}
-        [mui/typography {:variant :h2}
-         (if (nil? (:deceased current-case))
-           (str "welcome")
-           (str "your "
-             (-> current-case :deceased :relationship (clojure.string/lower-case))
-             "'s estate"))]
-        [mui/typography {:variant :h3} (if (nil? current-case) [mui/skeleton {:width "5rem"}] (str "case #" (:reference current-case :reference)))]]
-       [progress-bar/progress-bar]]
+    [mui/box
+     [mui/box {:style {:background-color theme/off-white :padding-bottom "4rem"}}
+      [c/navbar]
+      [mui/container {:maxWidth :xl :class (styles/main-content)}
+       [mui/stack {:spacing 3}
+        [mui/stack {:direction :row :justify-content :space-between :align-items :baseline}
+         [mui/typography {:variant :h2}
+          (if (nil? (:deceased current-case))
+            (str "welcome")
+            (str "your "
+              (-> current-case :deceased :relationship (clojure.string/lower-case))
+              "'s estate"))]
+         [mui/typography {:variant :h3} (if (nil? current-case) [mui/skeleton {:width "5rem"}] (str "case #" (:reference current-case :reference)))]]
+        [progress-bar/progress-bar]]]]
+     [mui/container {:maxWidth :xl}
       [mui/stack {:spacing 3 :sx {:padding-top "2rem"}}
        [mui/typography {:variant :h3} "estate details"]
        [mui/dialog
@@ -117,9 +120,9 @@
          [mui/grid {:item true :xs 1}
           (r/as-element [bank-card current-case])]]
         [mui/stack {:spacing 2 :style {:width "30%"}}
-         [overview/overview-card]]]]]
+         [overview/overview-card]]]]
 
-     [c/footer]]))
+      [c/footer]]]))
 
 (defmethod routes/panels :dashboard-panel [] [panel])
 
