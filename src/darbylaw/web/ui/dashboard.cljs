@@ -8,8 +8,10 @@
     [darbylaw.web.ui.bank-add :as bank]
     [darbylaw.api.bank-list :as bank-list]
     [darbylaw.web.ui.progress-bar :as progress-bar]
+    [darbylaw.web.ui.overview-tile :as overview]
     [re-frame.core :as rf]
-    [reagent.core :as r]))
+    [reagent.core :as r]
+    [darbylaw.web.theme :as theme]))
 
 
 (rf/reg-sub ::route-params
@@ -89,19 +91,21 @@
         bank-modal-open @(rf/subscribe [::bank-modal])]
     (assert case-id)
     (rf/dispatch [::load! case-id])
-    [mui/container {:style {:max-width "100%"}}
-     [c/navbar]
-     [mui/container {:maxWidth :xl :class (styles/main-content)}
-      [mui/stack {:spacing 3}
-       [mui/stack {:direction :row :justify-content :space-between :align-items :baseline}
-        [mui/typography {:variant :h2}
-         (if (nil? (:deceased current-case))
-           (str "welcome")
-           (str "your "
-             (-> current-case :deceased :relationship (clojure.string/lower-case))
-             "'s estate"))]
-        [mui/typography {:variant :h3} (if (nil? current-case) [mui/skeleton {:width "5rem"}] (str "case #" (:reference current-case :reference)))]]
-       [progress-bar/progress-bar]]
+    [mui/box
+     [mui/box {:style {:background-color theme/off-white :padding-bottom "4rem"}}
+      [c/navbar]
+      [mui/container {:maxWidth :xl :class (styles/main-content)}
+       [mui/stack {:spacing 3}
+        [mui/stack {:direction :row :justify-content :space-between :align-items :baseline}
+         [mui/typography {:variant :h2}
+          (if (nil? (:deceased current-case))
+            (str "welcome")
+            (str "your "
+              (-> current-case :deceased :relationship (clojure.string/lower-case))
+              "'s estate"))]
+         [mui/typography {:variant :h3} (if (nil? current-case) [mui/skeleton {:width "5rem"}] (str "case #" (:reference current-case :reference)))]]
+        [progress-bar/progress-bar]]]]
+     [mui/container {:maxWidth :xl}
       [mui/stack {:spacing 3 :sx {:padding-top "2rem"}}
        [mui/typography {:variant :h3} "estate details"]
        [mui/dialog
@@ -110,14 +114,15 @@
          :fullWidth true}
         [bank/modal]]
 
-       [mui/stack {:direction :row :spacing 2}
-        [mui/grid {:container true :spacing 2 :columns 3}
+       [mui/stack {:direction :row :spacing 1}
+        [mui/grid {:container true :spacing 1 :columns 3
+                   :style {:width "70%"}}
          [mui/grid {:item true :xs 1}
           (r/as-element [bank-card current-case])]]
-        [mui/stack {:spacing 2}
-         [mui/box {:sx {:width 200 :height 250 :background-color "#808080" :border-radius "4px"}}]
-         [mui/box {:sx {:width 200 :height 100 :background-color "#808080" :border-radius "4px"}}]]]]]
-     [c/footer]]))
+        [mui/stack {:spacing 2 :style {:width "30%"}}
+         [overview/overview-card]]]]
+
+      [c/footer]]]))
 
 (defmethod routes/panels :dashboard-panel [] [panel])
 
