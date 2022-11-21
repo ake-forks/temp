@@ -123,26 +123,11 @@ resource "aws_ecs_task_definition" "probatetree" {
 
 
 
-# >> VPC Info
-
-data "aws_vpc" "default_vpc" {
-  default = true
-}
-
-data "aws_subnets" "public" {
-  filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.default_vpc.id]
-  }
-}
-
-
-
 # >> Security Groups
 
 resource "aws_security_group" "task" {
   name   = "probatetree-task-sg-${terraform.workspace}"
-  vpc_id = data.aws_vpc.default_vpc.id
+  vpc_id = data.aws_vpc.main.id
 
   ingress {
     protocol         = "tcp"
@@ -163,7 +148,7 @@ resource "aws_security_group" "task" {
 
 resource "aws_security_group" "lb" {
   name   = "probatetree-lb-sg-${terraform.workspace}"
-  vpc_id = data.aws_vpc.default_vpc.id
+  vpc_id = data.aws_vpc.main.id
 
   ingress {
     protocol         = "tcp"
@@ -208,7 +193,7 @@ resource "aws_lb_target_group" "probatetree" {
   name        = "probatetree-tg-${terraform.workspace}"
   port        = local.container_port
   protocol    = "HTTP"
-  vpc_id      = data.aws_vpc.default_vpc.id
+  vpc_id      = data.aws_vpc.main.id
   target_type = "ip"
 
   health_check {
@@ -309,8 +294,8 @@ resource "aws_ecs_service" "probatetree" {
 
   network_configuration {
     security_groups  = [aws_security_group.task.id]
-    subnets          = data.aws_subnets.public.ids
-    assign_public_ip = true # TODO: Change when we have a NAT gateway in a private subnet
+    subnets          = data.aws_subnets.private.ids
+    assign_public_ip = false
   }
 
   load_balancer {
