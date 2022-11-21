@@ -31,6 +31,10 @@
   (fn [db _]
     (:path-params (:kee-frame/route db))))
 
+(rf/reg-sub ::route
+  (fn [db _]
+    (:name (:data (:kee-frame/route db)))))
+
 (rf/reg-event-fx ::add-bank-success
   (fn [{:keys [db]} [_ {:keys [path]} response]]
     (print response)
@@ -91,70 +95,85 @@
                       handle-change
                       handle-blur
                       touched]}]
-  [mui/stack {:spacing 1}
-   (doall
-     (->> fields
-       (map-indexed
-         (fn [idx field]
-           ^{:key idx}
-           [:<>
-            [mui/stack {:spacing 1 :direction :row}
+  (let [route @(rf/subscribe [::route])]
+    [mui/stack {:spacing 1}
+     (doall
+       (->> fields
+         (map-indexed
+           (fn [idx field]
+             ^{:key idx}
+             [mui/stack (if (= route :bank-confirmation) {:spacing 1 :style {:margin-bottom "1rem"}}
+                                                         {:spacing 1 :style {:margin-bottom 0}})
+              [mui/stack {:spacing 1 :direction :row}
 
-             [mui/text-field {:name :sort-code
-                              :value (or (get field :sort-code) "")
-                              :label "sort code"
-                              :placeholder "00-00-00"
-                              :on-change #(handle-change % idx)
-                              :on-blur #(handle-blur % idx)
-                              :full-width true
-                              :helper-text (when (touched idx :sort-code))}]
-             [mui/text-field {:name :account-number
-                              :value (or (get field :account-number) "")
-                              :label "account number"
-                              :placeholder "00000000"
-                              :on-change #(handle-change % idx)
-                              :on-blur #(handle-blur % idx)
-                              :required true
-                              :full-width true}]
-             [mui/text-field {:name :estimated-value
-                              :value (or (get field :estimated-value) "")
-                              :label "estimated value"
-                              :on-change #(handle-change % idx)
-                              :on-blur #(handle-blur % idx)
-                              :full-width true
-                              :InputProps
-                              {:start-adornment
-                               (r/as-element [mui/input-adornment {:position :start} "£"])}}]
+               [mui/text-field {:name :sort-code
+                                :value (or (get field :sort-code) "")
+                                :label "sort code"
+                                :placeholder "00-00-00"
+                                :on-change #(handle-change % idx)
+                                :on-blur #(handle-blur % idx)
+                                :required true
+                                :full-width true
+                                :helper-text (when (touched idx :sort-code))}]
+               [mui/text-field {:name :account-number
+                                :value (or (get field :account-number) "")
+                                :label "account number"
+                                :placeholder "00000000"
+                                :on-change #(handle-change % idx)
+                                :on-blur #(handle-blur % idx)
+                                :required true
+                                :full-width true}]
+               [mui/text-field {:name :estimated-value
+                                :value (or (get field :estimated-value) "")
+                                :label "estimated value"
+                                :on-change #(handle-change % idx)
+                                :on-blur #(handle-blur % idx)
+                                :full-width true
+                                :InputProps
+                                {:start-adornment
+                                 (r/as-element [mui/input-adornment {:position :start} "£"])}}]
 
-             [mui/form-group
-              [mui/form-control-label {
-                                       :control (r/as-element [mui/checkbox {:name :joint-check
-                                                                             :value (get field :joint-check)
-                                                                             :checked (get field :joint-check)
-                                                                             :label "estimated value"
-                                                                             :on-change #(handle-change % idx)}])
-                                       :label "Joint Account?"}]]
 
-             [mui/icon-button {:on-click #(remove idx)}
-              [ui/icon-delete]]]
+               [mui/form-group
+                [mui/form-control-label {
+                                         :control (r/as-element [mui/checkbox {:name :joint-check
+                                                                               :value (get field :joint-check)
+                                                                               :checked (get field :joint-check)
+                                                                               :label "estimated value"
+                                                                               :on-change #(handle-change % idx)}])
+                                         :label "Joint Account?"}]]
 
-            (if (true? (get field :joint-check))
-              [mui/text-field {:name :joint-info
-                               :value (if (true? (get field :joint-check)) (get field :joint-info) "")
-                               :label "name of other account holder"
-                               :on-change #(handle-change % idx)}]
+               [mui/icon-button {:on-click #(remove idx)}
+                [ui/icon-delete]]]
 
-              [:<>])]))))
-   [mui/button {:on-click #(insert {:sort-code "" :account-number "" :estimated-value ""})
-                :style {:text-transform "none" :align-self "baseline" :font-size "1.5rem"}
-                :variant :text
-                :size "large"
-                :full-width false
-                :start-icon (r/as-element [icon/mui-add])}
-    (str "add another "
-      (if-let [bank-id (get-in props [:values :bank-id])]
-        (str (bank-label bank-id) " account")
-        "account"))]])
+              (if (true? (get field :joint-check))
+                [mui/text-field {:name :joint-info
+                                 :value (if (true? (get field :joint-check)) (get field :joint-info) "")
+                                 :label "name of other account holder"
+                                 :on-change #(handle-change % idx)}]
+
+                [:<>])
+              (if (= route :bank-confirmation)
+                [mui/text-field {:name :confirmed-value
+                                 :value (or (get field :confirmed-value) "")
+                                 :label "confirmed value"
+                                 :on-change #(handle-change % idx)
+                                 :on-blur #(handle-blur % idx)
+                                 :required true
+                                 :full-width true
+                                 :InputProps
+                                 {:start-adornment
+                                  (r/as-element [mui/input-adornment {:position :start} "£"])}}])]))))
+     [mui/button {:on-click #(insert {:sort-code "" :account-number "" :estimated-value ""})
+                  :style {:text-transform "none" :align-self "baseline" :font-size "1.5rem"}
+                  :variant :text
+                  :size "large"
+                  :full-width false
+                  :start-icon (r/as-element [icon/mui-add])}
+      (str "add another "
+        (if-let [bank-id (get-in props [:values :bank-id])]
+          (str (bank-label bank-id) " account")
+          "account"))]]))
 
 (defn submit-buttons []
   [mui/stack {:spacing 1
@@ -172,7 +191,11 @@
       [mui/stack {:spacing 1 :style {:padding "1rem"}}
        (if (= (peek bank-modal) :add-bank)
          [mui/typography {:variant :h3} "add bank accounts"]
-         [mui/typography {:variant :h3} "edit accounts"])
+         [mui/stack {:direction :row :spacing 1 :justify-content :space-between}
+          [mui/typography {:variant :h3} "edit accounts"]
+          [mui/button {:on-click #(rf/dispatch [::ui/navigate [:bank-confirmation
+                                                               {:case-id (:id current-case)
+                                                                :bank-id (peek bank-modal)}]])} "view bank"]])
 
        [bank-select fork-args]
        [mui/typography {:variant :h6}
