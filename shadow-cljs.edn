@@ -1,4 +1,4 @@
-{:deps {:aliases [:shadow]}
+{:deps {:aliases [:dev]}
 
  :nrepl {:port 8777}
 
@@ -7,7 +7,10 @@
   8290 "target/browser-test"}
 
  ;; NOTE: Needed because compiling highlight.js runs out of stack space in :cards
- :jvm-opts ["-Xss2m"]
+ :jvm-opts ["-Xss2m"
+            ; Log4J2 is adopted as JBoss logging provider, which alters
+            ; shadow-cljs output. This sets back the default:
+            "-Dorg.jboss.logging.provider=jdk"]
 
  :builds
  {:app {:target :browser
