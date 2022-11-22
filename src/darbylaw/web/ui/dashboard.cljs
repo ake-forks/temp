@@ -6,6 +6,7 @@
     [darbylaw.web.styles :as styles]
     [darbylaw.web.routes :as routes]
     [darbylaw.web.ui.bank-add :as bank]
+    [darbylaw.web.ui.bank-modal :as bank-modal]
     [darbylaw.api.bank-list :as bank-list]
     [darbylaw.web.ui.progress-bar :as progress-bar]
     [darbylaw.web.ui.overview-tile :as overview]
@@ -68,11 +69,11 @@
                                       0
                                       (js/parseFloat (:estimated-value account)))) accounts))))]]]
      [mui/dialog
-      {:open (if (= (peek modal) bank-id) true false)
-       :maxWidth :md
+      {:open (if (= modal bank-id) true false)
+       :maxWidth :xl
        :fullWidth true}
-      [bank/modal-with-values
-       {:accounts accounts :bank-id (name (:id bank))}]]
+      [bank-modal/bank-modal]]
+
      [mui/divider {:variant "middle"}]]))
 
 (defn add-bank []
@@ -95,9 +96,10 @@
   (let [case-id (-> @(rf/subscribe [::route-params])
                   :case-id)
         current-case @(rf/subscribe [::current-case])
-        bank-modal-open @(rf/subscribe [::bank-modal])]
+        bank-modal @(rf/subscribe [::bank-modal])]
     (assert case-id)
     (rf/dispatch [::load! case-id])
+    (rf/dispatch [::bank/mark-bank-complete :load])
     [mui/box
      [mui/box {:style {:background-color theme/off-white :padding-bottom "4rem"}}
       [c/navbar]
@@ -116,7 +118,7 @@
       [mui/stack {:spacing 2 :sx {:pt "1rem" :pb "2rem"}}
        [mui/typography {:variant :h4} "estate details"]
        [mui/dialog
-        {:open (= (peek bank-modal-open) :add-bank)
+        {:open (= bank-modal :add-bank)
          :maxWidth :md
          :fullWidth true}
         [bank/modal]]

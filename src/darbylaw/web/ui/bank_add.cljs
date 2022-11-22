@@ -11,7 +11,7 @@
 
 (rf/reg-event-db
   ::show-bank-modal
-  (fn [db value]
+  (fn [db [_ value]]
     (assoc-in db [:modal/bank-modal] value)))
 
 (rf/reg-event-db
@@ -22,6 +22,15 @@
 (rf/reg-sub ::bank-modal
   (fn [db _]
     (:modal/bank-modal db)))
+
+(rf/reg-event-db
+  ::mark-bank-complete
+  (fn [db [_ bank-id]]
+    (update-in db [:banks-complete] conj bank-id)))
+
+(rf/reg-sub ::banks-complete
+  (fn [db _]
+    (:banks-complete db)))
 
 (rf/reg-sub ::current-case
   (fn [db _]
@@ -75,7 +84,7 @@
     [mui/autocomplete
      {:options (banks/all-bank-ids)
       :value (get values :bank-id)
-      :disabled (not= (peek bank-modal) :add-bank)
+      :disabled (not= bank-modal :add-bank)
       :getOptionLabel bank-label
       :onChange (fn [_evt new-value]
                   (set-handle-change {:value new-value
@@ -95,15 +104,17 @@
                       handle-change
                       handle-blur
                       touched]}]
-  (let [route @(rf/subscribe [::route])]
+  (let [bank-id @(rf/subscribe [::bank-modal])
+        sub @(rf/subscribe [::banks-complete])
+        complete (some #(= bank-id %) sub)]
     [mui/stack {:spacing 1}
      (doall
        (->> fields
          (map-indexed
            (fn [idx field]
              ^{:key idx}
-             [mui/stack (if (= route :bank-confirmation) {:spacing 1 :style {:margin-bottom "1rem"}}
-                                                         {:spacing 1 :style {:margin-bottom 0}})
+             [mui/stack (if (not (nil? complete)) {:spacing 1 :style {:margin-bottom "1rem"}}
+                                                  {:spacing 1 :style {:margin-bottom 0}})
               [mui/stack {:spacing 1 :direction :row}
 
                [mui/text-field {:name :sort-code
@@ -129,7 +140,7 @@
                                 :on-change #(handle-change % idx)
                                 :on-blur #(handle-blur % idx)
                                 :full-width true
-                                :disabled (= route :bank-confirmation)
+                                :disabled (if (not (nil? complete)) true false)
                                 :InputProps
                                 {:start-adornment
                                  (r/as-element [mui/input-adornment {:position :start} "£"])}}]
@@ -154,7 +165,7 @@
                                  :on-change #(handle-change % idx)}]
 
                 [:<>])
-              (if (= route :bank-confirmation)
+              (if (not (nil? complete))
                 [mui/text-field {:name :confirmed-value
                                  :value (or (get field :confirmed-value) "")
                                  :label "confirmed value"
@@ -166,7 +177,7 @@
                                  {:start-adornment
                                   (r/as-element [mui/input-adornment {:position :start} "£"])}}])]))))
      [mui/button {:on-click #(insert {:sort-code "" :account-number "" :estimated-value ""})
-                  :style {:text-transform "none" :align-self "baseline" :font-size "1.5rem"}
+                  :style {:text-transform "none" :align-self "baseline" :font-size "1rem"}
                   :variant :text
                   :size "large"
                   :full-width false
@@ -188,16 +199,15 @@
   (let [current-case @(rf/subscribe [::current-case])
         bank-modal @(rf/subscribe [::bank-modal])]
     [:form {:on-submit handle-submit}
-     [mui/container {:style {:padding "1rem" :background-color :white}}
+     [mui/box {:style {:background-color :white}}
       [mui/stack {:spacing 1 :style {:padding "1rem"}}
-       (if (= (peek bank-modal) :add-bank)
-         [mui/typography {:variant :h3} "add bank accounts"]
+       (if (= bank-modal :add-bank)
+         [mui/typography {:variant :h5} "add bank accounts"]
          [mui/stack {:direction :row :spacing 1 :justify-content :space-between}
-          [mui/typography {:variant :h3} "edit accounts"]
+          [mui/typography {:variant :h5} "edit accounts"]
           [mui/button {:on-click #(rf/dispatch [::ui/navigate [:bank-confirmation
                                                                {:case-id (:id current-case)
-                                                                :bank-id (peek bank-modal)}]])} "view bank"]])
-
+                                                                :bank-id bank-modal}]])} "view bank"]])
        [bank-select fork-args]
        [mui/typography {:variant :h6}
         (if (some? (-> current-case :deceased :relationship))
@@ -211,7 +221,10 @@
        [fork/field-array {:props fork-args
                           :name :accounts}
         account-array-fn]
-       [submit-buttons]]]]))
+       [submit-buttons]
+       [mui/button {:variant :contained
+                    :on-click #(rf/dispatch [::mark-bank-complete bank-modal])}
+        "mark bank complete"]]]]))
 
 
 ;(def validation
@@ -223,7 +236,7 @@
 (defn modal []
   (r/with-let []
     (let [case-id (-> @(rf/subscribe [::route-params]) :case-id)
-          modal-value (peek @(rf/subscribe [::bank-modal]))]
+          modal-value @(rf/subscribe [::bank-modal])]
       [fork/form
        {:state form-state
         :clean-on-unmount? true
@@ -239,7 +252,7 @@
 (defn modal-with-values [values]
   (r/with-let []
     (let [case-id (-> @(rf/subscribe [::route-params]) :case-id)
-          modal-value (peek @(rf/subscribe [::bank-modal]))]
+          modal-value @(rf/subscribe [::bank-modal])]
       [fork/form
        {:state form-state
         :clean-on-unmount? true
