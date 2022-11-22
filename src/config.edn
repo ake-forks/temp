@@ -4,4 +4,8 @@
   :auth #profile {:default #edn #env AUTH_MAP
                   :dev-auth {"admin" "admin"}
                   :dev :none
-                  :test :none}}}
+                  :test :none}}
+
+ :doc-store
+ {:s3-bucket #profile {:default "darbylaw-docs-test"
+                       :staging "darbylaw-docs-staging"}}}
