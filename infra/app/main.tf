@@ -82,6 +82,10 @@ resource "aws_ecs_task_definition" "probatetree" {
         # TODO: Don't give the application admin access to the database?
         environment = [
           {
+            "name" : "PROFILE"
+            "value" : "staging"
+          },
+          {
             "name" : "DATABASE_HOST"
             "value" : aws_db_instance.xtdb-backend.address
           },
