@@ -78,7 +78,7 @@ commands:
 
 # Define the jobs we want to run for this project
 jobs:
-  build_maybe_push:
+  build:
     working_directory: /app
     docker:
       - image: docker:20.10.18-git
@@ -123,14 +123,9 @@ jobs:
                 echo "$since_start($since_last_print) | $line"; \
                 PREV_TIME="$now"; \
               done
-      # We only push the docker image when on the `main` branch
-      - when:
-          condition:
-            equal: [ main, << pipeline.git.branch >> ]
-          steps:
-            - ecr_push_image:
-                environment: production
-                image_name: probatetree-staging
+      - ecr_push_image:
+          environment: production
+          image_name: probatetree-staging
   deploy:
     working_directory: /app
     docker:
@@ -158,10 +153,10 @@ jobs:
 workflows:
   build:
     jobs:
-      - build_maybe_push
+      - build
       - deploy:
           filters:
             branches:
               only: main
           requires:
-            - build_maybe_push
+            - build
