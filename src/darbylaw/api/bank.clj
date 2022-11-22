@@ -66,7 +66,7 @@
                         :xt/fn edit-bank-txn}]
              [::xt/fn ::edit-bank-txn case-id accounts bank-id]])))
     {:status 200
-     :body (:accounts body-params)}))
+     :body {:accounts accounts :case-id (.toString case-id)}}))
 
 (defn routes []
   [["/:case-id/add-bank-accounts" {:post {:handler add-bank-accounts
@@ -94,4 +94,5 @@
                                                               [:account-number :string]
                                                               [:estimated-value :string]
                                                               [:joint-check {:optional true} :boolean]
-                                                              [:joint-info {:optional true} :string]]]]]}}}]])
+                                                              [:joint-info {:optional true} :string]
+                                                              [:confirmed-value {:optional true} :string]]]]]}}}]])

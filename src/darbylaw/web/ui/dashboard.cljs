@@ -12,6 +12,7 @@
     [darbylaw.web.ui.tasks-tile :as tasks]
     [re-frame.core :as rf]
     [reagent.core :as r]
+    [reagent.format :as format]
     [darbylaw.web.theme :as theme]))
 
 
@@ -60,7 +61,12 @@
                             :sx {:padding-top "0.5rem" :padding-bottom "0.5rem"}}
       [mui/stack {:spacing 0.5 :direction :row :justify-content :space-between}
        [mui/typography {:variant :h6} (:common-name bank-data)]
-       [mui/typography {:variant :h6} (str "£" (reduce + (map (fn [account] (js/parseFloat (:estimated-value account))) accounts)))]]]
+       [mui/typography {:variant :h6}
+        (str "£" (format/format "%.2f"
+                   (reduce + (map (fn [account]
+                                    (if (clojure.string/blank? (:estimated-value account))
+                                      0
+                                      (js/parseFloat (:estimated-value account)))) accounts))))]]]
      [mui/dialog
       {:open (if (= (peek modal) bank-id) true false)
        :maxWidth :md
