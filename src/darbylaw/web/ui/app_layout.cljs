@@ -5,6 +5,7 @@
     [darbylaw.web.styles :as styles]
     [reagent.core :as r]
     [re-frame.core :as rf]
+    [kee-frame.core :as kf]
     [darbylaw.web.ui.case-model :as case-model]
     [darbylaw.web.theme :as theme]))
 
@@ -12,18 +13,24 @@
   (inc (.. theme -zIndex -drawer)))
 
 (defn navbar []
-  [mui/app-bar {:sx {:zIndex bring-to-front}}
-   [mui/toolbar {:variant :dense :class (styles/navbar)}
-    [mui/typography {:variant :h5 :style {:color theme/rich-black}} "probate-tree"]
-    [mui/button {:start-icon (r/as-element [ui/icon-person-outline])
-                 :style {:textTransform :none}
-                 :onClick (let [case-id @(rf/subscribe [::case-model/case-id])]
-                            #(rf/dispatch
-                               [::ui/navigate
-                                [:user-details
-                                 {:case-id case-id}]]))}
-     @(rf/subscribe [::case-model/nickname])]]
-   #_(ui/???_TO_BE_DEFINED_??? "do we replace probate-tree with a logo img? black or colourful?")])
+  (let [case-id @(rf/subscribe [::case-model/case-id])
+        nickname @(rf/subscribe [::case-model/nickname])]
+    [mui/app-bar {:sx {:zIndex bring-to-front}}
+     [mui/toolbar {:variant :dense :class (styles/navbar)}
+      [mui/stack {:direction :row :spacing 2}
+       [mui/typography {:variant :h5
+                        :style {:color theme/rich-black}}
+        "probate-tree"]
+       [mui/button {:variant :outlined
+                    :startIcon (r/as-element [ui/icon-arrow-back-sharp])
+                    :href (kf/path-for [:admin])}
+        "Back to admin"]]
+      [mui/button {:start-icon (r/as-element [ui/icon-person-outline])
+                   :style {:textTransform :none
+                           :fontSize :large}
+                   :href (kf/path-for [:user-details {:case-id case-id}])}
+       nickname]]
+     #_(ui/???_TO_BE_DEFINED_??? "do we replace probate-tree with a logo img? black or colourful?")]))
 
 (defn footer []
   [mui/app-bar {:position :fixed :sx {:top "auto" :bottom 0
