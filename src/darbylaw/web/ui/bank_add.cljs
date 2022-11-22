@@ -48,8 +48,8 @@
              (fork/set-submitting db path false))}))
 
 (defn transform-on-submit [data]
-  (-> data
-    (update :bank-id keyword)))
+  (update data :bank-id keyword))
+
 
 (rf/reg-event-fx ::add-bank
   (fn [{:keys [db]} [_ case-id modal-value {:keys [path values] :as fork-params}]]
@@ -129,6 +129,7 @@
                                 :on-change #(handle-change % idx)
                                 :on-blur #(handle-blur % idx)
                                 :full-width true
+                                :disabled (= route :bank-confirmation)
                                 :InputProps
                                 {:start-adornment
                                  (r/as-element [mui/input-adornment {:position :start} "£"])}}]
