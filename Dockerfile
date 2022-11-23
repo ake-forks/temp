@@ -8,7 +8,8 @@ FROM clojure:temurin-17-tools-deps-1.11.1.1165-bullseye as base
 WORKDIR /app
 
 # Build & runtime deps
-RUN apt-get update && apt-get install -y git libreoffice
+# libreoffice, procps: needed by JodConverter (`ps` command is needed by JodConverter's ProcessManager).
+RUN apt-get update && apt-get install -y git libreoffice procps
 
 
 
@@ -49,4 +50,5 @@ COPY --from=build /app/resources/public/js/workspaces /app/resources/public/js/w
 COPY . .
 
 # Run the container calling the main function
-CMD [ "clojure", "-M", "-m", "darbylaw.core" ]
+#CMD [ "clojure", "-M", "-m", "darbylaw.core" ]
+CMD bash
