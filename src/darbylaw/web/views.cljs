@@ -17,6 +17,7 @@
     [darbylaw.web.ui.history]
     [darbylaw.web.ui.bank-add]
     [darbylaw.web.ui.bank-view]
+    [darbylaw.web.ui.bank-confirmation-view]
     [darbylaw.web.ui.dashboard]
     [darbylaw.web.ui.settings]))
 
