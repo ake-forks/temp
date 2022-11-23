@@ -60,8 +60,12 @@
     [mui/box
      [mui/card-action-area {:on-click #(rf/dispatch [::bank/show-bank-modal bank-id])
                             :sx {:padding-top "0.5rem" :padding-bottom "0.5rem"}}
-      [mui/stack {:spacing 0.5 :direction :row :justify-content :space-between}
-       [mui/typography {:variant :h6} (:common-name bank-data)]
+      [mui/stack {:direction :row :spacing 1}
+       [mui/box {:component :img
+                 :src (str "/images/bank-logos/" (:icon bank-data))
+                 :sx {:width 25 :mr 1}}]
+       [mui/stack {:spacing 0.5 :direction :row :justify-content :space-between :style {:width "100%"}}
+        [mui/typography {:variant :h6} (:common-name bank-data)]]
        [mui/typography {:variant :h6}
         (str "£" (format/format "%.2f"
                    (reduce + (map (fn [account]
