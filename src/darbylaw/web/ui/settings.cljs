@@ -6,6 +6,7 @@
             [reagent-mui.components :as mui]
             [darbylaw.web.ui :as ui]
             [re-frame.core :as rf]
+            [kee-frame.core :as kf]
             [darbylaw.web.ui.case-model :as case-model]
             [reagent.core :as r]))
 
@@ -15,23 +16,19 @@
      [mui/list-item {:key :back-to-case}
       [mui/button {:variant :outlined
                    :startIcon (r/as-element [ui/icon-arrow-back-sharp])
-                   :onClick #(rf/dispatch
-                               [::ui/navigate
-                                [:dashboard {:case-id case-id}]])}
+                   :href (kf/path-for [:dashboard {:case-id case-id}])}
        "Back to dashboard"]]
      [mui/list-subheader
       "Your case"]
      [mui/list-item {:key :user-details}
       [mui/list-item-button {:selected (= panel-k :user-details-panel)
-                             :onClick #(rf/dispatch
-                                         [::ui/navigate
-                                          [:user-details {:case-id case-id}]])}
+                             :href (kf/path-for
+                                     [:user-details {:case-id case-id}])}
        [mui/list-item-text {:primary "Your details"}]]]
      [mui/list-item {:key :deceased-details}
       [mui/list-item-button {:selected (= panel-k :deceased-details-panel)
-                             :onClick #(rf/dispatch
-                                         [::ui/navigate
-                                          [:deceased-details {:case-id case-id}]])}
+                             :href (kf/path-for
+                                     [:deceased-details {:case-id case-id}])}
        [mui/list-item-text
         {:primary (if-let [rel @(rf/subscribe [::case-model/relationship])]
                     (str "Your " rel "'s details")

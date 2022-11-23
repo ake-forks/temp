@@ -3,84 +3,97 @@
     [clojure.java.io :as io]
     [clojure.pprint :refer [pprint]]
     [xtdb.api :as xt]
-    [xtdb.jdbc :as jdbc]
     [mount.core :refer [defstate]]
-    [taoensso.timbre :as log]))
+    [taoensso.timbre :as log]
+    [darbylaw.config :as config]))
+
+
+;; >> Postgres
 
 (defn xtdb-postgres-config
-  "Index store: rocksdb
-   Doc store: Postgres
-   Tx store: Postgres"
+  "Index store: RocksDB
+   Doc store:   Postgres
+   Tx store:    Postgres"
   [data-dir config]
-  (let [config* (::config config)
-        {:keys [db-spec ]} config*]
-    {::jdbc/connection-pool {:dialect {:xtdb/module 'xtdb.jdbc.psql/->dialect} :db-spec db-spec}
-     :xtdb/tx-log           {:xtdb/module `jdbc/->tx-log, :connection-pool ::jdbc/connection-pool}
-     :xtdb/document-store   {:xtdb/module `jdbc/->document-store, :connection-pool ::jdbc/connection-pool}
-     :xtdb/index-store      {:kv-store {:xtdb/module `rocks/->kv-store, :db-dir (io/file data-dir "indexes")}}
-     :xtdb.metrics.csv/reporter {:output-file "xtdb-metrics.csv"}}))
+  (let [{:keys [db-spec]} config]
+    {:xtdb.jdbc/connection-pool
+     {:dialect {:xtdb/module 'xtdb.jdbc.psql/->dialect}
+      :pool-opts {}
+      :db-spec db-spec}
 
-(defn xtdb-rocks-config
+     :xtdb/tx-log
+     {:xtdb/module 'xtdb.jdbc/->tx-log
+      :connection-pool :xtdb.jdbc/connection-pool}
+
+     :xtdb/document-store
+     {:xtdb/module 'xtdb.jdbc/->document-store
+      :connection-pool :xtdb.jdbc/connection-pool}
+
+     :xtdb/index-store
+     {:kv-store {:xtdb/module 'xtdb.rocksdb/->kv-store
+                 :db-dir (io/file data-dir "indexes")}}}))
+
+     ;; TODO: Metrics
+     ;:xtdb.metrics.csv/reporter
+     ;{:output-file "xtdb-metrics.csv"}}))
+
+
+
+;; >> RocksDB
+
+(defn xtdb-rocksdb-config
   [data-dir _config]
-  {:xtdb/tx-log         {:kv-store
-                         {:xtdb/module 'xtdb.rocksdb/->kv-store
-                          :sync?       true
-                          :db-dir      (io/file data-dir "rocksdb-tx-log")}}
-   :xtdb/document-store {:kv-store
-                         {:xtdb/module 'xtdb.rocksdb/->kv-store
-                          :sync?       true
-                          :db-dir      (io/file data-dir "rocksdb-doc-store")}}
-   :xtdb/index-store    {:kv-store {:xtdb/module 'xtdb.rocksdb/->kv-store
-                                    :sync?       true
-                                    :db-dir      (io/file data-dir "rocksdb-indexes")}}})
+  {:xtdb/tx-log
+   {:kv-store
+    {:xtdb/module 'xtdb.rocksdb/->kv-store
+     :sync? true
+     :db-dir (io/file data-dir "rocksdb-tx-log")}}
 
-(defn xtdb-lmdb-config
-  [data-dir _config]
-  {:xtdb/tx-log         {:kv-store
-                         {:xtdb/module 'xtdb.lmdb/->kv-store
-                          :sync?       true
-                          :db-dir      (io/file data-dir "lmdb-tx-log")}}
-   :xtdb/document-store {:kv-store
-                         {:xtdb/module 'xtdb.lmdb/->kv-store
-                          :sync?       true
-                          :db-dir      (io/file data-dir "lmdb-doc-store")}}
-   :xtdb/index-store    {:kv-store {:xtdb/module 'xtdb.lmdb/->kv-store
-                                    :sync?       true
-                                    :db-dir      (io/file data-dir "lmdb-indexes")}}})
+   :xtdb/document-store
+   {:kv-store
+    {:xtdb/module 'xtdb.rocksdb/->kv-store
+     :sync? true
+     :db-dir (io/file data-dir "rocksdb-doc-store")}}
 
-(defn xtdb-in-memory-config [_config] {})
+   :xtdb/index-store
+   {:kv-store
+    {:xtdb/module 'xtdb.rocksdb/->kv-store
+     :sync? true
+     :db-dir (io/file data-dir "rocksdb-indexes")}}})
 
-(def xtdb-data-dir "xtdb-store")
 
-(defn xtdb-config* [{:keys [node-type] :as config}]
-  (let [node-config
-        (get
-          {:rocks     (xtdb-rocks-config xtdb-data-dir config)
-           :postgres  (xtdb-postgres-config xtdb-data-dir config)
-           :lmdb      (xtdb-lmdb-config xtdb-data-dir config)
-           :in-memory (xtdb-in-memory-config config)}
-          node-type)]
-    (when-not node-config (throw (Exception. (str "Unknown XTDB node type in config: " (pr-str node-type)))))
-    node-config))
 
-(defn xtdb-config [node-config]
-  (let [c (xtdb-config* node-config)]
-    (log/info "Using XTDB config: ")
-    (log/info (with-out-str (pprint c)))
-    c))
+;; >> In-memory
 
-(defn start-node
-  "Convenience to run from tests."
-  [config]
-  (log/info "XTDB CONFIG: " config)
-  (xt/start-node (xtdb-config config)))
+(defn xtdb-in-memory-config
+  [_data-dir _config]
+  {})
 
-;(defstate xtdb-node
-;  :start (start-node (::config config))
-;  :stop (.close xtdb-node))
+
+
+;; >> XTDB Config
+
+(def xtdb-data-dir ".xtdb")
+
+(defn xtdb-config
+  [{:keys [node-type] :as config}]
+  (let [config-fn
+        (case node-type
+          :postgres xtdb-postgres-config
+          :rocksdb xtdb-rocksdb-config
+          :in-memory xtdb-in-memory-config
+          (throw
+            (Exception. 
+              (str "Unknown XTDB node type in config: "
+                   (pr-str node-type)))))]
+    (config-fn xtdb-data-dir config)))
+
+
+
+;; >> Actually run the node
 
 (defstate xtdb-node
-  :start (xt/start-node (xtdb-rocks-config ".xtdb" nil))
+  :start (-> config/config :database xtdb-config xt/start-node)
   :stop (.close xtdb-node))
 
 (comment

@@ -2,6 +2,7 @@
   (:require [darbylaw.web.routes :as routes]
             [reagent.core :as r]
             [re-frame.core :as rf]
+            [kee-frame.core :as kf]
             [ajax.core :as ajax]
             [darbylaw.web.ui :as ui]
             [reagent-mui.components :as mui]
@@ -49,9 +50,8 @@
     [mui/stack {:direction :row
                 :justify-content :space-between
                 :align-items :center}
-     [mui/card-action-area {:onClick (when-not loading?
-                                       #(rf/dispatch [::ui/navigate
-                                                      [:dashboard {:case-id id}]]))}
+     [mui/card-action-area {:href (when-not loading?
+                                    (kf/path-for [:dashboard {:case-id id}]))}
       [mui/stack
        [mui/typography {:sx {:fontSize 14} :color :text.secondary}
         (if-not loading?
@@ -67,8 +67,7 @@
           [mui/skeleton {:width 130}])]]]
      [mui/stack
       [mui/tooltip {:title "See history"
-                    :onClick #(rf/dispatch [::ui/navigate
-                                            [:case-history {:case-id id}]])}
+                    :href (kf/path-for [:case-history {:case-id id}])}
        [mui/icon-button [ui/icon-history]]]]]]])
 
 (defn no-cases-found
@@ -76,7 +75,7 @@
   [mui/alert {:severity :info :sx {:z-index 999}}
    [mui/alert-title "No Cases Found"]
    "Maybe "
-   [mui/link {:href "#" :on-click #(rf/dispatch [::ui/navigate :create-case])} "create"]
+   [mui/link {:href (kf/path-for [:create-case])} "create"]
    " a new one?"])
 
 (defn card-list [cases]
@@ -146,7 +145,7 @@
                  :align-items :center}
       [mui/typography {:variant :h1} "Cases"]
       [mui/button {:startIcon (r/as-element [ui/icon-add])
-                   :onClick #(rf/dispatch [::ui/navigate :create-case])}
+                   :href (kf/path-for [:create-case])}
        "Create case"]]
      [mui/box {:border-bottom 1 :border-color :divider}
       [mui/tabs {:value (or case-view :card)
