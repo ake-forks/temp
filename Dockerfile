@@ -50,5 +50,4 @@ COPY --from=build /app/resources/public/js/workspaces /app/resources/public/js/w
 COPY . .
 
 # Run the container calling the main function
-#CMD [ "clojure", "-M", "-m", "darbylaw.core" ]
-CMD bash
+CMD [ "clojure", "-M", "-m", "darbylaw.core" ]
