@@ -1,6 +1,6 @@
 (ns darbylaw.web.util.subscriptions
-  (:require [re-frame.core :as rf]
-            [darbylaw.web.ui :as ui]))
+  (:require [re-frame.core :as rf]))
+
 
 
 (rf/reg-sub ::route-params
@@ -25,14 +25,14 @@
   (fn [_ [_ case-id]]
     {:dispatch [::get-case! case-id]}))
 
-(rf/reg-event-fx ::get-case!
-  (fn [_ [_ case-id]]
-    {:http-xhrio
-     (ui/build-http
-       {:method :get
-        :uri (str "/api/case/" case-id)
-        :on-success [::load-success]
-        :on-failure [::load-failure case-id]})}))
+#_(rf/reg-event-fx ::get-case!
+    (fn [_ [_ case-id]]
+      {:http-xhrio
+       (ui/build-http
+         {:method :get
+          :uri (str "/api/case/" case-id)
+          :on-success [::load-success]
+          :on-failure [::load-failure case-id]})}))
 
 (rf/reg-sub ::bank-modal
   (fn [db _]

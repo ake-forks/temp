@@ -26,6 +26,25 @@
     (rf/dispatch [::bank/hide-bank-modal])
     #_(rf/dispatch [::ui/navigate [:dashboard {:case-id (:case-id response)}]])))
 
+(rf/reg-event-fx
+  ::load-success
+  (fn [{:keys [db]} [_ response]]
+    {:db (assoc db :current-case response)}))
+
+(rf/reg-event-db
+  ::load-failure
+  (fn [db [_ case-id result]]
+    (assoc db :failure-http-result result :case-id case-id)))
+
+(rf/reg-event-fx ::get-case!
+  (fn [_ [_ case-id]]
+    {:http-xhrio
+     (ui/build-http
+       {:method :get
+        :uri (str "/api/case/" case-id)
+        :on-success [::load-success]
+        :on-failure [::load-failure case-id]})}))
+
 (rf/reg-event-fx ::update-bank-failure
   (fn [{:keys [db]} [_ {:keys [path]} response]]
     {:db (do (assoc db :failure response)
@@ -68,15 +87,15 @@
         banks (-> @(rf/subscribe [::sub/current-case]) :bank-accounts)
         current-bank (filter #(= (:id %) bank-id) banks)
         accounts (:accounts (first current-bank))]
-    (rf/dispatch [::sub/load! case-id])
-    [mui/box {:style {:min-height "70vh"}}
+    (rf/dispatch [::load! case-id])
+    [mui/box
      [mui/stack {:style {:min-height "inherit"}
                  :spacing 1 :direction :row
                  :justify-content :space-between
                  :divider (r/as-element [mui/divider {:style {:border-color theme/rich-black
                                                               :border-width "1px"}}])}
       ;left-hand side
-      [mui/box {:style {:width "50%"} :class (styles/main-content)}
+      [mui/box
        [mui/stack {:spacing 1}
         [mui/typography {:variant :h5}
          (str "confirm your "
@@ -99,11 +118,10 @@
                [mui/box
                 [bank-confirmation-form (ui/mui-fork-args fork-args)]])]
             (finally
-              (reset! form-state nil))))]]
+              (reset! form-state nil))))]]]]))
 
-      ;right-hand side
-      [mui/box {:style {:width "50%"}}
-       [:iframe {:src "/Example-bank-confirmation-letter.pdf" :width "100%" :height "100%"}]]]]))
+;right-hand side
+
 
 
 
