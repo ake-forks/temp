@@ -2,6 +2,24 @@
 
 ## Clojure Server
 
+### Prerequisites
+
+#### Local AWS config
+
+The server relies on [automatically inferring](https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/credentials.html#credentials-default) AWS credentials and configuration (region) from your environment.
+
+Suggested setup: Using [aws-vault](https://github.com/99designs/aws-vault), which is an adapter for providing AWS credentials from your local password manager to AWS client programs:
+- Make sure that you have set up access keys for your AWS user.
+- Install [aws-vault](https://github.com/99designs/aws-vault) (Arch Linux: `pacman -S aws-vault`). 
+- Add profile `aws-vault add juxtegg` (Replace "juxtegg" with your desired profile name; here I am using my AWS user name). You may need/want to specify your [password manager](https://github.com/99designs/aws-vault#vaulting-backends), for example: `aws-vault add juxtegg --backend pass`.
+- Edit file `.aws/config` to contain:
+    ```
+    [profile juxtegg]
+    credential_process = aws-vault exec juxtegg --json
+    region=us-east-1
+    ```
+    Again, you may need the `--backend` option in the `credential_process` command line.
+
 ### Usage
 
 Run the backend server on port 8080 (if no port is provided 8888 is used):
