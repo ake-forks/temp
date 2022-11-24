@@ -19,7 +19,8 @@
    :in '[case-id]})
 
 (defn fetch-one [xt-results]
-  (assert (= 1 (count xt-results)))
+  (assert (= 1 (count xt-results))
+    (str "Expected one result, got " (count xt-results)))
   (ffirst xt-results))
 
 (defn keys-to-camel-case [m]
