@@ -181,11 +181,19 @@
                   :variant :text
                   :size "large"
                   :full-width false
-                  :start-icon (r/as-element [icon/mui-add])}
+                  :start-icon (r/as-element [ui/icon-add-circle])}
       (str "add another "
         (if-let [bank-id (get-in props [:values :bank-id])]
           (str (bank-label bank-id) " account")
-          "account"))]]))
+          "account"))]
+     (if (not (= bank-id :add-bank))
+       [mui/button {:on-click #(rf/dispatch [::mark-bank-complete bank-id])
+                    :style {:text-transform "none" :align-self "baseline" :font-size "1rem"}
+                    :variant :text
+                    :size "large"
+                    :full-width false
+                    :start-icon (r/as-element [ui/icon-check])}
+        "mark accounts complete"])]))
 
 (defn submit-buttons []
   [mui/stack {:spacing 1
@@ -212,7 +220,7 @@
        [mui/typography {:variant :h6}
         (if (some? (-> current-case :deceased :relationship))
           (str "To the best of your knowledge, enter the details for all of your "
-            (-> current-case :deceased :relationship (clojure.string/lower-case))
+            (-> current-case :deceased :relationship)
             "'s accounts")
           "To the best of your knowledge, enter the details for all of the deceased's accounts")
         (when-let [bank-id (:bank-id values)]
@@ -221,10 +229,8 @@
        [fork/field-array {:props fork-args
                           :name :accounts}
         account-array-fn]
-       [submit-buttons]
-       [mui/button {:variant :contained
-                    :on-click #(rf/dispatch [::mark-bank-complete bank-modal])}
-        "mark bank complete"]]]]))
+       [submit-buttons]]]]))
+
 
 
 ;(def validation

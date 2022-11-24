@@ -12,10 +12,10 @@
   (fn [db _]
     (:modal/bank-modal db)))
 
-(def white [:img {:src "/images/white-step.png" :width "25px"}])
-(def green [:img {:src "/images/green-step.png" :width "25px"}])
-(def orange [:img {:src "/images/orange-step.png" :width "25px"}])
-(def grey [:img {:src "/images/grey-step.png" :width "25px"}])
+(def white [:img {:src "/images/black-mui-leaf.png" :width "30px"}])
+(def green [:img {:src "/images/green-mui-leaf.png" :width "30px"}])
+(def orange [:img {:src "/images/orange-mui-leaf.png" :width "30px"}])
+(def grey [:img {:src "/images/grey-mui-leaf.png" :width "30px"}])
 (def loading [:img {:src "/images/loading-step.png" :width "25px"}])
 
 (defn get-icon [stage]
