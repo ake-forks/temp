@@ -20,6 +20,12 @@ Suggested setup: Using [aws-vault](https://github.com/99designs/aws-vault), whic
     ```
     Again, you may need the `--backend` option in the `credential_process` command line.
 
+#### Local packages
+
+For PDF generation, which uses [JODConverter](https://github.com/sbraconnier/jodconverter), you need to:
+- Install LibreOffice. (In arch: `pacman -S libreoffice-still`).
+- Make sure that `ps` command is accessible through your path. (This is usually the case. Otherwise, you may to install the `procps` package).
+
 ### Usage
 
 Run the backend server on port 8080 (if no port is provided 8888 is used):
