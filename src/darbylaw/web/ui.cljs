@@ -18,6 +18,7 @@
     [reagent-mui.icons.delete-icon]
     [reagent-mui.icons.warning]
     [reagent-mui.icons.arrow-forward-ios]
+    [reagent-mui.icons.check-circle]
     [reagent-mui.components :as mui]
     [reagent-mui.lab.loading-button]
     [reagent.core :as r]
@@ -46,6 +47,7 @@
 (def icon-search reagent-mui.icons.search/search)
 (def icon-delete reagent-mui.icons.delete-icon/delete)
 (def icon-arrow-forwards reagent-mui.icons.arrow-forward-ios/arrow-forward-ios)
+(def icon-check reagent-mui.icons.check-circle/check-circle)
 (def icon-warning reagent-mui.icons.warning/warning)
 (def loading-button reagent-mui.lab.loading-button/loading-button)
 

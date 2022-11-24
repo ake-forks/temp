@@ -72,11 +72,12 @@
                                     (if (clojure.string/blank? (:estimated-value account))
                                       0
                                       (js/parseFloat (:estimated-value account)))) accounts))))]]]
+
      [mui/dialog
       {:open (if (= modal bank-id) true false)
-       :maxWidth :xl
-       :fullWidth true}
-      [bank-modal/bank-modal]]
+       :maxWidth false
+       :fullWidth false}
+      [bank-modal/base-modal]]
 
      [mui/divider {:variant "middle"}]]))
 
@@ -125,7 +126,7 @@
         {:open (= bank-modal :add-bank)
          :maxWidth :md
          :fullWidth true}
-        [bank/modal]]
+        [bank-modal/base-modal]]
 
        [mui/stack {:direction :row :spacing 1 :style {:margin-top "0.5rem"}}
         [mui/grid {:container true :spacing 1 :columns 3
