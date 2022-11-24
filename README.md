@@ -19,6 +19,9 @@ Suggested setup: Using [aws-vault](https://github.com/99designs/aws-vault), whic
     region=us-east-1
     ```
     Again, you may need the `--backend` option in the `credential_process` command line.
+- When running the server, you will need to specify the AWS profile to use through:
+  - An environment variable (`export AWS_PROFILE=juxtegg`)
+  - Or just configure a default profile in `~/.aws/config` (section `[default]` with the same contents as above).
 
 #### Local packages
 
