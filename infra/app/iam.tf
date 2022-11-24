@@ -51,3 +51,46 @@ resource "aws_iam_role_policy_attachment" "execution_role_secret_access_policy_a
   role       = aws_iam_role.execution_role.name
   policy_arn = aws_iam_policy.secret_access.arn
 }
+
+# >> Task Role
+
+resource "aws_iam_role" "task_role" {
+  name = "probatetree-task-role-${terraform.workspace}"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Principal = {
+          Service = "ecs-tasks.amazonaws.com"
+        }
+        Effect = "Allow"
+        Sid    = ""
+      }
+    ]
+  })
+}
+
+data "aws_iam_policy_document" "doc_store_write" {
+  statement {
+    sid = "AllObjectActions"
+    effect = "Allow"
+    actions = ["s3:*"]
+    resources = [
+      "arn:aws:s3:::darbylaw-docs-staging",
+      "arn:aws:s3:::darbylaw-docs-staging/*"
+    ]
+  }
+}
+
+resource "aws_iam_policy" "doc_store_write" {
+  name   = "ProbateTreeDocStoreWritePolicy-${terraform.workspace}"
+  path   = "/"
+  policy = data.aws_iam_policy_document.doc_store_write.json
+}
+
+resource "aws_iam_role_policy_attachment" "task_role_policy_attachment" {
+  role       = aws_iam_role.task_role.name
+  policy_arn = aws_iam_policy.doc_store_write.arn
+}
