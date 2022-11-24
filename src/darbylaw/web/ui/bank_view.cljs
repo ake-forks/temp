@@ -6,12 +6,12 @@
             [darbylaw.web.styles :as styles]
             [darbylaw.api.bank-list :as bank-list]
             [reagent.core :as r]
-            [darbylaw.web.ui :as ui]))
+            [darbylaw.web.ui :as ui]
+            [darbylaw.web.ui.case-model :as case-model]))
 
 (rf/reg-event-fx
   ::load-success
   (fn [{:keys [db]} [_ response]]
-    (println "success" response)
     {:db (assoc db :current-case response)}))
 
 (rf/reg-event-db
@@ -66,25 +66,102 @@
                                :full-width true}])]])
      accounts)])
 
+(rf/reg-event-fx ::start-notification-process--success
+  (fn [{:keys [db]} [_ case-id bank-id]]
+    {:db (assoc-in db [:current-case :bank bank-id ::notification-process-starting?] false)
+     :dispatch [::load! case-id]}))
+
+(rf/reg-event-fx ::start-notification-process
+  (fn [{:keys [db]} [_ case-id bank-id]]
+    {:db (assoc-in db [:current-case :bank bank-id ::notification-process-starting?] true)
+     :http-xhrio
+     (ui/build-http
+       {:method :post
+        :uri (str "/api/case/" case-id "/bank/" (name bank-id) "/start-notification")
+        :on-success [::start-notification-process--success case-id bank-id]})}))
+
+(defn ongoing-notification-process? [db bank-id]
+  (let [status (get-in db [:current-case :bank bank-id :notification-status])]
+    (and (some? status)
+         (not= :cancelled status))))
+
+(rf/reg-sub ::start-notification-hidden?
+  (fn [db [_ case-id bank-id]]
+    (ongoing-notification-process? db bank-id)))
+
+(rf/reg-sub ::notification-process-starting?
+  (fn [db [_ case-id bank-id]]
+    (boolean (get-in db [:current-case :bank bank-id ::notification-process-starting?]))))
+
+(defn start-notification-process-button [case-id bank-id]
+  [ui/loading-button {:onClick #(rf/dispatch [::start-notification-process case-id bank-id])
+                      :sx (when @(rf/subscribe [::start-notification-hidden? case-id bank-id])
+                            {:display :none})
+                      :loading @(rf/subscribe [::notification-process-starting? case-id bank-id])
+                      :variant :contained}
+   "start bank notification process"])
+
+(rf/reg-event-fx ::cancel-notification-process--success
+  (fn [{:keys [db]} [_ case-id bank-id]]
+    {:dispatch [::load! case-id]}))
+
+(rf/reg-event-fx ::cancel-notification-process
+  (fn [{:keys [db]} [_ case-id bank-id]]
+    {:http-xhrio
+     (ui/build-http
+       {:method :post
+        :uri (str "/api/case/" case-id "/bank/" (name bank-id) "/cancel-notification")
+        :on-success [::cancel-notification-process--success case-id bank-id]})}))
+
+(rf/reg-sub ::cancel-notification-hidden?
+  (fn [db [_ case-id bank-id]]
+    (not (ongoing-notification-process? db bank-id))))
+
+(defn cancel-notification-process-button [case-id bank-id]
+  [mui/button {:onClick #(rf/dispatch [::cancel-notification-process case-id bank-id])
+               :sx (when @(rf/subscribe [::cancel-notification-hidden? case-id bank-id])
+                     {:display :none})
+               :variant :text
+               :startIcon (r/as-element [ui/icon-warning])}
+   "cancel bank notification process"])
+
+(rf/reg-sub ::review-notification-pdf-disabled?
+  (fn [db [_ case-id bank-id]]
+    (not (ongoing-notification-process? db bank-id))))
+
+(defn review-notification-pdf-button [case-id bank-id]
+  [mui/button {:href (str "/api/case/" case-id "/bank/" (name bank-id) "/notification-pdf")
+               :disabled @(rf/subscribe [::review-notification-pdf-disabled? case-id bank-id])
+               :target "_blank"
+               :variant :contained
+               :endIcon (r/as-element [ui/icon-open-in-new])}
+   "review notification letter pdf"])
+
 (defn display-timeline []
-  [mui/stepper {:orientation "vertical"
-                :active-step 2}
-   [mui/step {:expanded true}
-    [mui/step-label "you have completed all account information"]
-    [mui/step-content
-     [mui/button {:variant :contained} "view summary PDF"]]]
-   [mui/step {:expanded true}
-    [mui/step-label "we have sent the notification letter"]
-    [mui/step-content
-     [mui/button {:variant :contained} "view letter sent PDF"]]]
-   [mui/step {:expanded true}
-    [mui/step-label "we are waiting to receive confirmation and valuations from the bank"]
-    [mui/step-content
-     [mui/button {:variant :contained :disabled true} "view letter received PDF"]]]
-   [mui/step {:expanded true}
-    [mui/step-label "we will confirm the finalised valuations for these accounts"]
-    [mui/step-content
-     [mui/button {:variant :contained :disabled true} "enter valuations"]]]])
+  (let [case-id @(rf/subscribe [::case-model/case-id])
+        bank-id (-> @(rf/subscribe [::route-params]) :bank-id keyword)]
+    [mui/stepper {:orientation "vertical"
+                  :active-step 2}
+     [mui/step {:expanded true}
+      [mui/step-label "you have completed all account information"]
+      [mui/step-content
+       [mui/typography
+        "You won't be able to change account information for this bank as soon as you start the bank notification process."]]
+      [mui/step-content
+       [start-notification-process-button case-id bank-id]
+       [cancel-notification-process-button case-id bank-id]]]
+     [mui/step {:expanded true}
+      [mui/step-label "we have generated the notification letter"]
+      [mui/step-content
+       [review-notification-pdf-button case-id bank-id]]]
+     [mui/step {:expanded true}
+      [mui/step-label "we are waiting to receive confirmation and valuations from the bank"]
+      [mui/step-content
+       [mui/button {:variant :contained :disabled true} "view letter received PDF"]]]
+     [mui/step {:expanded true}
+      [mui/step-label "we will confirm the finalised valuations for these accounts"]
+      [mui/step-content
+       [mui/button {:variant :contained :disabled true} "enter valuations"]]]]))
 
 
 (comment

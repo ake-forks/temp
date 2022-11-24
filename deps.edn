@@ -20,12 +20,23 @@
         metosin/muuntaja {:mvn/version "0.6.7"}
         ;;; Logging
         com.taoensso/timbre {:mvn/version "5.2.1"}
+        org.apache.logging.log4j/log4j-core {:mvn/version "2.19.0"}
+        org.apache.logging.log4j/log4j-api {:mvn/version "2.19.0"}
+        org.apache.logging.log4j/log4j-slf4j-impl {:mvn/version "2.19.0"}
         ;;; Config managment
         yogthos/config {:mvn/version "1.1.7"}
         mount/mount {:mvn/version "0.1.16"}
         aero/aero {:mvn/version "1.1.6"}
         ;;; Authentication
         ring-basic-authentication/ring-basic-authentication {:mvn/version "1.1.1"}
+        ;; Documents
+        org.jodconverter/jodconverter-local {:mvn/version "4.4.4"}
+        io.github.erdos/stencil-core {:mvn/version "0.4.7"}
+        ;; Data
+        camel-snake-kebab/camel-snake-kebab {:mvn/version "0.4.3"}
+        ;; AWS API
+        com.amazonaws/aws-java-sdk-core {:mvn/version "1.12.344"}
+        com.amazonaws/aws-java-sdk-s3 {:mvn/version "1.12.344"}
 
         ;; Frontend
         ;; _________________________________________________
@@ -64,13 +75,12 @@
         nberger/libphonenumber-cljs {:mvn/version "7.1.0"}
         lambdaisland/deep-diff2 {:mvn/version "2.4.138"}}
 
-
-
  :aliases
  {:dev {:extra-paths ["dev"]
         :extra-deps {org.clojure/data.csv {:mvn/version "1.0.1"}
                      ;spyscope/spyscope {:mvn/version "0.1.6"} ; no cljs support
-                     com.github.den1k/spyscope {:git/sha "83f9a19939378f83e6fbc108b02288c4eb7d5552"}}}
+                     com.github.den1k/spyscope {:git/sha "83f9a19939378f83e6fbc108b02288c4eb7d5552"}}
+        :jvm-opts ["-Dclojure.tools.logging.factory=clojure.tools.logging.impl/log4j2-factory"]}
 
   :test {:extra-paths ["test"]
          :extra-deps {org.clojure/test.check {:mvn/version "1.0.0"}}}
