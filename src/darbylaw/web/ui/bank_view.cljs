@@ -130,7 +130,7 @@
     (not (ongoing-notification-process? db bank-id))))
 
 (defn review-notification-pdf-button [case-id bank-id]
-  [mui/button {:href (str "/api/case/" case-id "/bank/" bank-id "/notification-pdf")
+  [mui/button {:href (str "/api/case/" case-id "/bank/" (name bank-id) "/notification-pdf")
                :disabled @(rf/subscribe [::review-notification-pdf-disabled? case-id bank-id])
                :target "_blank"
                :variant :contained
