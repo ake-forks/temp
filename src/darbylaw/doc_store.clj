@@ -12,7 +12,8 @@
 ; for more options than cognitect.aws.credentials, like
 ; honoring the "credential_process" option of a profile.
 ; (See https://github.com/cognitect-labs/aws-api/issues/73)
-(def ^AmazonS3 s3 (AmazonS3ClientBuilder/defaultClient))
+(mount/defstate ^AmazonS3 s3
+  :start (AmazonS3ClientBuilder/defaultClient))
 
 (mount/defstate ^String bucket-name
   :start (get-in config/config [:doc-store :s3-bucket]))
