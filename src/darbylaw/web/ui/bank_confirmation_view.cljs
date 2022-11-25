@@ -2,7 +2,8 @@
   (:require [re-frame.core :as rf]
             [reagent-mui.components :as mui]
             [darbylaw.web.routes :as routes]
-            [darbylaw.web.util.subscriptions :as sub]
+            [darbylaw.web.ui.bank-model :as bank-model]
+            [darbylaw.web.ui.case-model :as case-model]
             [darbylaw.web.ui.bank-add :as bank-add]
             [darbylaw.api.bank-list :as bank-list]
             [darbylaw.web.util.form :as form]
@@ -15,35 +16,12 @@
             [darbylaw.web.ui.bank-add :as bank]))
 
 
-(rf/reg-sub ::route-params
-  (fn [db _]
-    (:path-params (:kee-frame/route db))))
-
 (rf/reg-event-fx ::update-bank-success
   (fn [{:keys [db]} [_ {:keys [path]} response]]
     (print response)
     {:db (fork/set-submitting db path false)}
-    (rf/dispatch [::bank/hide-bank-modal])
+    (rf/dispatch [::bank-model/hide-bank-dialog])
     #_(rf/dispatch [::ui/navigate [:dashboard {:case-id (:case-id response)}]])))
-
-(rf/reg-event-fx
-  ::load-success
-  (fn [{:keys [db]} [_ response]]
-    {:db (assoc db :current-case response)}))
-
-(rf/reg-event-db
-  ::load-failure
-  (fn [db [_ case-id result]]
-    (assoc db :failure-http-result result :case-id case-id)))
-
-(rf/reg-event-fx ::get-case!
-  (fn [_ [_ case-id]]
-    {:http-xhrio
-     (ui/build-http
-       {:method :get
-        :uri (str "/api/case/" case-id)
-        :on-success [::load-success]
-        :on-failure [::load-failure case-id]})}))
 
 (rf/reg-event-fx ::update-bank-failure
   (fn [{:keys [db]} [_ {:keys [path]} response]]
@@ -67,27 +45,26 @@
 
 
 (defn bank-confirmation-form [{:keys [values handle-submit] :as fork-args}]
-  (let [case-id (-> @(rf/subscribe [::route-params]) :case-id)]
-    [:form {:on-submit handle-submit}
-     [mui/stack {:spacing 2}
-      [fork/field-array {:props fork-args
-                         :name :accounts}
-       bank-add/account-array-fn]]
-     [mui/stack {:direction :row :spacing 1}
-      [mui/button {:on-click #(rf/dispatch [::sub/hide-bank-modal]) :variant :contained :full-width true} "cancel"]
-      [mui/button {:type :submit :variant :contained :full-width true} "submit"]]]))
+  [:form {:on-submit handle-submit}
+   [mui/stack {:spacing 2}
+    [fork/field-array {:props fork-args
+                       :name :accounts}
+     bank-add/account-array-fn]]
+   [mui/stack {:direction :row :spacing 1}
+    [mui/button {:on-click #(rf/dispatch [::bank-model/hide-bank-dialog]) :variant :contained :full-width true} "cancel"]
+    [mui/button {:type :submit :variant :contained :full-width true} "submit"]]])
 
 
 (defonce form-state (r/atom nil))
 
 (defn bank-confirmation-panel []
-  (let [case-id (-> @(rf/subscribe [::route-params]) :case-id)
-        bank-id @(rf/subscribe [::sub/bank-modal])
-        current-case @(rf/subscribe [::sub/current-case])
-        banks (-> @(rf/subscribe [::sub/current-case]) :bank-accounts)
+  (let [case-id (-> @(rf/subscribe [::ui/path-params]) :case-id)
+        bank-id @(rf/subscribe [::bank-model/bank-dialog])
+        current-case @(rf/subscribe [::case-model/current-case])
+        banks (-> @(rf/subscribe [::case-model/current-case]) :bank-accounts)
         current-bank (filter #(= (:id %) bank-id) banks)
         accounts (:accounts (first current-bank))]
-    (rf/dispatch [::load! case-id])
+    (rf/dispatch [::case-model/load-case! case-id])
     [mui/box
      [mui/stack {:style {:min-height "inherit"}
                  :spacing 1 :direction :row
@@ -120,9 +97,3 @@
             (finally
               (reset! form-state nil))))]]]]))
 
-;right-hand side
-
-
-
-
-(defmethod routes/panels :bank-confirmation-panel [] [bank-confirmation-panel])
