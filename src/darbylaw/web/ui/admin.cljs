@@ -142,8 +142,10 @@
 
      [mui/stack {:direction :row
                  :justify-content :space-between
-                 :align-items :center}
-      [mui/typography {:variant :h1} "Cases"]
+                 :align-items :center
+                 :sx {:mt "3rem"
+                      :mb "1rem"}}
+      [mui/typography {:variant :h4} "Cases"]
       [mui/button {:startIcon (r/as-element [ui/icon-add])
                    :href (kf/path-for [:create-case])}
        "Create case"]]

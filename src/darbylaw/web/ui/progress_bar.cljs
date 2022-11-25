@@ -12,43 +12,77 @@
   (fn [db _]
     (:modal/bank-modal db)))
 
-(def white [:img {:src "/images/black-mui-leaf.png" :width "30px"}])
-(def green [:img {:src "/images/green-mui-leaf.png" :width "30px"}])
-(def orange [:img {:src "/images/orange-mui-leaf.png" :width "30px"}])
-(def grey [:img {:src "/images/grey-mui-leaf.png" :width "30px"}])
-(def loading [:img {:src "/images/loading-step.png" :width "25px"}])
+(defn get-icon [status]
+  (case status
+    ;; The step isn't available for the user
+    ;; Grey so the user doesn't worry about it
+    :unavailable
+    (r/as-element
+      [:img {:src "/images/grey-mui-leaf.png" :width "30px"}])
+    ;; The user has tasks to do, or needs to kick of the step?
+    ;; NOTE: Is this one needed?
+    :available
+    (r/as-element
+      [:img {:src "/images/black-mui-leaf.png" :width "30px"}])
+    ;; The user has tasks to do
+    :tasks-available
+    (r/as-element
+      [:img {:src "/images/orange-mui-leaf.png" :width "30px"}])
+    ;; Waiting on a background process to complete
+    :waiting-on-us
+    (r/as-element
+      [:img {:src "/images/loading-step.png" :width "25px"}])
+    ;; Step complete, no further action required
+    :completed
+    (r/as-element
+      [:img {:src "/images/green-mui-leaf.png" :width "30px"}])))
 
-(defn get-icon [stage]
-  (case stage
-    0 (r/as-element grey)
-    1 (r/as-element white)
-    2 (r/as-element orange)
-    3 (r/as-element loading)
-    4 (r/as-element green)))
+(def steps
+  "An array of maps representing a step
+  
+  Each step can have the following:
+  :label      The label of the step (required)
+  :status-fn  A function that, given the current-case, returns a status
+              (see the get-icon function) (required)
+  :tooltip    An optional tooltip to describe the step"
+  [{:label "Case Created"
+    :status-fn (constantly :completed)} 
+   {:label "Identity Check"
+    :tooltip "We are waiting on SmmartSearch to complete your ID check."
+    :status-fn (constantly :waiting-on-us)} 
+   {:label "Complete Assets"
+    :tooltip "Add bank and utitity assets via the dashboard."
+    :status-fn (fn [current-case]
+                 (if-not (some? (:bank-accounts current-case))
+                   :available
+                   :tasks-available))}
+   {:label "Notify Institutions"
+    :tooltip "We will trigger a notification when one or more assets are complete."
+    :status-fn (fn [current-case]
+                 (if (some? (:bank-accounts current-case))
+                   :available
+                   :unavailable))}
+   {:label "Receive Valuations"
+    :tooltip "Not available until one or more institutions have been notified."
+    :status-fn (constantly :unavailable)}
+   {:label "Grant of Probate"
+    :tooltip "Not available until all valuations have been recieved."
+    :status-fn (constantly :unavailable)}])
 
 (defn progress-bar []
-  (let [current-case @(rf/subscribe [::current-case])
-        assets (if (some? (:bank-accounts current-case)) 2 1)
-        notify (if (= assets 1) 0 1)
-        valuations (case notify 0 0 1 0 2 2 3 2 4 2)
-        grant (if (= 4 assets notify valuations) 2 0)]
+  (let [current-case @(rf/subscribe [::current-case])]
     [mui/card
      [mui/stepper {:alternative-label true :non-linear true
                    :style {:margin-top "2rem" :margin-bottom "2rem"}}
-      [mui/step {:completed true}
-       [mui/step-label {:icon (get-icon 4)} "Case Created"]]
-      [mui/tooltip {:title "We are waiting for SmartSearch to complete your ID check." :position "top"}
-       [mui/step {:completed true}
-        [mui/step-label {:icon (get-icon 3)} "Identity Check"]]]
-      [mui/tooltip {:title "Add bank and utility assets via the dashboard." :position "top"}
-       [mui/step {:completed (if (> assets 0) true false)}
-        [mui/step-label {:icon (get-icon assets)} "Complete Assets"]]]
-      [mui/tooltip {:title "We will trigger notification when one or more assets are complete." :position "top"}
-       [mui/step {:completed (if (> notify 0) true false)}
-        [mui/step-label {:icon (get-icon notify)} "Notify Institutions"]]]
-      [mui/tooltip {:title "Not available until one or more institutions have been notified." :position "top"}
-       [mui/step {:completed (if (> valuations 0) true false)}
-        [mui/step-label {:icon (get-icon valuations)} "Receive Valuations"]]]
-      [mui/tooltip {:title "Not available until all valuations have been received." :position "top"}
-       [mui/step {:completed (if (> grant 0) true false)}
-        [mui/step-label {:icon (get-icon grant)} "Grant of Probate"]]]]]))
+      (for [{:keys [label tooltip status-fn]} steps]
+        (let [status (status-fn current-case)
+              elem
+              [mui/step {:completed (= status :completed)}
+               [mui/step-label {:icon (get-icon status)}
+                [mui/typography {:variant :body2
+                                 :style {:textTransform :uppercase}}
+                 label]]]]
+          (if tooltip
+            [mui/tooltip {:title tooltip :position :top}
+             elem]
+            elem)))]]))

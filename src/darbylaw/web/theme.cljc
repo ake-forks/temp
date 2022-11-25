@@ -32,6 +32,7 @@
     :h3 {:font-weight 700}
     :h4 {:font-weight 700}
     :h5 {:font-weight 700}
+    :h6 {:font-weight 700}
     :button {:font-weight 600}}
 
    :components

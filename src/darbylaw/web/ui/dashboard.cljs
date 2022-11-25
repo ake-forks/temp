@@ -65,8 +65,8 @@
                  :src (str "/images/bank-logos/" (:icon bank-data))
                  :sx {:width 25 :mr 1}}]
        [mui/stack {:spacing 0.5 :direction :row :justify-content :space-between :style {:width "100%"}}
-        [mui/typography {:variant :h6} (:common-name bank-data)]]
-       [mui/typography {:variant :h6}
+        [mui/typography {:variant :body1} (:common-name bank-data)]]
+       [mui/typography {:variant :body1 :sx {:font-weight :bold}}
         (str "£" (format/format "%.2f"
                    (reduce + (map (fn [account]
                                     (if (clojure.string/blank? (:estimated-value account))
@@ -77,67 +77,86 @@
       {:open (if (= modal bank-id) true false)
        :maxWidth false
        :fullWidth false}
-      [bank-modal/base-modal]]
-
-     [mui/divider {:variant "middle"}]]))
+      [bank-modal/base-modal]]]))
 
 (defn add-bank []
   [mui/card-action-area {:on-click #(rf/dispatch [::bank/show-bank-modal :add-bank]) :sx {:padding-top "0.5rem"}}
-   [mui/stack {:direction :row :spacing 2 :align-items :baseline}
-    [mui/typography {:variant :h5} "add bank account"]
-    [ui/icon-add]]])
+   [mui/stack {:direction :row :spacing 1}
+    [mui/typography {:variant :body1
+                     :sx {:color :primary.main
+                          :font-weight 600}}
+     "add bank account"]
+    [ui/icon-add {:color :primary}]]])
 
 (defn bank-card [current-case]
-  [mui/card
-   [mui/card-content
-    [mui/typography {:variant :h5 :sx {:font-weight 600}} "bank accounts"]
-    [mui/divider]
-    (for [bank (:bank-accounts current-case)]
-      ^{:key (:id bank)}
-      [bank-item bank])
-    [add-bank]]])
+  (let [accounts (:bank-accounts current-case)]
+    [mui/card
+     [mui/card-content
+      [mui/typography {:variant :h6 :font-weight 600}
+       "bank accounts"]
+      [mui/divider]
+      (interpose
+        ^{:key 1} ;; Ugly hack but works? What would a good solution look like?
+        [mui/divider]
+        (for [bank accounts]
+          ^{:key (:id bank)}
+          [bank-item bank]))
+      [mui/divider]
+      [add-bank]]]))
+
+(defn heading [current-case]
+  [mui/box {:sx {:background-color theme/off-white :padding-bottom {:xs "2rem" :xl "4rem"}}}
+   [mui/container {:maxWidth :xl :class (styles/main-content)}
+    [mui/stack {:spacing 3}
+     [mui/stack {:direction :row
+                 :justify-content :space-between
+                 :align-items :baseline
+                 :sx {:padding-top {:xs "0.5rem" :xl "2rem"}}}
+      [mui/typography {:variant :h4}
+       (if (nil? (:deceased current-case))
+         (str "welcome")
+         (str "your "
+           (-> current-case :deceased :relationship (clojure.string/lower-case))
+           "'s estate"))]
+      [mui/typography {:variant :h6}
+       (if (nil? current-case)
+         [mui/skeleton {:width "5rem"}]
+         (str "case " (:reference current-case :reference)))]]
+     [progress-bar/progress-bar]]]])
+
+(defn content [current-case]
+  (let [bank-modal @(rf/subscribe [::bank-modal])]
+    [mui/container {:maxWidth :xl}
+     [mui/stack {:spacing 2 :sx {:pt "1rem" :pb "2rem"}}
+      [mui/typography {:variant :h5} "estate details"]
+      [mui/dialog
+       {:open (= bank-modal :add-bank)
+        :maxWidth :md
+        :fullWidth true}
+       [bank-modal/base-modal]]
+
+      [mui/stack {:direction :row :spacing 1 :style {:margin-top "0.5rem"}}
+       [mui/grid {:container true :spacing 1 :columns 3
+                  :style {:width "70%"}}
+        [mui/grid {:item true :xs 1}
+         (r/as-element [bank-card current-case])]]
+
+       [mui/stack {:spacing 2 :style {:width "30%"}}
+        [tasks/tasks-tile]
+        [overview/overview-card]]]]]))
 
 (defn panel []
   (let [case-id (-> @(rf/subscribe [::route-params])
                   :case-id)
-        current-case @(rf/subscribe [::current-case])
-        bank-modal @(rf/subscribe [::bank-modal])]
+        current-case @(rf/subscribe [::current-case])]
     (assert case-id)
     (rf/dispatch [::load! case-id])
     (rf/dispatch [::bank/mark-bank-complete :load])
     [mui/box
-     [mui/box {:style {:background-color theme/off-white :padding-bottom "4rem"}}
-      [c/navbar]
-      [mui/container {:maxWidth :xl :class (styles/main-content)}
-       [mui/stack {:spacing 3}
-        [mui/stack {:direction :row :justify-content :space-between :align-items :baseline}
-         [mui/typography {:variant :h2}
-          (if (nil? (:deceased current-case))
-            (str "welcome")
-            (str "your "
-              (-> current-case :deceased :relationship (clojure.string/lower-case))
-              "'s estate"))]
-         [mui/typography {:variant :h3} (if (nil? current-case) [mui/skeleton {:width "5rem"}] (str "case #" (:reference current-case :reference)))]]
-        [progress-bar/progress-bar]]]]
-     [mui/container {:maxWidth :xl}
-      [mui/stack {:spacing 2 :sx {:pt "1rem" :pb "2rem"}}
-       [mui/typography {:variant :h4} "estate details"]
-       [mui/dialog
-        {:open (= bank-modal :add-bank)
-         :maxWidth :md
-         :fullWidth true}
-        [bank-modal/base-modal]]
-
-       [mui/stack {:direction :row :spacing 1 :style {:margin-top "0.5rem"}}
-        [mui/grid {:container true :spacing 1 :columns 3
-                   :style {:width "70%"}}
-         [mui/grid {:item true :xs 1}
-          (r/as-element [bank-card current-case])]]
-        [mui/stack {:spacing 2 :style {:width "30%"}}
-         [tasks/tasks-tile]
-         [overview/overview-card]]]]
-
-      [c/footer]]]))
+     [c/navbar]
+     [heading current-case]
+     [content current-case]
+     [c/footer]]))
 
 (defmethod routes/panels :dashboard-panel [] [panel])
 

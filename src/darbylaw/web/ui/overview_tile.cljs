@@ -23,8 +23,10 @@
 (defn overview-card []
   [mui/card {:style {:width "large" :background-color theme/off-white}}
    [mui/card-content
-    [mui/typography {:variant :h5 :sx {:font-weight 600 :mb 1}} "estimated value"]
-    [mui/typography {:variant :h3}
+    [mui/typography {:variant :h5 :sx {:mb 1}}
+     "estimated value"]
+    [mui/divider]
+    [mui/typography {:variant :h4 :sx {:mt 1}}
      "£" (format/format "%.2f" (get-value))]]])
 
 

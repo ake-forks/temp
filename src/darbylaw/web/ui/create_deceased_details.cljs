@@ -18,7 +18,7 @@
 
    [mui/container {:max-width :lg
                    :sx {:mb 4}}
-    [mui/typography {:variant :h3
+    [mui/typography {:variant :h4
                      :sx {:pt 4 :pb 2 :pl "10%"}}
      "deceased's details"]
     [form/deceased-details-form :create {}]]])

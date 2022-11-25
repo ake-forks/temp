@@ -18,8 +18,8 @@
     [mui/app-bar {:sx {:zIndex bring-to-front}}
      [mui/toolbar {:variant :dense :class (styles/navbar)}
       [mui/stack {:direction :row :spacing 2}
-       [mui/typography {:variant :h5
-                        :style {:color theme/rich-black}}
+       [mui/typography {:variant :h6
+                        :sx {:color theme/rich-black}}
         "probate-tree"]
        [mui/button {:variant :outlined
                     :startIcon (r/as-element [ui/icon-arrow-back-sharp])
@@ -29,12 +29,17 @@
                    :style {:textTransform :none
                            :fontSize :large}
                    :href (kf/path-for [:user-details {:case-id case-id}])}
-       nickname]]
+       [mui/typography {:variant :body1
+                        :sx {:font-weight :bold}}
+        nickname]]]
      #_(ui/???_TO_BE_DEFINED_??? "do we replace probate-tree with a logo img? black or colourful?")]))
 
 (defn footer []
   [mui/app-bar {:position :fixed :sx {:top "auto" :bottom 0
                                       :zIndex bring-to-front}}
    [mui/toolbar {:variant :dense :class (styles/footer)}
-    [mui/typography {:variant :p} "2022 probate-tree. All rights reserved."]
-    [mui/button {:variant :text} "terms and conditions"]]])
+    [mui/typography {:variant :body1}
+     "2022 probate-tree. All rights reserved."]
+    [mui/link {:variant :body2
+               :underline :none}
+     "terms and conditions"]]])

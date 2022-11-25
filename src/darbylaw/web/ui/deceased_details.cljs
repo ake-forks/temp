@@ -8,7 +8,7 @@
 (defn panel []
   (r/with-let [case-loaded? (case-model/await-load-case!)]
     [mui/container {:max-width :xl}
-     [mui/typography {:variant :h3
+     [mui/typography {:variant :h4
                       :sx {:pt 4 :pb 2}}
       "deceased's details"]
      (if @case-loaded?

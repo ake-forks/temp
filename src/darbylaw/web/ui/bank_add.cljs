@@ -92,7 +92,7 @@
       :renderInput (react-component [props]
                      [mui/text-field (merge props
                                        {:name :bank-id
-                                        :label "Bank Name"
+                                        :label "bank name"
                                         :required true
                                         :onBlur handle-blur})])}]))
 
@@ -215,7 +215,9 @@
           [mui/typography {:variant :h5} "edit accounts"]
           [mui/button {:on-click #(rf/dispatch [::ui/navigate [:bank-confirmation
                                                                {:case-id (:id current-case)
-                                                                :bank-id bank-modal}]])} "view bank"]])
+                                                                :bank-id bank-modal}]])}
+           [mui/typography {:variant :body1}
+            "view bank"]]])
        [bank-select fork-args]
        [mui/typography {:variant :h6}
         (if (some? (-> current-case :deceased :relationship))

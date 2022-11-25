@@ -32,8 +32,6 @@
 
 
 
-
-
 (defn bank-progress-bar []
   (let [current-case @(rf/subscribe [::sub/current-case])
         banks (-> @(rf/subscribe [::sub/current-case]) :bank-accounts)
@@ -42,17 +40,23 @@
     [mui/stepper {:alternative-label true}
      [mui/step
       [mui/step-label {:icon (if (= (get-stage) 1)
-                               (prog-bar/get-icon 2)
-                               (prog-bar/get-icon 4))} "add accounts"]]
+                               (prog-bar/get-icon :tasks-available)
+                               (prog-bar/get-icon :completed))}
+       [mui/typography {:variant :body2 :sx {:textTransform :uppercase}}
+        "Add Accounts"]]]
      [mui/step
       [mui/step-label {:icon (if (= (get-stage) 1)
-                               (prog-bar/get-icon 0)
-                               (prog-bar/get-icon 4))} "send notification"]]
+                               (prog-bar/get-icon :unavailable)
+                               (prog-bar/get-icon :completed))}
+       [mui/typography {:variant :body2 :sx {:textTransform :uppercase}}
+        "Send Notification"]]]
      [mui/step
       [mui/step-label {:icon (case (get-stage)
-                               1 (prog-bar/get-icon 0)
-                               4 (prog-bar/get-icon 2)
-                               5 (prog-bar/get-icon 4))} "input valuations"]]]))
+                               1 (prog-bar/get-icon :unavailable)
+                               4 (prog-bar/get-icon :tasks-available)
+                               5 (prog-bar/get-icon :completed))}
+       [mui/typography {:variant :body2 :sx {:textTransform :uppercase}}
+        "Input Valuations"]]]]))
 
 
 (defn bank-complete [bank-name current-bank]
