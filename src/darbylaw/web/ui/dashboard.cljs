@@ -70,7 +70,7 @@
         current-case @(rf/subscribe [::case-model/current-case])
         bank-dialog @(rf/subscribe [::bank-model/bank-dialog])]
     (assert case-id)
-    (rf/dispatch [::ui/load-case! case-id])
+    (rf/dispatch [::case-model/load-case! case-id])
     (rf/dispatch [::bank/mark-bank-complete :load])
     [mui/box
      [mui/box {:style {:background-color theme/off-white :padding-bottom "4rem"}}

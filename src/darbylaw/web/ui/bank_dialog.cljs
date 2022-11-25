@@ -14,9 +14,9 @@
     (some #(= bank-id %) completed-banks)))
 
 (defn values-confirmed? [bank-id]
-  (let [current-bank (-> @(rf/subscribe [::case-model/current-case])
-                       :bank-accounts
-                       (filter #(= (:id %) bank-id)))]
+  (let [bank-accounts (-> @(rf/subscribe [::case-model/current-case])
+                        :bank-accounts)
+        current-bank (filter #(= (:id %) bank-id) bank-accounts)]
     (contains? (get-in (:accounts (first current-bank)) [0]) :confirmed-value)))
 
 (defn get-bank-stage [bank-id]
@@ -28,8 +28,8 @@
   :confirm-values -> bank has replied with valuations and the user needs to input and confirm them
   :bank-completed -> user has confirmed all values for all accounts"
   (cond
-    (bank-completed? bank-id) :confirm-values
     (and (bank-completed? bank-id) (values-confirmed? bank-id)) :bank-completed
+    (bank-completed? bank-id) :confirm-values
     :else :edit))
 
 ;grey :unavailable
@@ -49,22 +49,23 @@
     :status-fn (fn [bank-id]
                  (if (bank-completed? bank-id)
                    :completed
-                   :tasks-available))
-    :label "send notification"
+                   :tasks-available))}
+   {:label "send notification"
     :status-fn (fn [bank-id]
                  (if (bank-completed? bank-id)
-                   :waiting-on-us
-                   :unavailable))
-    :label "input valuations"
-    :status-fn (fn [bank-id]
-                 (if (and (bank-completed? bank-id)
-                       (values-confirmed? bank-id))
                    :completed
-                   :tasks-available))}])
+                   :unavailable))}
+   {:label "input valuations"
+    :status-fn (fn [bank-id]
+                 (if (bank-completed? bank-id)
+                   (if (values-confirmed? bank-id)
+                     :completed
+                     :tasks-available)
+                   :unavailable))}])
 
 (defn bank-progress-bar []
   (let [bank-id @(rf/subscribe [::bank-model/bank-dialog])]
-    [mui/card
+    [mui/card {:style {:padding "1rem"}}
      [mui/stepper {:alternative-label true}
       (for [{:keys [label status-fn]} bank-steps]
         (let [status (status-fn bank-id)]
@@ -75,9 +76,8 @@
              label]]]))]]))
 
 (defn dialog-header [bank-id]
-  [mui/stack {:spacing 1}
-   [mui/typography {:variant :h4} (list/bank-label bank-id)]
-   [mui/card {:style {:padding "1rem" :margin-bottom "1rem"}}
+  [mui/stack {:spacing 1.5}
+   [mui/typography {:variant :h4} (list/bank-label bank-id)
     [bank-progress-bar]]])
 
 (defn edit-dialog []
@@ -91,8 +91,9 @@
                         :width "1130px"}}
      [dialog-header bank-id]
      [bank-add/dialog-with-values
-      {:accounts (:accounts (first current-bank))
-       :bank-id (name bank-id)}]]))
+      (if (some? bank-id)
+        {:accounts (:accounts (first current-bank))
+         :bank-id (name bank-id)})]]))
 
 (defn confirm-values-dialog []
   (let [bank-id @(rf/subscribe [::bank-model/bank-dialog])]
@@ -147,11 +148,16 @@
         case-id (-> @(rf/subscribe [::ui/path-params]) :case-id)]
     (rf/dispatch [::case-model/load-case! case-id])
     [mui/box
-     (cond (get-bank-stage bank-id)
-           :edit [edit-dialog]
-           :notify [:<>]
-           :confirm-values [confirm-values-dialog]
-           :bank-completed [bank-completed-dialog])]))
+     [mui/button {:variant :contained :on-click #(print (values-confirmed? bank-id))} "values"]
+     [mui/button {:variant :contained :on-click #(print (get-bank-stage bank-id))} "stage"]
+     (if (= bank-id :add-bank)
+       [bank-add/dialog]
+       (let [stage (get-bank-stage bank-id)]
+         (cond
+           (= stage :edit) [edit-dialog]
+           (= stage :notify) [:<>]
+           (= stage :confirm-values) [confirm-values-dialog]
+           (= stage :bank-completed) [bank-completed-dialog])))]))
 
 
 

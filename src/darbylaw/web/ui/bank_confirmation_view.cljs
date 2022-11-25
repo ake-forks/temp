@@ -20,8 +20,7 @@
   (fn [{:keys [db]} [_ {:keys [path]} response]]
     (print response)
     {:db (fork/set-submitting db path false)}
-    (rf/dispatch [::bank-model/hide-bank-dialog])
-    #_(rf/dispatch [::ui/navigate [:dashboard {:case-id (:case-id response)}]])))
+    (rf/dispatch [::bank-model/hide-bank-dialog])))
 
 (rf/reg-event-fx ::update-bank-failure
   (fn [{:keys [db]} [_ {:keys [path]} response]]
