@@ -150,7 +150,7 @@
         (if-let [bank-id (get-in props [:values :bank-id])]
           (str (bank-label bank-id) " account")
           "account"))]
-     (if (not (= bank-id :add-bank))
+     (if (and (not (= bank-id :add-bank)) (not complete))
        [mui/button {:on-click #(rf/dispatch [::bank-model/mark-bank-complete bank-id])
                     :style {:text-transform "none" :align-self "baseline" :font-size "1rem"}
                     :variant :text

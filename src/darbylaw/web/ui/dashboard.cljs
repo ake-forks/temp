@@ -32,8 +32,8 @@
                  :src (str "/images/bank-logos/" (:icon bank-data))
                  :sx {:width 25 :mr 1}}]
        [mui/stack {:spacing 0.5 :direction :row :justify-content :space-between :style {:width "100%"}}
-        [mui/typography {:variant :h6} (:common-name bank-data)]]
-       [mui/typography {:variant :h6}
+        [mui/typography {:variant :body1} (:common-name bank-data)]]
+       [mui/typography {:variant :body1 :sx {:font-weight :bold}}
         (str "£" (format/format "%.2f"
                    (reduce + (map (fn [account]
                                     (if (clojure.string/blank? (:estimated-value account))
@@ -64,47 +64,59 @@
       [bank-item bank])
     [add-bank]]])
 
+(defn heading [current-case]
+  [mui/box {:sx {:background-color theme/off-white :padding-bottom {:xs "2rem" :xl "4rem"}}}
+   [mui/container {:maxWidth :xl :class (styles/main-content)}
+    [mui/stack {:spacing 3}
+     [mui/stack {:direction :row
+                 :justify-content :space-between
+                 :align-items :baseline
+                 :sx {:padding-top {:xs "0.5rem" :xl "2rem"}}}
+      [mui/typography {:variant :h4}
+       (if (nil? (:deceased current-case))
+         (str "welcome")
+         (str "your "
+           (-> current-case :deceased :relationship (clojure.string/lower-case))
+           "'s estate"))]
+      [mui/typography {:variant :h6}
+       (if (nil? current-case)
+         [mui/skeleton {:width "5rem"}]
+         (str "case " (:reference current-case :reference)))]]
+     [progress-bar/progress-bar]]]])
+
+(defn content [current-case]
+  (let [bank-modal @(rf/subscribe [::bank-model/bank-dialog])]
+    [mui/container {:maxWidth :xl}
+     [mui/stack {:spacing 2 :sx {:pt "1rem" :pb "2rem"}}
+      [mui/typography {:variant :h5} "estate details"]
+      [mui/dialog
+       {:open (= bank-modal :add-bank)
+        :maxWidth :md
+        :fullWidth true}
+       [bank-dialog/base-dialog]]
+
+      [mui/stack {:direction :row :spacing 1 :style {:margin-top "0.5rem"}}
+       [mui/grid {:container true :spacing 1 :columns 3
+                  :style {:width "70%"}}
+        [mui/grid {:item true :xs 1}
+         (r/as-element [bank-card current-case])]]
+
+       [mui/stack {:spacing 2 :style {:width "30%"}}
+        [tasks/tasks-tile]
+        [overview/overview-card]]]]]))
+
 (defn panel []
   (let [case-id (-> @(rf/subscribe [::ui/path-params])
                   :case-id)
-        current-case @(rf/subscribe [::case-model/current-case])
-        bank-dialog @(rf/subscribe [::bank-model/bank-dialog])]
+        current-case @(rf/subscribe [::case-model/current-case])]
     (assert case-id)
     (rf/dispatch [::case-model/load-case! case-id])
     (rf/dispatch [::bank/mark-bank-complete :load])
     [mui/box
-     [mui/box {:style {:background-color theme/off-white :padding-bottom "4rem"}}
-      [c/navbar]
-      [mui/container {:maxWidth :xl :class (styles/main-content)}
-       [mui/stack {:spacing 3}
-        [mui/stack {:direction :row :justify-content :space-between :align-items :baseline}
-         [mui/typography {:variant :h2}
-          (if (nil? (:deceased current-case))
-            (str "welcome")
-            (str "your "
-              (-> current-case :deceased :relationship (clojure.string/lower-case))
-              "'s estate"))]
-         [mui/typography {:variant :h3} (if (nil? current-case) [mui/skeleton {:width "5rem"}] (str "case #" (:reference current-case :reference)))]]
-        [progress-bar/progress-bar]]]]
-     [mui/container {:maxWidth :xl}
-      [mui/stack {:spacing 2 :sx {:pt "1rem" :pb "2rem"}}
-       [mui/typography {:variant :h4} "estate details"]
-       [mui/dialog
-        {:open (= bank-dialog :add-bank)
-         :maxWidth :md
-         :fullWidth true}
-        [bank-dialog/base-dialog]]
-
-       [mui/stack {:direction :row :spacing 1 :style {:margin-top "0.5rem"}}
-        [mui/grid {:container true :spacing 1 :columns 3
-                   :style {:width "70%"}}
-         [mui/grid {:item true :xs 1}
-          (r/as-element [bank-card current-case])]]
-        [mui/stack {:spacing 2 :style {:width "30%"}}
-         [tasks/tasks-tile]
-         [overview/overview-card]]]]
-
-      [c/footer]]]))
+     [c/navbar]
+     [heading current-case]
+     [content current-case]
+     [c/footer]]))
 
 (defmethod routes/panels :dashboard-panel [] [panel])
 

@@ -148,8 +148,6 @@
         case-id (-> @(rf/subscribe [::ui/path-params]) :case-id)]
     (rf/dispatch [::case-model/load-case! case-id])
     [mui/box
-     [mui/button {:variant :contained :on-click #(print (values-confirmed? bank-id))} "values"]
-     [mui/button {:variant :contained :on-click #(print (get-bank-stage bank-id))} "stage"]
      (if (= bank-id :add-bank)
        [bank-add/dialog]
        (let [stage (get-bank-stage bank-id)]
