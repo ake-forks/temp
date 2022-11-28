@@ -79,7 +79,7 @@
                                                           [:map
                                                            [:sort-code :string]
                                                            [:account-number :string]
-                                                           [:estimated-value :string]
+                                                           [:estimated-value {:optional true} :string]
                                                            [:joint-check {:optional true} :boolean]
                                                            [:joint-info {:optional true} :string]]]]]}}}]
    ["/:case-id/update-bank-accounts" {:post {:handler update-bank-accounts

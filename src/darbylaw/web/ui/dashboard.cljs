@@ -5,8 +5,10 @@
     [darbylaw.web.ui :as ui]
     [darbylaw.web.styles :as styles]
     [darbylaw.web.routes :as routes]
+    [darbylaw.web.ui.bank-model :as bank-model]
+    [darbylaw.web.ui.case-model :as case-model]
     [darbylaw.web.ui.bank-add :as bank]
-    [darbylaw.web.ui.bank-modal :as bank-modal]
+    [darbylaw.web.ui.bank-dialog :as bank-dialog]
     [darbylaw.api.bank-list :as bank-list]
     [darbylaw.web.ui.progress-bar :as progress-bar]
     [darbylaw.web.ui.overview-tile :as overview]
@@ -17,48 +19,13 @@
     [darbylaw.web.theme :as theme]))
 
 
-(rf/reg-sub ::route-params
-  (fn [db _]
-    (:path-params (:kee-frame/route db))))
-
-(rf/reg-event-fx
-  ::load-success
-  (fn [{:keys [db]} [_ response]]
-    {:db (assoc db :current-case response)}))
-
-(rf/reg-event-db
-  ::load-failure
-  (fn [db [_ case-id result]]
-    (assoc db :failure-http-result result :case-id case-id)))
-
-(rf/reg-event-fx ::load!
-  (fn [_ [_ case-id]]
-    {:dispatch [::get-case! case-id]}))
-
-(rf/reg-event-fx ::get-case!
-  (fn [_ [_ case-id]]
-    {:http-xhrio
-     (ui/build-http
-       {:method :get
-        :uri (str "/api/case/" case-id)
-        :on-success [::load-success]
-        :on-failure [::load-failure case-id]})}))
-
-(rf/reg-sub ::current-case
-  (fn [db]
-    (:current-case db)))
-
-(rf/reg-sub ::bank-modal
-  (fn [db _]
-    (:modal/bank-modal db)))
-
 (defn bank-item [bank]
   (let [bank-data (bank-list/bank-by-id (:id bank))
         bank-id (:id bank)
         accounts (:accounts bank)
-        modal @(rf/subscribe [::bank-modal])]
+        bank-dialog @(rf/subscribe [::bank-model/bank-dialog])]
     [mui/box
-     [mui/card-action-area {:on-click #(rf/dispatch [::bank/show-bank-modal bank-id])
+     [mui/card-action-area {:on-click #(rf/dispatch [::bank-model/show-bank-dialog bank-id])
                             :sx {:padding-top "0.5rem" :padding-bottom "0.5rem"}}
       [mui/stack {:direction :row :spacing 1}
        [mui/box {:component :img
@@ -74,35 +41,28 @@
                                       (js/parseFloat (:estimated-value account)))) accounts))))]]]
 
      [mui/dialog
-      {:open (if (= modal bank-id) true false)
+      {:open (if (= bank-dialog bank-id) true false)
        :maxWidth false
        :fullWidth false}
-      [bank-modal/base-modal]]]))
+      [bank-dialog/base-dialog]]
+
+     [mui/divider {:variant "middle"}]]))
 
 (defn add-bank []
-  [mui/card-action-area {:on-click #(rf/dispatch [::bank/show-bank-modal :add-bank]) :sx {:padding-top "0.5rem"}}
-   [mui/stack {:direction :row :spacing 1}
-    [mui/typography {:variant :body1
-                     :sx {:color :primary.main
-                          :font-weight 600}}
-     "add bank account"]
-    [ui/icon-add {:color :primary}]]])
+  [mui/card-action-area {:on-click #(rf/dispatch [::bank-model/show-bank-dialog :add-bank]) :sx {:padding-top "0.5rem"}}
+   [mui/stack {:direction :row :spacing 2 :align-items :baseline}
+    [mui/typography {:variant :h5} "add bank account"]
+    [ui/icon-add]]])
 
 (defn bank-card [current-case]
-  (let [accounts (:bank-accounts current-case)]
-    [mui/card
-     [mui/card-content
-      [mui/typography {:variant :h6 :font-weight 600}
-       "bank accounts"]
-      [mui/divider]
-      (interpose
-        ^{:key 1} ;; Ugly hack but works? What would a good solution look like?
-        [mui/divider]
-        (for [bank accounts]
-          ^{:key (:id bank)}
-          [bank-item bank]))
-      [mui/divider]
-      [add-bank]]]))
+  [mui/card
+   [mui/card-content
+    [mui/typography {:variant :h5 :sx {:font-weight 600}} "bank accounts"]
+    [mui/divider]
+    (for [bank (:bank-accounts current-case)]
+      ^{:key (:id bank)}
+      [bank-item bank])
+    [add-bank]]])
 
 (defn heading [current-case]
   [mui/box {:sx {:background-color theme/off-white :padding-bottom {:xs "2rem" :xl "4rem"}}}
@@ -125,7 +85,7 @@
      [progress-bar/progress-bar]]]])
 
 (defn content [current-case]
-  (let [bank-modal @(rf/subscribe [::bank-modal])]
+  (let [bank-modal @(rf/subscribe [::bank-model/bank-dialog])]
     [mui/container {:maxWidth :xl}
      [mui/stack {:spacing 2 :sx {:pt "1rem" :pb "2rem"}}
       [mui/typography {:variant :h5} "estate details"]
@@ -133,7 +93,7 @@
        {:open (= bank-modal :add-bank)
         :maxWidth :md
         :fullWidth true}
-       [bank-modal/base-modal]]
+       [bank-dialog/base-dialog]]
 
       [mui/stack {:direction :row :spacing 1 :style {:margin-top "0.5rem"}}
        [mui/grid {:container true :spacing 1 :columns 3
@@ -146,11 +106,11 @@
         [overview/overview-card]]]]]))
 
 (defn panel []
-  (let [case-id (-> @(rf/subscribe [::route-params])
+  (let [case-id (-> @(rf/subscribe [::ui/path-params])
                   :case-id)
-        current-case @(rf/subscribe [::current-case])]
+        current-case @(rf/subscribe [::case-model/current-case])]
     (assert case-id)
-    (rf/dispatch [::load! case-id])
+    (rf/dispatch [::case-model/load-case! case-id])
     (rf/dispatch [::bank/mark-bank-complete :load])
     [mui/box
      [c/navbar]
