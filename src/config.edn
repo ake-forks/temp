@@ -14,4 +14,9 @@
            ;           :dbname #env DATABASE_DBNAME
            ;           :user #env DATABASE_USER
            ;           :password #env DATABASE_PASSWORD}}
-           :test {:node-type :in-memory}}}
+           :test {:node-type :in-memory
+                  :test :none}}
+
+ :doc-store
+ {:s3-bucket #profile {:default "darbylaw-docs-test"
+                       :staging "darbylaw-docs-staging"}}}

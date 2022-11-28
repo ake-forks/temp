@@ -2,24 +2,40 @@
 
 ## Clojure Server
 
+### Prerequisites
+
+#### Local AWS config
+
+The server relies on [automatically inferring](https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/credentials.html#credentials-default) AWS credentials and configuration (region) from your environment.
+
+Suggested setup: Using [aws-vault](https://github.com/99designs/aws-vault), which is an adapter for providing AWS credentials from your local password manager to AWS client programs:
+- Make sure that you have set up access keys for your AWS user.
+- Install [aws-vault](https://github.com/99designs/aws-vault) (Arch Linux: `pacman -S aws-vault`). 
+- Add profile `aws-vault add juxtegg` (Replace "juxtegg" with your desired profile name; here I am using my AWS user name). You may need/want to specify your [password manager](https://github.com/99designs/aws-vault#vaulting-backends), for example: `aws-vault add juxtegg --backend pass`.
+- Edit file `.aws/config` to contain:
+    ```
+    [profile juxtegg]
+    credential_process = aws-vault exec juxtegg --json
+    region=us-east-1
+    ```
+    Again, you may need the `--backend` option in the `credential_process` command line.
+- When running the server, you will need to specify the AWS profile to use through:
+  - An environment variable (`export AWS_PROFILE=juxtegg`)
+  - Or just configure a default profile in `~/.aws/config` (section `[default]` with the same contents as above).
+
+#### Local packages
+
+For PDF generation, which uses [JODConverter](https://github.com/sbraconnier/jodconverter), you need to:
+- Install LibreOffice. (In arch: `pacman -S libreoffice-still`).
+- Make sure that `ps` command is accessible through your path. (This is usually the case. Otherwise, you may to install the `procps` package).
+
 ### Usage
 
-Run the backend server on port 8080 (if no port is provided 8888 is used):
+Run a REPL with the `dev` and `test` alias. Then execute `(go!)` to start.
 
-    $ clojure -M -m darbylaw.core 8080
-
-Run the project's tests (they'll fail until you edit them):
+You can run the project's tests from that REPL, or from the command-line:
 
     $ clojure -M:test:runner
-
-Build an uberjar:
-
-    $ clj -T:build clean
-    $ clj -T:build uber
-
-Run that uberjar:
-
-    $ java -jar target/app-0.0.2-standalone.jar
 
 ## ClojureScript Client
 
@@ -27,147 +43,18 @@ Run that uberjar:
 
 ### Running the App
 
-Start a temporary local web server, build the app with the `dev` profile, and serve the app,
-browser test runner and karma test runner with hot reload:
+Run the server, as serves the client SPA.
 
+Run:
 ```sh
 npm install
 npx shadow-cljs watch app
 ```
 
-Please be patient; it may take over 20 seconds to see any output, and over 40 seconds to complete.
-
 When `[:app] Build completed` appears in the output, browse to
-[http://localhost:8280/](http://localhost:8280/).
+[http://localhost:8080/](http://localhost:8080/).
 
-[`shadow-cljs`](https://github.com/thheller/shadow-cljs) will automatically push ClojureScript code
-changes to your browser on save. To prevent a few common issues, see
-[Hot Reload in ClojureScript: Things to avoid](https://code.thheller.com/blog/shadow-cljs/2019/08/25/hot-reload-in-clojurescript.html#things-to-avoid).
-
-Opening the app in your browser starts a
-[ClojureScript browser REPL](https://clojurescript.org/reference/repl#using-the-browser-as-an-evaluation-environment),
-to which you may now connect.
-
-#### Connecting to the browser REPL from your editor
-
-See
-[Shadow CLJS User's Guide: Editor Integration](https://shadow-cljs.github.io/docs/UsersGuide.html#_editor_integration).
-Note that `npm run watch` runs `npx shadow-cljs watch` for you, and that this project's running build ids is
-`app`, `browser-test`, `karma-test`, or the keywords `:app`, `:browser-test`, `:karma-test` in a Clojure context.
-
-Alternatively, search the web for info on connecting to a `shadow-cljs` ClojureScript browser REPL
-from your editor and configuration.
-
-For example, in Vim / Neovim with `fireplace.vim`
-1. Open a `.cljs` file in the project to activate `fireplace.vim`
-2. In normal mode, execute the `Piggieback` command with this project's running build id, `:app`:
-    ```vim
-    :Piggieback :app
-    ```
-
-#### Connecting to the browser REPL from a terminal
-
-1. Connect to the `shadow-cljs` nREPL:
-    ```sh
-    lein repl :connect localhost:8777
-    ```
-    The REPL prompt, `shadow.user=>`, indicates that is a Clojure REPL, not ClojureScript.
-
-2. In the REPL, switch the session to this project's running build id, `:app`:
-    ```clj
-    (shadow.cljs.devtools.api/nrepl-select :app)
-    ```
-    The REPL prompt changes to `cljs.user=>`, indicating that this is now a ClojureScript REPL.
-3. See [`user.cljs`](dev/cljs/user.cljs) for symbols that are immediately accessible in the REPL
-without needing to `require`.
-
-### Running `shadow-cljs` Actions
-
-See a list of [`shadow-cljs CLI`](https://shadow-cljs.github.io/docs/UsersGuide.html#_command_line)
-actions:
-```sh
-npx shadow-cljs --help
-```
-
-Please be patient; it may take over 10 seconds to see any output. Also note that some actions shown
-may not actually be supported, outputting "Unknown action." when run.
-
-Run a shadow-cljs action on this project's build id (without the colon, just `app`):
-```sh
-npx shadow-cljs <action> app
-```
-### Debug Logging
-
-The `debug?` variable in [`config.cljs`](src/cljs/darbylaw/config.cljs) defaults to `true` in
-[`dev`](#running-the-app) builds, and `false` in [`prod`](#production) builds.
-
-Use `debug?` for logging or other tasks that should run only on `dev` builds:
-
-```clj
-(ns darbylaw.example
-  (:require [darbylaw.config :as config])
-
-(when config/debug?
-  (println "This message will appear in the browser console only on dev builds."))
-```
-
-## Production
-
-Build the app with the `prod` profile:
-
-```sh
-npm install
-npm run release
-```
-
-Please be patient; it may take over 15 seconds to see any output, and over 30 seconds to complete.
-
-The `resources/public/js/compiled` directory is created, containing the compiled `app.js` and
-`manifest.edn` files.
-
-### Project Overview
-
-* Architecture:
-  [Single Page Application (SPA)](https://en.wikipedia.org/wiki/Single-page_application)
-* Languages
-    - Front end is [ClojureScript](https://clojurescript.org/) with ([re-frame](https://github.com/day8/re-frame))
-    - CSS compilation is [Garden](https://github.com/noprompt/garden) with [Spade](https://github.com/dhleong/spade)
-* Dependencies
-    - UI framework: [re-frame](https://github.com/day8/re-frame)
-      ([docs](https://github.com/day8/re-frame/blob/master/docs/README.md),
-      [FAQs](https://github.com/day8/re-frame/blob/master/docs/FAQs/README.md)) ->
-      [Reagent](https://github.com/reagent-project/reagent) ->
-      [React](https://github.com/facebook/react)
-    - Client-side routing: [bidi](https://github.com/juxt/bidi) and [pushy](https://github.com/kibu-australia/pushy)
-    - CSS rendering: [Garden](https://github.com/noprompt/garden)
-    - Screen breakpoints tool: [BREAKING-POINT](https://github.com/gadfly361/breaking-point)
-* Build tools
-    - CLJS compilation, dependency management, REPL, & hot reload: [`shadow-cljs`](https://github.com/thheller/shadow-cljs)
-* Development tools
-    - Debugging: [CLJS DevTools](https://github.com/binaryage/cljs-devtools),
-      [re-frisk](https://github.com/flexsurfer/re-frisk)
-
-#### Directory structure
-
-* [`/`](/../../): project config files
-* [`dev/`](dev/): source files compiled only with the [dev](#running-the-app) profile
-    - [`user.cljs`](dev/cljs/user.cljs): symbols for use during development in the
-      [ClojureScript REPL](#connecting-to-the-browser-repl-from-a-terminal)
-* [`resources/public/`](resources/public/): SPA root directory;
-  [dev](#running-the-app) / [prod](#production) profile depends on the most recent build
-    - Generated directories and files
-        - Created on build with either the [dev](#running-the-app) or [prod](#production) profile
-        - `js/compiled/`: compiled CLJS (`shadow-cljs`)
-            - Not tracked in source control; see [`.gitignore`](.gitignore)
-* [`src/darbylaw/styles.cljs`](src/darbylaw/web/styles.cljs): CSS compilation source file (ClojureScript,
-  [Garden](https://github.com/noprompt/garden))
-* [`src/darbylaw/`](src/darbylaw/): SPA source files (ClojureScript,
-  [re-frame](https://github.com/Day8/re-frame))
-    - [`core.cljs`](src/darbylaw/web/core.cljs): contains the SPA entry point, `init`
-* [`.github/workflows/`](.github/workflows/): contains the
-  [github actions](https://github.com/features/actions) pipelines.
-    - [`test.yaml`](.github/workflows/test.yaml): Pipeline for testing.
-
+You can connect to the nREPL exposed by shadow-cljs, and run `(shadow/repl :app)` to run a CLJS REPL against your running browser.
 
 ### Browser Setup
 
@@ -177,26 +64,3 @@ Browser caching should be disabled when developer tools are open to prevent inte
 Custom formatters must be enabled in the browser before
 [CLJS DevTools](https://github.com/binaryage/cljs-devtools) can display ClojureScript data in the
 console in a more readable way.
-
-#### Chrome/Chromium
-
-1. Open [DevTools](https://developers.google.com/web/tools/chrome-devtools/) (Linux/Windows: `F12`
-   or `Ctrl-Shift-I`; macOS: `⌘-Option-I`)
-2. Open DevTools Settings (Linux/Windows: `?` or `F1`; macOS: `?` or `Fn+F1`)
-3. Select `Preferences` in the navigation menu on the left, if it is not already selected
-4. Under the `Network` heading, enable the `Disable cache (while DevTools is open)` option
-5. Under the `Console` heading, enable the `Enable custom formatters` option
-
-#### Firefox
-
-1. Open [Developer Tools](https://developer.mozilla.org/en-US/docs/Tools) (Linux/Windows: `F12` or
-   `Ctrl-Shift-I`; macOS: `⌘-Option-I`)
-2. Open [Developer Tools Settings](https://developer.mozilla.org/en-US/docs/Tools/Settings)
-   (Linux/macOS/Windows: `F1`)
-3. Under the `Advanced settings` heading, enable the `Disable HTTP Cache (when toolbox is open)`
-   option
-
-Unfortunately, Firefox does not yet support custom formatters in their devtools. For updates, follow
-the enhancement request in their bug tracker:
-[1262914 - Add support for Custom Formatters in devtools](https://bugzilla.mozilla.org/show_bug.cgi?id=1262914).
-

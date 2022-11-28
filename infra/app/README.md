@@ -24,7 +24,7 @@ Without doing it manually the docker push would fail, a bit of a chicken and egg
 $ tf init
 # Create workspace to deploy production resources to
 $ tf workspace new production
-$ tf apply -var "darbylaw_docker_tag=latest"
+$ tf apply -var "probatetree_docker_tag=latest"
 ```
 
 

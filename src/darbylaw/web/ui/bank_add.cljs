@@ -56,7 +56,7 @@
       :renderInput (react-component [props]
                      [mui/text-field (merge props
                                        {:name :bank-id
-                                        :label "Bank Name"
+                                        :label "bank name"
                                         :required true
                                         :onBlur handle-blur})])}]))
 

@@ -77,7 +77,7 @@
       (for [{:keys [label tooltip status-fn]} steps]
         (let [status (status-fn current-case)
               elem
-              [mui/step {:completed (= status :complete)}
+              [mui/step {:completed (= status :completed)}
                [mui/step-label {:icon (get-icon status)}
                 [mui/typography {:variant :body2
                                  :style {:textTransform :uppercase}}

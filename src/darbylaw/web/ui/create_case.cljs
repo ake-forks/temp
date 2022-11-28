@@ -20,10 +20,10 @@
                    :sx {:mb 4}}
     [mui/stack {:spacing 4}
      [mui/stack
-      [mui/typography {:variant :h3
+      [mui/typography {:variant :h4
                        :sx {:pt 4 :pb 2}}
        "get started"]
-      [mui/typography {:variant :p}
+      [mui/typography {:variant :body1}
        "It looks like you need probate.
        Here are some quick questions about you.
        Then we will ask about the deceased and their relationship to you."]]

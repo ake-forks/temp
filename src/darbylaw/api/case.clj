@@ -71,15 +71,20 @@
   (xt/tx-committed? darbylaw.xtdb-node/xtdb-node res)
   (xt/entity (xt/db darbylaw.xtdb-node/xtdb-node) :my-event))
 
-(defn put-event [txns event case-id]
-  (into txns
-    [[::xt/put {:xt/id ::put-with-tx-data
-                :xt/fn put-with-tx-data__txn-fn}]
-     [::xt/fn ::put-with-tx-data {:xt/id (random-uuid)
-                                  :type :event
-                                  :subject-type :probate.case
-                                  :event event
-                                  :ref/probate.case.id case-id}]]))
+(defn put-event
+  ([txns event case-id]
+   (put-event txns event case-id {}))
+  ([txns event case-id event-data]
+   (into txns
+     [[::xt/put {:xt/id ::put-with-tx-data
+                 :xt/fn put-with-tx-data__txn-fn}]
+      [::xt/fn ::put-with-tx-data (merge
+                                    {:xt/id (random-uuid)
+                                     :type :event
+                                     :subject-type :probate.case
+                                     :event event
+                                     :ref/probate.case.id case-id}
+                                    event-data)]])))
 
 (def initialise-case_txn-fn
   '(fn [ctx case-id pr-info-id is-test]
@@ -195,6 +200,7 @@
                              :reference
                              :deceased.info
                              :bank-accounts
+                             :bank
                              {:ref/personal-representative.info.id
                               personal-representative--props}])]
    :where '[[case :type :probate.case]

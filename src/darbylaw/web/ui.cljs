@@ -9,11 +9,14 @@
     [reagent-mui.icons.history]
     [reagent-mui.icons.keyboard-arrow-up]
     [reagent-mui.icons.keyboard-arrow-down]
+    [reagent-mui.icons.open-in-new]
     [reagent-mui.icons.priority-high]
     [reagent-mui.icons.add-circle]
     [reagent-mui.icons.person-outline]
+    [reagent-mui.icons.refresh]
     [reagent-mui.icons.search]
     [reagent-mui.icons.delete-icon]
+    [reagent-mui.icons.warning]
     [reagent-mui.icons.arrow-forward-ios]
     [reagent-mui.icons.check-circle]
     [reagent-mui.components :as mui]
@@ -35,14 +38,17 @@
 (def icon-history reagent-mui.icons.history/history)
 (def icon-keyboard-arrow-up reagent-mui.icons.keyboard-arrow-up/keyboard-arrow-up)
 (def icon-keyboard-arrow-down reagent-mui.icons.keyboard-arrow-down/keyboard-arrow-down)
+(def icon-open-in-new reagent-mui.icons.open-in-new/open-in-new)
 (def icon-priority-high reagent-mui.icons.priority-high/priority-high)
 (def icon-add-circle reagent-mui.icons.add-circle/add-circle)
 (def icon-account-balance reagent-mui.icons.account-balance/account-balance)
 (def icon-person-outline reagent-mui.icons.person-outline/person-outline)
+(def icon-refresh reagent-mui.icons.refresh/refresh)
 (def icon-search reagent-mui.icons.search/search)
 (def icon-delete reagent-mui.icons.delete-icon/delete)
 (def icon-arrow-forwards reagent-mui.icons.arrow-forward-ios/arrow-forward-ios)
 (def icon-check reagent-mui.icons.check-circle/check-circle)
+(def icon-warning reagent-mui.icons.warning/warning)
 (def loading-button reagent-mui.lab.loading-button/loading-button)
 
 (defn ???_TO_BE_DEFINED_??? [message]

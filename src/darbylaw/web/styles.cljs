@@ -31,7 +31,7 @@
    :background-color :white
    :padding-left "3rem"
    :padding-right "3rem"}
-  [:button {:color theme/pale-grey :text-transform "lowercase"}])
+  [:a {:color theme/pale-grey :text-transform "lowercase"}])
 
 (defclass main-content []
   {:padding-top "4rem"})
