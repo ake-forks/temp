@@ -1,12 +1,14 @@
 (ns darbylaw.web.ui.bank-add
   (:require [reagent-mui.components :as mui]
             [reagent.core :as r]
-            [fork.re-frame :as fork]
-            [darbylaw.web.ui :as ui]
             [re-frame.core :as rf]
+            [fork.re-frame :as fork]
+            [vlad.core :as v]
+            [darbylaw.web.ui :as ui]
             [darbylaw.web.ui.bank-model :as bank-model]
             [darbylaw.web.ui.case-model :as case-model]
-            [darbylaw.api.bank-list :as banks])
+            [darbylaw.api.bank-list :as banks]
+            [darbylaw.web.util.bank :as bank-utils])
   (:require-macros [reagent-mui.util :refer [react-component]]))
 
 (rf/reg-event-fx ::add-bank-success
@@ -43,25 +45,27 @@
   (assert (string? bank-id-str))
   (banks/bank-label (keyword bank-id-str)))
 
-(defn bank-select [{:keys [values set-handle-change handle-blur] :as fork-args}]
+(defn bank-select [{:keys [values set-handle-change handle-blur touched errors] :as fork-args}]
   (let [bank-dialog @(rf/subscribe [::bank-model/bank-dialog])]
-    [mui/autocomplete
-     {:options (banks/all-bank-ids)
-      :value (get values :bank-id)
-      :disabled (not= bank-dialog :add-bank)
-      :getOptionLabel bank-label
-      :onChange (fn [_evt new-value]
-                  (set-handle-change {:value new-value
-                                      :path [:bank-id]}))
-      :renderInput (react-component [props]
-                     [mui/text-field (merge props
-                                       {:name :bank-id
-                                        :label "bank name"
-                                        :required true
-                                        :onBlur handle-blur})])}]))
+    [:<>
+     [mui/autocomplete
+      {:options (banks/all-bank-ids)
+       :value (get values :bank-id)
+       :disabled (not= bank-dialog :add-bank)
+       :getOptionLabel bank-label
+       :onChange (fn [_evt new-value]
+                   (set-handle-change {:value new-value
+                                       :path [:bank-id]}))
+       :renderInput (react-component [props]
+                      [mui/text-field (merge props
+                                        {:name :bank-id
+                                         :label "bank name"
+                                         :required true
+                                         :onBlur handle-blur
+                                         :error (when (touched :bank-id) (get-in errors [:errors :bank-id :error?]))})])}]]))
 
 (defn account-array-fn
-  [{:keys [values errors] :as props}
+  [{:keys [errors] :as props}
    {:fieldarray/keys [fields
                       insert
                       remove
@@ -80,7 +84,6 @@
              [mui/stack (if (not (nil? complete)) {:spacing 1 :style {:margin-bottom "1rem"}}
                                                   {:spacing 1 :style {:margin-bottom 0}})
               [mui/stack {:spacing 1 :direction :row}
-
                [mui/text-field {:name :sort-code
                                 :value (or (get field :sort-code) "")
                                 :label "sort code"
@@ -89,7 +92,11 @@
                                 :on-blur #(handle-blur % idx)
                                 :required true
                                 :full-width true
-                                :helper-text (when (touched idx :sort-code))}]
+                                :error (boolean (bank-utils/get-account-error errors touched :sort-code idx))
+                                :helper-text (if
+                                               (boolean (bank-utils/get-account-error errors touched :sort-code idx))
+                                               "format 00-00-00")}]
+
                [mui/text-field {:name :account-number
                                 :value (or (get field :account-number) "")
                                 :label "account number"
@@ -97,7 +104,12 @@
                                 :on-change #(handle-change % idx)
                                 :on-blur #(handle-blur % idx)
                                 :required true
-                                :full-width true}]
+                                :full-width true
+                                :error (boolean (bank-utils/get-account-error errors touched :account-number idx))
+                                :helper-text (if
+                                               (boolean (bank-utils/get-account-error errors touched :account-number idx))
+                                               "8 digits")}]
+
                [mui/text-field {:name :estimated-value
                                 :value (or (get field :estimated-value) "")
                                 :label "estimated value"
@@ -109,14 +121,14 @@
                                 {:start-adornment
                                  (r/as-element [mui/input-adornment {:position :start} "£"])}}]
 
-
                [mui/form-group
                 [mui/form-control-label {
-                                         :control (r/as-element [mui/checkbox {:name :joint-check
-                                                                               :value (get field :joint-check)
-                                                                               :checked (get field :joint-check)
-                                                                               :label "estimated value"
-                                                                               :on-change #(handle-change % idx)}])
+                                         :control (r/as-element
+                                                    [mui/checkbox {:name :joint-check
+                                                                   :value (get field :joint-check)
+                                                                   :checked (get field :joint-check)
+                                                                   :label "estimated value"
+                                                                   :on-change #(handle-change % idx)}])
                                          :label "Joint Account?"}]]
 
                [mui/icon-button {:on-click #(remove idx)}
@@ -127,7 +139,6 @@
                                  :value (if (true? (get field :joint-check)) (get field :joint-info) "")
                                  :label "name of other account holder"
                                  :on-change #(handle-change % idx)}]
-
                 [:<>])
               (if (not (nil? complete))
                 [mui/text-field {:name :confirmed-value
@@ -173,13 +184,11 @@
     [:form {:on-submit handle-submit}
      [mui/box {:style {:background-color :white}}
       [mui/stack {:spacing 1 :style {:padding "1rem"}}
+
        (if (= bank-dialog :add-bank)
          [mui/typography {:variant :h5} "add bank accounts"]
          [mui/stack {:direction :row :spacing 1 :justify-content :space-between}
-          [mui/typography {:variant :h5} "edit accounts"]
-          [mui/button {:on-click #(rf/dispatch [::ui/navigate [:bank-confirmation
-                                                               {:case-id (:id current-case)
-                                                                :bank-id bank-dialog}]])} "view bank"]])
+          [mui/typography {:variant :h5} "edit accounts"]])
        [bank-select fork-args]
        [mui/typography {:variant :h6}
         (if (some? (-> current-case :deceased :relationship))
@@ -195,11 +204,26 @@
         account-array-fn]
        [submit-buttons]]]]))
 
+(def account-validation
+  (v/join
+    (v/attr [:sort-code]
+      (v/chain
+        (v/present)
+        (v/matches #"\d{2}-\d{2}-\d{2}")))
+    (v/attr [:account-number]
+      (v/chain
+        (v/present)
+        (v/matches #"[0-9]{8}")))))
 
+(def id-validation
+  (v/join
+    (v/attr [:bank-id] (v/present))))
 
-;(def validation
-;  (v/join
-;    (v/attr [:account-number] (v/chain (v/matches #"[0-9]{8}")))))
+(defn validation [values]
+  (merge (map (fn [acc]
+                (v/field-errors account-validation acc))
+           (:accounts values))
+    (v/field-errors id-validation values)))
 
 (defonce form-state (r/atom nil))
 
@@ -213,6 +237,12 @@
         :on-submit #(rf/dispatch [::submit! case-id bank-dialog %])
         :keywordize-keys true
         :prevent-default? true
+        :validation (fn [data]
+                      (try
+                        (validation data)
+                        (catch :default e
+                          (js/console.error "Error during validation: " e)
+                          [{:type ::validation-error :error e}])))
         :initial-values {:accounts [{}]}}                   ; placeholder for entering first account
        (fn [fork-args]
          [add-bank-panel (ui/mui-fork-args fork-args)])])
@@ -229,6 +259,12 @@
         :on-submit #(rf/dispatch [::submit! case-id bank-dialog %])
         :keywordize-keys true
         :prevent-default? true
+        :validation (fn [data]
+                      (try
+                        (validation data)
+                        (catch :default e
+                          (js/console.error "Error during validation: " e)
+                          [{:type ::validation-error :error e}])))
         :initial-values values}
        (fn [fork-args]
          [add-bank-panel (ui/mui-fork-args fork-args)])])
