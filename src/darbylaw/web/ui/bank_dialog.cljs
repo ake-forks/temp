@@ -7,7 +7,8 @@
             [darbylaw.web.ui :as ui]
             [darbylaw.web.ui.progress-bar :as progress-bar]
             [darbylaw.web.ui.bank-add :as bank-add]
-            [darbylaw.web.ui.bank-confirmation-view :as confirmation-view]))
+            [darbylaw.web.ui.bank-confirmation-view :as confirmation-view]
+            [darbylaw.web.ui.bank-letter-approval :as bank-letter-approval]))
 
 (defn bank-completed? [bank-id]
   (let [completed-banks @(rf/subscribe [::bank-model/banks-complete])]
@@ -95,6 +96,17 @@
         {:accounts (:accounts (first current-bank))
          :bank-id (name bank-id)})]]))
 
+(defn approve-letter-dialog []
+  (let [bank-id @(rf/subscribe [::bank-model/bank-dialog])
+        case-id @(rf/subscribe [::case-model/case-id])]
+    [mui/stack {:direction :row}
+     [:iframe {:src (str "/api/case/" case-id "/bank/" (name bank-id) "/notification-pdf")
+               :width "100%"
+               :height "100%"}]
+     [mui/stack {:sx {:p 2}}
+      [dialog-header bank-id]
+      [bank-letter-approval/panel]]]))
+
 (defn confirm-values-dialog []
   (let [bank-id @(rf/subscribe [::bank-model/bank-dialog])]
     [mui/stack {:spacing 1
@@ -143,6 +155,22 @@
      [mui/button {:on-click #(rf/dispatch [::bank-model/hide-bank-dialog])
                   :variant :contained} "close"]]))
 
+(rf/reg-sub ::bank-data
+  :<- [::case-model/current-case]
+  :<- [::bank-model/bank-id]
+  (fn [[current-case bank-id]]
+    (get-in current-case [:bank bank-id])))
+
+(rf/reg-sub ::stage
+  :<- [::bank-data]
+  (fn [bank-data]
+    (cond
+      (= (:notification-status bank-data) :started)
+      :approve-letter
+
+      :else
+      :edit-accounts)))
+
 (defn base-dialog []
   (let [bank-id @(rf/subscribe [::bank-model/bank-dialog])
         case-id (-> @(rf/subscribe [::ui/path-params]) :case-id)]
@@ -150,10 +178,10 @@
     [mui/box
      (if (= bank-id :add-bank)
        [bank-add/dialog]
-       (let [stage (get-bank-stage bank-id)]
+       (let [stage @(rf/subscribe [::stage])]
          (cond
-           (= stage :edit) [edit-dialog]
-           (= stage :notify) [:<>]
+           (= stage :edit-accounts) [edit-dialog]
+           (= stage :approve-letter) [approve-letter-dialog]
            (= stage :confirm-values) [confirm-values-dialog]
            (= stage :bank-completed) [bank-completed-dialog])))]))
 

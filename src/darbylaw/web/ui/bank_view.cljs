@@ -7,7 +7,8 @@
             [darbylaw.api.bank-list :as bank-list]
             [reagent.core :as r]
             [darbylaw.web.ui :as ui]
-            [darbylaw.web.ui.case-model :as case-model]))
+            [darbylaw.web.ui.case-model :as case-model]
+            [darbylaw.web.ui.bank-model :as bank-model]))
 
 (rf/reg-event-fx
   ::load-success
@@ -66,36 +67,13 @@
                                :full-width true}])]])
      accounts)])
 
-(rf/reg-event-fx ::start-notification-process--success
-  (fn [{:keys [db]} [_ case-id bank-id]]
-    {:db (assoc-in db [:current-case :bank bank-id ::notification-process-starting?] false)
-     :dispatch [::load! case-id]}))
-
-(rf/reg-event-fx ::start-notification-process
-  (fn [{:keys [db]} [_ case-id bank-id]]
-    {:db (assoc-in db [:current-case :bank bank-id ::notification-process-starting?] true)
-     :http-xhrio
-     (ui/build-http
-       {:method :post
-        :uri (str "/api/case/" case-id "/bank/" (name bank-id) "/start-notification")
-        :on-success [::start-notification-process--success case-id bank-id]})}))
-
-(defn ongoing-notification-process? [db bank-id]
-  (let [status (get-in db [:current-case :bank bank-id :notification-status])]
-    (and (some? status)
-         (not= :cancelled status))))
-
-(rf/reg-sub ::start-notification-hidden?
-  (fn [db [_ case-id bank-id]]
-    (ongoing-notification-process? db bank-id)))
-
 (rf/reg-sub ::notification-process-starting?
   (fn [db [_ case-id bank-id]]
     (boolean (get-in db [:current-case :bank bank-id ::notification-process-starting?]))))
 
 (defn start-notification-process-button [case-id bank-id]
-  [ui/loading-button {:onClick #(rf/dispatch [::start-notification-process case-id bank-id])
-                      :sx (when @(rf/subscribe [::start-notification-hidden? case-id bank-id])
+  [ui/loading-button {:onClick #(rf/dispatch [::bank-model/start-notification-process case-id bank-id])
+                      :sx (when @(rf/subscribe [::bank-model/start-notification-hidden? case-id bank-id])
                             {:display :none})
                       :loading @(rf/subscribe [::notification-process-starting? case-id bank-id])
                       :variant :contained}
@@ -115,7 +93,7 @@
 
 (rf/reg-sub ::cancel-notification-hidden?
   (fn [db [_ case-id bank-id]]
-    (not (ongoing-notification-process? db bank-id))))
+    (not (bank-model/ongoing-notification-process? db bank-id))))
 
 (defn cancel-notification-process-button [case-id bank-id]
   [mui/button {:onClick #(rf/dispatch [::cancel-notification-process case-id bank-id])
@@ -127,7 +105,7 @@
 
 (rf/reg-sub ::review-notification-pdf-disabled?
   (fn [db [_ case-id bank-id]]
-    (not (ongoing-notification-process? db bank-id))))
+    (not (bank-model/ongoing-notification-process? db bank-id))))
 
 (defn review-notification-pdf-button [case-id bank-id]
   [mui/button {:href (str "/api/case/" case-id "/bank/" (name bank-id) "/notification-pdf")

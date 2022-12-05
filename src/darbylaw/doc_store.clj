@@ -1,7 +1,8 @@
 (ns darbylaw.doc-store
   (:require [darbylaw.config :as config]
             [mount.core :as mount])
-  (:import (com.amazonaws.services.s3 AmazonS3ClientBuilder AmazonS3)))
+  (:import (com.amazonaws.services.s3 AmazonS3ClientBuilder AmazonS3)
+           (java.io File)))
 
 ; Usage of AWS Java has been preferred over the `cognitect.aws` library, because:
 ;
@@ -18,11 +19,17 @@
 (mount/defstate ^String bucket-name
   :start (get-in config/config [:doc-store :s3-bucket]))
 
-(defn store [key input-stream]
+(defn store [^String key ^File f]
   (when-not (.doesBucketExistV2 s3 bucket-name)
     (.createBucket s3 bucket-name))
+  (.putObject s3 bucket-name key f))
 
-  (.putObject s3 bucket-name key input-stream nil))
+(comment
+  ; Dummy implemenatation for dev tests
+  (defn store [key f]
+    (println "stored " f)
+    (Thread/sleep 1000)))
+
 
 (defn fetch [key]
   (-> (.getObject s3 ^String bucket-name ^String key)

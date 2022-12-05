@@ -37,14 +37,12 @@
 
    :components
    {:MuiButton {:variants
-                [{:props {:variant :contained}
+                [{:props {}
+                  :style {:textTransform :lowercase
+                          :borderRadius 0}}
+                 {:props {:variant :contained}
                   :style {:backgroundColor rich-black
-                          :color off-white
-                          :borderRadius 0
-                          :textTransform :lowercase}}
-                 {:props {:variant :text}
-                  :style {:textTransform :lowercase}}]}
+                          :color off-white}}
+                 {:props {:variant :text}}]}
     :MuiTextField {:defaultProps {:variant :filled}}
     :MuiSelect {:defaultProps {:variant :filled}}}})
-
-

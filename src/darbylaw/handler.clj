@@ -3,6 +3,8 @@
     [reitit.ring :as ring]
     [reitit.ring.coercion :as coercion]
     [reitit.ring.middleware.parameters :as parameters]
+    [reitit.ring.middleware.multipart :as middleware-multipart]
+    [ring.middleware.multipart-params :as ring-middleware-multipart]
     [reitit.ring.middleware.muuntaja :as muuntaja]
     [reitit.ring.middleware.dev]
     [reitit.coercion.malli]
@@ -100,6 +102,8 @@
                           :access-control-allow-origin [#".*"]
                           :access-control-allow-methods [:get :put :post :delete :patch]]
                          parameters/parameters-middleware
+                         #_middleware-multipart/multipart-middleware
+                         ring-middleware-multipart/wrap-multipart-params
                          muuntaja/format-negotiate-middleware
                          muuntaja/format-response-middleware
                          coercion/coerce-exceptions-middleware
