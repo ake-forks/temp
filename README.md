@@ -56,6 +56,13 @@ When `[:app] Build completed` appears in the output, browse to
 
 You can connect to the nREPL exposed by shadow-cljs, and run `(shadow/repl :app)` to run a CLJS REPL against your running browser.
 
+### Running workspaces cards
+
+```sh
+npm install
+npx shadow-cljs watch cards
+```
+
 ### Browser Setup
 
 Browser caching should be disabled when developer tools are open to prevent interference with
@@ -64,3 +71,9 @@ Browser caching should be disabled when developer tools are open to prevent inte
 Custom formatters must be enabled in the browser before
 [CLJS DevTools](https://github.com/binaryage/cljs-devtools) can display ClojureScript data in the
 console in a more readable way.
+
+### Terraform
+
+```sh
+aws-vault exec juxtegg --no-session -- terraform apply -var "probatetree_docker_tag=b3ef7a1b5d5c40d13783c905405ed13c4db91e47"
+```

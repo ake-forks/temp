@@ -72,7 +72,8 @@
                       handle-change
                       handle-blur
                       touched]}]
-  (let [bank-id @(rf/subscribe [::bank-model/bank-dialog])
+  (let [case-id @(rf/subscribe [::case-model/case-id])
+        bank-id @(rf/subscribe [::bank-model/bank-dialog])
         sub @(rf/subscribe [::bank-model/banks-complete])
         complete (some #(= bank-id %) sub)]
     [mui/stack {:spacing 1}
@@ -162,7 +163,7 @@
           (str (bank-label bank-id) " account")
           "account"))]
      (if (and (not (= bank-id :add-bank)) (not complete))
-       [mui/button {:on-click #(rf/dispatch [::bank-model/mark-bank-complete bank-id])
+       [mui/button {:on-click #(rf/dispatch [::bank-model/start-notification-process case-id bank-id])
                     :style {:text-transform "none" :align-self "baseline" :font-size "1rem"}
                     :variant :text
                     :size "large"

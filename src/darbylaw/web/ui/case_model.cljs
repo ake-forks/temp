@@ -12,6 +12,10 @@
   (fn [db]
     (:current-case db)))
 
+(rf/reg-sub ::current-case-reference
+  :<- [::current-case]
+  #(:reference %))
+
 (rf/reg-sub ::nickname
   :<- [::current-case]
   #(-> % :personal-representative :forename))

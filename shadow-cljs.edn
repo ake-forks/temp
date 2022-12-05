@@ -24,11 +24,14 @@
           :ns-regexp  "-(test|cards)$"
           :output-dir "resources/public/js/workspaces"
           :asset-path "/js/workspaces"
-          :preloads []
+          :preloads [re-frisk.preload
+                     spyscope.core]
           :js-options {:resolve {"goog.debug.Logger.Level"
                                  {:target :global
                                   :global "goog.log.Logger.Level"}}}
           :compiler-options {:output-feature-set :es7
                              ;; this line is essential for workspaces compatibility
                              ;; if using shadow-cljs >=2.15.13
-                             :global-goog-object&array true}}}}
+                             :global-goog-object&array true
+                             ; needed for redefining functions with `with-redefs`
+                             :static-fns false}}}}

@@ -18,6 +18,8 @@
         metosin/reitit-frontend {:mvn/version "0.5.18"}
         metosin/reitit-malli {:mvn/version "0.5.18"}
         metosin/muuntaja {:mvn/version "0.6.7"}
+        ; needed by ring-middleware-multipart:
+        javax.servlet/servlet-api {:mvn/version "2.5"}
         ;;; Logging
         com.taoensso/timbre {:mvn/version "5.2.1"}
         org.apache.logging.log4j/log4j-core {:mvn/version "2.19.0"}
