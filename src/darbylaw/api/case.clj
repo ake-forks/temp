@@ -72,9 +72,9 @@
   (xt/entity (xt/db darbylaw.xtdb-node/xtdb-node) :my-event))
 
 (defn put-event
-  ([txns event case-id]
-   (put-event txns event case-id {}))
-  ([txns event case-id event-data]
+  ([txns event case-id user]
+   (put-event txns event case-id user {}))
+  ([txns event case-id user event-data]
    (into txns
      [[::xt/put {:xt/id ::put-with-tx-data
                  :xt/fn put-with-tx-data__txn-fn}]
@@ -82,6 +82,7 @@
                                     {:xt/id (random-uuid)
                                      :type :event
                                      :subject-type :probate.case
+                                     :by (:username user)
                                      :event event
                                      :ref/probate.case.id case-id}
                                     event-data)]])))
@@ -106,7 +107,7 @@
                    :is-test is-test
                    :reference reference}]])))
 
-(defn create-case [{:keys [xtdb-node body-params]}]
+(defn create-case [{:keys [xtdb-node user body-params]}]
   (let [case-id (random-uuid)
         pr-info-id (random-uuid)
         pr-info (get body-params :personal-representative)
@@ -120,7 +121,7 @@
                          pr-info
                          {:type :probate.personal-representative.info
                           :xt/id pr-info-id})]]
-          (put-event :created case-id))))
+          (put-event :created case-id user))))
     {:status 200
      :body {:id case-id}}))
 
@@ -129,7 +130,7 @@
      (when-let [e (xtdb.api/entity (xtdb.api/db ctx) eid)]
        [[::xt/put (merge e m)]])))
 
-(defn update-deceased-info [{:keys [xtdb-node path-params body-params]}]
+(defn update-deceased-info [{:keys [xtdb-node user path-params body-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
         deceased-info body-params]
     (xt/await-tx xtdb-node
@@ -137,7 +138,7 @@
         (-> [[::xt/put {:xt/id ::merge
                         :xt/fn merge__txn-fn}]
              [::xt/fn ::merge case-id {:deceased.info deceased-info}]]
-          (put-event :updated.deceased.info case-id))))
+          (put-event :updated.deceased.info case-id user))))
     {:status 200
      :body deceased-info}))
 
@@ -152,7 +153,7 @@
          (assert refed-entity (str "refed entity not found: " refed-eid))
          [[::xt/put (merge m (select-keys refed-entity [:xt/id :type]))]]))))
 
-(defn update-pr-info [{:keys [xtdb-node path-params body-params]}]
+(defn update-pr-info [{:keys [xtdb-node user path-params body-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
         pr-info body-params]
     (xt/await-tx xtdb-node
@@ -160,7 +161,7 @@
         (-> [[::xt/put {:xt/id ::update-ref
                         :xt/fn update-ref__txn-fn}]
              [::xt/fn ::update-ref case-id :ref/personal-representative.info.id pr-info]]
-          (put-event :updated.personal-representative.info case-id))))
+          (put-event :updated.personal-representative.info case-id user))))
     {:status 200
      :body pr-info}))
 
@@ -233,7 +234,8 @@
                 first
                 (select-keys [:xt/id
                               :timestamp
-                              :event])
+                              :event
+                              :by])
                 (clojure.set/rename-keys
                   {:xt/id :id})))))))
 
@@ -273,19 +275,23 @@
                                         [:personal-representative
                                          personal-representative--schema]]}}}]
 
-   ["/case/:case-id" {:get {:handler get-case}}]
+   ["/case"
+    ["/:case-id" {:get {:handler get-case}}]
 
-   ["/case/:case-id/history" {:get {:handler get-case-history}}]
-   ["/event/:event-id" {:get {:handler get-event}}]
+    ["/:case-id"
+     ["/history" {:get {:handler get-case-history}}]
 
-   ["/case/:case-id/personal-representative"
-    {:put {:handler update-pr-info
-           :coercion reitit.coercion.malli/coercion
-           :parameters {:body personal-representative--schema}}}]
+     ["/personal-representative"
+      {:put {:handler update-pr-info
+             :coercion reitit.coercion.malli/coercion
+             :parameters {:body personal-representative--schema}}}]
 
-   ["/case/:case-id/deceased"
-    {:put {:handler update-deceased-info
-           :coercion reitit.coercion.malli/coercion
-           :parameters {:body deceased--schema}}}]
+     ["/deceased"
+      {:put {:handler update-deceased-info
+             :coercion reitit.coercion.malli/coercion
+             :parameters {:body deceased--schema}}}]]]
+
+   ["/event"
+    ["/:event-id" {:get {:handler get-event}}]]
 
    ["/cases" {:get {:handler get-cases}}]])

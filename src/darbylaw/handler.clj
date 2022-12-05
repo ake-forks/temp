@@ -9,7 +9,6 @@
     [reitit.ring.middleware.dev]
     [reitit.coercion.malli]
     [reitit.coercion]
-    [ring.middleware.basic-authentication :refer [wrap-basic-authentication]]
     [muuntaja.core :as m]
     [ring.middleware.cors :refer [wrap-cors]]
     [ring.util.response :as r]
@@ -17,11 +16,11 @@
     [xtdb.api :as xt]
     [mount.core :as mount]
     [darbylaw.web.theme :as theme]
-    [darbylaw.xtdb-node :refer [xtdb-node]]
     [darbylaw.api.case :as api.case]
     [darbylaw.api.bank :as api.bank]
     [darbylaw.api.bank-notification :as bank-notification]
-    [darbylaw.config :as config]))
+    [darbylaw.middleware.xtdb :refer [wrap-xtdb-node]]
+    [darbylaw.middleware.auth :refer [create-auth-middleware add-user-info authenticated?]]))
 
 (defn page [meta-info & body]
   (r/response
@@ -53,38 +52,18 @@
      :body {:ip (:remote-addr req)
             :xtdb-node xtdb-status}}))
 
-(defn wrap-xtdb-node [handler]
-  (fn [req]
-    (handler (-> req
-               (assoc :xtdb-node xtdb-node)))))
-
-(defn authenticated?
-  [username password]
-  (let [auth (get-in config/config [:web-server :auth])]
-    (if (= auth :none)
-      true
-      (and (contains? auth username)
-        (= (get auth username) password)))))
-
-(defn create-auth-middleware
-  [handler authenticated?]
-  (let [auth (get-in config/config [:web-server :auth])]
-    (if (= auth :none)
-      handler
-      (wrap-basic-authentication handler authenticated?))))
-
 (defn routes []
   [["/healthcheck" {:middleware [wrap-xtdb-node]
                     :get do-healthcheck}]
    [""
-    {:middleware [[create-auth-middleware authenticated?]]}
+    {:middleware [[create-auth-middleware authenticated?]
+                  add-user-info]}
     ["/" {:get (fn [_req] (r/redirect "/app/admin"))}]
     ["/app" {:get (fn [_req] (r/redirect "/app/admin"))}]
     ["/app{*path}" {:get spa}]
     ["/api" {:middleware [wrap-xtdb-node]}
      (api.case/routes)
-     (bank-notification/routes)]
-    ["/bank-api" {:middleware [wrap-xtdb-node]}
+     (bank-notification/routes)
      (api.bank/routes)]]])
 
 (defn make-router []

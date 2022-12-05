@@ -33,7 +33,7 @@
      :http-xhrio
      (ui/build-http
        {:method :post
-        :uri (str "/bank-api/" case-id "/update-bank-accounts")
+        :uri (str "/api/bank/" case-id "/update-bank-accounts")
         :params (bank/transform-on-submit values)
         :on-success [::update-bank-success fork-params]
         :on-failure [::update-bank-failure fork-params]})}))

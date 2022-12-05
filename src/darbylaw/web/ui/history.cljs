@@ -64,12 +64,13 @@
 (comment
   (format-timestamp (js/Date.)))
 
-(defn row [{:keys [id timestamp event]}]
+(defn row [{:keys [id timestamp event by]}]
   (r/with-let [open? (r/atom false)]
     [:<>
      [mui/table-row {:key (str id)}
       [mui/table-cell (format-timestamp timestamp)]
       [mui/table-cell event]
+      [mui/table-cell by]
       [mui/table-cell
        [mui/icon-button {:onClick #(do
                                      (swap! open? not)
@@ -82,7 +83,8 @@
                        :sx {:pb 0 :pt 0}}
        [mui/collapse {:in @open?
                       :unmountOnExit true}
-        (let [{:keys [case-before case-after]} @(rf/subscribe [::history-event id])]
+        (let [{:keys [case-before case-after]}
+              @(rf/subscribe [::history-event id])]
           [error-boundary
            [mui/box {:sx {:fontFamily :monospace}}
             (diff/diff case-before case-after)]])]]]]))

@@ -50,11 +50,13 @@
      (let [case-data (xtdb.api/entity (xtdb.api/db ctx) case-id)]
        [[::xt/put (assoc-in case-data [:bank bank-id :notification-status] new-status)]])))
 
-(defn change-bank-notification-status-txns [case-id bank-id status]
+(defn change-bank-notification-status-txns [case-id user bank-id status]
   (-> [[::xt/put {:xt/id ::change-bank-notification-status
                   :xt/fn change-bank-notification-status--txn}]
        [::xt/fn ::change-bank-notification-status case-id bank-id status]]
     (case-api/put-event :case.bank.notification.status
+      case-id
+      user
       {:bank-id bank-id
        :bank-notification-status status})))
 
@@ -91,7 +93,7 @@
       (finally
         (.delete pdf)))))
 
-(defn start-notification [{:keys [xtdb-node path-params]}]
+(defn start-notification [{:keys [xtdb-node user path-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
         bank-id (keyword (:bank-id path-params))
         case-data (fetch-one
@@ -104,15 +106,15 @@
         (.delete docx)))
     (xt/await-tx xtdb-node
       (xt/submit-tx xtdb-node
-        (change-bank-notification-status-txns case-id bank-id :started)))
+        (change-bank-notification-status-txns case-id user bank-id :started)))
     {:status 204}))
 
-(defn cancel-notification [{:keys [xtdb-node path-params]}]
+(defn cancel-notification [{:keys [xtdb-node user path-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
         bank-id (keyword (:bank-id path-params))]
     (xt/await-tx xtdb-node
       (xt/submit-tx xtdb-node
-        (change-bank-notification-status-txns case-id bank-id :cancelled)))
+        (change-bank-notification-status-txns case-id user bank-id :cancelled)))
     {:status 204}))
 
 (def docx-mime-type

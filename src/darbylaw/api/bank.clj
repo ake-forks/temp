@@ -18,7 +18,7 @@
      (let [e (xtdb.api/entity (xtdb.api/db ctx) eid)]
        [[::xt/put (update-in e [:bank-accounts] conj {:id bank-id :accounts accounts})]])))
 
-(defn add-bank-accounts [{:keys [xtdb-node path-params body-params]}]
+(defn add-bank-accounts [{:keys [xtdb-node user path-params body-params]}]
   (let [bank-id (:bank-id body-params)
         accounts (:accounts body-params)
         case-id (parse-uuid (:case-id path-params))
@@ -34,14 +34,14 @@
             (-> [[::xt/put {:xt/id ::add-bank-txn
                             :xt/fn add-bank-txn}]
                  [::xt/fn ::add-bank-txn case-id accounts bank-id]]
-              (case-api/put-event :updated.bank-accounts case-id))))
+              (case-api/put-event :updated.bank-accounts case-id user))))
         ;if it does, update existing entry for that id
         (xt/await-tx xtdb-node
           (xt/submit-tx xtdb-node
             (-> [[::xt/put {:xt/id ::update-bank-txn
                             :xt/fn update-bank-txn}]
                  [::xt/fn ::update-bank-txn case-id accounts bank-id]]
-              (case-api/put-event :updated.bank-accounts case-id))))))
+              (case-api/put-event :updated.bank-accounts case-id user))))))
     {:status 200
      :body body-params}))
 
@@ -55,7 +55,7 @@
            filtered-data (filterv #(not-empty (:accounts %)) new-data)]
        [[::xt/put (assoc-in e [:bank-accounts] filtered-data)]])))
 
-(defn update-bank-accounts [{:keys [xtdb-node path-params body-params]}]
+(defn update-bank-accounts [{:keys [xtdb-node user path-params body-params]}]
   (let [bank-id (:bank-id body-params)
         accounts (:accounts body-params)
         case-id (parse-uuid (:case-id path-params))
@@ -64,35 +64,40 @@
       (xt/submit-tx xtdb-node
         (-> [[::xt/put {:xt/id ::edit-bank-txn
                         :xt/fn edit-bank-txn}]
-             [::xt/fn ::edit-bank-txn case-id accounts bank-id]])))
+             [::xt/fn ::edit-bank-txn case-id accounts bank-id]]
+            (case-api/put-event :updated.bank-accounts case-id user))))
     {:status 200
      :body {:accounts accounts :case-id (.toString case-id)}}))
 
 (defn routes []
-  [["/:case-id/add-bank-accounts" {:post {:handler add-bank-accounts
-                                          :coercion reitit.coercion.malli/coercion
-                                          :parameters {:body
-                                                       [:map
-                                                        [:bank-id :keyword]
-                                                        [:accounts
-                                                         [:vector
-                                                          [:map
-                                                           [:sort-code :string]
-                                                           [:account-number :string]
-                                                           [:estimated-value {:optional true} :string]
-                                                           [:joint-check {:optional true} :boolean]
-                                                           [:joint-info {:optional true} :string]]]]]}}}]
-   ["/:case-id/update-bank-accounts" {:post {:handler update-bank-accounts
-                                             :coercion reitit.coercion.malli/coercion
-                                             :parameters {:body
-                                                          [:map
-                                                           [:bank-id :keyword]
-                                                           [:accounts
-                                                            [:vector
-                                                             [:map
-                                                              [:sort-code :string]
-                                                              [:account-number :string]
-                                                              [:estimated-value {:optional true} :string]
-                                                              [:joint-check {:optional true} :boolean]
-                                                              [:joint-info {:optional true} :string]
-                                                              [:confirmed-value {:optional true} :string]]]]]}}}]])
+  ["/bank"
+   ["/:case-id"
+    ["/add-bank-accounts"
+     {:post {:handler add-bank-accounts
+             :coercion reitit.coercion.malli/coercion
+             :parameters {:body
+                          [:map
+                           [:bank-id :keyword]
+                           [:accounts
+                            [:vector
+                             [:map
+                              [:sort-code :string]
+                              [:account-number :string]
+                              [:estimated-value {:optional true} :string]
+                              [:joint-check {:optional true} :boolean]
+                              [:joint-info {:optional true} :string]]]]]}}}]
+    ["/update-bank-accounts"
+     {:post {:handler update-bank-accounts
+             :coercion reitit.coercion.malli/coercion
+             :parameters {:body
+                          [:map
+                           [:bank-id :keyword]
+                           [:accounts
+                            [:vector
+                             [:map
+                              [:sort-code :string]
+                              [:account-number :string]
+                              [:estimated-value {:optional true} :string]
+                              [:joint-check {:optional true} :boolean]
+                              [:joint-info {:optional true} :string]
+                              [:confirmed-value {:optional true} :string]]]]]}}}]]])
