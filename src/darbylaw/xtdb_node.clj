@@ -97,4 +97,14 @@
   :stop (.close xtdb-node))
 
 (comment
+  ;; delete everything
+  (let [res (xt/q (xt/db xtdb-node)
+                  '{:find [id]
+                    :where [[id :type anything]]})
+        ids (map first res)]
+    (->> res
+         (map first)
+         (mapv (fn [id] [::xt/delete id]))
+         (xt/submit-tx xtdb-node)))
+
   (xt/entity (xt/db xtdb-node) :testing))
