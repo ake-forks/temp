@@ -19,14 +19,16 @@
     (if (= auth :none)
       (fn no-auth-handler [req]
         (-> req
-            (assoc :user {:username "dev"})
+            (assoc :basic-authentication {:username "dev"})
             handler))
       (wrap-basic-authentication handler authenticated?))))
 
 (defn add-user-info
   [handler]
   (fn [req]
-    (-> req
-        ;; Add in `:user` key for convenience
-        #(assoc :user (:basic-authentication %))
-        handler)))
+    (let [user (:basic-authentication req)]
+      (clojure.tools.logging/info user)
+      (-> req
+          ;; Add in `:user` key for convenience
+          (assoc :user user)
+          handler))))
