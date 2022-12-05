@@ -118,7 +118,7 @@
 ; Fix reagent-mui.styles/create-theme
 ; See https://github.com/arttuka/reagent-material-ui/issues/41
 (defn create-theme [options]
-  (js->clj (mui-styles/createTheme (reagent-mui.util/clj->js' options))))
+  (mui-styles/createTheme (reagent-mui.util/clj->js' options)))
 
 (defn theme-spacing [arg]
   (fn [theme]
