@@ -1,5 +1,6 @@
 (ns darbylaw.web.ui.bank-dialog
   (:require [re-frame.core :as rf]
+            [reagent.core :as r]
             [reagent-mui.components :as mui]
             [darbylaw.api.bank-list :as list]
             [darbylaw.web.ui.case-model :as case-model]
@@ -20,6 +21,18 @@
         current-bank (filter #(= (:id %) bank-id) bank-accounts)]
     (contains? (get-in (:accounts (first current-bank)) [0]) :confirmed-value)))
 
+(rf/reg-sub ::stage
+  :<- [::bank-data]
+  (fn [bank-data]
+    (cond
+      (= (:notification-status bank-data) :started)
+      :approve-letter
+      (= (:notification-status bank-data) :notification-letter-sent)
+      :confirm-values
+
+      :else
+      :edit-accounts)))
+
 (defn get-bank-stage [bank-id]
   "A function to return to status of the whole process for that bank.
   Stages are linear and mutually exclusive.
@@ -31,7 +44,7 @@
   (cond
     (and (bank-completed? bank-id) (values-confirmed? bank-id)) :bank-completed
     (bank-completed? bank-id) :confirm-values
-    :else :edit))
+    :else :edit-accounts))
 
 ;grey :unavailable
 ;black :available
@@ -83,6 +96,7 @@
 
 (defn edit-dialog []
   (let [bank-id @(rf/subscribe [::bank-model/bank-dialog])
+        case-id @(rf/subscribe [::case-model/case-id])
         current-bank (filter #(= (:id %) bank-id)
                        (:bank-accounts @(rf/subscribe [::case-model/current-case])))]
     [mui/stack {:spacing 1
@@ -94,35 +108,54 @@
      [bank-add/dialog-with-values
       (if (some? bank-id)
         {:accounts (:accounts (first current-bank))
-         :bank-id (name bank-id)})]]))
+         :bank-id (name bank-id)})]
+     [mui/button {:on-click #(rf/dispatch [::bank-model/start-notification-process case-id bank-id])
+                  :style {:text-transform "none" :align-self "baseline" :font-size "1rem"}
+                  :variant :text
+                  :size "large"
+                  :full-width false
+                  :start-icon (r/as-element [ui/icon-check])}
+      "mark accounts complete"]]))
+
+(defn approve-letter-pdf [uploading? case-id bank-id]
+  [mui/box {:style {:width "50%"}}
+   (if (false? @uploading?)
+     [:iframe {:src (str "/api/case/" case-id "/bank/" (name bank-id) "/notification-pdf")
+               :width "100%"
+               :height "100%"}]
+     [reagent-mui.lab.loading-button/loading-button {:loading true :full-width true}])])
 
 (defn approve-letter-dialog []
   (let [bank-id @(rf/subscribe [::bank-model/bank-dialog])
         case-id @(rf/subscribe [::case-model/case-id])]
-    [mui/stack {:direction :row}
-     [:iframe {:src (str "/api/case/" case-id "/bank/" (name bank-id) "/notification-pdf")
-               :width "100%"
-               :height "100%"}]
-     [mui/stack {:sx {:p 2}}
-      [dialog-header bank-id]
-      [bank-letter-approval/panel]]]))
+    [mui/stack {:spacing 1
+                :style {:padding "2rem"
+                        :background-color :white
+                        :height "90vh"
+                        :width "90vw"}}
+     [mui/stack {:direction :row :spacing 1 :style {:height "inherit"}}
+      [approve-letter-pdf bank-letter-approval/uploading? case-id bank-id]
+      [mui/stack {:spacing 1 :style {:width "50%"}}
+       [mui/typography {:variant :h4} (list/bank-label bank-id)]
+       [bank-progress-bar]
+       [bank-letter-approval/panel]]]]))
 
 (defn confirm-values-dialog []
   (let [bank-id @(rf/subscribe [::bank-model/bank-dialog])]
     [mui/stack {:spacing 1
                 :style {:padding "2rem"
                         :background-color :white
-                        :height "800px"
-                        :width "1300px"}}
-     [mui/stack {:spacing 1}
-      [mui/typography {:variant :h4} (list/bank-label bank-id)]]
-     [mui/stack {:direction :row :spacing 1 :style {:height "inherit"}}
-      [mui/stack {:spacing 1 :style {:width "50%"}}
-       [mui/card {:style {:padding "1rem" :margin-bottom "1rem"}}
-        [bank-progress-bar]]
-       [confirmation-view/bank-confirmation-panel]]
+                        :height "90vh"
+                        :width "90vw"}}
+     [mui/stack {:direction :row :spacing 2 :style {:height "inherit"}}
       [mui/box {:style {:width "50%"}}
-       [:iframe {:src "/Example-bank-confirmation-letter.pdf" :width "100%" :height "100%"}]]]]))
+       [:iframe {:src "/Example-bank-confirmation-letter.pdf" :width "100%" :height "100%"}]]
+      [mui/stack {:spacing 1 :style {:width "50%"}}
+       [mui/typography {:variant :h4} (list/bank-label bank-id)]
+       [bank-progress-bar]
+       [confirmation-view/bank-confirmation-panel]]]]))
+
+
 
 (defn bank-completed-dialog []
   (let [current-case @(rf/subscribe [::case-model/current-case])
@@ -160,16 +193,6 @@
   :<- [::bank-model/bank-id]
   (fn [[current-case bank-id]]
     (get-in current-case [:bank bank-id])))
-
-(rf/reg-sub ::stage
-  :<- [::bank-data]
-  (fn [bank-data]
-    (cond
-      (= (:notification-status bank-data) :started)
-      :approve-letter
-
-      :else
-      :edit-accounts)))
 
 (defn base-dialog []
   (let [bank-id @(rf/subscribe [::bank-model/bank-dialog])
