@@ -117,12 +117,12 @@
         (change-bank-notification-status-txns case-id user bank-id :cancelled)))
     {:status 204}))
 
-(defn mark-notification-sent [{:keys [xtdb-node path-params]}]
+(defn mark-notification-sent [{:keys [xtdb-node user path-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
         bank-id (keyword (:bank-id path-params))]
     (xt/await-tx xtdb-node
       (xt/submit-tx xtdb-node
-        (change-bank-notification-status-txns case-id bank-id :notification-letter-sent)))
+        (change-bank-notification-status-txns case-id user bank-id :notification-letter-sent)))
     {:status 204}))
 
 
