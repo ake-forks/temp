@@ -161,15 +161,9 @@
       (str "add another "
         (if-let [bank-id (get-in props [:values :bank-id])]
           (str (bank-label bank-id) " account")
-          "account"))]
-     (if (and (not (= bank-id :add-bank)) (not complete))
-       [mui/button {:on-click #(rf/dispatch [::bank-model/start-notification-process case-id bank-id])
-                    :style {:text-transform "none" :align-self "baseline" :font-size "1rem"}
-                    :variant :text
-                    :size "large"
-                    :full-width false
-                    :start-icon (r/as-element [ui/icon-check])}
-        "mark accounts complete"])]))
+          "account"))]]))
+
+
 
 (defn submit-buttons []
   [mui/stack {:spacing 1

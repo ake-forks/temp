@@ -117,6 +117,15 @@
         (change-bank-notification-status-txns case-id user bank-id :cancelled)))
     {:status 204}))
 
+(defn mark-notification-sent [{:keys [xtdb-node path-params]}]
+  (let [case-id (parse-uuid (:case-id path-params))
+        bank-id (keyword (:bank-id path-params))]
+    (xt/await-tx xtdb-node
+      (xt/submit-tx xtdb-node
+        (change-bank-notification-status-txns case-id bank-id :notification-letter-sent)))
+    {:status 204}))
+
+
 (def docx-mime-type
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
 
@@ -161,6 +170,7 @@
   [["/case/:case-id/bank/:bank-id"
     ["/start-notification" {:post {:handler start-notification}}]
     ["/cancel-notification" {:post {:handler cancel-notification}}]
+    ["/mark-notification-sent" {:post {:handler mark-notification-sent}}]
     ["/notification-docx" {:get {:handler (partial get-notification :docx)}
                            :post {:handler post-notification}}]
     ["/notification-pdf" {:get {:handler (partial get-notification :pdf)}}]]])
@@ -177,6 +187,4 @@
 
   (def temp-file
     (render-docx
-      (case-template-data :britannia-bereavement-team case-data)))
-
-  ,)
+      (case-template-data :britannia-bereavement-team case-data))),)
