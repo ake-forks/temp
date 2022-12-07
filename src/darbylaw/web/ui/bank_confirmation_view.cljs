@@ -13,7 +13,8 @@
             [darbylaw.web.theme :as theme]
             [darbylaw.web.styles :as styles]
             [darbylaw.web.ui :as ui]
-            [darbylaw.web.ui.bank-add :as bank]))
+            [darbylaw.web.ui.bank-add :as bank]
+            [vlad.core :as v]))
 
 
 (rf/reg-event-fx ::update-bank-success
@@ -56,6 +57,21 @@
 
 (defonce form-state (r/atom nil))
 
+(def conf-value-validation
+  (v/attr [:confirmed-value]
+    (v/chain
+      (v/present)
+      (v/matches #"[0-9]*(\.[0-9]{2})?"))))
+
+(defn validation [values]
+  (merge (map (fn [acc]
+                (merge (v/field-errors bank-add/account-validation acc)
+                  (v/field-errors conf-value-validation acc)))
+           (:accounts values))
+    {}))
+
+
+
 (defn bank-confirmation-panel []
   (let [case-id (-> @(rf/subscribe [::ui/path-params]) :case-id)
         bank-id @(rf/subscribe [::bank-model/bank-dialog])
@@ -89,7 +105,13 @@
               :keywordize-keys true
               :prevent-default? true
               :disable :estimated-value
-              :initial-values {:accounts accounts :bank-id (name bank-id)}}
+              :initial-values {:accounts accounts :bank-id (name bank-id)}
+              :validation (fn [data]
+                            (try
+                              (validation data)
+                              (catch :default e
+                                (js/console.error "Error during validation: " e)
+                                [{:type ::validation-error :error e}])))}
              (fn [fork-args]
                [mui/box
                 [bank-confirmation-form (ui/mui-fork-args fork-args)]])]
