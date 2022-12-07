@@ -23,8 +23,16 @@
              (print response)
              (fork/set-submitting db path false))}))
 
+(defn remove-joint [data]
+  (mapv (fn [acc]
+          (if (false? (:joint-check acc))
+            (apply dissoc acc [:joint-check :joint-info])
+            acc))
+    (:accounts data)))
+
 (defn transform-on-submit [data]
-  (update data :bank-id keyword))
+  (merge {:bank-id (keyword (:bank-id data))
+          :accounts (remove-joint data)}))
 
 (rf/reg-event-fx ::add-bank
   (fn [{:keys [db]} [_ case-id bank-dialog {:keys [path values] :as fork-params}]]
@@ -142,7 +150,7 @@
 
               (if (true? (get field :joint-check))
                 [mui/text-field {:name :joint-info
-                                 :value (if (true? (get field :joint-check)) (get field :joint-info) "")
+                                 :value (get field :joint-info)
                                  :label "name of other account holder"
                                  :on-change #(handle-change % idx)}]
                 [:<>])
