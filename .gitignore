@@ -32,3 +32,6 @@ terraform.rc
 
 # Dev DB store
 /.xtdb/
+
+# Local SFTP for post mail tests
+/.post-sftp/

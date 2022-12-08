@@ -39,6 +39,16 @@ resource "aws_ssm_parameter" "auth-map" {
   }
 }
 
+resource "aws_ssm_parameter" "post-service-map" {
+  name  = "ProbateTree_PostService_${terraform.workspace}"
+  type  = "SecureString"
+  value = "{}"
+
+  lifecycle {
+    ignore_changes = [value]
+  }
+}
+
 
 
 # >> Logs
@@ -111,6 +121,10 @@ resource "aws_ecs_task_definition" "probatetree" {
           {
             "name" : "AUTH_MAP"
             "valueFrom" : aws_ssm_parameter.auth-map.arn
+          },
+          {
+            "name" : "POST_SERVICE_MAP"
+            "valueFrom" : aws_ssm_parameter.post-service-map.arn
           }
         ]
         logConfiguration = {

@@ -39,6 +39,11 @@
         ;; AWS API
         com.amazonaws/aws-java-sdk-core {:mvn/version "1.12.344"}
         com.amazonaws/aws-java-sdk-s3 {:mvn/version "1.12.344"}
+        com.amazonaws/aws-java-sdk-appconfig {:mvn/version "1.12.344"}
+        ;; SFTP
+        clj-commons/clj-ssh {:mvn/version "0.5.15"}
+        org.apache.sshd/sshd-sftp {:mvn/version "2.9.2"}
+        org.apache.sshd/sshd-scp {:mvn/version "2.9.2"}
 
         ;; Frontend
         ;; _________________________________________________

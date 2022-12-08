@@ -12,7 +12,17 @@
    [::xt/fn ::assoc-in eid m v]])
 
 ; TODO: check for txn errors
-(defn exec-txn [xtdb-node txn]
+(defn exec-tx [xtdb-node tx-ops]
   (xt/await-tx xtdb-node
     (xt/submit-tx xtdb-node
-      txn)))
+      tx-ops)))
+
+(defn exec-txn
+  "Deprecated name. Use `exec-tx`"
+  [xtdb-node tx-ops]
+  (exec-tx xtdb-node tx-ops))
+
+(defn fetch-one [xt-results]
+  (assert (= 1 (count xt-results))
+    (str "Expected one result, got " (count xt-results)))
+  (ffirst xt-results))
