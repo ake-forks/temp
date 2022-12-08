@@ -11,15 +11,13 @@
             [darbylaw.web.ui.bank-confirmation-view :as confirmation-view]
             [darbylaw.web.ui.bank-letter-approval :as bank-letter-approval]))
 
-(defn bank-completed? [bank-id]
-  (let [completed-banks @(rf/subscribe [::bank-model/banks-complete])]
-    (some #(= bank-id %) completed-banks)))
 
-(defn values-confirmed? [bank-id]
-  (let [bank-accounts (-> @(rf/subscribe [::case-model/current-case])
-                        :bank-accounts)
-        current-bank (filter #(= (:id %) bank-id) bank-accounts)]
-    (contains? (get-in (:accounts (first current-bank)) [0]) :confirmed-value)))
+
+(rf/reg-sub ::bank-data
+  :<- [::case-model/current-case]
+  :<- [::bank-model/bank-id]
+  (fn [[current-case bank-id]]
+    (get-in current-case [:bank bank-id])))
 
 (rf/reg-sub ::stage
   :<- [::bank-data]
@@ -29,28 +27,22 @@
       :approve-letter
       (= (:notification-status bank-data) :notification-letter-sent)
       :confirm-values
-
+      (and (= (:notification-status bank-data) :values-confirmed))
+      :bank-completed
       :else
       :edit-accounts)))
-
-(defn get-bank-stage [bank-id]
-  "A function to return to status of the whole process for that bank.
-  Stages are linear and mutually exclusive.
-  Stages:
-  :edit -> user is adding and editing accounts
-  :notify -> user has marked the bank complete and triggered the notification process
-  :confirm-values -> bank has replied with valuations and the user needs to input and confirm them
-  :bank-completed -> user has confirmed all values for all accounts"
-  (cond
-    (and (bank-completed? bank-id) (values-confirmed? bank-id)) :bank-completed
-    (bank-completed? bank-id) :confirm-values
-    :else :edit-accounts))
 
 ;grey :unavailable
 ;black :available
 ;orange :tasks-available
 ;loading :waiting-on-us
 ;green ;completed
+
+;case stages
+;:edit-accounts
+;:approve-letter
+;:confirm-values
+;:completed
 
 (def bank-steps
   "An array of maps representing a step
@@ -60,29 +52,37 @@
   :status-fn  A function that, given the current-case, returns a status for that step
               (see the get-icon function) (required)"
   [{:label "add accounts"
-    :status-fn (fn [bank-id]
-                 (if (bank-completed? bank-id)
-                   :completed
+    :status-fn (fn [stage]
+                 (case stage
+                   :edit-accounts :tasks-available
+                   :approve-letter :completed
+                   :confirm-values :completed
+                   :bank-completed :completed
                    :tasks-available))}
    {:label "send notification"
-    :status-fn (fn [bank-id]
-                 (if (bank-completed? bank-id)
-                   :completed
+    :status-fn (fn [stage]
+                 (case stage
+                   :edit-accounts :unavailable
+                   :approve-letter :tasks-available
+                   :confirm-values :completed
+                   :bank-completed :completed
                    :unavailable))}
    {:label "input valuations"
-    :status-fn (fn [bank-id]
-                 (if (bank-completed? bank-id)
-                   (if (values-confirmed? bank-id)
-                     :completed
-                     :tasks-available)
+    :status-fn (fn [stage]
+                 (case stage
+                   :edit-accounts :unavailable
+                   :approve-letter :unavailable
+                   :confirm-values :tasks-available
+                   :bank-completed :completed
                    :unavailable))}])
 
 (defn bank-progress-bar []
-  (let [bank-id @(rf/subscribe [::bank-model/bank-dialog])]
+  (let [bank-id @(rf/subscribe [::bank-model/bank-dialog])
+        stage @(rf/subscribe [::stage])]
     [mui/card {:style {:padding "1rem"}}
      [mui/stepper {:alternative-label true}
       (for [{:keys [label status-fn]} bank-steps]
-        (let [status (status-fn bank-id)]
+        (let [status (status-fn stage)]
           [mui/step {:completed (= status :completed)}
            [mui/step-label {:icon (progress-bar/get-icon status)}
             [mui/typography {:variant :body2
@@ -155,8 +155,6 @@
        [bank-progress-bar]
        [confirmation-view/bank-confirmation-panel]]]]))
 
-
-
 (defn bank-completed-dialog []
   (let [current-case @(rf/subscribe [::case-model/current-case])
         banks (:bank-accounts current-case)
@@ -188,12 +186,6 @@
      [mui/button {:on-click #(rf/dispatch [::bank-model/hide-bank-dialog])
                   :variant :contained} "close"]]))
 
-(rf/reg-sub ::bank-data
-  :<- [::case-model/current-case]
-  :<- [::bank-model/bank-id]
-  (fn [[current-case bank-id]]
-    (get-in current-case [:bank bank-id])))
-
 (defn base-dialog []
   (let [bank-id @(rf/subscribe [::bank-model/bank-dialog])
         case-id (-> @(rf/subscribe [::ui/path-params]) :case-id)]
@@ -207,8 +199,3 @@
            (= stage :approve-letter) [approve-letter-dialog]
            (= stage :confirm-values) [confirm-values-dialog]
            (= stage :bank-completed) [bank-completed-dialog])))]))
-
-
-
-
-

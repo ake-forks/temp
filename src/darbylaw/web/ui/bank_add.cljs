@@ -93,7 +93,6 @@
              [mui/stack (if (= :notification-letter-sent status) {:spacing 1 :style {:margin-bottom "1rem"}}
                                                                  {:spacing 1 :style {:margin-bottom 0}})
               [mui/stack {:spacing 1 :direction :row}
-               [mui/button {:onClick #(print errors)} "print errors"]
                [mui/text-field {:name :sort-code
                                 :value (or (get field :sort-code) "")
                                 :label "sort code"

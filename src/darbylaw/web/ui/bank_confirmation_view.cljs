@@ -40,8 +40,9 @@
         :on-failure [::update-bank-failure fork-params]})}))
 
 (rf/reg-event-fx ::submit!
-  (fn [{:keys [db]} [_ case-id fork-params]]
-    {:dispatch [::update-bank case-id fork-params]}))
+  (fn [{:keys [db]} [_ case-id bank-id fork-params]]
+    {:fx [[:dispatch [::update-bank case-id fork-params]]
+          [:dispatch [::bank-model/mark-values-confirmed case-id bank-id]]]}))
 
 
 (defn bank-confirmation-form [{:keys [values handle-submit] :as fork-args}]
@@ -101,7 +102,7 @@
             [fork/form
              {:state form-state
               :clean-on-unmount? true
-              :on-submit #(rf/dispatch [::submit! case-id %])
+              :on-submit #(rf/dispatch [::submit! case-id bank-id %])
               :keywordize-keys true
               :prevent-default? true
               :disable :estimated-value
