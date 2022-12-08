@@ -156,6 +156,17 @@
       {:status http/status-202-accepted}
       {:status http/status-409-conflict})))
 
+(defn get-post-tasks [{:keys [xtdb-node]}]
+  {:status http/status-200-ok
+   :body (->> (xt/q (xt/db xtdb-node)
+                '{:find [(pull task [:case-id
+                                     :bank-id
+                                     :post-state])]
+                  :where [[task :type task-type]]
+                  :in [task-type]}
+                post-task/task-type)
+           (map (fn [[post-task]] (-> post-task))))})
+
 (defn routes []
   [["/case/:case-id/bank/:bank-id"
     ["/start-notification" {:post {:handler start-notification}}]
@@ -164,7 +175,8 @@
     ["/notification-docx" {:get {:handler (partial get-notification :docx)}
                            :post {:handler post-notification}}]
     ["/notification-pdf" {:get {:handler (partial get-notification :pdf)}}]
-    ["/post-letter" {:post {:handler post-letter}}]]])
+    ["/post-letter" {:post {:handler post-letter}}]]
+   ["/post-tasks" {:get {:handler get-post-tasks}}]])
 
 (comment
   (def all-case-data

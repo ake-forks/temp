@@ -11,6 +11,8 @@
     [reagent-mui.icons.keyboard-arrow-up]
     [reagent-mui.icons.keyboard-arrow-down]
     [reagent-mui.icons.launch]
+    [reagent-mui.icons.mail]
+    [reagent-mui.icons.mail-outlined]
     [reagent-mui.icons.open-in-new]
     [reagent-mui.icons.priority-high]
     [reagent-mui.icons.add-circle]
@@ -44,6 +46,8 @@
 (def icon-keyboard-arrow-up reagent-mui.icons.keyboard-arrow-up/keyboard-arrow-up)
 (def icon-keyboard-arrow-down reagent-mui.icons.keyboard-arrow-down/keyboard-arrow-down)
 (def icon-launch reagent-mui.icons.launch/launch)
+(def icon-mail reagent-mui.icons.mail/mail)
+(def icon-mail-outlined reagent-mui.icons.mail-outlined/mail-outlined)
 (def icon-open-in-new reagent-mui.icons.open-in-new/open-in-new)
 (def icon-priority-high reagent-mui.icons.priority-high/priority-high)
 (def icon-add-circle reagent-mui.icons.add-circle/add-circle)
