@@ -1,7 +1,8 @@
 (ns darbylaw.web.ui.bank-model
   (:require [re-frame.core :as rf]
             [darbylaw.web.ui :as ui]
-            [darbylaw.api.bank-list :as banks]))
+            [darbylaw.api.bank-list :as banks]
+            [darbylaw.web.ui.case-model :as case-model]))
 
 (rf/reg-sub ::bank-id
   (fn [db]
@@ -59,3 +60,17 @@
 (rf/reg-sub ::start-notification-hidden?
   (fn [db [_ case-id bank-id]]
     (ongoing-notification-process? db bank-id)))
+
+(rf/reg-event-fx ::mark-notification-sent--success
+  (fn [{:keys [db]} [_ case-id bank-id]]
+    {:fx [[:dispatch [::hide-bank-dialog]]
+          [:dispatch [::case-model/load-case! case-id]]]}))
+
+(rf/reg-event-fx ::mark-notification-sent
+  (fn [{:keys [db]} [_ case-id bank-id]]
+    {:http-xhrio
+     (ui/build-http
+       {:method :post
+        :uri (str "/api/case/" case-id "/bank/" (name bank-id) "/mark-notification-sent")
+        :on-success [::mark-notification-sent--success case-id bank-id]})}))
+
