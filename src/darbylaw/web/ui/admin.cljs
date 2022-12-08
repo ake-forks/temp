@@ -20,12 +20,11 @@
   (fn [{:keys [db]} _]
     {:db (update db :config/case-view #(or % :card))
      :http-xhrio
-     {:method :get
-      :uri "/api/cases"
-      :timeout 8000
-      :response-format (ajax/transit-response-format)
-      :on-success [::load-success]
-      :on-failure [::load-failure]}}))
+     (ui/build-http
+       {:method :get
+        :uri "/api/cases"
+        :on-success [::load-success]
+        :on-failure [::load-failure]})}))
 
 (rf/reg-event-db ::set-case-view
   (fn [db [_ view]]
