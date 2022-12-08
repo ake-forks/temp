@@ -46,22 +46,25 @@
               own-task? (xt/tx-committed? xtdb-node tx)]
           (when own-task?
             (try
-              (try
-                (let [input (doc-store/fetch (letter-store/s3-key case-id bank-id ".pdf"))
-                      file (files-util/create-temp-file ".pdf")]
-                  (spit file input)
-                  (post/post-letter
-                    (.getCanonicalPath file)
-                    (str case-id " - Bank-notification for " (name bank-id) ".pdf"))
+              (let [temp-file (files-util/create-temp-file ".pdf")
+                    filename (str "bank-notification." case-id "." (name bank-id) ".pdf")]
+                (try
+                  (doc-store/fetch-to-file
+                    (letter-store/s3-key case-id bank-id ".pdf")
+                    temp-file)
+                  (post/post-letter (.getCanonicalPath temp-file) filename)
+                  (log/debug "Uploaded file for posting: " filename)
                   (xt-util/exec-tx xtdb-node
                     [[::xt/put (-> task-data
-                                 (assoc :post-state :uploaded))]]))
-                (catch ExceptionInfo exc
-                  (if (= (-> exc ex-data :error) ::doc-store/not-found)
-                    (xt-util/exec-tx xtdb-node
-                      [[::xt/put (-> task-data
-                                   (assoc :post-state :failed))]])
-                    (throw exc))))
+                                 (assoc :post-state :uploaded))]])
+                  (catch ExceptionInfo exc
+                    (if (= (-> exc ex-data :error) ::doc-store/not-found)
+                      (xt-util/exec-tx xtdb-node
+                        [[::xt/put (-> task-data
+                                     (assoc :post-state :failed))]])
+                      (throw exc)))
+                  (finally
+                    (.delete temp-file))))
               (catch Exception exc
                 (log/error exc "Error while uploading letter; will retry later.")
                 (xt-util/exec-tx xtdb-node
@@ -85,19 +88,23 @@
   (.isCancelled post-task))
 
 (comment
-  (def xt-node xtdb-node)
-  (create-post-task! xt-node :dummy-case-id :dummy-bank-id)
-  (exec-post-tasks! xt-node)
+  (create-post-task! xtdb-node :dummy-case-id :dummy-bank-id)
+  (create-post-task! xtdb-node
+    #uuid"041c820a-2e09-4b73-8452-0d0c3feb281b"
+    :britannia-bereavement-team)
+  (exec-post-tasks! xtdb-node)
 
   (def task-data
-    (ffirst (xt/q (xt/db xtdb-node)
-              '{:find [(pull task [*])]
-                :where [[task :type task-type]]
-                :in [task-type]}
-              task-type)))
+    (xt/q (xt/db xtdb-node)
+      '{:find [(pull task [*])]
+        :where [[task :type task-type]
+                [task :bank-id :britannia-bereavement-team]]
+        :in [task-type]}
+      task-type))
 
   (xt-util/exec-tx xtdb-node
     [[::xt/put (-> task-data
+                 ffirst
                  (assoc :post-state :scheduled))]])
 
   ,)

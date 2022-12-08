@@ -4,7 +4,7 @@
             [clojure.tools.logging :as log])
   (:import (com.amazonaws.services.s3 AmazonS3ClientBuilder AmazonS3)
            (java.io File)
-           (com.amazonaws.services.s3.model AmazonS3Exception ListObjectsRequest)))
+           (com.amazonaws.services.s3.model AmazonS3Exception ListObjectsRequest GetObjectRequest)))
 
 ; Usage of AWS Java has been preferred over the `cognitect.aws` library, because:
 ;
@@ -37,6 +37,14 @@
   (try
     (-> (.getObject s3 ^String bucket-name ^String key)
       (.getObjectContent))
+    (catch AmazonS3Exception exc
+      (if (= (.getErrorCode exc) "NoSuchKey")
+        (throw (ex-info "Not found" {:error ::not-found} exc))
+        (throw exc)))))
+
+(defn fetch-to-file [key ^File file]
+  (try
+    (.getObject s3 (GetObjectRequest. bucket-name key) file)
     (catch AmazonS3Exception exc
       (if (= (.getErrorCode exc) "NoSuchKey")
         (throw (ex-info "Not found" {:error ::not-found} exc))
