@@ -154,7 +154,8 @@
    :body (->> (xt/q (xt/db xtdb-node)
                 '{:find [(pull task [:case-id
                                      :bank-id
-                                     :post-state])]
+                                     :post-state
+                                     :created-at])]
                   :where [[task :type task-type]]
                   :in [task-type]}
                 post-task/task-type)

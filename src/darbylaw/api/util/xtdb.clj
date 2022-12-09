@@ -1,5 +1,6 @@
 (ns darbylaw.api.util.xtdb
-  (:require [xtdb.api :as xt]))
+  (:require [xtdb.api :as xt])
+  (:import (java.util Date)))
 
 (def assoc-in--txn-fn
   '(fn [ctx eid ks v]
@@ -26,3 +27,6 @@
   (assert (= 1 (count xt-results))
     (str "Expected one result, got " (count xt-results)))
   (ffirst xt-results))
+
+(defn now []
+  (Date.))

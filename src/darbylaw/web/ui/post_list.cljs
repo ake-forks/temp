@@ -2,7 +2,8 @@
   (:require [reagent-mui.components :as mui]
             [re-frame.core :as rf]
             [darbylaw.web.ui :as ui]
-            [reagent.core :as r]))
+            [reagent.core :as r]
+            [darbylaw.web.util.date :as date-util]))
 
 (rf/reg-event-db ::load-success
   (fn [db [_ response]]
@@ -24,7 +25,8 @@
 
 (rf/reg-sub ::post-tasks
   (fn [db]
-    (:post-tasks db)))
+    (->> (:post-tasks db)
+      (sort-by :created-at >))))
 
 (defn panel []
   (let [post-tasks @(rf/subscribe [::post-tasks])]
@@ -39,7 +41,7 @@
         (nil? post-tasks) "Loading..."
         (empty? post-tasks) "No mailing tasks"
         :else
-        (for [{:keys [case-id bank-id post-state]} post-tasks]
+        (for [{:keys [case-id bank-id post-state created-at]} post-tasks]
           [mui/card
            [mui/card-content
             [mui/stack {:direction :row
@@ -49,5 +51,10 @@
              [mui/box {:flexGrow 2}
               [mui/typography [:strong "case "] (str case-id)]
               [mui/typography [:strong "bank "] bank-id]]
-             [mui/typography {:font-weight :bold}
-              (name post-state)]]]]))]]))
+             [mui/box
+              [mui/typography {:font-weight :bold
+                               :text-align :right}
+               (name post-state)]
+              [mui/typography {:variant :body2
+                               :text-align :right}
+               "created: " (date-util/show-local-numeric created-at)]]]]]))]]))
