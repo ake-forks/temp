@@ -7,56 +7,73 @@
            (org.apache.sshd.sftp.client.impl DefaultSftpClientFactory SimpleSftpClientImpl)
            (org.apache.sshd.client.keyverifier AcceptAllServerKeyVerifier)))
 
-(mount/defstate ssh-agent
-  :start (ssh/ssh-agent {:use-system-ssh-agent false}))
+(def ssh-agent
+  (ssh/ssh-agent {:use-system-ssh-agent false}))
 
-(mount/defstate ssh-session
-  :start (let [{:keys [host username password port]}
-               (-> config/config :post-service :ssh)]
-           (ssh/session ssh-agent host
-             {:strict-host-key-checking :no
-              :username username
-              :password password
-              :port port}))
-  :stop (ssh/disconnect ssh-session))
+(defn create-session []
+  (let [{:keys [host username password port]}
+        (-> config/config :post-service :ssh)]
+    (doto (ssh/session ssh-agent host
+            {:strict-host-key-checking :no
+             :username username
+             :password password
+             :port port})
+      (ssh/connect))))
 
-; clj-ssh operations contain their own check, but they will actually fail
-; if session is not connected when creating a channel.
-(defn ensure-connected! [session]
-  (when-not (ssh/connected? session)
-    (ssh/connect session)))
+; Prevents creation of multiple sessions by concurrent client threads.
+(def connection-lock (Object.))
 
-(defn post-letter [from-path to-path]
-  (ensure-connected! ssh-session)
-  (ssh/sftp ssh-session {}
-    :put from-path to-path))
+(mount/defstate ssh-session-atom
+  :start (atom nil)
+  :stop (locking connection-lock
+          (let [session @ssh-session-atom]
+            (when session
+              (ssh/disconnect session)))))
 
-(defn ls []
-  (ensure-connected! ssh-session)
-  (ssh/sftp ssh-session {} :ls))
+(defn obtain-ssh-session []
+  (locking connection-lock
+    (let [session @ssh-session-atom]
+      (if (or (nil? session)
+              (not (ssh/connected? session)))
+        ; Sometimes it is not enough to reconnect an existing
+        ; session object; creating a new session object is needed.
+        ; See https://stackoverflow.com/a/30855201/503785
+        (reset! ssh-session-atom (create-session))
+        session))))
+
+;; Public functions
 
 (defn available? []
   (try
-    (ensure-connected! ssh-session)
-    (ssh/sftp ssh-session {} :pwd)
+    (let [session (obtain-ssh-session)]
+      (ssh/sftp session {} :pwd))
     true
     (catch Exception exc
       (log/warn exc "SSH connection check failed!")
       false)))
 
-(comment
-  (mount/stop #'ssh-session)
-  (mount/start #'ssh-session)
+(defn post-letter [from-path to-path]
+  (let [session (obtain-ssh-session)]
+    (ssh/sftp session {}
+      :put from-path to-path)))
 
-  (ensure-connected! ssh-session)
+(defn ls []
+  (let [session (obtain-ssh-session)]
+    (ssh/sftp session {} :ls)))
+
+(comment
+  (mount/stop #'ssh-session-atom)
+  (mount/start #'ssh-session-atom)
+
+  (obtain-ssh-session)
   (available?)
   (ls)
   (post-letter "README.md" "README.md")
   (post-letter "upload-test.txt" "upload-test.txt")
 
-  (ssh/connected? ssh-session)
-  (ssh/connect ssh-session)
-  (ssh/disconnect ssh-session)
+  (ssh/connected? @ssh-session-atom)
+  (ssh/connect @ssh-session-atom)
+  (ssh/disconnect @ssh-session-atom)
 
   (mount/stop #'config/config)
   (mount/start #'config/config))
@@ -80,17 +97,17 @@
                     (.setServerKeyVerifier AcceptAllServerKeyVerifier/INSTANCE)
                     (.start)))
 
-  (def ssh-session (let [{:keys [host username password port]}
-                         (-> config/config :post-service :ssh)]
-                     (-> ssh-client
-                       (.connect username host port)
-                       (.verify 5000)
-                       (.getSession))))
+  (def ssh-session-atom (let [{:keys [host username password port]}
+                              (-> config/config :post-service :ssh)]
+                          (-> ssh-client
+                            (.connect username host port)
+                            (.verify 5000)
+                            (.getSession))))
 
   (let [{:keys [password]}
         (-> config/config :post-service :ssh)]
-    (.addPasswordIdentity ssh-session password))
-  (-> ssh-session (.auth) (.verify 5000))
+    (.addPasswordIdentity ssh-session-atom password))
+  (-> ssh-session-atom (.auth) (.verify 5000))
 
   (def sftp-client (-> DefaultSftpClientFactory/INSTANCE
-                     (.createSftpClient ssh-session))))
+                     (.createSftpClient ssh-session-atom))))

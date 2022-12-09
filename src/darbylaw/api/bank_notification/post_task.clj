@@ -23,7 +23,8 @@
                          :xt/id task-id
                          :case-id case-id
                          :bank-id bank-id
-                         :post-state :scheduled}]])]
+                         :post-state :scheduled
+                         :created-at (xt-util/now)}]])]
     (xt/tx-committed? xtdb-node tx)))
 
 (defn exec-post-tasks! [xtdb-node]
