@@ -119,14 +119,16 @@
                  :pdf "application/pdf")}
      :body input-stream}))
 
-(defn set-custom-letter-uploaded--txns [case-id bank-id]
+(defn set-custom-letter-uploaded--txns [case-id bank-id user]
   (-> (xt-util/assoc-in--txns case-id
         [:bank bank-id :notification-letter-author]
         :unknown-user)
     (case-api/put-event :case.bank.notification.uploaded-custom-letter
+      case-id
+      user
       {:bank-id bank-id})))
 
-(defn post-notification [{:keys [xtdb-node path-params multipart-params]}]
+(defn post-notification [{:keys [xtdb-node path-params multipart-params user]}]
   (let [case-id (parse-uuid (:case-id path-params))
         bank-id (keyword (:bank-id path-params))
         {:keys [tempfile content-type]} (get multipart-params "file")]
@@ -136,7 +138,7 @@
       (finally
         (.delete tempfile)))
     (xt-util/exec-tx xtdb-node
-      (set-custom-letter-uploaded--txns case-id bank-id))
+      (set-custom-letter-uploaded--txns case-id bank-id user))
     {:status 204}))
 
 (defn post-letter [{:keys [xtdb-node path-params user]}]
