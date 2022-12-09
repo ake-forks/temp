@@ -23,8 +23,16 @@
              (print response)
              (fork/set-submitting db path false))}))
 
+(defn remove-joint [data]
+  (mapv (fn [acc]
+          (if (false? (:joint-check acc))
+            (apply dissoc acc [:joint-check :joint-info])
+            acc))
+    (:accounts data)))
+
 (defn transform-on-submit [data]
-  (update data :bank-id keyword))
+  (merge {:bank-id (keyword (:bank-id data))
+          :accounts (remove-joint data)}))
 
 (rf/reg-event-fx ::add-bank
   (fn [{:keys [db]} [_ case-id bank-dialog {:keys [path values] :as fork-params}]]
@@ -74,16 +82,16 @@
                       touched]}]
   (let [case-id @(rf/subscribe [::case-model/case-id])
         bank-id @(rf/subscribe [::bank-model/bank-dialog])
-        sub @(rf/subscribe [::bank-model/banks-complete])
-        complete (some #(= bank-id %) sub)]
+        current-case @(rf/subscribe [::case-model/current-case])
+        status (if (nil? bank-id) :nil (-> current-case :bank bank-id :notification-status))]
     [mui/stack {:spacing 1}
      (doall
        (->> fields
          (map-indexed
            (fn [idx field]
              ^{:key idx}
-             [mui/stack (if (not (nil? complete)) {:spacing 1 :style {:margin-bottom "1rem"}}
-                                                  {:spacing 1 :style {:margin-bottom 0}})
+             [mui/stack (if (= :notification-letter-sent status) {:spacing 1 :style {:margin-bottom "1rem"}}
+                                                                 {:spacing 1 :style {:margin-bottom 0}})
               [mui/stack {:spacing 1 :direction :row}
                [mui/text-field {:name :sort-code
                                 :value (or (get field :sort-code) "")
@@ -117,7 +125,11 @@
                                 :on-change #(handle-change % idx)
                                 :on-blur #(handle-blur % idx)
                                 :full-width true
-                                :disabled (if (not (nil? complete)) true false)
+                                :error (boolean (bank-utils/get-account-error errors touched :estimated-value idx))
+                                :helper-text (if
+                                               (boolean (bank-utils/get-account-error errors touched :estimated-value idx))
+                                               "check formatting")
+                                :disabled (= status :notification-letter-sent)
                                 :InputProps
                                 {:start-adornment
                                  (r/as-element [mui/input-adornment {:position :start} "£"])}}]
@@ -137,11 +149,11 @@
 
               (if (true? (get field :joint-check))
                 [mui/text-field {:name :joint-info
-                                 :value (if (true? (get field :joint-check)) (get field :joint-info) "")
+                                 :value (get field :joint-info)
                                  :label "name of other account holder"
                                  :on-change #(handle-change % idx)}]
                 [:<>])
-              (if (not (nil? complete))
+              (if (= status :notification-letter-sent)
                 [mui/text-field {:name :confirmed-value
                                  :value (or (get field :confirmed-value) "")
                                  :label "confirmed value"
@@ -149,6 +161,10 @@
                                  :on-blur #(handle-blur % idx)
                                  :required true
                                  :full-width true
+                                 :error (boolean (bank-utils/get-account-error errors touched :confirmed-value idx))
+                                 :helper-text (if
+                                                (boolean (bank-utils/get-account-error errors touched :confirmed-value idx))
+                                                "check formatting")
                                  :InputProps
                                  {:start-adornment
                                   (r/as-element [mui/input-adornment {:position :start} "£"])}}])]))))
@@ -210,13 +226,19 @@
         (v/present)
         (v/matches #"[0-9]{8}")))))
 
+(def est-value-validation
+  (v/attr [:estimated-value]
+    (v/matches #"[0-9]*(\.[0-9]{2})?")))
+
 (def id-validation
   (v/join
     (v/attr [:bank-id] (v/present))))
 
 (defn validation [values]
   (merge (map (fn [acc]
-                (v/field-errors account-validation acc))
+                (merge (v/field-errors account-validation acc)
+                  (if (not (clojure.string/blank? (:estimated-value acc)))
+                    (v/field-errors est-value-validation acc))))
            (:accounts values))
     (v/field-errors id-validation values)))
 
