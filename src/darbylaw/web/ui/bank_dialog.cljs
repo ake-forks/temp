@@ -188,12 +188,16 @@
          "The notification process is complete.
        You can view copies of all correspondence using the buttons to the left."]
         [mui/typography {:variant :h6} "accounts summary"]
+        #_[mui/stack {:direction :row :spacing 2}
+           [mui/typography {:variant :body2} "sort code"]
+           [mui/typography {:variant :body2} "account number"]
+           [mui/typography {:variant :body2} "confirmed value"]]
         (map
           (fn [acc]
-            [mui/stack {:direction :row :spacing 1}
-             [mui/typography {:variant :body2} (str "sort code: " (:sort-code acc))]
-             [mui/typography {:variant :body2} (str "account number: " (:account-number acc))]
-             [mui/typography {:variant :body2} (str "value: £" (:confirmed-value acc))]])
+            [mui/stack {:direction :row :spacing 4}
+             [mui/typography {:variant :body2} (:sort-code acc)]
+             [mui/typography {:variant :body2} (:account-number acc)]
+             [mui/typography {:variant :body2} (:confirmed-value acc)]])
           (:accounts (first current-bank)))]
        [mui/button
         {:variant :contained
