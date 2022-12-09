@@ -9,9 +9,8 @@
             [darbylaw.web.ui.progress-bar :as progress-bar]
             [darbylaw.web.ui.bank-add :as bank-add]
             [darbylaw.web.ui.bank-confirmation-view :as confirmation-view]
-            [darbylaw.web.ui.bank-letter-approval :as bank-letter-approval]))
-
-
+            [darbylaw.web.ui.bank-letter-approval :as bank-letter-approval]
+            [darbylaw.web.ui.document-view :as document-view]))
 
 (rf/reg-sub ::bank-data
   :<- [::case-model/current-case]
@@ -155,36 +154,53 @@
        [bank-progress-bar]
        [confirmation-view/bank-confirmation-panel]]]]))
 
+
+
 (defn bank-completed-dialog []
   (let [current-case @(rf/subscribe [::case-model/current-case])
+        case-id (:id current-case)
         banks (:bank-accounts current-case)
         bank-id @(rf/subscribe [::bank-model/bank-dialog])
         current-bank (filter #(= (:id %) bank-id) banks)]
     [mui/stack {:spacing 1
+                :direction :row
                 :style {:padding "2rem"
-                        :background-color :white
-                        :height "700px"
-                        :width "1130px"}}
-     [dialog-header bank-id]
-     [mui/stack {:direction :row :spacing 1}
-      [mui/stack {:spacing 2 :width "50%"}
-       [mui/typography {:variant :h6}
-        "The notification process is complete.
-        You can view copies of all correspondence using the buttons below."]
+                        :background-color :white}}
+
+
+     [mui/box {:style {:width "50%"}}
+      [document-view/view-pdf-dialog
+       {:buttons [{:key "value"
+                   :name "value confirmation"
+                   :source "/Example-bank-confirmation-letter.pdf"}
+                  {:key "notification"
+                   :name "notification letter"
+                   :source (str "/api/case/" case-id "/bank/" (name bank-id) "/notification-pdf")}]}]]
+
+     [mui/stack {:spacing 2 :style {:width "50%"}}
+      [dialog-header bank-id]
+
+      [mui/stack {:spacing 1
+                  :flex-grow 1
+                  :justify-content :space-between}
        [mui/box
-        [mui/typography "todo -> add buttons to display pdfs"]]]
-      [mui/stack {:direction :row :spacing 1 :style {:align-self :baseline}}
-       [mui/box
-        [mui/typography "accounts"]
+        [mui/typography {:variant :body1}
+         "The notification process is complete.
+       You can view copies of all correspondence using the buttons to the left."]
+        [mui/typography {:variant :h6} "accounts summary"]
         (map
           (fn [acc]
             [mui/stack {:direction :row :spacing 1}
-             [mui/typography {:variant :h6} (str "sort code: " (:sort-code acc))]
-             [mui/typography {:variant :h6} (str "account number: " (:account-number acc))]
-             [mui/typography {:variant :h6} (str "value: £" (:confirmed-value acc))]])
-          (:accounts (first current-bank)))]]]
-     [mui/button {:on-click #(rf/dispatch [::bank-model/hide-bank-dialog])
-                  :variant :contained} "close"]]))
+             [mui/typography {:variant :body2} (str "sort code: " (:sort-code acc))]
+             [mui/typography {:variant :body2} (str "account number: " (:account-number acc))]
+             [mui/typography {:variant :body2} (str "value: £" (:confirmed-value acc))]])
+          (:accounts (first current-bank)))]
+       [mui/button
+        {:variant :contained
+         :full-width true
+         :on-click #(do (rf/dispatch [::document-view/hide-pdf])
+                        (rf/dispatch [::bank-model/hide-bank-dialog]))}
+        "close"]]]]))
 
 (defn base-dialog []
   (let [bank-id @(rf/subscribe [::bank-model/bank-dialog])
