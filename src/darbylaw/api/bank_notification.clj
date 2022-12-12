@@ -120,7 +120,7 @@
      :body input-stream}))
 
 (defn set-custom-letter-uploaded--txns [case-id bank-id user]
-  (-> (xt-util/assoc-in--txns case-id
+  (-> (xt-util/assoc-in-tx case-id
         [:bank bank-id :notification-letter-author]
         :unknown-user)
     (case-api/put-event :case.bank.notification.uploaded-custom-letter

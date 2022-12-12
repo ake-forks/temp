@@ -135,3 +135,6 @@
 (defn theme-spacing [arg]
   (fn [theme]
     (.spacing theme arg)))
+
+(defn event-target-checked [onchange-event]
+  (.. onchange-event -target -checked))

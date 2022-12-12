@@ -7,9 +7,17 @@
             [darbylaw.api.util.files :as files-util]
             [darbylaw.api.services.post :as post]
             [mount.core :as mount]
-            [darbylaw.xtdb-node :refer [xtdb-node]])
+            [darbylaw.xtdb-node :refer [xtdb-node]]
+            [darbylaw.api.settings :as settings])
   (:import (java.util.concurrent Executors ScheduledExecutorService TimeUnit ScheduledFuture)
            (clojure.lang ExceptionInfo)))
+
+(defn disabled? [xtdb-node]
+  (let [disabled? (-> (settings/fetch-settings xtdb-node)
+                    :post-letters-disabled?)]
+    (when disabled?
+      (log/info "Posting letters has been disabled."))
+    disabled?))
 
 (def task-type :probate.bank-notification-post-task)
 
@@ -36,7 +44,8 @@
                                  :in [task-type]}
                                task-type)
                           (map first))]
-    (when (and (seq scheduled-tasks)
+    (when (and (not (disabled? xtdb-node))
+               (seq scheduled-tasks)
                (doc-store/available?)
                (post/available?))
       (doseq [{:keys [case-id bank-id] :as task-data} scheduled-tasks]

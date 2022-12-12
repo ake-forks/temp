@@ -16,9 +16,10 @@
     [xtdb.api :as xt]
     [mount.core :as mount]
     [darbylaw.web.theme :as theme]
-    [darbylaw.api.case :as api.case]
-    [darbylaw.api.bank :as api.bank]
-    [darbylaw.api.bank-notification :as bank-notification]
+    [darbylaw.api.settings :as settings-api]
+    [darbylaw.api.case :as case-api]
+    [darbylaw.api.bank :as bank-api]
+    [darbylaw.api.bank-notification :as bank-notification-api]
     [darbylaw.middleware.xtdb :refer [wrap-xtdb-node]]
     [darbylaw.middleware.auth :refer [create-auth-middleware add-user-info authenticated?]]))
 
@@ -62,9 +63,10 @@
     ["/app" {:get (fn [_req] (r/redirect "/app/admin"))}]
     ["/app{*path}" {:get spa}]
     ["/api" {:middleware [wrap-xtdb-node]}
-     (api.case/routes)
-     (bank-notification/routes)
-     (api.bank/routes)]]])
+     (settings-api/routes)
+     (case-api/routes)
+     (bank-api/routes)
+     (bank-notification-api/routes)]]])
 
 (defn make-router []
   (ring/router

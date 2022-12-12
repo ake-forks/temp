@@ -1,16 +1,28 @@
 (ns darbylaw.api.util.xtdb
-  (:require [xtdb.api :as xt])
+  (:require [xtdb.api :as xt]
+            [medley.core])
   (:import (java.util Date)))
 
-(def assoc-in--txn-fn
+(def assoc-in--txfn
   '(fn [ctx eid ks v]
      (when-let [e (xtdb.api/entity (xtdb.api/db ctx) eid)]
        [[::xt/put (assoc-in e ks v)]])))
 
-(defn assoc-in--txns [eid m v]
+(defn assoc-in-tx [eid ks v]
   [[::xt/put {:xt/id ::assoc-in
-              :xt/fn assoc-in--txn-fn}]
-   [::xt/fn ::assoc-in eid m v]])
+              :xt/fn assoc-in--txfn}]
+   [::xt/fn ::assoc-in eid ks v]])
+
+(def deep-merge--txfn
+  '(fn [ctx m]
+     (if-let [e (xtdb.api/entity (xtdb.api/db ctx) (:xt/id m))]
+       [[::xt/put (medley.core/deep-merge e m)]]
+       [[::xt/put m]])))
+
+(defn deep-merge-tx [m]
+  [[::xt/put {:xt/id ::deep-merge
+              :xt/fn deep-merge--txfn}]
+   [::xt/fn ::deep-merge m]])
 
 ; TODO: check for txn errors
 (defn exec-tx [xtdb-node tx-ops]
