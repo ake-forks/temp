@@ -1,11 +1,8 @@
 (ns darbylaw.core
   (:require
-    ;; third party libs
     [org.httpkit.server :as app-server]
-    [taoensso.timbre :as timbre :refer [log info warn error fatal]]
     [mount.core :as mount]
-
-     ;; app specific
+    [clojure.tools.logging :as log]
     [darbylaw.config :as config]
     [darbylaw.handler :as handler])
   (:gen-class))
@@ -15,7 +12,7 @@
 (defn app-server-start
   "Starts the backend server and logs the time of start"
   [http-port]
-  (info (str "Server started on port " http-port))
+  (log/info (str "Server started on port " http-port))
   (reset! app-server-instance
     (app-server/run-server handler/ring-handler {:port http-port})))
 
@@ -25,7 +22,7 @@
   (when-not (nil? @app-server-instance)
     (@app-server-instance :timeout 100)
     (reset! app-server-instance nil)
-    (warn "Server shutdown")))
+    (log/warn "Server shutdown")))
 
 (defn app-server-restart
   "Calls app-server-stop, then calls app-server-start if the port provided

@@ -3,10 +3,10 @@
             [reagent.core :as r]
             [re-frame.core :as rf]
             [kee-frame.core :as kf]
-            [ajax.core :as ajax]
             [darbylaw.web.ui :as ui]
             [reagent-mui.components :as mui]
-            [reagent-mui.x.data-grid :refer [data-grid]]))
+            [reagent-mui.x.data-grid :refer [data-grid]]
+            [darbylaw.web.ui.post-list :as post-list]))
 
 (rf/reg-event-db ::load-success
   (fn [db [_ response]]
@@ -20,12 +20,11 @@
   (fn [{:keys [db]} _]
     {:db (update db :config/case-view #(or % :card))
      :http-xhrio
-     {:method :get
-      :uri "/api/cases"
-      :timeout 8000
-      :response-format (ajax/transit-response-format)
-      :on-success [::load-success]
-      :on-failure [::load-failure]}}))
+     (ui/build-http
+       {:method :get
+        :uri "/api/cases"
+        :on-success [::load-success]
+        :on-failure [::load-failure]})}))
 
 (rf/reg-event-db ::set-case-view
   (fn [db [_ view]]
@@ -153,11 +152,13 @@
       [mui/tabs {:value (or case-view :card)
                  :on-change (fn [_ value] (rf/dispatch [::set-case-view (keyword value)]))}
        [mui/tab {:label "List" :value :card}]
-       [mui/tab {:label "Table" :value :data-grid}]]]
+       [mui/tab {:label "Table" :value :data-grid}]
+       [mui/tab {:label "Mailing" :value :mail}]]]
      [mui/box {:margin-top 1}
-      (if (= case-view :data-grid)
-        [data-grid-list cases]
-        [card-list cases])]]))
+      (case (or case-view :card)
+        :card [card-list cases]
+        :data-grid [data-grid-list cases]
+        :mail [post-list/panel])]]))
 
 (defn panel []
   (rf/dispatch [::load!])

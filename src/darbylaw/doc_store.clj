@@ -1,8 +1,10 @@
 (ns darbylaw.doc-store
   (:require [darbylaw.config :as config]
-            [mount.core :as mount])
+            [mount.core :as mount]
+            [clojure.tools.logging :as log])
   (:import (com.amazonaws.services.s3 AmazonS3ClientBuilder AmazonS3)
-           (java.io File)))
+           (java.io File)
+           (com.amazonaws.services.s3.model AmazonS3Exception ListObjectsRequest GetObjectRequest)))
 
 ; Usage of AWS Java has been preferred over the `cognitect.aws` library, because:
 ;
@@ -32,5 +34,32 @@
 
 
 (defn fetch [key]
-  (-> (.getObject s3 ^String bucket-name ^String key)
-    (.getObjectContent)))
+  (try
+    (-> (.getObject s3 ^String bucket-name ^String key)
+      (.getObjectContent))
+    (catch AmazonS3Exception exc
+      (if (= (.getErrorCode exc) "NoSuchKey")
+        (throw (ex-info "Not found" {:error ::not-found} exc))
+        (throw exc)))))
+
+(defn fetch-to-file [key ^File file]
+  (try
+    (.getObject s3 (GetObjectRequest. bucket-name key) file)
+    (catch AmazonS3Exception exc
+      (if (= (.getErrorCode exc) "NoSuchKey")
+        (throw (ex-info "Not found" {:error ::not-found} exc))
+        (throw exc)))))
+
+(defn available? []
+  (try
+    (.listObjects s3 (ListObjectsRequest. bucket-name nil nil nil (int 1)))
+    true
+    (catch Exception exc
+      (log/warn exc "S3 connection check failed!")
+      false)))
+
+(comment
+  (available?)
+
+  (with-redefs [bucket-name "non-existant-bucket"]
+    (available?)))
