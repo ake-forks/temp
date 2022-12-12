@@ -25,7 +25,7 @@
     (ssh/ssh-agent {:use-system-ssh-agent false})))
 
 (defn create-session []
-  (let [{:keys [host username password port]}
+  (let [{:keys [host username password port] :or {port 22}}
         (-> config/config :post-service :ssh)]
     (doto (ssh/session ssh-agent host
             {:strict-host-key-checking :no
