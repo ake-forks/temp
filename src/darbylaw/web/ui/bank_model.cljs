@@ -72,3 +72,16 @@
        {:method :post
         :uri (str "/api/case/" case-id "/bank/" (name bank-id) "/post-letter")
         :on-success [::post-letter--success case-id bank-id]})}))
+
+(rf/reg-event-fx ::mark-values-confirmed--success
+  (fn [{:keys [db]} [_ case-id bank-id]]
+    {:fx [[:dispatch [::case-model/load-case! case-id]]]}))
+
+(rf/reg-event-fx ::mark-values-confirmed
+  (fn [{:keys [db]} [_ case-id bank-id]]
+    {:http-xhrio
+     (ui/build-http
+       {:method :post
+        :uri (str "/api/case/" case-id "/bank/" (name bank-id) "/mark-values-confirmed")
+        :on-success [::mark-values-confirmed--success case-id bank-id]})}))
+

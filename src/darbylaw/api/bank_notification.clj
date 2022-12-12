@@ -102,6 +102,15 @@
         (change-bank-notification-status-txns case-id user bank-id :cancelled)))
     {:status 204}))
 
+(defn mark-values-confirmed [{:keys [xtdb-node user path-params]}]
+  (let [case-id (parse-uuid (:case-id path-params))
+        bank-id (keyword (:bank-id path-params))]
+    (xt/await-tx xtdb-node
+      (xt/submit-tx xtdb-node
+        (change-bank-notification-status-txns case-id user bank-id :values-confirmed)))
+    {:status 204}))
+
+
 (def docx-mime-type
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
 
@@ -167,6 +176,7 @@
   [["/case/:case-id/bank/:bank-id"
     ["/start-notification" {:post {:handler start-notification}}]
     ["/cancel-notification" {:post {:handler cancel-notification}}]
+    ["/mark-values-confirmed" {:post {:handler mark-values-confirmed}}]
     ["/notification-docx" {:get {:handler (partial get-notification :docx)}
                            :post {:handler post-notification}}]
     ["/notification-pdf" {:get {:handler (partial get-notification :pdf)}}]
