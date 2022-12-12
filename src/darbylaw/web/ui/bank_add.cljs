@@ -83,7 +83,8 @@
   (let [case-id @(rf/subscribe [::case-model/case-id])
         bank-id @(rf/subscribe [::bank-model/bank-dialog])
         current-case @(rf/subscribe [::case-model/current-case])
-        status (if (nil? bank-id) :nil (-> current-case :bank bank-id :notification-status))]
+        status (if (nil? bank-id) :nil (-> current-case :bank bank-id :notification-status))
+        confirmation-stage? (or (= status :notification-letter-sent) (= status :values-uploaded))]
     [mui/stack {:spacing 1}
      (doall
        (->> fields
@@ -129,7 +130,7 @@
                                 :helper-text (if
                                                (boolean (bank-utils/get-account-error errors touched :estimated-value idx))
                                                "check formatting")
-                                :disabled (= status :notification-letter-sent)
+                                :disabled confirmation-stage?
                                 :InputProps
                                 {:start-adornment
                                  (r/as-element [mui/input-adornment {:position :start} "£"])}}]
@@ -153,7 +154,7 @@
                                  :label "name of other account holder"
                                  :on-change #(handle-change % idx)}]
                 [:<>])
-              (if (= status :notification-letter-sent)
+              (if confirmation-stage?
                 [mui/text-field {:name :confirmed-value
                                  :value (or (get field :confirmed-value) "")
                                  :label "confirmed value"

@@ -130,12 +130,23 @@
         bank-id (keyword (:bank-id path-params))]
     (xt/await-tx xtdb-node
       (xt/submit-tx xtdb-node
+        (change-bank-notification-status-txns case-id user bank-id :values-uploaded)))
+    {:status 204}))
+
+(defn mark-values-confirmed [{:keys [xtdb-node user path-params]}]
+  (let [case-id (parse-uuid (:case-id path-params))
+        bank-id (keyword (:bank-id path-params))]
+    (xt/await-tx xtdb-node
+      (xt/submit-tx xtdb-node
         (change-bank-notification-status-txns case-id user bank-id :values-confirmed)))
     {:status 204}))
 
 
 (def docx-mime-type
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+
+(def pdf-mime-type
+  "application/pdf")
 
 (defn get-notification [doc-type {:keys [path-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
@@ -151,14 +162,25 @@
                  :pdf "application/pdf")}
      :body input-stream}))
 
-(defn set-custom-letter-uploaded--txns [case-id bank-id]
+(defn get-valuation [{:keys [path-params]}]
+  (let [case-id (parse-uuid (:case-id path-params))
+        bank-id (keyword (:bank-id path-params))
+        input-stream (doc-store/fetch
+                       (s3-key case-id bank-id "-valuation.pdf"))]
+    {:status 200
+     :headers {"Content-Type" "application/pdf"}
+     :body input-stream}))
+
+(defn set-custom-letter-uploaded--txns [case-id user bank-id]
   (-> (xt-util/assoc-in--txns case-id
         [:bank bank-id :notification-letter-author]
         :unknown-user)
     (case-api/put-event :case.bank.notification.uploaded-custom-letter
+      case-id
+      user
       {:bank-id bank-id})))
 
-(defn post-notification [{:keys [xtdb-node path-params multipart-params]}]
+(defn post-notification [{:keys [xtdb-node user path-params multipart-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
         bank-id (keyword (:bank-id path-params))
         {:keys [^File tempfile content-type]} (get multipart-params "file")]
@@ -168,8 +190,19 @@
       (finally
         (.delete tempfile)))
     (xt-util/exec-txn xtdb-node
-      (set-custom-letter-uploaded--txns case-id bank-id))
+      (set-custom-letter-uploaded--txns case-id user bank-id))
     {:status 204}))
+
+(defn post-valuation [{:keys [xtdb-node user path-params multipart-params]}]
+  (let [case-id (parse-uuid (:case-id path-params))
+        bank-id (keyword (:bank-id path-params))
+        {:keys [^File tempfile content-type]} (get multipart-params "file")]
+    (try
+      (assert (= content-type pdf-mime-type))
+      (doc-store/store (s3-key case-id bank-id "-valuation.pdf") tempfile))
+    (xt-util/exec-txn xtdb-node
+      (change-bank-notification-status-txns case-id user bank-id :values-uploaded)))
+  {:status 204})
 
 (comment
   (-> last-request :multipart-params))
@@ -178,8 +211,12 @@
   [["/case/:case-id/bank/:bank-id"
     ["/start-notification" {:post {:handler start-notification}}]
     ["/cancel-notification" {:post {:handler cancel-notification}}]
+    ;TODO - consolidate next 3 routes
     ["/mark-notification-sent" {:post {:handler mark-notification-sent}}]
+    ["/mark-values-uploaded" {:post {:handler mark-values-uploaded}}]
     ["/mark-values-confirmed" {:post {:handler mark-values-confirmed}}]
+    ["/upload-valuation" {:post {:handler post-valuation}}]
+    ["/valuation-pdf" {:get {:handler get-valuation}}]
     ["/notification-docx" {:get {:handler (partial get-notification :docx)}
                            :post {:handler post-notification}}]
     ["/notification-pdf" {:get {:handler (partial get-notification :pdf)}}]]])

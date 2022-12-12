@@ -24,7 +24,8 @@
     (cond
       (= (:notification-status bank-data) :started)
       :approve-letter
-      (= (:notification-status bank-data) :notification-letter-sent)
+      (or (= (:notification-status bank-data) :notification-letter-sent)
+        (= (:notification-status bank-data) :values-uploaded))
       :confirm-values
       (and (= (:notification-status bank-data) :values-confirmed))
       :bank-completed
@@ -76,8 +77,7 @@
                    :unavailable))}])
 
 (defn bank-progress-bar []
-  (let [bank-id @(rf/subscribe [::bank-model/bank-dialog])
-        stage @(rf/subscribe [::stage])]
+  (let [stage @(rf/subscribe [::stage])]
     [mui/card {:style {:padding "1rem"}}
      [mui/stepper {:alternative-label true}
       (for [{:keys [label status-fn]} bank-steps]
@@ -147,14 +147,12 @@
                         :height "90vh"
                         :width "90vw"}}
      [mui/stack {:direction :row :spacing 2 :style {:height "inherit"}}
-      [mui/box {:style {:width "50%"}}
-       [:iframe {:src "/Example-bank-confirmation-letter.pdf" :width "100%" :height "100%"}]]
+      [mui/box {:width "50%"}
+       [confirmation-view/upload-valuation-pdf]]
       [mui/stack {:spacing 1 :style {:width "50%"}}
        [mui/typography {:variant :h4} (list/bank-label bank-id)]
        [bank-progress-bar]
        [confirmation-view/bank-confirmation-panel]]]]))
-
-
 
 (defn bank-completed-dialog []
   (let [current-case @(rf/subscribe [::case-model/current-case])
@@ -172,7 +170,7 @@
       [document-view/view-pdf-dialog
        {:buttons [{:key "value"
                    :name "value confirmation"
-                   :source "/Example-bank-confirmation-letter.pdf"}
+                   :source (str "/api/case/" case-id "/bank/" (name bank-id) "/valuation-pdf")}
                   {:key "notification"
                    :name "notification letter"
                    :source (str "/api/case/" case-id "/bank/" (name bank-id) "/notification-pdf")}]}]]
@@ -188,10 +186,6 @@
          "The notification process is complete.
        You can view copies of all correspondence using the buttons to the left."]
         [mui/typography {:variant :h6} "accounts summary"]
-        #_[mui/stack {:direction :row :spacing 2}
-           [mui/typography {:variant :body2} "sort code"]
-           [mui/typography {:variant :body2} "account number"]
-           [mui/typography {:variant :body2} "confirmed value"]]
         (map
           (fn [acc]
             [mui/stack {:direction :row :spacing 4}
