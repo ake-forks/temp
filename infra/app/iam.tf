@@ -37,6 +37,7 @@ data "aws_iam_policy_document" "secret_access" {
     resources = [
       aws_ssm_parameter.xtdb-backend-admin-password.arn,
       aws_ssm_parameter.auth-map.arn,
+      aws_ssm_parameter.post-service-map.arn,
     ]
   }
 }
