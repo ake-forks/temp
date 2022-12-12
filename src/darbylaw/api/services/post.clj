@@ -5,10 +5,22 @@
             [clojure.tools.logging :as log])
   (:import (org.apache.sshd.client SshClient)
            (org.apache.sshd.sftp.client.impl DefaultSftpClientFactory SimpleSftpClientImpl)
-           (org.apache.sshd.client.keyverifier AcceptAllServerKeyVerifier)))
+           (org.apache.sshd.client.keyverifier AcceptAllServerKeyVerifier)
+           (java.nio.file Files Paths LinkOption)
+           (java.nio.file.attribute FileAttribute)))
+
+(defn create-known-hosts []
+  (let [path (Paths/get
+               (System/getProperty "user.home")
+               (into-array String [".ssh" "known_hosts"]))]
+    (when-not (Files/exists path (into-array LinkOption []))
+      (log/info "Created file " (str path))
+      (Files/createFile path (into-array FileAttribute [])))))
 
 (def ssh-agent
-  (ssh/ssh-agent {:use-system-ssh-agent false}))
+  (do
+    (create-known-hosts)
+    (ssh/ssh-agent {:use-system-ssh-agent false})))
 
 (defn create-session []
   (let [{:keys [host username password port]}
