@@ -10,11 +10,13 @@
            (java.nio.file.attribute FileAttribute)))
 
 (defn create-known-hosts []
-  (let [path (Paths/get
-               (System/getProperty "user.home")
-               (into-array String [".ssh" "known_hosts"]))]
+  (let [dir-path (Paths/get
+                   (System/getProperty "user.home")
+                   (into-array String [".ssh"]))
+        path (.resolve dir-path "known_hosts")]
     (when-not (Files/exists path (into-array LinkOption []))
-      (log/info "Created file " (str path))
+      (log/info "Creating file " (str path))
+      (Files/createDirectories dir-path (into-array FileAttribute []))                      ;
       (Files/createFile path (into-array FileAttribute [])))))
 
 (def ssh-agent
