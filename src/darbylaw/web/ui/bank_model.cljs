@@ -26,16 +26,6 @@
   (fn [db _]
     (:modal/bank-dialog db)))
 
-;temporary
-(rf/reg-event-db
-  ::mark-bank-complete
-  (fn [db [_ bank-id]]
-    (update-in db [:banks-complete] conj bank-id)))
-
-(rf/reg-sub ::banks-complete
-  (fn [db _]
-    (:banks-complete db)))
-
 ; Bank notification starts
 
 (rf/reg-event-fx ::start-notification-process--success

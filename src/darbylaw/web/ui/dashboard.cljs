@@ -7,7 +7,6 @@
     [darbylaw.web.routes :as routes]
     [darbylaw.web.ui.bank-model :as bank-model]
     [darbylaw.web.ui.case-model :as case-model]
-    [darbylaw.web.ui.bank-add :as bank]
     [darbylaw.web.ui.bank-dialog :as bank-dialog]
     [darbylaw.api.bank-list :as bank-list]
     [darbylaw.web.ui.progress-bar :as progress-bar]
@@ -111,7 +110,6 @@
         current-case @(rf/subscribe [::case-model/current-case])]
     (assert case-id)
     (rf/dispatch [::case-model/load-case! case-id])
-    (rf/dispatch [::bank/mark-bank-complete :load])
     [mui/box
      [c/navbar]
      [heading current-case]
