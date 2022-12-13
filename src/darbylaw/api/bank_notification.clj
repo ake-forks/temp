@@ -110,7 +110,7 @@
         (change-bank-notification-status-txns case-id user bank-id :notification-letter-sent)))
     {:status 204}))
 
-(defn mark-values-confirmed [{:keys [xtdb-node user path-params]}]
+(defn mark-values-uploaded [{:keys [xtdb-node user path-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
         bank-id (keyword (:bank-id path-params))]
     (xt/await-tx xtdb-node
@@ -226,8 +226,8 @@
     ["/notification-docx" {:get {:handler (partial get-notification :docx)}
                            :post {:handler post-notification}}]
     ["/notification-pdf" {:get {:handler (partial get-notification :pdf)}}]
-    ["/post-letter" {:post {:handler post-letter}}]]
-   ["/post-tasks" {:get {:handler get-post-tasks}}]])
+    ["/post-letter" {:post {:handler post-letter}}]
+    ["/post-tasks" {:get {:handler get-post-tasks}}]]])
 
 (comment
   (def all-case-data
