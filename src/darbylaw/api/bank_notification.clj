@@ -226,8 +226,8 @@
     ["/notification-docx" {:get {:handler (partial get-notification :docx)}
                            :post {:handler post-notification}}]
     ["/notification-pdf" {:get {:handler (partial get-notification :pdf)}}]
-    ["/post-letter" {:post {:handler post-letter}}]
-    ["/post-tasks" {:get {:handler get-post-tasks}}]]])
+    ["/post-letter" {:post {:handler post-letter}}]]
+   ["/post-tasks" {:get {:handler get-post-tasks}}]])
 
 (comment
   (def all-case-data
