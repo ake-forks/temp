@@ -1,22 +1,93 @@
 (ns darbylaw.web.ui.bank-confirmation-view
   (:require [re-frame.core :as rf]
             [reagent-mui.components :as mui]
-            [darbylaw.web.routes :as routes]
             [darbylaw.web.ui.bank-model :as bank-model]
             [darbylaw.web.ui.case-model :as case-model]
             [darbylaw.web.ui.bank-add :as bank-add]
             [darbylaw.api.bank-list :as bank-list]
-            [darbylaw.web.util.form :as form]
             [fork.re-frame :as fork]
             [reagent.core :as r]
-            [kee-frame.core :as kf]
             [darbylaw.web.theme :as theme]
-            [darbylaw.web.styles :as styles]
             [darbylaw.web.ui :as ui]
             [darbylaw.web.ui.bank-add :as bank]
             [vlad.core :as v]))
 
+;utils for uploading and viewing valuation PDF
+(def uploading? (r/atom false))
 
+(rf/reg-sub ::bank-data
+  :<- [::case-model/current-case]
+  :<- [::bank-model/bank-id]
+  (fn [[current-case bank-id]]
+    (get-in current-case [:bank bank-id])))
+
+(rf/reg-sub ::values-uploaded?
+  :<- [::bank-data]
+  (fn [bank-data]
+    (= (:notification-status bank-data) :values-uploaded)))
+
+(rf/reg-sub ::bank-id
+  (fn [db]
+    (:modal/bank-dialog db)))
+
+(rf/reg-event-fx ::mark-values-uploaded--success
+  (fn [_ _]
+    (print "mark values success")
+    (reset! uploading? false)))
+
+(rf/reg-event-fx ::mark-values-uploaded
+  (fn [{:keys [db]} [_ case-id bank-id]]
+    {:http-xhrio
+     (ui/build-http
+       {:method :post
+        :uri (str "/api/case/" case-id "/bank/" (name bank-id) "/mark-values-uploaded")
+        :on-success [::mark-values-uploaded--success]})}))
+
+(rf/reg-event-fx ::load-case-success
+  (fn [_ _]
+    (reset! uploading? false)))
+
+(rf/reg-event-fx ::upload-success
+  (fn [_ [_ case-id bank-id]]
+    {:fx [[:dispatch [::mark-values-uploaded case-id bank-id]]
+          [:dispatch [::case-model/load-case! case-id
+                      {:on-success [::load-case-success]}]]]}))
+
+(rf/reg-event-fx ::upload-failure
+  (fn [_ _]
+    (reset! uploading? false)))
+
+(rf/reg-event-fx ::upload
+  (fn [_ [_ case-id bank-id file]]
+    {:http-xhrio
+     (ui/build-http
+       {:method :post
+        :uri (str "/api/case/" case-id "/bank/" (name bank-id) "/upload-valuation")
+        :body (doto (js/FormData.)
+                (.append "file" file))
+        :format nil
+        :on-success [::upload-success case-id bank-id]
+        :on-failure [::upload-failure]})}))
+
+(defn upload-button [_case-id _bank-id _props _label]
+  (r/with-let [_ (reset! uploading? false)
+               filename (r/atom "")]
+    (fn [case-id bank-id props label]
+      [ui/loading-button (merge props {:component "label"
+                                       :loading @uploading?})
+       label
+       [mui/input {:type :file
+                   :value @filename
+                   :onChange #(let [selected-file (-> % .-target .-files first)]
+                                (print)
+                                (rf/dispatch [::upload case-id bank-id selected-file])
+                                (reset! filename "")
+                                (reset! uploading? true))
+                   :hidden true
+                   :sx {:display :none}}]])))
+
+
+;utils for editing bank account information
 (rf/reg-event-fx ::update-bank-success
   (fn [{:keys [db]} [_ {:keys [path]} response]]
     (print response)
@@ -44,7 +115,38 @@
     {:fx [[:dispatch [::update-bank case-id fork-params]]
           [:dispatch [::bank-model/mark-values-confirmed case-id bank-id]]]}))
 
+(defn pdf-viewer [case-id bank-id]
+  (if (false? @uploading?)
+    [mui/stack {:spacing 1
+                :style {:width "50%" :height "100%"}}
+     [:iframe {:src (str "/api/case/" case-id "/bank/" (name bank-id) "/valuation-pdf")
+               :width "100%"
+               :height "100%"}]
+     [upload-button case-id bank-id {:variant :contained} "replace pdf"]]
+    [ui/loading-button {:loading true} "loading"]))
 
+
+;pdf view and upload components
+(defn upload-valuation-pdf []
+  (let [values-uploaded? @(rf/subscribe [::values-uploaded?])
+        case-id (-> @(rf/subscribe [::ui/path-params]) :case-id)
+        bank-id @(rf/subscribe [::bank-model/bank-dialog])]
+    (if values-uploaded?
+      (if (false? @uploading?)
+        [mui/stack {:spacing 1
+                    :style {:width "100%" :height "100%"}}
+         [:iframe {:src (str "/api/case/" case-id "/bank/" (name bank-id) "/valuation-pdf")
+                   :width "100%"
+                   :height "100%"}]
+         [upload-button case-id bank-id {:variant :contained} "replace pdf"]]
+        [ui/loading-button {:loading true :full-width true} "loading"])
+      [mui/stack {:spacing 1}
+       [mui/typography {:variant :body1}
+        (str "Once you have received a letter of valuation from "
+          (bank-list/bank-label bank-id) ", upload a PDF below.")]
+       [upload-button case-id bank-id {:variant :contained} "upload pdf"]])))
+
+;bank edit components
 (defn bank-confirmation-form [{:keys [values handle-submit] :as fork-args}]
   [:form {:on-submit handle-submit}
    [mui/stack {:spacing 2}
@@ -54,7 +156,6 @@
    [mui/stack {:direction :row :spacing 1}
     [mui/button {:on-click #(rf/dispatch [::bank-model/hide-bank-dialog]) :variant :contained :full-width true} "cancel"]
     [mui/button {:type :submit :variant :contained :full-width true} "submit"]]])
-
 
 (defonce form-state (r/atom nil))
 
@@ -71,8 +172,7 @@
            (:accounts values))
     {}))
 
-
-
+;panel
 (defn bank-confirmation-panel []
   (let [case-id (-> @(rf/subscribe [::ui/path-params]) :case-id)
         bank-id @(rf/subscribe [::bank-model/bank-dialog])
@@ -87,7 +187,6 @@
                  :justify-content :space-between
                  :divider (r/as-element [mui/divider {:style {:border-color theme/rich-black
                                                               :border-width "1px"}}])}
-      ;left-hand side
       [mui/box
        [mui/stack {:spacing 1}
         [mui/typography {:variant :h5}
