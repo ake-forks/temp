@@ -74,15 +74,18 @@
     [mui/card
      [mui/stepper {:alternative-label true :non-linear true
                    :style {:margin-top "2rem" :margin-bottom "2rem"}}
-      (for [{:keys [label tooltip status-fn]} steps]
-        (let [status (status-fn current-case)
-              elem
-              [mui/step {:completed (= status :completed)}
-               [mui/step-label {:icon (get-icon status)}
-                [mui/typography {:variant :body2
-                                 :style {:textTransform :uppercase}}
-                 label]]]]
-          (if tooltip
-            [mui/tooltip {:title tooltip :position :top}
-             elem]
-            elem)))]]))
+      (into [:<>]
+        (for [{:keys [label tooltip status-fn]} steps]
+          (let [status (status-fn current-case)
+                elem
+                [mui/step {:completed (= status :completed)}
+                 [mui/step-label {:icon (get-icon status)}
+                  [mui/typography {:variant :body2
+                                   :style {:textTransform :uppercase}}
+                   label]]]]
+            (with-meta
+              (if tooltip
+                [mui/tooltip {:title tooltip :position :top}
+                 elem]
+                elem)
+              {:key label}))))]]))
