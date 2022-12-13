@@ -104,17 +104,18 @@
         [tasks/tasks-tile]
         [overview/overview-card]]]]]))
 
-(defn panel []
-  (let [case-id (-> @(rf/subscribe [::ui/path-params])
-                  :case-id)
-        current-case @(rf/subscribe [::case-model/current-case])]
-    (assert case-id)
-    (rf/dispatch [::case-model/load-case! case-id])
+(defn panel* []
+  (let [current-case @(rf/subscribe [::case-model/current-case])]
     [mui/box
      [c/navbar]
      [heading current-case]
      [content current-case]
      [c/footer]]))
 
-(defmethod routes/panels :dashboard-panel [] [panel])
+(defn panel []
+  (let [case-id @(rf/subscribe [::case-model/case-id])]
+    (assert case-id)
+    (rf/dispatch [::case-model/load-case! case-id])
+    [panel*]))
 
+(defmethod routes/panels :dashboard-panel [] [panel])
