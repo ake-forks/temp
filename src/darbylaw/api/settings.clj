@@ -10,7 +10,7 @@
 (defn get-settings [{:keys [xtdb-node]}]
   (let [settings (fetch-settings xtdb-node)]
     {:status http/status-200-ok
-     :body settings}))
+     :body (or settings {})}))
 
 (defn merge-settings [{:keys [xtdb-node body-params]}]
   (xt-util/exec-tx xtdb-node
@@ -23,3 +23,7 @@
                  :post {:handler merge-settings
                         :coercion reitit.coercion.malli/coercion
                         :parameters {:body map?}}}]])
+
+(comment
+  (xt-util/exec-tx darbylaw.xtdb-node/xtdb-node
+    [[::xt/evict :probate/settings]]))
