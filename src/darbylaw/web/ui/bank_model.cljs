@@ -61,18 +61,17 @@
   (fn [db [_ case-id bank-id]]
     (ongoing-notification-process? db bank-id)))
 
-(rf/reg-event-fx ::mark-notification-sent--success
+(rf/reg-event-fx ::post-letter--success
   (fn [{:keys [db]} [_ case-id bank-id]]
-    {:fx [[:dispatch [::hide-bank-dialog]]
-          [:dispatch [::case-model/load-case! case-id]]]}))
+    {:fx [[:dispatch [::case-model/load-case! case-id]]]}))
 
-(rf/reg-event-fx ::mark-notification-sent
+(rf/reg-event-fx ::post-letter
   (fn [{:keys [db]} [_ case-id bank-id]]
     {:http-xhrio
      (ui/build-http
        {:method :post
-        :uri (str "/api/case/" case-id "/bank/" (name bank-id) "/mark-notification-sent")
-        :on-success [::mark-notification-sent--success case-id bank-id]})}))
+        :uri (str "/api/case/" case-id "/bank/" (name bank-id) "/post-letter")
+        :on-success [::post-letter--success case-id bank-id]})}))
 
 (rf/reg-event-fx ::mark-values-confirmed--success
   (fn [{:keys [db]} [_ case-id bank-id]]

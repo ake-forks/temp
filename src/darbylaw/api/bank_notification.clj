@@ -7,10 +7,11 @@
             [darbylaw.doc-store :as doc-store]
             [darbylaw.api.case :as case-api]
             [darbylaw.api.pdf :as pdf]
-            [darbylaw.api.util.xtdb :as xt-util])
-  (:import (java.io InputStream File)
-           (java.nio.file Files)
-           (java.nio.file.attribute FileAttribute)))
+            [darbylaw.api.util.xtdb :as xt-util]
+            [darbylaw.api.util.http :as http]
+            [darbylaw.api.util.files :as files-util]
+            [darbylaw.api.bank-notification.post-task :as post-task]
+            [darbylaw.api.bank-notification.letter-store :as letter-store]))
 
 (def get-case--query
   {:find [(list 'pull 'case [:xt/id
@@ -19,11 +20,6 @@
    :where '[[case :type :probate.case]
             [case :xt/id case-id]]
    :in '[case-id]})
-
-(defn fetch-one [xt-results]
-  (assert (= 1 (count xt-results))
-    (str "Expected one result, got " (count xt-results)))
-  (ffirst xt-results))
 
 (defn keys-to-camel-case [m]
   (clojure.walk/postwalk
@@ -68,37 +64,26 @@
 (def bank-notification-template
   (stencil/prepare (io/resource "darbylaw/templates/bank-notification.docx")))
 
-(defn ^InputStream render-docx [template-data]
-  (stencil/render! bank-notification-template template-data
-    :output :input-stream))
-
-(defn create-temp-file [suffix]
-  (-> (Files/createTempFile nil suffix (into-array FileAttribute nil))
-    .toFile))
-
 (defn render-docx [template-data file]
   (stencil/render! bank-notification-template template-data
     :output file
     :overwrite? true))
 
-(defn s3-key [case-id bank-id suffix]
-  (str case-id "/bank-notification/" (name bank-id) suffix))
-
 (defn convert-to-pdf-and-store [case-id bank-id docx]
-  (let [^File pdf (create-temp-file ".pdf")]
+  (let [pdf (files-util/create-temp-file ".pdf")]
     (try
       (pdf/convert-file docx pdf)
-      (doc-store/store (s3-key case-id bank-id ".docx") docx)
-      (doc-store/store (s3-key case-id bank-id ".pdf") pdf)
+      (doc-store/store (letter-store/s3-key case-id bank-id ".docx") docx)
+      (doc-store/store (letter-store/s3-key case-id bank-id ".pdf") pdf)
       (finally
         (.delete pdf)))))
 
 (defn start-notification [{:keys [xtdb-node user path-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
         bank-id (keyword (:bank-id path-params))
-        case-data (fetch-one
+        case-data (xt-util/fetch-one
                     (xt/q (xt/db xtdb-node) get-case--query case-id))
-        ^File docx (create-temp-file ".docx")]
+        docx (files-util/create-temp-file ".docx")]
     (try
       (render-docx (case-template-data bank-id case-data) docx)
       (convert-to-pdf-and-store case-id bank-id docx)
@@ -152,9 +137,9 @@
   (let [case-id (parse-uuid (:case-id path-params))
         bank-id (keyword (:bank-id path-params))
         input-stream (doc-store/fetch
-                       (s3-key case-id bank-id (case doc-type
-                                                 :docx ".docx"
-                                                 :pdf ".pdf")))]
+                       (letter-store/s3-key case-id bank-id (case doc-type
+                                                              :docx ".docx"
+                                                              :pdf ".pdf")))]
     {:status 200
      :headers {"Content-Type"
                (case doc-type
@@ -166,13 +151,13 @@
   (let [case-id (parse-uuid (:case-id path-params))
         bank-id (keyword (:bank-id path-params))
         input-stream (doc-store/fetch
-                       (s3-key case-id bank-id "-valuation.pdf"))]
+                       (letter-store/s3-key case-id bank-id "-valuation.pdf"))]
     {:status 200
      :headers {"Content-Type" "application/pdf"}
      :body input-stream}))
 
 (defn set-custom-letter-uploaded--txns [case-id user bank-id]
-  (-> (xt-util/assoc-in--txns case-id
+  (-> (xt-util/assoc-in-tx case-id
         [:bank bank-id :notification-letter-author]
         :unknown-user)
     (case-api/put-event :case.bank.notification.uploaded-custom-letter
@@ -180,17 +165,17 @@
       user
       {:bank-id bank-id})))
 
-(defn post-notification [{:keys [xtdb-node user path-params multipart-params]}]
+(defn post-notification [{:keys [xtdb-node user path-params multipart-params user]}]
   (let [case-id (parse-uuid (:case-id path-params))
         bank-id (keyword (:bank-id path-params))
-        {:keys [^File tempfile content-type]} (get multipart-params "file")]
+        {:keys [tempfile content-type]} (get multipart-params "file")]
     (try
       (assert (= content-type docx-mime-type))
       (convert-to-pdf-and-store case-id bank-id tempfile)
       (finally
         (.delete tempfile)))
-    (xt-util/exec-txn xtdb-node
-      (set-custom-letter-uploaded--txns case-id user bank-id))
+    (xt-util/exec-tx xtdb-node
+      (set-custom-letter-uploaded--txns case-id bank-id user))
     {:status 204}))
 
 (defn post-valuation [{:keys [xtdb-node user path-params multipart-params]}]
@@ -199,13 +184,34 @@
         {:keys [^File tempfile content-type]} (get multipart-params "file")]
     (try
       (assert (= content-type pdf-mime-type))
-      (doc-store/store (s3-key case-id bank-id "-valuation.pdf") tempfile))
+      (doc-store/store (letter-store/s3-key case-id bank-id "-valuation.pdf") tempfile))
     (xt-util/exec-txn xtdb-node
       (change-bank-notification-status-txns case-id user bank-id :values-uploaded)))
   {:status 204})
 
 (comment
   (-> last-request :multipart-params))
+(defn post-letter [{:keys [xtdb-node path-params user]}]
+  (let [case-id (parse-uuid (:case-id path-params))
+        bank-id (keyword (:bank-id path-params))
+        created? (post-task/create-post-task! xtdb-node case-id bank-id)]
+    (xt-util/exec-tx xtdb-node
+      (change-bank-notification-status-txns case-id user bank-id :notification-letter-sent))
+    (if created?
+      {:status http/status-204-no-content}
+      {:status http/status-409-conflict})))
+
+(defn get-post-tasks [{:keys [xtdb-node]}]
+  {:status http/status-200-ok
+   :body (->> (xt/q (xt/db xtdb-node)
+                '{:find [(pull task [:case-id
+                                     :bank-id
+                                     :post-state
+                                     :created-at])]
+                  :where [[task :type task-type]]
+                  :in [task-type]}
+                post-task/task-type)
+           (map (fn [[post-task]] (-> post-task))))})
 
 (defn routes []
   [["/case/:case-id/bank/:bank-id"
@@ -219,7 +225,9 @@
     ["/valuation-pdf" {:get {:handler get-valuation}}]
     ["/notification-docx" {:get {:handler (partial get-notification :docx)}
                            :post {:handler post-notification}}]
-    ["/notification-pdf" {:get {:handler (partial get-notification :pdf)}}]]])
+    ["/notification-pdf" {:get {:handler (partial get-notification :pdf)}}]
+    ["/post-letter" {:post {:handler post-letter}}]]
+   ["/post-tasks" {:get {:handler get-post-tasks}}]])
 
 (comment
   (def all-case-data
@@ -228,7 +236,7 @@
 
   (:bank case-data)
 
-  (xt-util/exec-txn darbylaw.xtdb-node/xtdb-node
+  (xt-util/exec-tx darbylaw.xtdb-node/xtdb-node
     [[::xt/put (update all-case-data :bank dissoc :virgin-money)]])
 
   (def temp-file

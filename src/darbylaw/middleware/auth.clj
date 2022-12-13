@@ -27,7 +27,6 @@
   [handler]
   (fn [req]
     (let [user (:basic-authentication req)]
-      (clojure.tools.logging/info user)
       (-> req
           ;; Add in `:user` key for convenience
           (assoc :user user)

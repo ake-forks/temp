@@ -19,4 +19,14 @@
 
  :doc-store
  {:s3-bucket #profile {:default "darbylaw-docs-test"
-                       :staging "darbylaw-docs-staging"}}}
+                       :staging "darbylaw-docs-staging"}}
+
+ :post-service
+ {:ssh #profile {:default #edn #env POST_SERVICE_MAP
+                 :dev {:host "localhost"
+                       :port 2222
+                       :username "none"
+                       :password "none"}}
+  :local-sftp-server {:enabled? #profile {:default false
+                                          :dev true}
+                      :port 2222}}}

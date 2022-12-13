@@ -147,7 +147,7 @@
         [mui/button {:onClick #(rf/dispatch [::bank-model/hide-bank-dialog])
                      :variant :contained
                      :full-width true} "cancel"]
-        [mui/button {:on-click #(rf/dispatch [::bank-model/mark-notification-sent case-id bank-id])
+        [mui/button {:on-click #(rf/dispatch [::bank-model/post-letter case-id bank-id])
                      :variant :contained
                      :startIcon (r/as-element [ui/icon-send])
                      :disabled (not @approved?)
