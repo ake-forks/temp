@@ -7,26 +7,13 @@ orbs:
 commands:
   setup_aws_cli:
     description: |
-      Install aws-cli and setup things so that commands run in the correct environment
+      Install aws-cli and runs setup
 
       Assumes the following Environment Variables have been setup:
-      <environment>_AWS_ACCESS_KEY_ID
-      <environment>_AWS_SECRET_ACCESS_KEY
-    parameters:
-      environment:
-        description: The aws environment to setup, see command description
-        type: string
+      AWS_ACCESS_KEY_ID
+      AWS_SECRET_ACCESS_KEY
+      AWS_DEFAULT_REGION
     steps:
-      - run:
-          name: Setup AWS Environment
-          command: |
-            # Environment Variables can't be passed between steps
-            # So we store them in $BASH_ENV, where they are later sourced
-            # https://circleci.com/docs/env-vars (search for "BASH_ENV")
-            touch "$BASH_ENV"
-            echo 'export AWS_ACCESS_KEY_ID="${<< parameters.environment >>_AWS_ACCESS_KEY_ID}"' >> "$BASH_ENV"
-            echo 'export AWS_SECRET_ACCESS_KEY="${<< parameters.environment >>_AWS_SECRET_ACCESS_KEY}"' >> "$BASH_ENV"
-            echo 'export AWS_DEFAULT_REGION="eu-west-2"' >> "$BASH_ENV"
       - run:
           name: Manually Install AWS CLI
           command: |
@@ -34,33 +21,32 @@ commands:
             # when the orb installs the cli there's a conflict with the libgcc version
             apk add --no-cache \
               aws-cli=1.22.81-r0
+
+            # aws-cli/setup errors if this file does not exist
+            # We have our AWS credentials setup in the project config in CircleCi
+            touch "$BASH_ENV"
       - aws-cli/setup
   ecr_push_image:
     description: |
-      Push the given docker image to the specified environment
+      Push the given docker image
 
       Assumes that the image you want to push is built and tagged "<< parameters.image_name >>:latest"
       Assumes the following Environment Variables have been setup:
-      <environment>_AWS_ACCESS_KEY_ID
-      <environment>_AWS_SECRET_ACCESS_KEY
+      AWS_ACCESS_KEY_ID
+      AWS_SECRET_ACCESS_KEY
+      AWS_DEFAULT_REGION
     parameters:
-      environment:
-        description: The environment to push the image to, see command description
-        type: string
       image_name:
         description: The name of the image you want to push, see command description
         type: string
     steps:
-      - setup_aws_cli:
-          environment: << parameters.environment >>
+      - setup_aws_cli
       - run:
           name: Push Image to ECR
           command: |
-            . "$BASH_ENV"
             # >> Config
             region="$AWS_DEFAULT_REGION"
             # Currently will always be the same account
-            # If this changes just add another env variable <environment>_ACCOUNT_ID
             account_id=713170488151
 
             # >> Login
@@ -115,7 +101,7 @@ jobs:
             PREV_TIME=$START_TIME
 
             echo "  start(   prev) | log line"
-            docker build -t probatetree-staging:latest . | \
+            docker build -t probatetree:latest . | \
               while read line ; do \
                 now="$(date +%s)"; \
                 since_start="$(diff_fmt $(time_diff $now $START_TIME))"; \
@@ -124,16 +110,14 @@ jobs:
                 PREV_TIME="$now"; \
               done
       - ecr_push_image:
-          environment: production
-          image_name: probatetree-staging
+          image_name: probatetree
   deploy:
     working_directory: /app
     docker:
       - image: hashicorp/terraform:1.2.9
     steps:
       - checkout
-      - setup_aws_cli:
-          environment: production
+      - setup_aws_cli
       - run:
           name: Terraform Init
           working_directory: ./infra/app
