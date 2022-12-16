@@ -17,8 +17,13 @@ locals {
 
 # >> ECR
 
-resource "aws_ecr_repository" "probatetree" {
-  name = "probatetree-${terraform.workspace}"
+data "aws_ecr_repository" "probatetree" {
+  name = "probatetree"
+}
+
+# NOTE: Deprecated
+resource "aws_ecr_repository" "probatetree-old" {
+  name = "probatetree-staging"
 }
 
 resource "aws_ecs_cluster" "probatetree" {
@@ -75,13 +80,13 @@ resource "aws_ecs_task_definition" "probatetree" {
   cpu                = 1024
   memory             = 2048
   execution_role_arn = aws_iam_role.execution_role.arn
-  task_role_arn = aws_iam_role.task_role.arn
+  task_role_arn      = aws_iam_role.task_role.arn
 
   container_definitions = jsonencode(
     [
       {
         name      = "webserver"
-        image     = "${aws_ecr_repository.probatetree.repository_url}:${var.probatetree_docker_tag}"
+        image     = "${data.aws_ecr_repository.probatetree.repository_url}:${var.probatetree_docker_tag}"
         essential = true
         portMappings = [
           {

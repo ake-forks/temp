@@ -201,6 +201,8 @@
                              :reference
                              :deceased.info
                              :bank-accounts
+                             :funeral-account
+                             :funeral-expense
                              :bank
                              {:ref/personal-representative.info.id
                               personal-representative--props}])]

@@ -19,6 +19,7 @@
     [darbylaw.api.settings :as settings-api]
     [darbylaw.api.case :as case-api]
     [darbylaw.api.bank :as bank-api]
+    [darbylaw.api.funeral :as funeral-api]
     [darbylaw.api.bank-notification :as bank-notification-api]
     [darbylaw.middleware.xtdb :refer [wrap-xtdb-node]]
     [darbylaw.middleware.auth :refer [create-auth-middleware add-user-info authenticated?]]))
@@ -66,6 +67,7 @@
      (settings-api/routes)
      (case-api/routes)
      (bank-api/routes)
+     (funeral-api/routes)
      (bank-notification-api/routes)]]])
 
 (defn make-router []

@@ -5,6 +5,8 @@
     [darbylaw.web.ui :as ui]
     [darbylaw.web.styles :as styles]
     [darbylaw.web.routes :as routes]
+    [darbylaw.web.ui.funeral.model :as funeral-model]
+    [darbylaw.web.ui.funeral.dialog :as funeral-dialog]
     [darbylaw.web.ui.bank-model :as bank-model]
     [darbylaw.web.ui.case-model :as case-model]
     [darbylaw.web.ui.bank-dialog :as bank-dialog]
@@ -63,6 +65,85 @@
       [bank-item bank])
     [add-bank]]])
 
+(defn asset-card [{:keys [title on-add]} & body]
+  [mui/card
+   [mui/card-content
+    [mui/typography {:variant :h5
+                     :sx {:font-weight 600}}
+     title]
+    [mui/divider]
+    body]])
+
+(defn asset-add-button [{:keys [title on-click]}]
+  [mui/card-action-area {:on-click on-click
+                         :sx {:padding-top 1}}
+   [mui/stack {:direction :row
+               :spacing 2
+               :align-items :center}
+    [mui/typography {:variant :h5}
+     (or title "add")]
+    [ui/icon-add]]])
+
+(defn format-currency
+  [value]
+  (format/format "%.2f" value))
+
+(defn asset-item [{:keys [title value on-click icon]}]
+  [mui/box
+   [mui/card-action-area {:on-click on-click
+                          :sx {:padding-top 1 :padding-bottom 1}}
+    [mui/stack {:direction :row
+                :spacing 2
+                :justify-content :space-between}
+     (if (string? icon)
+       [mui/box {:component :img
+                 :src icon}]
+       icon)
+     [mui/typography {:variant :body1
+                      :noWrap true
+                      :sx {:width "100%"}}
+      title]
+     [mui/typography {:variant :body1
+                      :sx {:font-weight :bold}}
+      (str "£" (format-currency value))]]]
+   [mui/divider]])
+
+(defn funeral-card []
+  (let [dialog-info @(rf/subscribe [::funeral-model/dialog-info])
+        account @(rf/subscribe [::funeral-model/account])
+        expenses @(rf/subscribe [::funeral-model/expense-list])]
+    [asset-card {:title "funeral expenses"}
+     (when account
+       ^{:key :funeral-account}
+       [asset-item
+        {:title (:title account)
+         :value (:value account)
+         :on-click #(rf/dispatch [::funeral-model/show-funeral-dialog :edit-account])
+         ;; TODO: Make right size
+         :icon [mui/skeleton {:variant :circular
+                              :width 25}]}])
+     (for [{:keys [id value title]} expenses]
+       ^{:key id}
+       [asset-item
+        {:title title
+         :value value
+         :on-click #(rf/dispatch [::funeral-model/show-funeral-dialog id])
+         ;; TODO: Make right size
+         :icon [mui/skeleton {:variant :circular
+                              :width 25}]}])
+     (when-not account
+       ^{:key :add-account-button}
+       [asset-add-button
+        {:title "add funeral account"
+         :on-click #(rf/dispatch [::funeral-model/show-funeral-dialog :add-funeral-director])}])
+     ^{:key :add-expense-button}
+     [asset-add-button
+      {:title "add other expense"
+       :on-click #(rf/dispatch [::funeral-model/show-funeral-dialog :add-other])}]
+     (when dialog-info
+       ^{:key :funeral-dialog}
+       [funeral-dialog/main-dialog])]))
+
 (defn heading [current-case]
   [mui/box {:sx {:background-color theme/off-white :padding-bottom {:xs "2rem" :xl "4rem"}}}
    [mui/container {:maxWidth :xl :class (styles/main-content)}
@@ -98,7 +179,9 @@
        [mui/grid {:container true :spacing 1 :columns 3
                   :style {:width "70%"}}
         [mui/grid {:item true :xs 1}
-         (r/as-element [bank-card current-case])]]
+         [bank-card current-case]]
+        [mui/grid {:item true :xs 1}
+         [funeral-card current-case]]]
 
        [mui/stack {:spacing 2 :style {:width "30%"}}
         [tasks/tasks-tile]
