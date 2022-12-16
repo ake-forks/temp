@@ -16,7 +16,7 @@
   (assert (string? (:username user)))
   (put-with-tx-data
     (merge
-      (dissoc event-data [:case-id :user])
+      (dissoc event-data :case-id :user)
       {:xt/id (random-uuid)
        :type :event
        :subject-type :probate.case
