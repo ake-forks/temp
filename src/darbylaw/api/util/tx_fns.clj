@@ -6,23 +6,27 @@
               :xt/fn f}]
    (into [::xt/fn id] args)])
 
-(defn assoc* [eid ks x]
-  (invoke ::assoc [eid ks x]
+(defn set-value [eid ks x]
+  (invoke ::set-value [eid ks x]
     '(fn [ctx eid ks x]
        (let [e (xtdb.api/entity (xtdb.api/db ctx) eid)]
          [[::xt/put (assoc-in e ks x)]]))))
 
-(defn into* [eid ks coll]
-  (invoke ::into [eid ks coll]
+(defn append [eid ks coll]
+  (invoke ::append [eid ks coll]
     '(fn [ctx eid ks coll]
        (let [e (xtdb.api/entity (xtdb.api/db ctx) eid)]
-         [[::xt/put (update-in e ks (fnil #(into % coll) []))]]))))
+         [[::xt/put (update-in e ks (-> (fn [v]
+                                          (let [v (if (vector? v) v (vec v))]
+                                            (into v coll)))
+                                      (fnil [])))]]))))
 
-(defn conj-unique [eid ks x]
-  (invoke ::conj-unique [eid ks x]
-    '(fn [ctx eid ks x]
+(defn append-unique [eid ks coll]
+  (invoke ::append-unique [eid ks coll]
+    '(fn [ctx eid ks coll]
        (let [e (xtdb.api/entity (xtdb.api/db ctx) eid)]
-         [[::xt/put (update-in e ks (fnil
-                                      (fn [v]
-                                        (if (some #{x} v) v (conj v x)))
-                                      []))]]))))
+         [[::xt/put (update-in e ks (-> (fn [v]
+                                          (let [coll (remove (set v) coll)
+                                                v (if (vector? v) v (vec v))]
+                                            (into v coll)))
+                                      (fnil [])))]]))))
