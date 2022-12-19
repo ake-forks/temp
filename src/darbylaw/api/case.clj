@@ -3,7 +3,8 @@
             [reitit.coercion]
             [reitit.coercion.malli]
             [ring.util.response :as ring]
-            [darbylaw.config :as config]))
+            [darbylaw.config :as config]
+            [darbylaw.api.util.http :as http]))
 
 (def date--schema
   [:re #"^\d{4}-\d{2}-\d{2}$"])
@@ -214,21 +215,25 @@
   (mapv
     (fn [bank-id]
       ; TODO change :id to :bank-id
-      {:id bank-id
-       :accounts (get by-bank bank-id)})
+      (merge
+        (get by-bank bank-id)
+        {:id bank-id}))
     bank-order))
 
 (defn get-case [{:keys [xtdb-node path-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
         results (xt/q (xt/db xtdb-node) get-case__query case-id)]
-    (assert (= 1 (count results)))
-    (ring/response
-      (-> (ffirst results)
-        (clojure.set/rename-keys
-          {:xt/id :id
-           :ref/personal-representative.info.id :personal-representative
-           :deceased.info :deceased})
-        (update :bank-accounts bank-accounts->vector)))))
+    (if (zero? (count results))
+      {:status http/status-404-not-found}
+      (do
+        (assert (= 1 (count results)))
+        (ring/response
+          (-> (ffirst results)
+            (clojure.set/rename-keys
+              {:xt/id :id
+               :ref/personal-representative.info.id :personal-representative
+               :deceased.info :deceased})
+            (update :bank-accounts bank-accounts->vector)))))))
 
 (defn get-case-history [{:keys [xtdb-node path-params]}]
   (let [case-id (parse-uuid (:case-id path-params))

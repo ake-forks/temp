@@ -14,8 +14,8 @@
       (xt-util/exec-tx xtdb-node
         (concat
           (case op
-            :add (tx-fns/append case-id [:bank-accounts :by-bank bank-id] accounts)
-            :update (tx-fns/set-value case-id [:bank-accounts :by-bank bank-id] accounts))
+            :add (tx-fns/append case-id [:bank-accounts :by-bank bank-id :accounts] accounts)
+            :update (tx-fns/set-value case-id [:bank-accounts :by-bank bank-id :accounts] accounts))
           (tx-fns/append-unique case-id [:bank-accounts :bank-order] [bank-id])
           (case-history/put-event {:event :updated.bank-accounts
                                    :case-id case-id
