@@ -25,6 +25,7 @@
     [reagent-mui.icons.warning]
     [reagent-mui.icons.arrow-forward-ios]
     [reagent-mui.icons.check-circle]
+    [reagent-mui.icons.close]
     [reagent-mui.components :as mui]
     [reagent-mui.lab.loading-button]
     [reagent.core :as r]
@@ -61,6 +62,8 @@
 (def icon-check reagent-mui.icons.check-circle/check-circle)
 (def icon-upload reagent-mui.icons.upload/upload)
 (def icon-warning reagent-mui.icons.warning/warning)
+
+(def icon-close reagent-mui.icons.close/close)
 (def loading-button reagent-mui.lab.loading-button/loading-button)
 
 (defn ???_TO_BE_DEFINED_??? [message]

@@ -10,7 +10,8 @@
             [darbylaw.web.ui.bank-add :as bank-add]
             [darbylaw.web.ui.bank-confirmation-view :as confirmation-view]
             [darbylaw.web.ui.bank-letter-approval :as bank-letter-approval]
-            [darbylaw.web.ui.document-view :as document-view]))
+            [darbylaw.web.ui.document-view :as document-view]
+            [darbylaw.web.ui.buildingsociety.dialog :as buildsoc]))
 
 (rf/reg-sub ::bank-data
   :<- [::case-model/current-case]
@@ -27,7 +28,7 @@
       (or (= (:notification-status bank-data) :notification-letter-sent)
         (= (:notification-status bank-data) :values-uploaded))
       :confirm-values
-      (and (= (:notification-status bank-data) :values-confirmed))
+      (= (:notification-status bank-data) :values-confirmed)
       :bank-completed
       :else
       :edit-accounts)))
@@ -204,12 +205,11 @@
   (let [bank-id @(rf/subscribe [::bank-model/bank-dialog])
         case-id (-> @(rf/subscribe [::ui/path-params]) :case-id)]
     (rf/dispatch [::case-model/load-case! case-id])
-    [mui/box
-     (if (= bank-id :add-bank)
-       [bank-add/dialog]
-       (let [stage @(rf/subscribe [::stage])]
-         (cond
-           (= stage :edit-accounts) [edit-dialog]
-           (= stage :approve-letter) [approve-letter-dialog]
-           (= stage :confirm-values) [confirm-values-dialog]
-           (= stage :bank-completed) [bank-completed-dialog])))]))
+    (if (= bank-id :add-bank)
+      [bank-add/dialog]
+      (let [stage @(rf/subscribe [::stage])]
+        (cond
+          (= stage :edit-accounts) [edit-dialog]
+          (= stage :approve-letter) [approve-letter-dialog]
+          (= stage :confirm-values) [confirm-values-dialog]
+          (= stage :bank-completed) [bank-completed-dialog])))))

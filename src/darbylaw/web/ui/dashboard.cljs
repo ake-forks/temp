@@ -9,6 +9,8 @@
     [darbylaw.web.ui.funeral.dialog :as funeral-dialog]
     [darbylaw.web.ui.bank-model :as bank-model]
     [darbylaw.web.ui.case-model :as case-model]
+    [darbylaw.web.ui.buildingsociety.model :as build-soc-model]
+    [darbylaw.web.ui.buildingsociety.dialog :as build-soc-dialog]
     [darbylaw.web.ui.bank-dialog :as bank-dialog]
     [darbylaw.api.bank-list :as bank-list]
     [darbylaw.web.ui.progress-bar :as progress-bar]
@@ -167,6 +169,8 @@
 (defn content [current-case]
   (let [bank-modal @(rf/subscribe [::bank-model/bank-dialog])]
     [mui/container {:maxWidth :xl}
+     [mui/button {:on-click #(rf/dispatch [::build-soc-model/show-add-dialog])} "add build soc"]
+     [build-soc-dialog/dialog]
      [mui/stack {:spacing 2 :sx {:pt "1rem" :pb "2rem"}}
       [mui/typography {:variant :h5} "estate details"]
       [mui/dialog
