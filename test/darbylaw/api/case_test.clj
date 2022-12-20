@@ -4,7 +4,7 @@
     [darbylaw.test.common :as test-common :refer [submap?]]
     [darbylaw.handler :refer [ring-handler]]
     [cognitect.transit :as transit]
-    [darbylaw.api.sample-data :as sample]))
+    [darbylaw.api.setup :as sample]))
 
 (use-fixtures :once
   (test-common/use-mount-states test-common/ring-handler-states))

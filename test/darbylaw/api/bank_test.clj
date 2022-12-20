@@ -3,27 +3,15 @@
     [clojure.test :refer :all]
     [darbylaw.test.common :as test-common]
     [darbylaw.handler :refer [ring-handler]]
-    [cognitect.transit :as transit]
-    [darbylaw.api.sample-data :as sample]
-    [medley.core :as medley]))
+    [darbylaw.api.setup :as setup]
+    [medley.core :as medley]
+    [darbylaw.test.common :as t]))
 
 (use-fixtures :once
   (test-common/use-mount-states test-common/ring-handler-states))
 
-(defn read-body [resp]
-  (cond-> resp
-    (:body resp)
-    (update :body #(transit/read (transit/reader % :json)))))
-
-(defn get-case [case-id]
-  (read-body
-    (ring-handler
-      {:request-method :get
-       :uri (str "/api/case/" case-id)
-       :headers {"accept" "application/transit+json"}})))
-
 (defn get-accounts-by-bank [case-id]
-  (let [{case :body} (get-case case-id)]
+  (let [{case :body} (t/run-request (setup/get-case case-id))]
     (-> (medley/index-by :id (:bank-accounts case))
       (update-vals :accounts))))
 
@@ -36,12 +24,7 @@
      :headers {"accept" "application/transit+json"}}))
 
 (deftest add_and_update_bank-accounts
-  (let [new-case-resp (read-body
-                        (ring-handler
-                          {:request-method :post
-                           :uri "/api/case"
-                           :body-params {:personal-representative sample/pr-info1}
-                           :headers {"accept" "application/transit+json"}}))
+  (let [new-case-resp (t/run-request (setup/create-case))
         _ (is (<= 200 (:status new-case-resp) 299))
         case-id (-> new-case-resp :body :id)
 

@@ -12,6 +12,17 @@
   :<- [::bank-id]
   banks/bank-label)
 
+(rf/reg-sub ::current-bank-data
+  :<- [::case-model/current-case]
+  :<- [::bank-id]
+  (fn [[current-case bank-id]]
+    (first (->> (:bank-accounts current-case)
+             (filter (fn [bank]
+                       (= bank-id (:id bank))))))))
+
+(comment
+  (def s (rf/subscribe [::current-bank-data])))
+
 (rf/reg-event-db
   ::show-bank-dialog
   (fn [db [_ value]]
@@ -28,19 +39,19 @@
 
 ; Bank notification starts
 
-(rf/reg-event-fx ::start-notification-process--success
+(rf/reg-event-fx ::generate-notification-letter--success
   (fn [{:keys [db]} [_ case-id bank-id]]
     {:db (assoc-in db [:current-case :bank bank-id ::notification-process-starting?] false)
-     :dispatch [::load! case-id]}))
+     :dispatch [::case-model/load-case! case-id]}))
 
-(rf/reg-event-fx ::start-notification-process
+(rf/reg-event-fx ::generate-notification-letter
   (fn [{:keys [db]} [_ case-id bank-id]]
     {:db (assoc-in db [:current-case :bank bank-id ::notification-process-starting?] true)
      :http-xhrio
      (ui/build-http
        {:method :post
-        :uri (str "/api/case/" case-id "/bank/" (name bank-id) "/start-notification")
-        :on-success [::start-notification-process--success case-id bank-id]})}))
+        :uri (str "/api/case/" case-id "/bank/" (name bank-id) "/generate-notification-letter")
+        :on-success [::generate-notification-letter--success case-id bank-id]})}))
 
 (defn ongoing-notification-process? [db bank-id]
   (let [status (get-in db [:current-case :bank bank-id :notification-status])]
@@ -51,17 +62,17 @@
   (fn [db [_ case-id bank-id]]
     (ongoing-notification-process? db bank-id)))
 
-(rf/reg-event-fx ::post-letter--success
+(rf/reg-event-fx ::approve-notification-letter--success
   (fn [{:keys [db]} [_ case-id bank-id]]
     {:fx [[:dispatch [::case-model/load-case! case-id]]]}))
 
-(rf/reg-event-fx ::post-letter
+(rf/reg-event-fx ::approve-notification-letter
   (fn [{:keys [db]} [_ case-id bank-id]]
     {:http-xhrio
      (ui/build-http
        {:method :post
-        :uri (str "/api/case/" case-id "/bank/" (name bank-id) "/post-letter")
-        :on-success [::post-letter--success case-id bank-id]})}))
+        :uri (str "/api/case/" case-id "/bank/" (name bank-id) "/approve-notification-letter")
+        :on-success [::approve-notification-letter--success case-id bank-id]})}))
 
 (rf/reg-event-fx ::mark-values-confirmed--success
   (fn [{:keys [db]} [_ case-id bank-id]]
