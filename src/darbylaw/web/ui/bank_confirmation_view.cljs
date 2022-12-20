@@ -59,7 +59,6 @@
        [mui/input {:type :file
                    :value @filename
                    :onChange #(let [selected-file (-> % .-target .-files first)]
-                                (print)
                                 (rf/dispatch [::upload case-id bank-id selected-file])
                                 (reset! filename "")
                                 (reset! uploading? true))
@@ -70,7 +69,6 @@
 ;utils for editing bank account information
 (rf/reg-event-fx ::update-bank-success
   (fn [{:keys [db]} [_ {:keys [path]} response]]
-    (print response)
     {:db (fork/set-submitting db path false)}
     (rf/dispatch [::bank-model/hide-bank-dialog])))
 
