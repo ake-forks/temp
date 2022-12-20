@@ -98,7 +98,8 @@
 (defn submit-buttons []
   [mui/stack {:spacing 1
               :direction :row
-              :justify-content :space-between}
+              :justify-content :space-between
+              :sx {:width 1}}
    [mui/button {:onClick #(rf/dispatch [::model/hide-dialog])
                 :variant :contained :full-width true} "cancel"]
    [mui/button {:type :submit :variant :contained :full-width true} "save"]])

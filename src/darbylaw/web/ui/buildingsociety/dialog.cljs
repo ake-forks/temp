@@ -17,15 +17,35 @@
     [mui/dialog
      {:open (or (:open dialog-data) false)
       :maxWidth false
-      :fullWidth false}
+      :fullWidth false
+      :scroll :paper}
      (case stage
+
+       ;add a new build soc
+       :edit
+       [:<>
+        [mui/dialog-title
+         [mui/typography {:variant :h4} "add building society"]]
+        [mui/dialog-content
+         [mui/box {:style {:height "50vh"
+                           :width "60vw"
+                           :padding "1rem"}}
+          [add/panel]]]
+        [mui/dialog-actions
+         [shared/submit-buttons]]]
+
+       ;editing stage
        :add
-       [mui/box {:style {:height "70vh"
-                         :width "70vw"}}
-        [shared/stepper]
-        [edit/panel]]
-
-
+       [:<>
+        [mui/dialog-title
+         [shared/header "Bath Building Society" 0]]
+        [mui/dialog-content
+         [mui/box {:style {:height "50vh"
+                           :width "60vw"
+                           :padding "1rem"}}
+          [edit/panel]]]
+        [mui/dialog-actions
+         [shared/submit-buttons]]]
 
        2
        [mui/box {:style {:height "90vh"
