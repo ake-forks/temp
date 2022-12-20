@@ -89,7 +89,7 @@
 
              :else
              "This letter was automatically generated from case data.")]
-          [mui/button {:onClick (rf/dispatch [::regenerate])
+          [mui/button {:onClick #(rf/dispatch [::regenerate])
                        :startIcon (r/as-element [ui/icon-refresh])
                        :variant :outlined
                        :sx {:mt 1}}
