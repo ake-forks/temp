@@ -137,7 +137,6 @@
                 [mui/form-control-label {
                                          :control (r/as-element
                                                     [mui/checkbox {:name :joint-check
-                                                                   :value (get field :joint-check)
                                                                    :checked (get field :joint-check)
                                                                    :label "estimated value"
                                                                    :on-change #(handle-change % idx)}])
