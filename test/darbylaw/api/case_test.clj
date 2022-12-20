@@ -3,10 +3,11 @@
     [clojure.test :refer :all]
     [darbylaw.test.common :as test-common :refer [submap?]]
     [darbylaw.handler :refer [ring-handler]]
-    [cognitect.transit :as transit]))
+    [cognitect.transit :as transit]
+    [darbylaw.api.setup :as sample]))
 
 (use-fixtures :once
-  test-common/use-ring-handler)
+  (test-common/use-mount-states test-common/ring-handler-states))
 
 (defn read-body [resp]
   (cond-> resp
@@ -14,16 +15,7 @@
     (update :body #(transit/read (transit/reader % :json)))))
 
 (deftest create_and_get_cases
-  (let [pr-info {:title "Mr"
-                 :forename "John"
-                 :surname "Doe"
-                 :date-of-birth "1980-01-21"
-                 :email "john.doe@test.com"
-                 :phone "+441234123456"
-                 :street-number "16"
-                 :street1 "A Street"
-                 :town "London"
-                 :postcode "SW1W 0NY"}
+  (let [pr-info sample/pr-info1
         post-resp (read-body
                     (ring-handler
                       {:request-method :post

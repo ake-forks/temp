@@ -19,6 +19,7 @@
         metosin/reitit-frontend {:mvn/version "0.5.18"}
         metosin/reitit-malli {:mvn/version "0.5.18"}
         metosin/muuntaja {:mvn/version "0.6.7"}
+        com.cognitect/transit-clj {:mvn/version "1.0.329"}
         ; needed by ring-middleware-multipart:
         javax.servlet/servlet-api {:mvn/version "2.5"}
         ;;; Logging
@@ -28,7 +29,7 @@
         org.apache.logging.log4j/log4j-slf4j-impl {:mvn/version "2.19.0"}
         ;;; Config managment
         yogthos/config {:mvn/version "1.1.7"}
-        mount/mount {:mvn/version "0.1.16"}
+        mount/mount {:mvn/version "0.1.17"}
         aero/aero {:mvn/version "1.1.6"}
         ;;; Authentication
         ring-basic-authentication/ring-basic-authentication {:mvn/version "1.1.1"}

@@ -5,7 +5,7 @@
     [org.httpkit.client :as http]))
 
 (use-fixtures :once
-  test-common/use-web-server)
+  (test-common/use-mount-states test-common/web-server-states))
 
 (deftest healthcheck
   (let [resp @(http/request {:method :get
