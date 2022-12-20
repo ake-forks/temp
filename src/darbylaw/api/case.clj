@@ -210,15 +210,25 @@
             [case :xt/id case-id]]
    :in '[case-id]})
 
+(defn bank-accounts->vector [{:keys [bank-order by-bank]}]
+  (mapv
+    (fn [bank-id]
+      ; TODO change :id to :bank-id
+      {:id bank-id
+       :accounts (get by-bank bank-id)})
+    bank-order))
+
 (defn get-case [{:keys [xtdb-node path-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
         results (xt/q (xt/db xtdb-node) get-case__query case-id)]
     (assert (= 1 (count results)))
     (ring/response
-      (clojure.set/rename-keys (ffirst results)
-        {:xt/id :id
-         :ref/personal-representative.info.id :personal-representative
-         :deceased.info :deceased}))))
+      (-> (ffirst results)
+        (clojure.set/rename-keys
+          {:xt/id :id
+           :ref/personal-representative.info.id :personal-representative
+           :deceased.info :deceased})
+        (update :bank-accounts bank-accounts->vector)))))
 
 (defn get-case-history [{:keys [xtdb-node path-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
