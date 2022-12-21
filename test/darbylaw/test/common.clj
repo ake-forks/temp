@@ -15,7 +15,7 @@
 
 (defn use-mount-states [states]
   (fn [f]
-    (mount/stop (keys test-states))
+    (mount/stop states)
     (mount/start (-> states
                    (mount/swap-states test-states)))
     (f)
@@ -50,5 +50,6 @@
         (update :headers assoc "accept" "application/transit+json")))))
 
 (defn assert-success [resp]
-  (assert (<= 200 (:status resp) 299))
+  (assert (<= 200 (:status resp) 299)
+    (str "Expected success, but received HTTP status " (:status resp)))
   resp)
