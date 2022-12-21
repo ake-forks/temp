@@ -7,13 +7,13 @@
                   :test :none}}
  :database
  #profile {:default {:node-type :rocksdb}
-           ;#{:production :staging}
-           ;{:node-type :postgres
-           ; :db-spec {:host #env DATABASE_HOST
-           ;           :port #env DATABASE_PORT
-           ;           :dbname #env DATABASE_DBNAME
-           ;           :user #env DATABASE_USER
-           ;           :password #env DATABASE_PASSWORD}}
+           :production
+           {:node-type :postgres
+            :db-spec {:host #env DATABASE_HOST
+                      :port #env DATABASE_PORT
+                      :dbname #env DATABASE_DBNAME
+                      :user #env DATABASE_USER
+                      :password #env DATABASE_PASSWORD}}
            :test {:node-type :in-memory
                   :test :none}}
 
