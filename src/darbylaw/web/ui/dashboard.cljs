@@ -9,8 +9,8 @@
     [darbylaw.web.ui.funeral.dialog :as funeral-dialog]
     [darbylaw.web.ui.bank-model :as bank-model]
     [darbylaw.web.ui.case-model :as case-model]
-    [darbylaw.web.ui.buildingsociety.model :as build-soc-model]
-    [darbylaw.web.ui.buildingsociety.dialog :as build-soc-dialog]
+    [darbylaw.web.ui.buildingsociety.model :as buildsoc-model]
+    [darbylaw.web.ui.buildingsociety.dialog :as buildsoc-dialog]
     [darbylaw.web.ui.bank-dialog :as bank-dialog]
     [darbylaw.api.bank-list :as bank-list]
     [darbylaw.web.ui.progress-bar :as progress-bar]
@@ -146,6 +146,21 @@
        ^{:key :funeral-dialog}
        [funeral-dialog/main-dialog])]))
 
+(defn buildsoc-card []
+  [asset-card {:title "building societies"}
+   [buildsoc-dialog/dialog]
+   (map
+     (fn [buildsoc]
+       (let [id (:buildsoc-id buildsoc)]
+         [asset-item {:title (:common-name buildsoc)
+                      :value 100
+                      :on-click #(rf/dispatch [::buildsoc-model/show-process-dialog id])}]))
+     buildsoc-model/buildsoc-accounts)
+   [asset-add-button
+    {:title "add building society"
+     :on-click #(rf/dispatch [::buildsoc-model/show-add-dialog])}]])
+
+
 (defn heading [current-case]
   [mui/box {:sx {:background-color theme/off-white :padding-bottom {:xs "2rem" :xl "4rem"}}}
    [mui/container {:maxWidth :xl :class (styles/main-content)}
@@ -169,8 +184,7 @@
 (defn content [current-case]
   (let [bank-modal @(rf/subscribe [::bank-model/bank-dialog])]
     [mui/container {:maxWidth :xl}
-     [mui/button {:on-click #(rf/dispatch [::build-soc-model/show-add-dialog])} "add build soc"]
-     [build-soc-dialog/dialog]
+
      [mui/stack {:spacing 2 :sx {:pt "1rem" :pb "2rem"}}
       [mui/typography {:variant :h5} "estate details"]
       [mui/dialog
@@ -185,7 +199,9 @@
         [mui/grid {:item true :xs 1}
          [bank-card current-case]]
         [mui/grid {:item true :xs 1}
-         [funeral-card current-case]]]
+         [funeral-card current-case]]
+        [mui/grid {:item true :xs 1}
+         [buildsoc-card]]]
 
        [mui/stack {:spacing 2 :style {:width "30%"}}
         [tasks/tasks-tile]

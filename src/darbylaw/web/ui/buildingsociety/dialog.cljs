@@ -13,41 +13,25 @@
 
 (defn dialog []
   (let [dialog-data @(rf/subscribe [::model/get-dialog])
-        stage :add]
+        stage (:stage dialog-data)]
     [mui/dialog
      {:open (or (:open dialog-data) false)
       :maxWidth false
       :fullWidth false
       :scroll :paper}
-     (case stage
+     (if (some? stage)
+       (case stage
+         ;add a new build soc
+         ;dialog content and action area are within panel
+         ;(so that body can be scrolled and action buttons are fixed to the bottom edge)
+         :add
+         [add/panel]
 
-       ;add a new build soc
-       :edit
-       [:<>
-        [mui/dialog-title
-         [mui/typography {:variant :h4} "add building society"]]
-        [mui/dialog-content
-         [mui/box {:style {:height "50vh"
-                           :width "60vw"
-                           :padding "1rem"}}
-          [add/panel]]]
-        [mui/dialog-actions
-         [shared/submit-buttons]]]
+         ;editing stage
+         :edit
+         [edit/panel]
 
-       ;editing stage
-       :add
-       [:<>
-        [mui/dialog-title
-         [shared/header "Bath Building Society" 0]]
-        [mui/dialog-content
-         [mui/box {:style {:height "50vh"
-                           :width "60vw"
-                           :padding "1rem"}}
-          [edit/panel]]]
-        [mui/dialog-actions
-         [shared/submit-buttons]]]
+         :notify
+         []))]))
 
-       2
-       [mui/box {:style {:height "90vh"
-                         :width "90vw"}}])]))
 

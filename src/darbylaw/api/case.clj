@@ -93,7 +93,7 @@
            last-case-ref (xtdb.api/entity db ::last-case-ref)
            new-case-ref (if (nil? last-case-ref)
                           1
-                          (inc (:value last-case-ref))) 
+                          (inc (:value last-case-ref)))
            ref-suffix (if is-test "99" "00")
            ;; Pad `new-case-ref` so that it's at least 6 digits total
            reference (str (format "%04d" new-case-ref) ref-suffix)]
@@ -204,6 +204,7 @@
                              :funeral-account
                              :funeral-expense
                              :bank
+                             :buildsoc-accounts
                              {:ref/personal-representative.info.id
                               personal-representative--props}])]
    :where '[[case :type :probate.case]

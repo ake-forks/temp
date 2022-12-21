@@ -26,7 +26,7 @@
     [mui/step-label "CONFIRM VALUES"]]])
 
 (defn title [name]
-  [mui/typography {:variant :h4} name])
+  [mui/typography {:variant :h4 :sx {:mb 1}} name])
 
 (defn header [name stage]
   [mui/stack {:spacing 2}
@@ -37,3 +37,8 @@
 
 (defn submit-buttons []
   [form/submit-buttons])
+
+(def narrow-dialog-props
+  {:style {:height "40vh"}
+   :width "60vw"
+   :padding "1rem"})

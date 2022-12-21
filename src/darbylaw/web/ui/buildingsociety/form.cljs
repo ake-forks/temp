@@ -7,20 +7,17 @@
             [darbylaw.web.ui.buildingsociety.model :as model])
   (:require-macros [reagent-mui.util :refer [react-component]]))
 
-(def buildsoc-options
-  [{:id :bath-building-society
-    :common-name "Bath Building Society"}
-   {:id :cambridge-building-society
-    :common-name "Cambridge Building Society"}
-   {:id :darlington-building-society
-    :common-name "Darlington Building Society"}
-   {:id :harpenden-building-society
-    :common-name "Harpenden Building Society"}])
+
+
+(defn buildsoc-label [buildsoc-id]
+  (assert (string? buildsoc-id))
+  (clojure.string/replace buildsoc-id "-" " "))
 
 (defn buildsoc-select [{:keys [values set-handle-change handle-blur touched errors] :as fork-args}]
   [mui/autocomplete
-   {:options (map :id buildsoc-options)
+   {:options (map :id model/buildsoc-options)
     :value (get values :buildsoc-id)
+    :getOptionLabel buildsoc-label
     :onChange (fn [_evt new-value]
                 (set-handle-change {:value new-value
                                     :path [:buildsoc-id]}))
@@ -116,16 +113,16 @@
 
 (defonce form-state (r/atom nil))
 
-(defn form [form-component initial-values]
+(defn form [form-component initial-values submit-fn]
   (r/with-let []
     (let [case-id (-> @(rf/subscribe [::ui/path-params]) :case-id)]
       [fork/form
        {:state form-state
         :clean-on-unmount? true
-        :on-submit #(print %)
+        :on-submit submit-fn
         :keywordize-keys true
         :prevent-default? true
-        :initial-values initial-values}                     ; placeholder for entering first account
+        :initial-values initial-values}
        (fn [fork-args]
          [form-component (ui/mui-fork-args fork-args)])])
     (finally
