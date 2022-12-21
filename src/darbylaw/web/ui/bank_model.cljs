@@ -18,7 +18,7 @@
   (fn [[current-case bank-id]]
     (first (->> (:bank-accounts current-case)
              (filter (fn [bank]
-                       (= bank-id (:id bank))))))))
+                       (= bank-id (:bank-id bank))))))))
 
 (comment
   (def s (rf/subscribe [::current-bank-data])))

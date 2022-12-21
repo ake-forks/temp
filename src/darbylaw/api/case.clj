@@ -206,19 +206,12 @@
                              :funeral-expense
                              :bank
                              {:ref/personal-representative.info.id
-                              personal-representative--props}])]
+                              personal-representative--props}
+                             {:bank-accounts [:bank-id
+                                              :accounts]}])]
    :where '[[case :type :probate.case]
             [case :xt/id case-id]]
    :in '[case-id]})
-
-(defn bank-accounts->vector [{:keys [bank-order by-bank]}]
-  (mapv
-    (fn [bank-id]
-      ; TODO change :id to :bank-id
-      (merge
-        (get by-bank bank-id)
-        {:id bank-id}))
-    bank-order))
 
 (defn get-case [{:keys [xtdb-node path-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
@@ -232,8 +225,7 @@
             (clojure.set/rename-keys
               {:xt/id :id
                :ref/personal-representative.info.id :personal-representative
-               :deceased.info :deceased})
-            (update :bank-accounts bank-accounts->vector)))))))
+               :deceased.info :deceased})))))))
 
 (defn get-case-history [{:keys [xtdb-node path-params]}]
   (let [case-id (parse-uuid (:case-id path-params))

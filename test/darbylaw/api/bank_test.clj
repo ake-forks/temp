@@ -11,9 +11,13 @@
   (test-common/use-mount-states test-common/ring-handler-states))
 
 (defn get-accounts-by-bank [case-id]
-  (let [{case :body} (t/run-request (setup/get-case case-id))]
-    (-> (medley/index-by :id (:bank-accounts case))
+  (let [resp (t/assert-success (t/run-request (setup/get-case case-id)))
+        case (:body resp)]
+    (-> (medley/index-by :bank-id (:bank-accounts case))
       (update-vals :accounts))))
+
+(comment
+  (t/run-request (setup/get-case "cd245cf8-ebc2-4703-9833-c0aaa3376c0b")))
 
 (defn post-bank-accounts [op case-id bank-id accounts]
   (ring-handler
@@ -24,8 +28,7 @@
      :headers {"accept" "application/transit+json"}}))
 
 (deftest add_and_update_bank-accounts
-  (let [new-case-resp (t/run-request (setup/create-case))
-        _ (is (<= 200 (:status new-case-resp) 299))
+  (let [new-case-resp (t/assert-success (t/run-request (setup/create-case)))
         case-id (-> new-case-resp :body :id)
 
         added-accounts [{:sort-code "sort-code1"
@@ -36,9 +39,9 @@
                    "/add-bank-accounts" case-id :test-bank-id
                    added-accounts)
         _ (is (<= 200 (:status add-resp) 299))
-        by-bank-id (get-accounts-by-bank case-id)
-        _ (is (= added-accounts (-> by-bank-id :test-bank-id)))
-
+        _ (is (= added-accounts
+                 (-> (get-accounts-by-bank case-id)
+                   :test-bank-id)))
         more-added-accounts [{:sort-code "sort-code3"
                               :account-number "account-number3"}
                              {:sort-code "sort-code4"
@@ -73,4 +76,3 @@
         by-bank-id (get-accounts-by-bank case-id)
         _ (is (= new-accounts (-> by-bank-id :test-bank-id)))
         _ (is (= new-accounts2 (-> by-bank-id :test-bank-id2)))]))
-
