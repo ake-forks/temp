@@ -10,26 +10,21 @@
             [darbylaw.web.ui.bank-add :as bank-add]
             [darbylaw.web.ui.bank-confirmation-view :as confirmation-view]
             [darbylaw.web.ui.bank-letter-approval :as bank-letter-approval]
-            [darbylaw.web.ui.document-view :as document-view]
-            [darbylaw.web.ui.buildingsociety.dialog :as buildsoc]))
-
-(rf/reg-sub ::bank-data
-  :<- [::case-model/current-case]
-  :<- [::bank-model/bank-id]
-  (fn [[current-case bank-id]]
-    (get-in current-case [:bank bank-id])))
+            [darbylaw.web.ui.document-view :as document-view]))
 
 (rf/reg-sub ::stage
-  :<- [::bank-data]
+  :<- [::bank-model/current-bank-data]
   (fn [bank-data]
     (cond
-      (= (:notification-status bank-data) :started)
-      :approve-letter
-      (or (= (:notification-status bank-data) :notification-letter-sent)
-        (= (:notification-status bank-data) :values-uploaded))
-      :confirm-values
-      (= (:notification-status bank-data) :values-confirmed)
+      (:values-confirmed bank-data)
       :bank-completed
+
+      (get-in bank-data [:notification-letter :approved])
+      :confirm-values
+
+      (:notification-letter bank-data)
+      :approve-letter
+
       :else
       :edit-accounts)))
 
@@ -38,12 +33,6 @@
 ;orange :tasks-available
 ;loading :waiting-on-us
 ;green ;completed
-
-;case stages
-;:edit-accounts
-;:approve-letter
-;:confirm-values
-;:completed
 
 (def bank-steps
   "An array of maps representing a step
@@ -81,13 +70,15 @@
   (let [stage @(rf/subscribe [::stage])]
     [mui/card {:style {:padding "1rem"}}
      [mui/stepper {:alternative-label true}
-      (for [{:keys [label status-fn]} bank-steps]
-        (let [status (status-fn stage)]
-          [mui/step {:completed (= status :completed)}
-           [mui/step-label {:icon (progress-bar/get-icon status)}
-            [mui/typography {:variant :body2
-                             :style {:textTransform :uppercase}}
-             label]]]))]]))
+      (into [:<>]
+        (for [{:keys [label status-fn]} bank-steps]
+          (let [status (status-fn stage)]
+            ^{:key label}
+            [mui/step {:completed (= status :completed)}
+             [mui/step-label {:icon (progress-bar/get-icon status)}
+              [mui/typography {:variant :body2
+                               :style {:textTransform :uppercase}}
+               label]]])))]]))
 
 (defn dialog-header [bank-id]
   [mui/stack {:spacing 1.5}
@@ -97,8 +88,7 @@
 (defn edit-dialog []
   (let [bank-id @(rf/subscribe [::bank-model/bank-dialog])
         case-id @(rf/subscribe [::case-model/case-id])
-        current-bank (filter #(= (:id %) bank-id)
-                       (:bank-accounts @(rf/subscribe [::case-model/current-case])))]
+        current-bank @(rf/subscribe [::bank-model/current-bank-data])]
     [mui/stack {:spacing 1
                 :style {:padding "2rem"
                         :background-color :white
@@ -107,9 +97,9 @@
      [dialog-header bank-id]
      [bank-add/dialog-with-values
       (if (some? bank-id)
-        {:accounts (:accounts (first current-bank))
+        {:accounts (:accounts current-bank)
          :bank-id (name bank-id)})]
-     [mui/button {:on-click #(rf/dispatch [::bank-model/start-notification-process case-id bank-id])
+     [mui/button {:on-click #(rf/dispatch [::bank-model/generate-notification-letter case-id bank-id])
                   :style {:text-transform "none" :align-self "baseline" :font-size "1rem"}
                   :variant :text
                   :size "large"
@@ -158,9 +148,8 @@
 (defn bank-completed-dialog []
   (let [current-case @(rf/subscribe [::case-model/current-case])
         case-id (:id current-case)
-        banks (:bank-accounts current-case)
         bank-id @(rf/subscribe [::bank-model/bank-dialog])
-        current-bank (filter #(= (:id %) bank-id) banks)]
+        current-bank @(rf/subscribe [::bank-model/current-bank-data])]
     [mui/stack {:spacing 1
                 :direction :row
                 :style {:padding "2rem"
@@ -205,11 +194,12 @@
   (let [bank-id @(rf/subscribe [::bank-model/bank-dialog])
         case-id (-> @(rf/subscribe [::ui/path-params]) :case-id)]
     (rf/dispatch [::case-model/load-case! case-id])
-    (if (= bank-id :add-bank)
-      [bank-add/dialog]
-      (let [stage @(rf/subscribe [::stage])]
-        (cond
-          (= stage :edit-accounts) [edit-dialog]
-          (= stage :approve-letter) [approve-letter-dialog]
-          (= stage :confirm-values) [confirm-values-dialog]
-          (= stage :bank-completed) [bank-completed-dialog])))))
+    [mui/box
+     (if (= bank-id :add-bank)
+       [bank-add/dialog]
+       (let [stage @(rf/subscribe [::stage])]
+         (cond
+           (= stage :edit-accounts) [edit-dialog]
+           (= stage :approve-letter) [approve-letter-dialog]
+           (= stage :confirm-values) [confirm-values-dialog]
+           (= stage :bank-completed) [bank-completed-dialog])))]))

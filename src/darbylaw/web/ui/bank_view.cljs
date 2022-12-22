@@ -42,7 +42,6 @@
     (:bank-accounts (:current-case db))))
 
 (defn display-accounts [accounts]
-  (print accounts)
   [mui/stack {:spacing 1 :style {:margin-top "1rem"}}
    (map (fn [acc]
           [mui/stack {:spacing 1}
@@ -72,7 +71,7 @@
     (boolean (get-in db [:current-case :bank bank-id ::notification-process-starting?]))))
 
 (defn start-notification-process-button [case-id bank-id]
-  [ui/loading-button {:onClick #(rf/dispatch [::bank-model/start-notification-process case-id bank-id])
+  [ui/loading-button {:onClick #(rf/dispatch [::bank-model/generate-notification-letter case-id bank-id])
                       :sx (when @(rf/subscribe [::bank-model/start-notification-hidden? case-id bank-id])
                             {:display :none})
                       :loading @(rf/subscribe [::notification-process-starting? case-id bank-id])

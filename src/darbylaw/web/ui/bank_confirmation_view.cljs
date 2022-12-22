@@ -15,54 +15,38 @@
 ;utils for uploading and viewing valuation PDF
 (def uploading? (r/atom false))
 
-(rf/reg-sub ::bank-data
-  :<- [::case-model/current-case]
-  :<- [::bank-model/bank-id]
-  (fn [[current-case bank-id]]
-    (get-in current-case [:bank bank-id])))
-
 (rf/reg-sub ::values-uploaded?
-  :<- [::bank-data]
+  :<- [::bank-model/current-bank-data]
   (fn [bank-data]
-    (= (:notification-status bank-data) :values-uploaded)))
+    (some? (:valuation-letter-uploaded bank-data))))
 
 (rf/reg-sub ::bank-id
   (fn [db]
     (:modal/bank-dialog db)))
 
-(rf/reg-event-fx ::mark-values-uploaded--success
-  (fn [_ _]
-    (print "mark values success")
+(rf/reg-fx ::reset-uploading
+  (fn [_]
     (reset! uploading? false)))
-
-(rf/reg-event-fx ::mark-values-uploaded
-  (fn [{:keys [db]} [_ case-id bank-id]]
-    {:http-xhrio
-     (ui/build-http
-       {:method :post
-        :uri (str "/api/case/" case-id "/bank/" (name bank-id) "/mark-values-uploaded")
-        :on-success [::mark-values-uploaded--success]})}))
 
 (rf/reg-event-fx ::load-case-success
   (fn [_ _]
-    (reset! uploading? false)))
+    {::reset-uploading nil}))
 
 (rf/reg-event-fx ::upload-success
   (fn [_ [_ case-id bank-id]]
-    {:fx [[:dispatch [::mark-values-uploaded case-id bank-id]]
-          [:dispatch [::case-model/load-case! case-id
+    {:fx [[:dispatch [::case-model/load-case! case-id
                       {:on-success [::load-case-success]}]]]}))
 
 (rf/reg-event-fx ::upload-failure
   (fn [_ _]
-    (reset! uploading? false)))
+    {::reset-uploading nil}))
 
 (rf/reg-event-fx ::upload
   (fn [_ [_ case-id bank-id file]]
     {:http-xhrio
      (ui/build-http
        {:method :post
-        :uri (str "/api/case/" case-id "/bank/" (name bank-id) "/upload-valuation")
+        :uri (str "/api/case/" case-id "/bank/" (name bank-id) "/valuation-pdf")
         :body (doto (js/FormData.)
                 (.append "file" file))
         :format nil
@@ -79,7 +63,6 @@
        [mui/input {:type :file
                    :value @filename
                    :onChange #(let [selected-file (-> % .-target .-files first)]
-                                (print)
                                 (rf/dispatch [::upload case-id bank-id selected-file])
                                 (reset! filename "")
                                 (reset! uploading? true))
@@ -90,7 +73,6 @@
 ;utils for editing bank account information
 (rf/reg-event-fx ::update-bank-success
   (fn [{:keys [db]} [_ {:keys [path]} response]]
-    (print response)
     {:db (fork/set-submitting db path false)}
     (rf/dispatch [::bank-model/hide-bank-dialog])))
 

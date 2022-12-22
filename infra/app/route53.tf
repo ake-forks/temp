@@ -7,14 +7,23 @@ resource "aws_acm_certificate" "probatetree" {
   domain_name       = "${local.config.subdomain}.${local.config.hosted_zone_name}"
   validation_method = "DNS"
 
+  subject_alternative_names = (
+    terraform.workspace == "production"
+    ? [local.config.hosted_zone_name]
+    : []
+  )
+
   lifecycle {
     create_before_destroy = true
   }
 }
 
 resource "aws_acm_certificate_validation" "probatetree" {
-  certificate_arn         = aws_acm_certificate.probatetree.arn
-  validation_record_fqdns = [for record in aws_route53_record.probatetree_cert_validation : record.fqdn]
+  certificate_arn = aws_acm_certificate.probatetree.arn
+  validation_record_fqdns = [
+    for record in aws_route53_record.probatetree_cert_validation
+    : record.fqdn
+  ]
 }
 
 
@@ -22,6 +31,21 @@ resource "aws_acm_certificate_validation" "probatetree" {
 # >> Records
 
 resource "aws_route53_record" "probatetree" {
+  count = terraform.workspace == "production" ? 1 : 0
+
+  zone_id = local.config.hosted_zone_id
+  name    = local.config.hosted_zone_name
+  type    = "A"
+
+
+  alias {
+    name                   = aws_lb.ingress.dns_name
+    zone_id                = aws_lb.ingress.zone_id
+    evaluate_target_health = false
+  }
+}
+
+resource "aws_route53_record" "probatetree-subdomain" {
   zone_id = local.config.hosted_zone_id
   name    = "${local.config.subdomain}.${local.config.hosted_zone_name}"
   type    = "A"

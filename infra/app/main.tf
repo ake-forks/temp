@@ -4,11 +4,13 @@ locals {
       hosted_zone_id   = "Z0021879STRZ8VWEL8XM"
       hosted_zone_name = "probatetree.com"
       subdomain        = "www"
+      desired_count    = 2
     }
     staging = {
       hosted_zone_id   = "Z0021879STRZ8VWEL8XM"
       hosted_zone_name = "probatetree.com"
       subdomain        = "staging"
+      desired_count    = 1
     }
   }
   config = lookup(local.environments, terraform.workspace)
@@ -23,7 +25,7 @@ data "aws_ecr_repository" "probatetree" {
 
 # NOTE: Deprecated
 resource "aws_ecr_repository" "probatetree-old" {
-  name = "probatetree-staging"
+  name = "probatetree-${terraform.workspace}"
 }
 
 resource "aws_ecs_cluster" "probatetree" {
@@ -99,7 +101,7 @@ resource "aws_ecs_task_definition" "probatetree" {
         environment = [
           {
             "name" : "PROFILE"
-            "value" : "staging"
+            "value" : terraform.workspace
           },
           {
             "name" : "DATABASE_HOST"
@@ -275,7 +277,7 @@ resource "aws_ecs_service" "probatetree" {
   task_definition = aws_ecs_task_definition.probatetree.arn
   launch_type     = "FARGATE"
 
-  desired_count = 1
+  desired_count = local.config.desired_count
 
   # NOTE: Below is an explanation of how the grace period works
   #

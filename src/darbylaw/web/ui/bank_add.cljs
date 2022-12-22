@@ -13,14 +13,12 @@
 
 (rf/reg-event-fx ::add-bank-success
   (fn [{:keys [db]} [_ {:keys [path]} response]]
-    (print response)
     {:db (fork/set-submitting db path false)}
     (rf/dispatch [::bank-model/hide-bank-dialog])))
 
 (rf/reg-event-fx ::add-bank-failure
   (fn [{:keys [db]} [_ {:keys [path]} response]]
     {:db (do (assoc db :failure response)
-             (print response)
              (fork/set-submitting db path false))}))
 
 (defn remove-joint [data]
@@ -139,7 +137,6 @@
                 [mui/form-control-label {
                                          :control (r/as-element
                                                     [mui/checkbox {:name :joint-check
-                                                                   :value (get field :joint-check)
                                                                    :checked (get field :joint-check)
                                                                    :label "estimated value"
                                                                    :on-change #(handle-change % idx)}])

@@ -12,20 +12,7 @@ If there's any shared infrastruction it should go in `infra/account`.
 
 For when there's nothing deployed in any *environment*.
 
-
-### NOTE:
-You **must** manually run through these steps for the first time.
-This creates the ECR that the CI deploys the docker container to.
-Without doing it manually the docker push would fail, a bit of a chicken and egg situation 🐣
-
-```bash
-# NOTE: You will have to make sure your shell has permissions, look into aws-vault
-# NOTE: Requires the terraform state bucket to exist in the account, see `infra/account`
-$ tf init
-# Create workspace to deploy production resources to
-$ tf workspace new production
-$ tf apply -var "probatetree_docker_tag=latest"
-```
+Deploy the `infra/account` terraform to create resources this infra depends on.
 
 
 

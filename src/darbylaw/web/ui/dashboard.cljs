@@ -23,8 +23,8 @@
 
 
 (defn bank-item [bank]
-  (let [bank-data (bank-list/bank-by-id (:id bank))
-        bank-id (:id bank)
+  (let [bank-data (bank-list/bank-by-id (:bank-id bank))
+        bank-id (:bank-id bank)
         accounts (:accounts bank)
         bank-dialog @(rf/subscribe [::bank-model/bank-dialog])]
     [mui/box
@@ -63,7 +63,7 @@
     [mui/typography {:variant :h5 :sx {:font-weight 600}} "bank accounts"]
     [mui/divider]
     (for [bank (:bank-accounts current-case)]
-      ^{:key (:id bank)}
+      ^{:key (:bank-id bank)}
       [bank-item bank])
     [add-bank]]])
 

@@ -115,6 +115,10 @@ jobs:
     working_directory: /app
     docker:
       - image: hashicorp/terraform:1.2.9
+    parameters:
+      workspace:
+        description: The terraform workspace to deploy
+        type: string
     steps:
       - checkout
       - setup_aws_cli
@@ -123,7 +127,7 @@ jobs:
           working_directory: ./infra/app
           command: |
             terraform init -input=false
-            terraform workspace select staging
+            terraform workspace select << parameters.workspace >>
       - run:
           name: Terraform Plan
           working_directory: ./infra/app
@@ -139,6 +143,16 @@ workflows:
     jobs:
       - build
       - deploy:
+          name: Deploy to Staging
+          workspace: staging
+          filters:
+            branches:
+              only: main
+          requires:
+            - build
+      - deploy:
+          name: Deploy to Production
+          workspace: production
           filters:
             branches:
               only: main
