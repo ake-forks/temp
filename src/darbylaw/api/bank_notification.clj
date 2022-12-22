@@ -12,7 +12,7 @@
             [darbylaw.api.case-history :as case-history]))
 
 (defn build-asset-id [case-id bank-id]
-  {:type :probate.case.asset.bank-accounts
+  {:type :probate.bank-accounts
    :case-id case-id
    :bank-id bank-id})
 

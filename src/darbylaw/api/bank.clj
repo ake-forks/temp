@@ -10,7 +10,7 @@
   (let [bank-id (:bank-id body-params)
         accounts (:accounts body-params)
         case-id (parse-uuid (:case-id path-params))
-        asset-id {:type :probate.case.asset.bank-accounts
+        asset-id {:type :probate.bank-accounts
                   :case-id case-id
                   :bank-id bank-id}]
     (when (seq accounts)

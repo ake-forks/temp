@@ -11,7 +11,7 @@
            '(pull bank-accounts [:accounts])]
     :where '[[case :type :probate.case]
              [case :xt/id case-id]
-             [bank-accounts :type :probate.case.asset.bank-accounts]
+             [bank-accounts :type :probate.bank-accounts]
              [bank-accounts :bank-id bank-id]]
     :in '[case-id
           bank-id]}
