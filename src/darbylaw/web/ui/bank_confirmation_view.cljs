@@ -24,9 +24,13 @@
   (fn [db]
     (:modal/bank-dialog db)))
 
+(rf/reg-fx ::reset-uploading
+  (fn [_]
+    (reset! uploading? false)))
+
 (rf/reg-event-fx ::load-case-success
   (fn [_ _]
-    (reset! uploading? false)))
+    {::reset-uploading nil}))
 
 (rf/reg-event-fx ::upload-success
   (fn [_ [_ case-id bank-id]]
@@ -35,7 +39,7 @@
 
 (rf/reg-event-fx ::upload-failure
   (fn [_ _]
-    (reset! uploading? false)))
+    {::reset-uploading nil}))
 
 (rf/reg-event-fx ::upload
   (fn [_ [_ case-id bank-id file]]
