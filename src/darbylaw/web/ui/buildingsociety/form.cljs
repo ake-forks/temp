@@ -31,19 +31,19 @@
 
 ;accounts can
 (defn account-array
-  [props
+  [{:keys [stage] :as props}
    {:fieldarray/keys [fields
                       insert
                       remove
                       handle-change
                       handle-blur]}]
-  [mui/stack {:spacing 1}
+  [mui/stack {:spacing 2}
    (doall
      (->> fields
        (map-indexed
          (fn [idx field]
            ^{:key idx}
-           [mui/box
+           [mui/stack {:spacing 1}
             [mui/stack {:spacing 1 :direction :row}
              [mui/text-field {:name :roll-number
                               :value (get field :roll-number)
@@ -59,12 +59,27 @@
                               :on-blur #(handle-blur % idx)
                               :required true
                               :full-width true
+                              :disabled (= stage :valuation)
                               :InputProps
                               {:start-adornment
                                (r/as-element [mui/input-adornment
                                               {:position :start} "£"])}}]
+
              [mui/icon-button {:on-click #(remove idx)}
-              [ui/icon-delete]]]]))))
+              [ui/icon-delete]]]
+            (if (= stage :valuation)
+              [mui/text-field {:name :confirmed-value
+                               :value (get field :confirmed-value)
+                               :label "confirmed value"
+                               :on-change #(handle-change % idx)
+                               :on-blur #(handle-blur % idx)
+                               :required true
+                               :full-width true
+                               :InputProps
+                               {:start-adornment
+                                (r/as-element [mui/input-adornment
+                                               {:position :start} "£"])}}]
+              [:<>])]))))
    [mui/button {:on-click #(insert {:roll-number "" :estimated-value ""})
                 :style {:text-transform "none" :align-self "baseline" :font-size "1rem"}
                 :variant :text

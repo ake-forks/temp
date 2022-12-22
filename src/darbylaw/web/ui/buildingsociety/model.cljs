@@ -43,6 +43,8 @@
     (if (contains? (:by-buildsoc all-buildsocs) id)
       :edit
       :add)))
+;:notify
+; valuation)))
 
 (rf/reg-event-db
   ::show-process-dialog
@@ -50,7 +52,7 @@
     (assoc-in db [:dialog/building-society]
       {:open true
        :id id
-       :stage :edit #_(get-process-stage id)})))
+       :stage :notify #_(get-process-stage id)})))
 
 (rf/reg-event-db
   ::show-add-dialog

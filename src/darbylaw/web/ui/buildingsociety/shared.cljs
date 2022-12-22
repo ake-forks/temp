@@ -14,10 +14,11 @@
     [ui/icon-close]]])
 
 (defn close-button []
-  [mui/icon-button {:on-click #(rf/dispatch [::model/hide-dialog])}
+  [mui/icon-button {:on-click #(rf/dispatch [::model/hide-dialog])
+                    :style {:align-self "flex-start"}}
    [ui/icon-close]])
 (defn stepper [stage]
-  [mui/stepper {:alternative-label true :active-step stage}
+  [mui/stepper {:alternative-label false :active-step stage}
    [mui/step
     [mui/step-label "ADD ACCOUNTS"]]
    [mui/step
@@ -25,13 +26,16 @@
    [mui/step
     [mui/step-label "CONFIRM VALUES"]]])
 
-(defn title [name]
-  [mui/typography {:variant :h4 :sx {:mb 1}} name])
+(defn title-only [text]
+  [mui/stack {:direction :row :justify-content :space-between}
+   [mui/typography {:variant :h3 :sx {:mb 1}} text]
+   [close-button]])
 
-(defn header [name stage]
+
+(defn header [text stage]
   [mui/stack {:spacing 2}
    [mui/stack {:direction :row :justify-content :space-between}
-    [title name]
+    [mui/typography {:variant :h4 :sx {:mb 1}} text]
     [close-button]]
    [stepper stage]])
 
@@ -41,4 +45,9 @@
 (def narrow-dialog-props
   {:style {:height "40vh"}
    :width "60vw"
+   :padding "1rem"})
+
+(def tall-dialog-props
+  {:style {:height "90vh"}
+   :width "70vw"
    :padding "1rem"})

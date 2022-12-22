@@ -7,13 +7,15 @@
     [darbylaw.web.ui.buildingsociety.shared :as shared]
     [darbylaw.web.ui.buildingsociety.stage-add :as add]
     [darbylaw.web.ui.buildingsociety.stage-edit :as edit]
+    [darbylaw.web.ui.buildingsociety.stage-notify :as notify]
+    [darbylaw.web.ui.buildingsociety.stage-valuation :as valuation]
     [darbylaw.web.ui.buildingsociety.model :as model]))
 
 
 
 (defn dialog []
   (let [dialog-data @(rf/subscribe [::model/get-dialog])
-        stage (:stage dialog-data)]
+        stage :valuation #_(:stage dialog-data)]
     [mui/dialog
      {:open (or (:open dialog-data) false)
       :maxWidth false
@@ -32,6 +34,10 @@
          [edit/panel]
 
          :notify
-         []))]))
+         [notify/panel]
+
+         :valuation
+         [valuation/panel]))]))
+
 
 

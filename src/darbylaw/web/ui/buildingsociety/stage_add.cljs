@@ -38,8 +38,7 @@
   (let [current-case @(rf/subscribe [::case-model/current-case])]
     [:form {:on-submit handle-submit}
      [mui/dialog-title
-      [mui/typography {:variant :h3
-                       :sx {:mb 1}} "add a building society"]]
+      [shared/title-only "add building society"]]
      [mui/dialog-content
       [mui/box shared/narrow-dialog-props
        [mui/stack {:sx {:height 1}}
