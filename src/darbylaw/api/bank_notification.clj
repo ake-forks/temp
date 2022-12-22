@@ -1,9 +1,6 @@
 (ns darbylaw.api.bank-notification
-  (:require [clojure.java.io :as io]
-            [stencil.api :as stencil]
-            [xtdb.api :as xt]
-            [camel-snake-kebab.core :as csk]
-            [darbylaw.api.bank-list :as banks]
+  (:require [xtdb.api :as xt]
+            [darbylaw.api.bank-notification-template :as template]
             [darbylaw.doc-store :as doc-store]
             [darbylaw.api.pdf :as pdf]
             [darbylaw.api.util.xtdb :as xt-util]
@@ -14,46 +11,10 @@
             [darbylaw.api.util.tx-fns :as tx-fns]
             [darbylaw.api.case-history :as case-history]))
 
-(def get-case--query
-  {:find [(list 'pull 'case [:xt/id
-                             :deceased.info
-                             :bank-accounts])]
-   :where '[[case :type :probate.case]
-            [case :xt/id case-id]]
-   :in '[case-id]})
-
-(defn keys-to-camel-case [m]
-  (clojure.walk/postwalk
-    #(if (map-entry? %)
-       (let [[k v] %]
-         (if (namespace k)
-           %
-           [(csk/->camelCase k :separator #"[.-]") v]))
-       %)
-    m))
-
-(comment
-  (keys-to-camel-case {:to.camel-case :ignore-value :b {:to-camel.case 2} :ns/k :ignore-qualified}))
-
-(defn extract-bank [case-data bank-id]
-  (let [bank-data (first (filter #(= (:id %) bank-id) (:bank-accounts case-data)))]
-    (-> case-data
-      (assoc :bank (-> bank-data
-                     (assoc :name (banks/bank-label bank-id))))
-      (dissoc :bank-accounts))))
-
-(defn case-template-data [bank-id case-data]
-  (-> case-data
-    (extract-bank bank-id)
-    (keys-to-camel-case)))
-
-(def bank-notification-template
-  (stencil/prepare (io/resource "darbylaw/templates/bank-notification.docx")))
-
-(defn render-docx [template-data file]
-  (stencil/render! bank-notification-template template-data
-    :output file
-    :overwrite? true))
+(defn build-asset-id [case-id bank-id]
+  {:type :probate.case.asset.bank-accounts
+   :case-id case-id
+   :bank-id bank-id})
 
 (defn convert-to-pdf-and-store [case-id bank-id docx]
   (let [pdf (files-util/create-temp-file ".pdf")]
@@ -67,18 +28,17 @@
 (defn generate-notification-letter [{:keys [xtdb-node user path-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
         bank-id (keyword (:bank-id path-params))
-        case-data (xt-util/fetch-one
-                    (xt/q (xt/db xtdb-node) get-case--query case-id))
+        letter-template-data (template/get-letter-template-data xtdb-node case-id bank-id)
         docx (files-util/create-temp-file ".docx")]
     (try
-      (render-docx (case-template-data bank-id case-data) docx)
+      (template/render-docx letter-template-data docx)
       (convert-to-pdf-and-store case-id bank-id docx)
       (finally
         (.delete docx)))
     (xt-util/exec-tx xtdb-node
       (concat
-        (tx-fns/set-value case-id
-          [:bank-accounts :by-bank bank-id :notification-letter :author]
+        (tx-fns/set-value (build-asset-id case-id bank-id)
+          [:notification-letter :author]
           :generated)
         (case-history/put-event
           {:event :bank-notification.letter-generated
@@ -101,8 +61,8 @@
         (.delete tempfile)))
     (xt-util/exec-tx xtdb-node
       (concat
-        (tx-fns/set-value case-id
-          [:bank-accounts :by-bank bank-id :notification-letter :author]
+        (tx-fns/set-value (build-asset-id case-id bank-id)
+          [:notification-letter :author]
           user)
         (case-history/put-event
           {:event :bank-notification.letter-updated
@@ -134,8 +94,8 @@
       (do
         (xt-util/exec-tx xtdb-node
           (concat
-            (tx-fns/set-value case-id
-              [:bank-accounts :by-bank bank-id :notification-letter :approved]
+            (tx-fns/set-value (build-asset-id case-id bank-id)
+              [:notification-letter :approved]
               {:by user
                :timestamp (xt-util/now)})
             (case-history/put-event
@@ -165,8 +125,8 @@
         (.delete tempfile)))
     (xt-util/exec-tx xtdb-node
       (concat
-        (tx-fns/set-value case-id
-          [:bank-accounts :by-bank bank-id :valuation-letter-uploaded]
+        (tx-fns/set-value (build-asset-id case-id bank-id)
+          [:valuation-letter-uploaded]
           {:by user
            :timestamp (xt-util/now)})
         (case-history/put-event
@@ -181,8 +141,8 @@
         bank-id (keyword (:bank-id path-params))]
     (xt-util/exec-tx xtdb-node
       (concat
-        (tx-fns/set-value case-id
-          [:bank-accounts :by-bank bank-id :values-confirmed]
+        (tx-fns/set-value (build-asset-id case-id bank-id)
+          [:values-confirmed]
           {:by user
            :timestamp (xt-util/now)})
         (case-history/put-event

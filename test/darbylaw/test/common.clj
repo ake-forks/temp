@@ -34,7 +34,9 @@
     (-> config :web-server :port)
     path))
 
-(defn submap? [m1 m2]
+(defn submap?
+  "Is m1 a submap of m2?"
+  [m1 m2]
   (clojure.set/subset? (set m1) (set m2)))
 
 (defn read-transit-body [resp]
