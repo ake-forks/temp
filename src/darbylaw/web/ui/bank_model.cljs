@@ -37,6 +37,11 @@
   (fn [db _]
     (:modal/bank-dialog db)))
 
+(rf/reg-sub ::notification-letter-id
+  :<- [::current-bank-data]
+  (fn [bank-data]
+    (get-in bank-data [:notification-letter :id])))
+
 ; Bank notification starts
 
 (rf/reg-event-fx ::generate-notification-letter--success
@@ -67,11 +72,11 @@
     {:fx [[:dispatch [::case-model/load-case! case-id]]]}))
 
 (rf/reg-event-fx ::approve-notification-letter
-  (fn [{:keys [db]} [_ case-id bank-id]]
+  (fn [{:keys [db]} [_ case-id bank-id letter-id]]
     {:http-xhrio
      (ui/build-http
        {:method :post
-        :uri (str "/api/case/" case-id "/bank/" (name bank-id) "/approve-notification-letter")
+        :uri (str "/api/case/" case-id "/bank/" (name bank-id) "/approve-notification-letter/" letter-id)
         :on-success [::approve-notification-letter--success case-id bank-id]})}))
 
 (rf/reg-event-fx ::mark-values-confirmed--success

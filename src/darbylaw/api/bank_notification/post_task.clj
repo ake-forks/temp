@@ -56,7 +56,7 @@
               own-task? (xt/tx-committed? xtdb-node tx)]
           (when own-task?
             (try
-              (let [temp-file (files-util/create-temp-file ".pdf")
+              (let [temp-file (files-util/create-temp-file nil ".pdf")
                     filename (str "bank-notification." case-id "." (name bank-id) ".pdf")]
                 (try
                   (doc-store/fetch-to-file

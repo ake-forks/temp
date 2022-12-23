@@ -18,7 +18,7 @@
 (rf/reg-sub ::values-uploaded?
   :<- [::bank-model/current-bank-data]
   (fn [bank-data]
-    (some? (:valuation-letter-uploaded bank-data))))
+    (some? (:valuation-letter bank-data))))
 
 (rf/reg-sub ::bank-id
   (fn [db]
@@ -48,7 +48,8 @@
        {:method :post
         :uri (str "/api/case/" case-id "/bank/" (name bank-id) "/valuation-pdf")
         :body (doto (js/FormData.)
-                (.append "file" file))
+                (.append "file" file)
+                (.append "filename" (.-name file)))
         :format nil
         :on-success [::upload-success case-id bank-id]
         :on-failure [::upload-failure]})}))
