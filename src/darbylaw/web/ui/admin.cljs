@@ -6,7 +6,7 @@
             [darbylaw.web.ui :as ui]
             [reagent-mui.components :as mui]
             [reagent-mui.x.data-grid :refer [data-grid]]
-            [darbylaw.web.ui.post-list :as post-list]))
+            [darbylaw.web.ui.mailing :as mailing]))
 
 (rf/reg-event-db ::load-success
   (fn [db [_ response]]
@@ -158,7 +158,7 @@
       (case (or case-view :card)
         :card [card-list cases]
         :data-grid [data-grid-list cases]
-        :mail [post-list/panel])]]))
+        :mail [mailing/panel])]]))
 
 (defn panel []
   (rf/dispatch [::load!])

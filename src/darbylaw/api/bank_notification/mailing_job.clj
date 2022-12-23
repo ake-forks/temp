@@ -1,4 +1,4 @@
-(ns darbylaw.api.bank-notification.post-task
+(ns darbylaw.api.bank-notification.mailing-job
   (:require [xtdb.api :as xt]
             [darbylaw.api.util.xtdb :as xt-util]
             [clojure.tools.logging :as log]

@@ -1,4 +1,4 @@
-(ns darbylaw.web.ui.post-list
+(ns darbylaw.web.ui.mailing
   (:require [reagent-mui.components :as mui]
             [re-frame.core :as rf]
             [darbylaw.web.ui :as ui]
