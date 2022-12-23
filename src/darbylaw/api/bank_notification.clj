@@ -167,7 +167,7 @@
     (do
       (xt-util/exec-tx xtdb-node
         (concat
-          [[::xt/put {:type :probate.bank-letter
+          [[::xt/put {:type :probate.received-bank-letter
                       :xt/id letter-id
                       :case-id case-id
                       :bank-id bank-id
