@@ -3,8 +3,8 @@
             [mount.core :as mount]
             [clojure.tools.logging :as log])
   (:import (com.amazonaws.services.s3 AmazonS3ClientBuilder AmazonS3)
-           (java.io File)
-           (com.amazonaws.services.s3.model AmazonS3Exception ListObjectsRequest GetObjectRequest)))
+           (java.io File FileInputStream)
+           (com.amazonaws.services.s3.model AmazonS3Exception ListObjectsRequest GetObjectRequest ObjectMetadata)))
 
 ; Usage of AWS Java has been preferred over the `cognitect.aws` library, because:
 ;
@@ -21,10 +21,18 @@
 (mount/defstate ^String bucket-name
   :start (get-in config/config [:doc-store :s3-bucket]))
 
-(defn store [^String key ^File f]
-  (when-not (.doesBucketExistV2 s3 bucket-name)
-    (.createBucket s3 bucket-name))
-  (.putObject s3 bucket-name key f))
+(defn store
+  ([^String key ^File f]
+   (when-not (.doesBucketExistV2 s3 bucket-name)
+      (.createBucket s3 bucket-name))
+   (.putObject s3 bucket-name key f))
+  ([^String key ^File f {:keys [content-type]}]
+   (when-not (.doesBucketExistV2 s3 bucket-name)
+      (.createBucket s3 bucket-name))
+   (with-open [fs (FileInputStream. f)]
+     (let [metadata (doto (ObjectMetadata.)
+                      (.setContentType content-type))]
+       (.putObject s3 bucket-name key fs metadata)))))
 
 (comment
   ; Dummy implemenatation for dev tests
@@ -33,14 +41,16 @@
     (Thread/sleep 1000)))
 
 
-(defn fetch [key]
+(defn fetch-raw [key]
   (try
-    (-> (.getObject s3 ^String bucket-name ^String key)
-      (.getObjectContent))
+    (.getObject s3 ^String bucket-name ^String key)
     (catch AmazonS3Exception exc
       (if (= (.getErrorCode exc) "NoSuchKey")
         (throw (ex-info "Not found" {:error ::not-found} exc))
         (throw exc)))))
+
+(defn fetch [key]
+  (-> key fetch-raw .getObjectContent))
 
 (defn fetch-to-file [key ^File file]
   (try

@@ -4,7 +4,9 @@
     [fork.re-frame :as fork]
     [re-frame.core :as rf]
     [reagent.core :as r]
+    [darbylaw.web.ui.case-model :as case-model]
     [darbylaw.web.ui.funeral.model :as funeral-model]
+    [darbylaw.web.ui.funeral.util :as util]
     [darbylaw.web.ui :as ui]
     [darbylaw.web.util.form :as form]
     [vlad.core :as v]))
@@ -52,38 +54,25 @@
         :checked (:paid? values false)
         :on-change #(handle-change %)}])}])
 
-(defn file-upload-field
-  [fork-args
-   {:keys [name label] :as config}]
-  (assert name "Missing required arg :name")
-  (let [props {:name name
-               :label label
-               :full-width true}
-        prop-overrides (dissoc config :name :label :button-config)
+(defn funeral-file-url
+  [case-id expense-id]
+  (str "/api/case/" case-id "/funeral/other/" expense-id "/receipt"))
 
-        button-label (or (get-in config [:button-config :label])
-                         "choose file")
-        button-props {:variant :contained}
-        button-prop-overrides (-> config :button-config (dissoc :label))]
+(defn receipt-field [fork-args]
+  (let [case-id @(rf/subscribe [::case-model/case-id])
+        expense-id @(rf/subscribe [::funeral-model/dialog-info])]
     [mui/stack {:direction :row
-                :spacing 1}
-     [form/text-field fork-args
-      (merge props prop-overrides)]
-     [mui/button
-      (merge button-props button-prop-overrides)
-      button-label]]))
-
-(defn recipt-field [fork-args]
-  [file-upload-field fork-args
-   {:name :recipt
-    :label "recipt"
-    :button-config {:on-click #(println "test")}}])
-
-(defn invoice-field [fork-args]
-  [file-upload-field fork-args
-   {:name :invoice
-    :label "invoice"
-    :button-config {:on-click #(println "test")}}])
+                :spacing 1
+                :justify-content :space-between}
+     [util/upload-button fork-args
+      {:name :receipt
+       :full-width true}]
+     [util/download-button
+      {:full-width true
+       :href (funeral-file-url case-id expense-id)
+       :disabled (and (not (nil? expense-id))
+                      (let [expense @(rf/subscribe [::funeral-model/expense expense-id])]
+                        (not (:receipt-uploaded expense))))}]]))
 
 (defn paid-by-field [fork-args]
   [form/text-field fork-args
@@ -102,8 +91,11 @@
      [amount-field fork-args]
      [paid-field fork-args]]
 
-    [recipt-field fork-args]
-    [paid-by-field fork-args]
+    (when (:paid? values)
+      [:<>
+       [paid-by-field fork-args]
+       [mui/typography "receipt"]
+       [receipt-field fork-args]])
       
     [submit-buttons]]])
 
