@@ -6,7 +6,6 @@
             [darbylaw.api.util.xtdb :as xt-util]
             [darbylaw.api.util.http :as http]
             [darbylaw.api.util.files :as files-util]
-            [darbylaw.api.bank-notification.post-task :as post-task]
             [darbylaw.api.bank-notification.letter-store :as letter-store]
             [darbylaw.api.util.tx-fns :as tx-fns]
             [darbylaw.api.case-history :as case-history]
@@ -53,6 +52,8 @@
                       assert-letter-not-exists-tx
                       [[::xt/put {:type :probate.bank-notification-letter
                                   :xt/id letter-id
+                                  :case-id case-id
+                                  :bank-id bank-id
                                   :author :generated
                                   :by (:username user)}]]
                       (tx-fns/set-value asset-id [:notification-letter] letter-id)
@@ -202,18 +203,6 @@
            :bank-id bank-id})))
     {:status 204}))
 
-(defn get-post-tasks [{:keys [xtdb-node]}]
-  {:status http/status-200-ok
-   :body (->> (xt/q (xt/db xtdb-node)
-                '{:find [(pull task [:case-id
-                                     :bank-id
-                                     :post-state
-                                     :created-at])]
-                  :where [[task :type task-type]]
-                  :in [task-type]}
-                post-task/task-type)
-           (map (fn [[post-task]] (-> post-task))))})
-
 (defn routes []
   [["/case/:case-id/bank/:bank-id"
     ["/generate-notification-letter" {:post {:handler generate-notification-letter}}]
@@ -223,8 +212,7 @@
     ["/approve-notification-letter/:letter-id" {:post {:handler approve-notification-letter}}]
     ["/valuation-pdf" {:get {:handler get-valuation}
                        :post {:handler post-valuation}}]
-    ["/mark-values-confirmed" {:post {:handler mark-values-confirmed}}]]
-   ["/post-tasks" {:get {:handler get-post-tasks}}]])
+    ["/mark-values-confirmed" {:post {:handler mark-values-confirmed}}]]])
 
 (comment
   (def all-case-data

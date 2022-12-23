@@ -8,7 +8,9 @@
             [darbylaw.api.services.post :as post]
             [mount.core :as mount]
             [darbylaw.xtdb-node :refer [xtdb-node]]
-            [darbylaw.api.settings :as settings])
+            [darbylaw.api.settings :as settings]
+            [darbylaw.api.util.tx-fns :as tx-fns]
+            [darbylaw.api.util.http :as http])
   (:import (java.util.concurrent Executors ScheduledExecutorService TimeUnit ScheduledFuture)
            (clojure.lang ExceptionInfo)))
 
@@ -19,78 +21,97 @@
       (log/info "Posting letters has been disabled."))
     disabled?))
 
-(def task-type :probate.bank-notification-post-task)
-
-(defn create-post-task! [xtdb-node case-id bank-id]
-  (let [task-id {:type task-type
-                 :case-id case-id
-                 :bank-id bank-id}
-        tx (xt-util/exec-tx xtdb-node
-             [[::xt/match task-id nil]
-              [::xt/put {:type task-type
-                         :xt/id task-id
-                         :case-id case-id
-                         :bank-id bank-id
-                         :post-state :scheduled
-                         :created-at (xt-util/now)}]])]
-    (xt/tx-committed? xtdb-node tx)))
-
-(defn exec-post-tasks! [xtdb-node]
-  (log/debug "exec-post-tasks! starts")
-  (let [scheduled-tasks (->> (xt/q (xt/db xtdb-node)
-                               '{:find [(pull task [*])]
-                                 :where [[task :type task-type]
-                                         [task :post-state :scheduled]]
-                                 :in [task-type]}
-                               task-type)
-                          (map first))]
+(defn upload-mail!* [xtdb-node]
+  (let [letters (->> (xt/q (xt/db xtdb-node)
+                       '{:find [(pull letter [*])]
+                         :where [[letter :type :probate.bank-notification-letter]
+                                 [letter :approved]
+                                 (not [letter :upload-state])]})
+                  (map first))]
     (when (and (not (disabled? xtdb-node))
-               (seq scheduled-tasks)
+               (seq letters)
                (doc-store/available?)
                (post/available?))
-      (doseq [{:keys [case-id bank-id] :as task-data} scheduled-tasks]
-        (let [tx (xt-util/exec-tx xtdb-node
-                   [[::xt/match (:xt/id task-data) task-data]
-                    [::xt/put (-> task-data
-                                (assoc :post-state :uploading))]])
-              own-task? (xt/tx-committed? xtdb-node tx)]
-          (when own-task?
+      (doseq [letter-data letters]
+        (let [{:keys [case-id bank-id]
+               letter-id :xt/id} letter-data
+              tx (xt-util/exec-tx xtdb-node
+                   (concat
+                     [[::xt/match (:xt/id letter-data) letter-data]]
+                     (tx-fns/set-value letter-id [:upload-state] :uploading)))
+              own? (xt/tx-committed? xtdb-node tx)]
+          (when own?
             (try
-              (let [temp-file (files-util/create-temp-file nil ".pdf")
-                    filename (str "bank-notification." case-id "." (name bank-id) ".pdf")]
+              (let [temp-file (files-util/create-temp-file letter-id ".pdf")]
                 (try
                   (doc-store/fetch-to-file
-                    (letter-store/s3-key case-id bank-id ".pdf")
+                    (letter-store/s3-key case-id bank-id letter-id ".pdf")
                     temp-file)
-                  (post/post-letter (.getCanonicalPath temp-file) filename)
-                  (log/debug "Uploaded file for posting: " filename)
+                  (let [remote-filename (str letter-id ".pdf")]
+                    (post/post-letter (.getCanonicalPath temp-file) remote-filename)
+                    (log/debug "Uploaded file for posting: " remote-filename))
                   (xt-util/exec-tx xtdb-node
-                    [[::xt/put (-> task-data
-                                 (assoc :post-state :uploaded))]])
+                    (tx-fns/set-value letter-id [:upload-state] :uploaded))
                   (catch ExceptionInfo exc
                     (if (= (-> exc ex-data :error) ::doc-store/not-found)
                       (xt-util/exec-tx xtdb-node
-                        [[::xt/put (-> task-data
-                                     (assoc :post-state :failed))]])
+                        (tx-fns/set-value letter-id [:upload-state] :not-found))
                       (throw exc)))
                   (finally
                     (.delete temp-file))))
               (catch Exception exc
-                (log/error exc "Error while uploading letter; will retry later.")
+                (log/warn exc "Error while uploading letter; will retry later.")
                 (xt-util/exec-tx xtdb-node
-                  [[::xt/put (-> task-data
-                               (assoc :post-state :retry-upload))]]))))))))
-  (log/debug "exec-post-tasks! ends"))
+                  (tx-fns/set-value letter-id [:upload-state] :retry-upload))))))))))
 
-(mount/defstate ^ScheduledExecutorService scheduled-executor
-  :start (Executors/newSingleThreadScheduledExecutor)
-  :stop (.shutdown scheduled-executor))
+(def upload-mail-ongoing?
+  (atom false))
 
-(mount/defstate ^ScheduledFuture post-task
-  :start (.scheduleWithFixedDelay scheduled-executor
-           (fn [] (exec-post-tasks! xtdb-node))
-           10 10 TimeUnit/SECONDS)
-  :stop (.cancel post-task false))
+(defn upload-mail! [xtdb-node]
+  (log/debug "upload-mail! starts")
+  (when (compare-and-set! upload-mail-ongoing? false true)
+    (try
+      (upload-mail!* xtdb-node)
+      (finally
+        (reset! upload-mail-ongoing? false)
+        (log/debug "upload-mail! ends")))))
+
+(def upload-mail-agent
+  (agent nil))
+
+(defn post-upload-mail [{:keys [xtdb-node]}]
+  (if @upload-mail-ongoing?
+    {:status http/status-429-too-many-requests}
+    (do
+      (send-off upload-mail-agent (fn [_]
+                                    (upload-mail! xtdb-node)))
+      {:status http/status-204-no-content})))
+
+(defn get-mailing-items [{:keys [xtdb-node]}]
+  {:status http/status-200-ok
+   :body (->> (xt/q (xt/db xtdb-node)
+                '{:find [(pull letter [*
+                                       ({:case-id [(:xt/id {:as :id})
+                                                   :reference]}
+                                        {:as :case})])]
+                  :where [[letter :type :probate.bank-notification-letter]]})
+           (map first))})
+
+(defn routes []
+  [["/mailing/run" {:post {:handler post-upload-mail}}]
+   ["/mailing/items" {:get {:handler get-mailing-items}}]])
+
+; Periodic execution disabled.
+
+#_(mount/defstate ^ScheduledExecutorService scheduled-executor
+    :start (Executors/newSingleThreadScheduledExecutor)
+    :stop (.shutdown scheduled-executor))
+
+#_(mount/defstate ^ScheduledFuture post-task
+    :start (.scheduleWithFixedDelay scheduled-executor
+             (fn [] (upload-mail! xtdb-node))
+             10 10 TimeUnit/SECONDS)
+    :stop (.cancel post-task false))
 
 (comment
   (mount/stop #'post-task)
@@ -98,23 +119,4 @@
   (.isCancelled post-task))
 
 (comment
-  (create-post-task! xtdb-node :dummy-case-id :dummy-bank-id)
-  (create-post-task! xtdb-node
-    #uuid"041c820a-2e09-4b73-8452-0d0c3feb281b"
-    :britannia-bereavement-team)
-  (exec-post-tasks! xtdb-node)
-
-  (def task-data
-    (xt/q (xt/db xtdb-node)
-      '{:find [(pull task [*])]
-        :where [[task :type task-type]
-                [task :bank-id :britannia-bereavement-team]]
-        :in [task-type]}
-      task-type))
-
-  (xt-util/exec-tx xtdb-node
-    [[::xt/put (-> task-data
-                 ffirst
-                 (assoc :post-state :scheduled))]])
-
-  ,)
+  (upload-mail! xtdb-node))
