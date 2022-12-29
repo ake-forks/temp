@@ -209,13 +209,19 @@
                               personal-representative--props}
                              {:bank-accounts [:bank-id
                                               :accounts
-                                              :notification-letter
-                                              :valuation-letter-uploaded]}
+                                              {:notification-letter ['(:xt/id {:as :id})
+                                                                     :author
+                                                                     :by
+                                                                     :approved]}
+                                              {:valuation-letter [:uploaded-by
+                                                                  :uploaded-at]}
+                                              ]}
                              {:buildsoc-accounts [:buildsoc-id
                                                   :accounts-unknown
                                                   :accounts
                                                   :notification-letter
                                                   :valuation-letter-uploaded]}])]
+
    :where '[[case :type :probate.case]
             [case :xt/id case-id]]
    :in '[case-id]})

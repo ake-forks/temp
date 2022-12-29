@@ -7,7 +7,8 @@
             [clojure.java.io :as io]))
 
 (defn letter-template-query [case-id bank-id]
-  [{:find ['(pull case [:deceased.info])
+  [{:find ['(pull case [:reference
+                        :deceased.info])
            '(pull bank-accounts [:accounts])]
     :where '[[case :type :probate.case]
              [case :xt/id case-id]

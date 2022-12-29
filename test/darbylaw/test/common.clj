@@ -6,7 +6,8 @@
             [darbylaw.handler :refer [ring-handler]]
             [darbylaw.core :refer [web-server]]
             [xtdb.api :as xt]
-            [cognitect.transit :as transit]))
+            [cognitect.transit :as transit]
+            [clojure.string :as str]))
 
 (def test-states
   {#'profile {:start (fn [] :test)}
@@ -41,7 +42,9 @@
 
 (defn read-transit-body [resp]
   (cond-> resp
-    (= 200 (:status resp))
+    (let [content-type (get-in resp [:headers "Content-Type"])]
+      (and (some? content-type)
+           (str/includes? content-type "application/transit+json")))
     (update :body #(transit/read (transit/reader % :json)))))
 
 (defn run-request [req]

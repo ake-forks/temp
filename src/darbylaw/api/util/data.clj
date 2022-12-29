@@ -1,5 +1,6 @@
 (ns darbylaw.api.util.data
-  (:require [camel-snake-kebab.core :as csk]))
+  (:require [camel-snake-kebab.core :as csk]
+            [clojure.string :as str]))
 
 (defn keys-to-camel-case [m]
   (clojure.walk/postwalk
@@ -13,3 +14,12 @@
 
 (comment
   (keys-to-camel-case {:to.camel-case :ignore-value :b {:to-camel.case 2} :ns/k :ignore-qualified}))
+
+(defn strip-end [s end]
+  (cond-> s
+    (str/ends-with? s end)
+    (subs 0 (- (count s) (count end)))))
+
+(comment
+  (strip-end "hello" "l")
+  (strip-end "hello" "lo"))
