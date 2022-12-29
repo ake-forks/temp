@@ -205,13 +205,17 @@
                              :funeral-account
                              :funeral-expense
                              :bank
-                             :buildsoc-accounts
                              {:ref/personal-representative.info.id
                               personal-representative--props}
                              {:bank-accounts [:bank-id
                                               :accounts
                                               :notification-letter
-                                              :valuation-letter-uploaded]}])]
+                                              :valuation-letter-uploaded]}
+                             {:buildsoc-accounts [:buildsoc-id
+                                                  :accounts-unknown
+                                                  :accounts
+                                                  :notification-letter
+                                                  :valuation-letter-uploaded]}])]
    :where '[[case :type :probate.case]
             [case :xt/id case-id]]
    :in '[case-id]})

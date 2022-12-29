@@ -15,7 +15,8 @@
 
 (defn dialog []
   (let [dialog-data @(rf/subscribe [::model/get-dialog])
-        stage :valuation #_(:stage dialog-data)]
+        stage (model/get-process-stage (:id dialog-data))
+        all-buildsocs @(rf/subscribe [::model/building-societies])]
     [mui/dialog
      {:open (or (:open dialog-data) false)
       :maxWidth false

@@ -24,7 +24,7 @@
 
 (rf/reg-sub ::building-societies
   (fn [db]
-    (:building-societies (:current-case db))))
+    (:buildsoc-accounts (:current-case db))))
 
 (rf/reg-sub ::get-dialog
   (fn [db]
@@ -34,15 +34,21 @@
 
 (defn build-soc-data [id]
   (let [all-data @(rf/subscribe [::building-societies])]
-    (get all-data id)))
+    (filter #(= (:buildsoc-id %) id) all-data)))
 
 ;derive stage so far without relying on :notification-status
 (defn get-process-stage [id]
-  (let [all-buildsocs @(rf/subscribe [::building-societies])]
-    (assert (some? all-buildsocs) "building society data not found")
-    (if (contains? (:by-buildsoc all-buildsocs) id)
-      :edit
-      :add)))
+  (let [all-buildsocs @(rf/subscribe [::building-societies])
+        dialog @(rf/subscribe [::get-dialog])]
+    (if (= (:stage dialog) :add)
+      :add
+      (if (some? (filter #(= :buildsoc-id %) all-buildsocs))
+        (if (= (first (:notification-letter (first (build-soc-data id)))) :started)
+          :notify
+          (if (= (first (:notification-letter (first (build-soc-data id)))) :approved)
+            :valuation
+            :edit))))))
+
 ;:notify
 ; valuation)))
 
@@ -52,7 +58,7 @@
     (assoc-in db [:dialog/building-society]
       {:open true
        :id id
-       :stage :notify #_(get-process-stage id)})))
+       :stage :edit #_(get-process-stage id)})))
 
 (rf/reg-event-db
   ::show-add-dialog

@@ -10,8 +10,10 @@
     [darbylaw.web.ui.buildingsociety.shared :as shared]))
 
 (rf/reg-event-fx ::add-buildsoc-success
-  (fn [{:keys [db]} [_ {:keys [path]} response]]
-    {:db (fork/set-submitting db path false)}))
+  (fn [{:keys [db]} [_ case-id {:keys [path]} response]]
+    {:db (fork/set-submitting db path false)
+     :fx [[:dispatch [::model/hide-dialog]]
+          [:dispatch [::case-model/load-case! case-id]]]}))
 
 (rf/reg-event-fx ::add-buildsoc-failure
   (fn [{:keys [db]} [_ {:keys [path]} response]]
@@ -28,7 +30,7 @@
        {:method :post
         :uri (str "/api/buildingsociety/" case-id "/add-buildsoc-accounts")
         :params (transform-on-submit values)
-        :on-success [::add-buildsoc-success fork-params]
+        :on-success [::add-buildsoc-success case-id fork-params]
         :on-failure [::add-buildsoc-failure fork-params]})}))
 (rf/reg-event-fx ::submit!
   (fn [{:keys [db]} [_ case-id fork-params]]
@@ -63,13 +65,13 @@
           (if (:accounts-unknown values)
             [:<>]
             [form/account-array-component fork-args])]]]]]
-     [mui/dialog-actions [form/submit-buttons]]]))
+     [mui/dialog-actions
+      [form/submit-buttons {:left-label "cancel" :right-label "save"}]]]))
 
 
 
 (defn panel []
-  (let [current-case @(rf/subscribe [::case-model/current-case])
-        case-id (:id current-case)]
+  (let [case-id @(rf/subscribe [::case-model/case-id])]
     [form/form layout {:accounts [{}]} #(rf/dispatch [::submit! case-id %])]))
 
 

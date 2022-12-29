@@ -43,11 +43,11 @@
                                       0
                                       (js/parseFloat (:estimated-value account)))) accounts))))]]]
 
-     [mui/dialog
-      {:open (if (= bank-dialog bank-id) true false)
-       :maxWidth false
-       :fullWidth false}
-      [bank-dialog/base-dialog]]
+     #_[mui/dialog
+        {:open (if (= bank-dialog bank-id) true false)
+         :maxWidth false
+         :fullWidth false}
+        [bank-dialog/base-dialog]]
 
      [mui/divider {:variant "middle"}]]))
 
@@ -105,9 +105,10 @@
                       :noWrap true
                       :sx {:width "100%"}}
       title]
-     [mui/typography {:variant :body1
-                      :sx {:font-weight :bold}}
-      (str "£" (format-currency value))]]]
+     (if (number? value)
+       [mui/typography {:variant :body1
+                        :sx {:font-weight :bold}}
+        (str "£" (format-currency value))])]]
    [mui/divider]])
 
 (defn funeral-card []
@@ -147,18 +148,20 @@
        [funeral-dialog/main-dialog])]))
 
 (defn buildsoc-card []
-  [asset-card {:title "building societies"}
-   [buildsoc-dialog/dialog]
-   (map
-     (fn [buildsoc]
-       (let [id (:buildsoc-id buildsoc)]
-         [asset-item {:title (:common-name buildsoc)
-                      :value 100
-                      :on-click #(rf/dispatch [::buildsoc-model/show-process-dialog id])}]))
-     buildsoc-model/buildsoc-accounts)
-   [asset-add-button
-    {:title "add building society"
-     :on-click #(rf/dispatch [::buildsoc-model/show-add-dialog])}]])
+  (let [current-case @(rf/subscribe [::case-model/current-case])]
+    [asset-card {:title "building societies"}
+     [buildsoc-dialog/dialog]
+     (map
+       (fn [buildsoc]
+         (let [id (:buildsoc-id buildsoc)]
+           ^{:key id}
+           [asset-item {:title (:buildsoc-id buildsoc)
+                        :value (reduce + (map (fn [acc] (js/parseInt (:estimated-value acc))) (:accounts buildsoc)))
+                        :on-click #(rf/dispatch [::buildsoc-model/show-process-dialog id])}]))
+       (:buildsoc-accounts current-case))
+     [asset-add-button
+      {:title "add building society"
+       :on-click #(rf/dispatch [::buildsoc-model/show-add-dialog])}]]))
 
 
 (defn heading [current-case]
@@ -187,17 +190,17 @@
 
      [mui/stack {:spacing 2 :sx {:pt "1rem" :pb "2rem"}}
       [mui/typography {:variant :h5} "estate details"]
-      [mui/dialog
-       {:open (= bank-modal :add-bank)
-        :maxWidth :md
-        :fullWidth true}
-       [bank-dialog/base-dialog]]
+      #_[mui/dialog
+         {:open (= bank-modal :add-bank)
+          :maxWidth :md
+          :fullWidth true}
+         [bank-dialog/base-dialog]]
 
       [mui/stack {:direction :row :spacing 1 :style {:margin-top "0.5rem"}}
        [mui/grid {:container true :spacing 1 :columns 3
                   :style {:width "70%"}}
         [mui/grid {:item true :xs 1}
-         [bank-card current-case]]
+         #_[bank-card current-case]]
         [mui/grid {:item true :xs 1}
          [funeral-card current-case]]
         [mui/grid {:item true :xs 1}

@@ -5,10 +5,28 @@
     [reagent-mui.components :as mui]
     [darbylaw.web.ui.buildingsociety.shared :as shared]
     [darbylaw.web.ui.buildingsociety.model :as model]
+    [darbylaw.web.ui.case-model :as case-model]
     [reagent.core :as r]))
 
+(rf/reg-event-fx [::send-notification-success]
+  (fn [{:keys [db]} [_ case-id {:keys [path]}]]
+    {:fx [[:dispatch [::model/hide-dialog]]
+          [:dispatch [::case-model/load-case! case-id]]]}))
 
-(defn submit-buttons []
+(rf/reg-event-fx ::send-notification-failure
+  (fn [{:keys [db]} [_ {:keys [path]} response]]
+    {:db (do (assoc db :failure response))}))
+(rf/reg-event-fx ::send-notification
+  (fn [{:keys [db]} [_ case-id buildsoc-id]]
+    {:http-xhrio
+     (ui/build-http
+       {:method :post
+        :uri (str "/api/buildingsociety/" case-id "/approve-notification")
+        :params {:buildsoc-id buildsoc-id}
+        :on-success [::send-notification-success case-id]
+        :on-failure [::send-notification-failure]})}))
+
+(defn submit-buttons [case-id buildsoc-id]
   ;TODO amalgamate with buttons in form ns
   [mui/stack {:spacing 1
               :direction :row
@@ -21,7 +39,8 @@
    [mui/button {:type :submit
                 :variant :contained
                 :full-width true
-                :startIcon (r/as-element [ui/icon-send])}
+                :startIcon (r/as-element [ui/icon-send])
+                :on-click #(rf/dispatch [::send-notification case-id buildsoc-id])}
     "send letter"]])
 
 (defn bank-notify [author]
@@ -98,7 +117,9 @@
 
 
 (defn panel []
-  (let [dialog-data @(rf/subscribe [::model/get-dialog])]
+  (let [dialog-data @(rf/subscribe [::model/get-dialog])
+        buildsoc-id (:id dialog-data)
+        case-id @(rf/subscribe [::case-model/case-id])]
     [mui/box shared/tall-dialog-props
      [mui/stack {:spacing 1
                  :direction :row
@@ -115,4 +136,4 @@
        [mui/dialog-content
         [bank-notify :unknown-user]]
        [mui/dialog-actions
-        [submit-buttons]]]]]))
+        [submit-buttons case-id buildsoc-id]]]]]))

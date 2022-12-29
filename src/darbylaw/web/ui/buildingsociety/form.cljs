@@ -107,14 +107,14 @@
                                                       :onChange handle-change}])
                             :label "account details not known"}]])
 
-(defn submit-buttons []
+(defn submit-buttons [{:keys [left-label right-label]}]
   [mui/stack {:spacing 1
               :direction :row
               :justify-content :space-between
               :sx {:width 1}}
    [mui/button {:onClick #(rf/dispatch [::model/hide-dialog])
-                :variant :contained :full-width true} "cancel"]
-   [mui/button {:type :submit :variant :contained :full-width true} "save"]])
+                :variant :contained :full-width true} left-label]
+   [mui/button {:type :submit :variant :contained :full-width true} right-label]])
 
 
 (defn form-component [{:keys [values handle-submit] :as fork-args}]

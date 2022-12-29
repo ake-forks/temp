@@ -39,8 +39,8 @@
     [close-button]]
    [stepper stage]])
 
-(defn submit-buttons []
-  [form/submit-buttons])
+(defn submit-buttons [labels]
+  [form/submit-buttons labels])
 
 (def narrow-dialog-props
   {:style {:height "40vh"}
