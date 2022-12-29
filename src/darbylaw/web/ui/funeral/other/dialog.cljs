@@ -4,6 +4,7 @@
     [fork.re-frame :as fork]
     [re-frame.core :as rf]
     [darbylaw.web.ui.funeral.model :as funeral-model]
+    [darbylaw.web.ui.funeral.util :as util]
     [darbylaw.web.ui.case-model :as case-model]
     [darbylaw.web.ui :as ui]
     [darbylaw.web.ui.funeral.other.form :as other-form]))
@@ -13,15 +14,18 @@
 
 (rf/reg-event-fx ::add-expense
   (fn [{:keys [db]} [_ case-id {:keys [path values] :as fork-params}]]
-    {:db (fork/set-submitting db path true)
-     :http-xhrio
-     (ui/build-http
-       {:method :post
-        :uri (str "/api/case/" case-id "/funeral/other")
-        :params values
-        ;; TODO:
-        :on-success [::submit-success case-id fork-params]
-        :on-failure [::submit-failure case-id fork-params]})}))
+    (let [query-values (dissoc values :receipt)
+          file (:receipt values)]
+      {:db (fork/set-submitting db path true)
+       :http-xhrio
+       (ui/build-http
+         {:method :post
+          :uri (str "/api/case/" case-id "/funeral/other")
+          :url-params query-values
+          :body (when file (util/->FormData {:file file}))
+          ;; TODO:
+          :on-success [::submit-success case-id fork-params]
+          :on-failure [::submit-failure case-id fork-params]})})))
 
 (rf/reg-event-fx ::submit-success
   (fn [{:keys [db]} [_ case-id {:keys [path values]}]]
@@ -40,15 +44,18 @@
 (rf/reg-event-fx ::edit-expense
   (fn [{:keys [db]} [_ case-id expense-id
                      {:keys [path values] :as fork-params}]]
-    {:db (fork/set-submitting db path true)
-     :http-xhrio
-     (ui/build-http
-       {:method :put
-        :uri (str "/api/case/" case-id "/funeral/other/" expense-id)
-        :params values
-        ;; TODO:
-        :on-success [::submit-success case-id fork-params]
-        :on-failure [::submit-failure case-id fork-params]})}))
+    (let [query-values (dissoc values :receipt)
+          file (:receipt values)]
+      {:db (fork/set-submitting db path true)
+       :http-xhrio
+       (ui/build-http
+         {:method :put
+          :uri (str "/api/case/" case-id "/funeral/other/" expense-id)
+          :url-params query-values
+          :body (when file (util/->FormData {:file file}))
+          ;; TODO:
+          :on-success [::submit-success case-id fork-params]
+          :on-failure [::submit-failure case-id fork-params]})})))
 
 (rf/reg-event-fx ::submit-success
   (fn [{:keys [db]} [_ case-id {:keys [path values]}]]

@@ -4,7 +4,9 @@
     [fork.re-frame :as fork]
     [re-frame.core :as rf]
     [reagent.core :as r]
+    [darbylaw.web.ui.case-model :as case-model]
     [darbylaw.web.ui.funeral.model :as funeral-model]
+    [darbylaw.web.ui.funeral.util :as util]
     [darbylaw.web.ui :as ui]
     [darbylaw.web.util.form :as form]))
 
@@ -51,38 +53,37 @@
         :checked (:paid? values false)
         :on-change #(handle-change %)}])}])
 
-(defn file-upload-field
-  [fork-args
-   {:keys [name label] :as config}]
-  (assert name "Missing required arg :name")
-  (let [props {:name name
-               :label label
-               :full-width true}
-        prop-overrides (dissoc config :name :label :button-config)
+(defn funeral-file-url
+  [case-id file-name]
+  (str "/api/case/" case-id "/funeral/account/" file-name))
 
-        button-label (or (get-in config [:button-config :label])
-                         "choose file")
-        button-props {:variant :contained}
-        button-prop-overrides (-> config :button-config (dissoc :label))]
+(defn receipt-field [fork-args]
+  (let [case-id @(rf/subscribe [::case-model/case-id])
+        account @(rf/subscribe [::funeral-model/account])]
     [mui/stack {:direction :row
-                :spacing 1}
-     [form/text-field fork-args
-      (merge props prop-overrides)]
-     [mui/button
-      (merge button-props button-prop-overrides)
-      button-label]]))
-
-(defn recipt-field [fork-args]
-  [file-upload-field fork-args
-   {:name :recipt
-    :label "recipt"
-    :button-config {:on-click #(println "test")}}])
+                :spacing 1
+                :justify-content :space-between}
+     [util/upload-button fork-args
+      {:name :receipt
+       :full-width true}]
+     [util/download-button
+      {:full-width true
+       :href (funeral-file-url case-id "receipt")
+       :disabled (not (:receipt-uploaded account))}]]))
 
 (defn invoice-field [fork-args]
-  [file-upload-field fork-args
-   {:name :invoice
-    :label "invoice"
-    :button-config {:on-click #(println "test")}}])
+  (let [case-id @(rf/subscribe [::case-model/case-id])
+        account @(rf/subscribe [::funeral-model/account])]
+    [mui/stack {:direction :row
+                :spacing 1
+                :justify-content :space-between}
+     [util/upload-button fork-args
+      {:name :invoice
+       :full-width true}]
+     [util/download-button
+      {:full-width true
+       :href (funeral-file-url case-id "invoice")
+       :disabled (not (:invoice-uploaded account))}]]))
 
 (defn paid-by-field [fork-args]
   [form/text-field fork-args
@@ -103,10 +104,13 @@
 
     (if (:paid? values)
       [:<>
-       [recipt-field fork-args]
-       [paid-by-field fork-args]]
+       [paid-by-field fork-args]
+       [mui/typography "receipt"]
+       [receipt-field fork-args]]
 
-      [invoice-field fork-args])
+      [:<>
+       [mui/typography "invoice"]
+       [invoice-field fork-args]])
       
     [submit-buttons]]])
 
