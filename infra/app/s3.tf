@@ -14,6 +14,7 @@ resource "aws_s3_bucket" "doc-store" {
 # TODO: Setup tighter controlled permissions?
 resource "aws_s3_bucket_acl" "doc-store" {
   bucket = aws_s3_bucket.doc-store.bucket
+  acl    = "private"
 
   lifecycle {
     prevent_destroy = true
