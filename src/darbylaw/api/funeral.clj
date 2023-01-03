@@ -142,7 +142,7 @@
    ["/account"
     {:put {:handler upsert-funeral-account
            :parameters {:query funeral-account-schema}}}]
-   ["/account/"
+   ["/account"
     ["/receipt"
      {:get {:handler (get-funeral-file "receipt")}}]
     ["/invoice"
