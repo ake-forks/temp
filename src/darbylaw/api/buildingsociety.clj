@@ -20,7 +20,7 @@
        (let [asset (xtdb.api/entity (xtdb.api/db ctx) asset-id)]
          [[::xt/put (merge asset {:accounts accounts
                                   :accounts-unknown unknown
-                                  :notification-letter [:started]})]]))))
+                                  :notification-status :started})]]))))
 
 (defn update-buildsoc-accounts [op {:keys [xtdb-node user path-params body-params]}]
   (let [buildsoc-id (:buildsoc-id body-params)
@@ -50,8 +50,7 @@
                                    :op op
                                    :buildsoc-id buildsoc-id
                                    :accounts accounts}))))
-    {:status http/status-200-ok
-     :body accounts-unknown}))
+    {:status http/status-204-no-content}))
 
 (defn notification-letter-status [op {:keys [xtdb-node user path-params body-params]}]
   (let [buildsoc-id (:buildsoc-id body-params)
@@ -67,18 +66,6 @@
             :approved (tx-fns/set-value asset-id [:notification-letter] [:approved]))))
       {:status http/status-204-no-content})))
 
-
-(defn approve-notification-letter [op {:keys [xtdb-node user path-params body-params]}]
-  (let [buildsoc-id (:buildsoc-id body-params)
-        case-id (parse-uuid (:case-id path-params))
-        asset-id {:type :probate.buildsoc-accounts
-                  :case-id case-id
-                  :buildsoc-id buildsoc-id}]
-    (do
-      (xt-util/exec-tx xtdb-node
-        (concat
-          (tx-fns/set-value asset-id [:notification-letter] [:approved])))
-      {:status http/status-204-no-content})))
 
 
 (def body-schema
@@ -106,11 +93,4 @@
     ["/complete-buildsoc-accounts"
      {:post {:handler (partial update-buildsoc-accounts :complete)
              :coercion reitit.coercion.malli/coercion
-             :parameters {:body body-schema}}}]
-    ["/approve-notification"
-     {:post {:handler (partial notification-letter-status :approved)
-             :coercion reitit.coercion.malli/coercion
-             :parameters {:body
-                          [:map
-                           [:notification-status {:optional true} :keyword]
-                           [:buildsoc-id :keyword]]}}}]]])
+             :parameters {:body body-schema}}}]]])

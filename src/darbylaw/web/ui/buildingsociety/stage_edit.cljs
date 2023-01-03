@@ -10,9 +10,10 @@
     [darbylaw.web.ui.case-model :as case-model]))
 
 (rf/reg-event-fx ::complete-buildsoc-success
-  (fn [{:keys [db]} [_ case-id {:keys [path]} response]]
+  (fn [{:keys [db]} [_ case-id {:keys [path values]} response]]
     {:db (fork/set-submitting db path false)
-     :fx [[:dispatch [::model/hide-dialog]]
+     :fx [[:dispatch [::model/generate-notification case-id (:buildsoc-id values)]]
+          [:dispatch [::model/hide-dialog]]
           [:dispatch [::case-model/load-case! case-id]]]}))
 
 (rf/reg-event-fx ::complete-buildsoc-failure
@@ -32,7 +33,7 @@
      (ui/build-http
        {:method :post
         :uri (str "/api/buildingsociety/" case-id "/complete-buildsoc-accounts")
-        :params values
+        :params (transform-on-submit values)
         :on-success [::complete-buildsoc-success case-id fork-params]
         :on-failure [::complete-buildsoc-failure fork-params]})}))
 
@@ -53,7 +54,7 @@
        [mui/stack {:justify-content :space-between
                    :sx {:height 1}}
         [mui/stack {:spacing 1}
-
+         [mui/typography {:variant :h5} "add accounts"]
          [mui/typography {:variant :body1}
           (str "To the best of your knowledge, enter the details for your late "
             (-> current-case :deceased :relationship)
@@ -64,7 +65,6 @@
          (if (:accounts-unknown values)
            [:<>]
            [form/account-array-component fork-args])]]]]
-     [mui/button {:on-click #(print (transform-on-submit values))} "values"]
      [mui/dialog-actions
       [shared/submit-buttons {:left-label "cancel" :right-label "accounts complete"}]]]))
 
@@ -73,6 +73,4 @@
   (let [buildsoc-id (:id @(rf/subscribe [::model/get-dialog]))
         values (model/build-soc-data buildsoc-id)
         case-id @(rf/subscribe [::case-model/case-id])]
-    [:<>
-
-     [form/form layout (first values) #(rf/dispatch [::submit! case-id %])]]))
+    [form/form layout values #(rf/dispatch [::submit! case-id %])]))

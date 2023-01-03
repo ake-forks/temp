@@ -1,47 +1,37 @@
 (ns darbylaw.web.ui.buildingsociety.stage-notify
   (:require
-    [darbylaw.web.ui :as ui]
     [re-frame.core :as rf]
+    [reagent.core :as r]
+    [darbylaw.web.ui :as ui]
     [reagent-mui.components :as mui]
     [darbylaw.web.ui.buildingsociety.shared :as shared]
     [darbylaw.web.ui.buildingsociety.model :as model]
     [darbylaw.web.ui.case-model :as case-model]
-    [reagent.core :as r]))
+    [darbylaw.web.ui.buildingsociety.form :as form]))
 
-(rf/reg-event-fx [::send-notification-success]
-  (fn [{:keys [db]} [_ case-id {:keys [path]}]]
-    {:fx [[:dispatch [::model/hide-dialog]]
-          [:dispatch [::case-model/load-case! case-id]]]}))
 
-(rf/reg-event-fx ::send-notification-failure
-  (fn [{:keys [db]} [_ {:keys [path]} response]]
-    {:db (do (assoc db :failure response))}))
-(rf/reg-event-fx ::send-notification
-  (fn [{:keys [db]} [_ case-id buildsoc-id]]
-    {:http-xhrio
-     (ui/build-http
-       {:method :post
-        :uri (str "/api/buildingsociety/" case-id "/approve-notification")
-        :params {:buildsoc-id buildsoc-id}
-        :on-success [::send-notification-success case-id]
-        :on-failure [::send-notification-failure]})}))
 
+(def approved? (r/atom false))
 (defn submit-buttons [case-id buildsoc-id]
   ;TODO amalgamate with buttons in form ns
-  [mui/stack {:spacing 1
-              :direction :row
-              :justify-content :space-between
-              :sx {:width 1}}
-   [mui/button {:onClick #(rf/dispatch [::model/hide-dialog])
-                :variant :contained
-                :full-width true}
-    "cancel"]
-   [mui/button {:type :submit
-                :variant :contained
-                :full-width true
-                :startIcon (r/as-element [ui/icon-send])
-                :on-click #(rf/dispatch [::send-notification case-id buildsoc-id])}
-    "send letter"]])
+  (let [letter-id (model/notification-letter-id buildsoc-id)]
+    [mui/stack {:spacing 1
+                :direction :row
+                :justify-content :space-between
+                :sx {:width 1}}
+     [mui/button {:onClick #(do (reset! approved? false)
+                                (rf/dispatch [::model/hide-dialog]))
+                  :variant :contained
+                  :full-width true}
+      "cancel"]
+     [mui/button {:type :submit
+                  :variant :contained
+                  :disabled (not @approved?)
+                  :full-width true
+                  :startIcon (r/as-element [ui/icon-send])
+                  :on-click #(do (rf/dispatch [::model/approve-notification-letter case-id buildsoc-id letter-id])
+                                 (reset! approved? false))}
+      "send letter"]]))
 
 (defn bank-notify [author]
   [mui/box
@@ -61,10 +51,9 @@
 
          (string? author)
          (str "This letter was uploaded by " author)
-
          :else
          "This letter was automatically generated from case data.")]
-      [mui/button {:onClick (rf/dispatch [::regenerate])
+      [mui/button {
                    :startIcon (r/as-element [ui/icon-refresh])
                    :variant :outlined
                    :sx {:mt 1}}
@@ -116,9 +105,91 @@
         "We will wait for an answer from the bank for the final valuation step."]]]]]])
 
 
+
+(defn upload-button [_case-id _buildsoc-id _props _label]
+  (r/with-let [_ (reset! model/file-uploading? false)
+               filename (r/atom "")]
+    (fn [case-id buildsoc-id props label]
+      [ui/loading-button (merge props {:component "label"
+                                       :loading @model/file-uploading?})
+       label
+       [mui/input {:type :file
+                   :value @filename
+                   :onChange #(let [selected-file (-> % .-target .-files first)]
+                                (rf/dispatch [::model/upload-file case-id buildsoc-id selected-file "/notification-docx"])
+                                (reset! filename "")
+                                (reset! model/file-uploading? true))
+                   :hidden true
+                   :sx {:display :none}}]])))
+(defn control-buttons []
+  (let [case-id @(rf/subscribe [::case-model/case-id])
+        case-reference [::case-model/current-case-reference]
+        buildsoc-id (:id @(rf/subscribe [::model/get-dialog]))]
+    [mui/stack {:direction :row :spacing 1}
+     [mui/button {:href (str "/api/case/" case-id "/buildsoc/" (name buildsoc-id) "/notification-docx")
+                  :download (str case-reference " - " (name buildsoc-id) " - Building Society notification.docx")
+                  :variant :outlined
+                  :full-width true
+                  :startIcon (r/as-element [ui/icon-download])}
+      "download current letter"]
+     [upload-button case-id buildsoc-id
+      {:variant :outlined
+       :full-width true
+       :startIcon (r/as-element [ui/icon-upload])}
+      "upload replacement"]
+     ;TODO replace "use docx file type" with specific error
+     [model/upload-error-snackbar "Please upload a docx file type."]]))
+
+(defn approval []
+  [mui/alert {:severity :info}
+   [mui/stack
+    "The letter will be posted automatically through ordinary mail. "
+    "We will wait for an answer from the bank for the final valuation step."]
+   [mui/form-control-label
+    {:control (r/as-element
+                [mui/checkbox
+                 {:checked @approved?
+                  :on-change #(reset! approved? (not @approved?))}])
+     :label "I approve, the letter is ready to be sent."}]])
+
+(defn process-list []
+  [mui/list
+   [mui/list-item {:disable-padding true}
+    [mui/list-item-icon
+     [ui/icon-download]]
+    [mui/list-item-text "download the generated letter as docx file"]]
+   [mui/list-item {:disable-padding true}
+    [mui/list-item-icon
+     [ui/icon-edit]]
+    [mui/list-item-text "edit it in Word - take care to preserve the address format"]]
+   [mui/list-item {:disable-padding true}
+    [mui/list-item-icon
+     [ui/icon-upload]]
+    [mui/list-item-text "upload the edited file as a replacement"]]])
+
+(defn approve-notification-panel []
+  (let [buildsoc-id (:id @(rf/subscribe [::model/get-dialog]))
+        case-id @(rf/subscribe [::case-model/case-id])
+        buildsoc-data (model/build-soc-data buildsoc-id)]
+    [mui/stack {:spacing 3}
+     [mui/stack {:spacing 1}
+      [mui/typography {:variant :h5} "review notification letter"]
+      [mui/typography {:variant :body1}
+       "A notification letter has been generated using a standard template and the data from this case."]
+      [mui/typography {:variant :body1}
+       "If you would like to make changes, use the controls at the bottom to:"]
+      [process-list]
+      [mui/typography {:variant :body1}
+       (str "Once you are happy with the letter, you can approve it to be posted to " buildsoc-id " via Royal Mail.")]]
+     [shared/accounts-view (:accounts (first buildsoc-data)) {:estimated? true :confirmed? false}]
+     [mui/stack {:spacing 1}
+      [mui/typography {:variant :h6} "edit and approve letter"]
+      [control-buttons case-id buildsoc-id]
+      [approval]]]))
+
+
 (defn panel []
-  (let [dialog-data @(rf/subscribe [::model/get-dialog])
-        buildsoc-id (:id dialog-data)
+  (let [buildsoc-id (:id @(rf/subscribe [::model/get-dialog]))
         case-id @(rf/subscribe [::case-model/case-id])]
     [mui/box shared/tall-dialog-props
      [mui/stack {:spacing 1
@@ -126,14 +197,15 @@
                  :sx {:height 1}}
       ;left side
       [mui/stack {:spacing 1 :sx {:width 0.5}}
-       [:iframe {:style {:height "100%"}
-                 :src "/Example-bank-confirmation-letter.pdf"}]]
-
+       (if @model/file-uploading?
+         [reagent-mui.lab.loading-button/loading-button {:loading true :full-width true}]
+         [:iframe {:style {:height "100%"}
+                   :src (str "/api/case/" case-id "/buildsoc/" (name buildsoc-id) "/notification-pdf")}])]
       ;right side
       [mui/stack {:spacing 1 :sx {:width 0.5}}
        [mui/dialog-title
-        [shared/header (:id dialog-data) 1]]
+        [shared/header buildsoc-id 1]]
        [mui/dialog-content
-        [bank-notify :unknown-user]]
+        [approve-notification-panel]]
        [mui/dialog-actions
         [submit-buttons case-id buildsoc-id]]]]]))

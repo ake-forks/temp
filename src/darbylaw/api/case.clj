@@ -214,13 +214,18 @@
                                                                      :by
                                                                      :approved]}
                                               {:valuation-letter [:uploaded-by
-                                                                  :uploaded-at]}
-                                              ]}
+                                                                  :uploaded-at]}]}
+
                              {:buildsoc-accounts [:buildsoc-id
                                                   :accounts-unknown
                                                   :accounts
-                                                  :notification-letter
-                                                  :valuation-letter-uploaded]}])]
+                                                  :notification-status
+                                                  {:notification-letter ['(:xt/id {:as :id})
+                                                                         :author
+                                                                         :by
+                                                                         :approved]}
+                                                  {:valuation-letter [:uploaded-by
+                                                                      :uploaded-at]}]}])]
 
    :where '[[case :type :probate.case]
             [case :xt/id case-id]]

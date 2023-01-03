@@ -4,7 +4,8 @@
     [darbylaw.web.ui.buildingsociety.model :as model]
     [darbylaw.web.ui.buildingsociety.form :as form]
     [re-frame.core :as rf]
-    [reagent-mui.components :as mui]))
+    [reagent-mui.components :as mui]
+    [reagent.core :as r]))
 
 
 (defn close-button-row []
@@ -28,7 +29,7 @@
 
 (defn title-only [text]
   [mui/stack {:direction :row :justify-content :space-between}
-   [mui/typography {:variant :h3 :sx {:mb 1}} text]
+   [mui/typography {:variant :h4 :sx {:mb 1}} text]
    [close-button]])
 
 
@@ -38,6 +39,39 @@
     [mui/typography {:variant :h4 :sx {:mb 1}} text]
     [close-button]]
    [stepper stage]])
+
+(defn accounts-view [accounts {:keys [estimated? confirmed?]}]
+  [mui/stack {:spacing 1}
+   [mui/typography {:variant :h6} "account information"]
+   (map
+     (fn [account]
+       [mui/stack {:spacing 1 :direction :row}
+        [mui/text-field {:name :roll-number
+                         :value (get account :roll-number)
+                         :label "roll number"
+                         :disabled true
+                         :full-width true}]
+        (if estimated?
+          [mui/text-field {:name :estimated-value
+                           :value (get account :estimated-value)
+                           :label "estimated value"
+                           :disabled true
+                           :full-width true
+                           :InputProps
+                           {:start-adornment
+                            (r/as-element [mui/input-adornment
+                                           {:position :start} "£"])}}])
+        (if confirmed?
+          [mui/text-field {:name :confirmed-value
+                           :value (get account :confirmed-value)
+                           :label "confirmed value"
+                           :disabled true
+                           :full-width true
+                           :InputProps
+                           {:start-adornment
+                            (r/as-element [mui/input-adornment
+                                           {:position :start} "£"])}}])])
+     accounts)])
 
 (defn submit-buttons [labels]
   [form/submit-buttons labels])
@@ -51,3 +85,4 @@
   {:style {:height "90vh"}
    :width "70vw"
    :padding "1rem"})
+

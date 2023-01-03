@@ -25,8 +25,7 @@
 (defn bank-item [bank]
   (let [bank-data (bank-list/bank-by-id (:bank-id bank))
         bank-id (:bank-id bank)
-        accounts (:accounts bank)
-        bank-dialog @(rf/subscribe [::bank-model/bank-dialog])]
+        accounts (:accounts bank)]
     [mui/box
      [mui/card-action-area {:on-click #(rf/dispatch [::bank-model/show-bank-dialog bank-id])
                             :sx {:padding-top "0.5rem" :padding-bottom "0.5rem"}}
@@ -43,12 +42,6 @@
                                       0
                                       (js/parseFloat (:estimated-value account)))) accounts))))]]]
 
-     #_[mui/dialog
-        {:open (if (= bank-dialog bank-id) true false)
-         :maxWidth false
-         :fullWidth false}
-        [bank-dialog/base-dialog]]
-
      [mui/divider {:variant "middle"}]]))
 
 (defn add-bank []
@@ -58,14 +51,20 @@
     [ui/icon-add]]])
 
 (defn bank-card [current-case]
-  [mui/card
-   [mui/card-content
-    [mui/typography {:variant :h5 :sx {:font-weight 600}} "bank accounts"]
-    [mui/divider]
-    (for [bank (:bank-accounts current-case)]
-      ^{:key (:bank-id bank)}
-      [bank-item bank])
-    [add-bank]]])
+  (let [bank-dialog @(rf/subscribe [::bank-model/bank-dialog])]
+    [mui/card
+     [mui/card-content
+      [mui/typography {:variant :h5 :sx {:font-weight 600}} "bank accounts"]
+      [mui/divider]
+      (for [bank (:bank-accounts current-case)]
+        ^{:key (:bank-id bank)}
+        [bank-item bank])
+      [add-bank]]
+     [mui/dialog
+      {:open (some? bank-dialog)
+       :maxWidth :md
+       :fullWidth true}
+      [bank-dialog/base-dialog]]]))
 
 (defn asset-card [{:keys [title on-add]} & body]
   [mui/card
@@ -185,30 +184,26 @@
      [progress-bar/progress-bar]]]])
 
 (defn content [current-case]
-  (let [bank-modal @(rf/subscribe [::bank-model/bank-dialog])]
-    [mui/container {:maxWidth :xl}
 
-     [mui/stack {:spacing 2 :sx {:pt "1rem" :pb "2rem"}}
-      [mui/typography {:variant :h5} "estate details"]
-      #_[mui/dialog
-         {:open (= bank-modal :add-bank)
-          :maxWidth :md
-          :fullWidth true}
-         [bank-dialog/base-dialog]]
+  [mui/container {:maxWidth :xl}
 
-      [mui/stack {:direction :row :spacing 1 :style {:margin-top "0.5rem"}}
-       [mui/grid {:container true :spacing 1 :columns 3
-                  :style {:width "70%"}}
-        [mui/grid {:item true :xs 1}
-         #_[bank-card current-case]]
-        [mui/grid {:item true :xs 1}
-         [funeral-card current-case]]
-        [mui/grid {:item true :xs 1}
-         [buildsoc-card]]]
+   [mui/stack {:spacing 2 :sx {:pt "1rem" :pb "2rem"}}
+    [mui/typography {:variant :h5} "estate details"]
 
-       [mui/stack {:spacing 2 :style {:width "30%"}}
-        [tasks/tasks-tile]
-        [overview/overview-card]]]]]))
+
+    [mui/stack {:direction :row :spacing 1 :style {:margin-top "0.5rem"}}
+     [mui/grid {:container true :spacing 1 :columns 3
+                :style {:width "70%"}}
+      [mui/grid {:item true :xs 1}
+       [bank-card current-case]]
+      [mui/grid {:item true :xs 1}
+       [funeral-card current-case]]
+      [mui/grid {:item true :xs 1}
+       [buildsoc-card]]]
+
+     [mui/stack {:spacing 2 :style {:width "30%"}}
+      [tasks/tasks-tile]
+      [overview/overview-card]]]]])
 
 (defn panel* []
   (let [current-case @(rf/subscribe [::case-model/current-case])]
