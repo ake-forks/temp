@@ -75,12 +75,12 @@ resource "aws_iam_role" "task_role" {
 
 data "aws_iam_policy_document" "doc_store_write" {
   statement {
-    sid = "AllObjectActions"
-    effect = "Allow"
+    sid     = "AllObjectActions"
+    effect  = "Allow"
     actions = ["s3:*"]
     resources = [
-      "arn:aws:s3:::darbylaw-docs-staging",
-      "arn:aws:s3:::darbylaw-docs-staging/*"
+      "arn:aws:s3:::darbylaw-docs-${terraform.workspace}",
+      "arn:aws:s3:::darbylaw-docs-${terraform.workspace}/*"
     ]
   }
 }
