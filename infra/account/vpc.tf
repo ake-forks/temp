@@ -1,7 +1,7 @@
 # >> VPC
 #
 # The aim is to enable the following architecture:
-# - Only things which *must* be publicly accessable be in the public subnet
+# - Only things which *must* be publicly accessible be in the public subnet
 #   - E.g the Load Balancer, but not the database or app
 # - Everything else in the private subnet
 #
@@ -14,11 +14,15 @@
 
 # >> VPC
 
+locals {
+  vpc_name = "main"
+}
+
 module "main-vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "3.18.1"
 
-  name = "main"
+  name = local.vpc_name
   cidr = "10.0.0.0/16"
 
   # Setup Availability Zones and Subnets
@@ -29,4 +33,32 @@ module "main-vpc" {
   # Setup NAT Gateways so private subnets have internet access
   enable_nat_gateway = true
   single_nat_gateway = false
+}
+
+
+
+# >> Subnets
+
+# Only get private IPs
+# Connected to a NAT Gateway
+data "aws_subnets" "private" {
+  filter {
+    name   = "vpc-id"
+    values = [module.main-vpc.vpc_id]
+  }
+
+  tags = {
+    Name = "${local.vpc_name}-private-*"
+  }
+}
+
+data "aws_subnets" "public" {
+  filter {
+    name   = "vpc-id"
+    values = [module.main-vpc.vpc_id]
+  }
+
+  tags = {
+    Name = "${local.vpc_name}-public-*"
+  }
 }
