@@ -73,6 +73,22 @@
                                            {:position :start} "£"])}}])])
      accounts)])
 
+(defn upload-button [_case-id _buildsoc-id _props _label suffix]
+  (r/with-let [_ (reset! model/file-uploading? false)
+               filename (r/atom "")]
+    (fn [case-id buildsoc-id props label]
+      [ui/loading-button (merge props {:component "label"
+                                       :loading @model/file-uploading?})
+       label
+       [mui/input {:type :file
+                   :value @filename
+                   :onChange #(let [selected-file (-> % .-target .-files first)]
+                                (rf/dispatch [::model/upload-file case-id buildsoc-id selected-file suffix])
+                                (reset! filename "")
+                                (reset! model/file-uploading? true))
+                   :hidden true
+                   :sx {:display :none}}]])))
+
 (defn submit-buttons [labels]
   [form/submit-buttons labels])
 

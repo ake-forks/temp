@@ -12,7 +12,9 @@
 
 (defn layout [{:keys [values handle-submit] :as fork-args}]
   (let [current-case @(rf/subscribe [::case-model/current-case])
-        dialog-data @(rf/subscribe [::model/get-dialog])]
+        dialog-data @(rf/subscribe [::model/get-dialog])
+        case-id @(rf/subscribe [::case-model/case-id])
+        buildsoc-id (:id @(rf/subscribe [::model/get-dialog]))]
     [:form {:on-submit handle-submit}]
     [mui/box shared/tall-dialog-props
      [mui/stack {:spacing 1
@@ -31,17 +33,21 @@
         [mui/stack {:spacing 2}
          [mui/typography {:variant :body1}
           (str "Once you have received a letter from "
-            (:id dialog-data)
+            buildsoc-id
             ", upload a scanned pdf using the button below.")]
-         [mui/button {:variant :outlined} "upload pdf"]
+         [shared/upload-button case-id buildsoc-id
+          {:variant :outlined
+           :full-width true
+           :startIcon (r/as-element [ui/icon-upload])}
+          "upload pdf"]
          [mui/typography {:variant :body1}
           (str "Please enter the confirmed details for each of your late "
             (-> current-case :deceased :relationship)
             "'s accounts with "
-            (:id dialog-data) ".")]
+            buildsoc-id ".")]
          [form/account-array-component (merge fork-args {:stage :valuation})]]]
        [mui/dialog-actions
-        [form/submit-buttons]]]]]))
+        [form/submit-buttons {:left-label "cancel" :right-label "submit valuations"}]]]]]))
 
 (defn panel []
   (let [current-case @(rf/subscribe [::case-model/current-case])

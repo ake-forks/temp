@@ -106,21 +106,7 @@
 
 
 
-(defn upload-button [_case-id _buildsoc-id _props _label]
-  (r/with-let [_ (reset! model/file-uploading? false)
-               filename (r/atom "")]
-    (fn [case-id buildsoc-id props label]
-      [ui/loading-button (merge props {:component "label"
-                                       :loading @model/file-uploading?})
-       label
-       [mui/input {:type :file
-                   :value @filename
-                   :onChange #(let [selected-file (-> % .-target .-files first)]
-                                (rf/dispatch [::model/upload-file case-id buildsoc-id selected-file "/notification-docx"])
-                                (reset! filename "")
-                                (reset! model/file-uploading? true))
-                   :hidden true
-                   :sx {:display :none}}]])))
+
 (defn control-buttons []
   (let [case-id @(rf/subscribe [::case-model/case-id])
         case-reference [::case-model/current-case-reference]
@@ -132,11 +118,12 @@
                   :full-width true
                   :startIcon (r/as-element [ui/icon-download])}
       "download current letter"]
-     [upload-button case-id buildsoc-id
+     [shared/upload-button case-id buildsoc-id
       {:variant :outlined
        :full-width true
        :startIcon (r/as-element [ui/icon-upload])}
-      "upload replacement"]
+      "upload replacement"
+      "/notification-docx"]
      ;TODO replace "use docx file type" with specific error
      [model/upload-error-snackbar "Please upload a docx file type."]]))
 
