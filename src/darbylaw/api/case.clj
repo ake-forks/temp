@@ -4,7 +4,9 @@
             [reitit.coercion.malli]
             [ring.util.response :as ring]
             [darbylaw.config :as config]
-            [darbylaw.api.util.http :as http]))
+            [darbylaw.api.util.http :as http]
+            [darbylaw.api.case-history :as case-history]
+            [darbylaw.api.util.xtdb :as xt-util]))
 
 (def date--schema
   [:re #"^\d{4}-\d{2}-\d{2}$"])
@@ -54,40 +56,6 @@
    [:name-of-doctor-certifying :string]
    [:name-of-registrar :string]])
 
-(def put-with-tx-data__txn-fn
-  '(fn [ctx m]
-     (let [tx (xtdb.api/indexing-tx ctx)]
-       [[::xt/put (assoc m
-                    :timestamp (::xt/tx-time tx)
-                    :tx-id (::xt/tx-id tx))]])))
-
-(comment
-  (def res (xt/submit-tx darbylaw.xtdb-node/xtdb-node
-             [[::xt/put {:xt/id ::put-with-tx-data
-                         :xt/fn put-with-tx-data__txn-fn}]
-              [::xt/fn ::put-with-tx-data {:xt/id :my-event
-                                           :type :event}]]))
-  res
-  (xt/await-tx darbylaw.xtdb-node/xtdb-node res)
-  (xt/tx-committed? darbylaw.xtdb-node/xtdb-node res)
-  (xt/entity (xt/db darbylaw.xtdb-node/xtdb-node) :my-event))
-
-(defn put-event
-  ([txns event case-id user]
-   (put-event txns event case-id user {}))
-  ([txns event case-id user event-data]
-   (into txns
-     [[::xt/put {:xt/id ::put-with-tx-data
-                 :xt/fn put-with-tx-data__txn-fn}]
-      [::xt/fn ::put-with-tx-data (merge
-                                    {:xt/id (random-uuid)
-                                     :type :event
-                                     :subject-type :probate.case
-                                     :by (:username user)
-                                     :event event
-                                     :ref/probate.case.id case-id}
-                                    event-data)]])))
-
 (def initialise-case_txn-fn
   '(fn [ctx case-id pr-info-id is-test]
      (let [db (xtdb.api/db ctx)
@@ -113,16 +81,18 @@
         pr-info-id (random-uuid)
         pr-info (get body-params :personal-representative)
         is-test (not= config/profile :production)]
-    (xt/await-tx xtdb-node
-      (xt/submit-tx xtdb-node
-        (-> [[::xt/put {:xt/id ::initialise-case
-                        :xt/fn initialise-case_txn-fn}]
-             [::xt/fn ::initialise-case case-id pr-info-id is-test]
-             [::xt/put (merge
-                         pr-info
-                         {:type :probate.personal-representative.info
-                          :xt/id pr-info-id})]]
-          (put-event :created case-id user))))
+    (xt-util/exec-tx xtdb-node
+      (concat
+        [[::xt/put {:xt/id ::initialise-case
+                    :xt/fn initialise-case_txn-fn}]
+         [::xt/fn ::initialise-case case-id pr-info-id is-test]
+         [::xt/put (merge
+                     pr-info
+                     {:type :probate.personal-representative.info
+                      :xt/id pr-info-id})]]
+        (case-history/put-event {:event :created
+                                 :case-id case-id
+                                 :user user})))
     {:status 200
      :body {:id case-id}}))
 
@@ -134,12 +104,14 @@
 (defn update-deceased-info [{:keys [xtdb-node user path-params body-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
         deceased-info body-params]
-    (xt/await-tx xtdb-node
-      (xt/submit-tx xtdb-node
-        (-> [[::xt/put {:xt/id ::merge
-                        :xt/fn merge__txn-fn}]
-             [::xt/fn ::merge case-id {:deceased.info deceased-info}]]
-          (put-event :updated.deceased.info case-id user))))
+    (xt-util/exec-tx xtdb-node
+      (concat
+        [[::xt/put {:xt/id ::merge
+                    :xt/fn merge__txn-fn}]
+         [::xt/fn ::merge case-id {:deceased.info deceased-info}]]
+        (case-history/put-event {:event :updated.deceased.info
+                                 :case-id case-id
+                                 :user user})))
     {:status 200
      :body deceased-info}))
 
@@ -157,12 +129,14 @@
 (defn update-pr-info [{:keys [xtdb-node user path-params body-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
         pr-info body-params]
-    (xt/await-tx xtdb-node
-      (xt/submit-tx xtdb-node
-        (-> [[::xt/put {:xt/id ::update-ref
-                        :xt/fn update-ref__txn-fn}]
-             [::xt/fn ::update-ref case-id :ref/personal-representative.info.id pr-info]]
-          (put-event :updated.personal-representative.info case-id user))))
+    (xt-util/exec-tx xtdb-node
+      (concat
+        [[::xt/put {:xt/id ::update-ref
+                    :xt/fn update-ref__txn-fn}]
+         [::xt/fn ::update-ref case-id :ref/personal-representative.info.id pr-info]]
+        (case-history/put-event {:event :updated.personal-representative.info
+                                 :case-id case-id
+                                 :user user})))
     {:status 200
      :body pr-info}))
 

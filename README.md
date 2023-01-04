@@ -94,3 +94,13 @@ With this the idea is that:
 - Once we're happy with `staging` a PR will be created to merge `staging` into `production`
   - Maybe named something like "Release 1.0"
 - If there's a production issue, branches or commits can be merged into `production` but should be quickly merged into `staging`
+
+## Data design guidelines
+
+Record data in a very concrete way, in a way that it reflects facts that have happened, not the way data will be used. Leave interpretation, generalizations or abstractions up to applications. This should help preserve flexibility when making use of the data, and prevent data modifications when introducing changing or extending applications.
+
+In general, split nested data to separate referenced entities. This should allow for using `xtdb.api/match` for implementing transactions around that data as a unit. It should also allow for easier access and modification of that data.
+
+Separate PII or any other data that needs to be evicted in their own documents.
+
+For easier interop, use keywords that have a bijection to/from JavaScript CamelCase properties. For instance, use only the kebab-case `-` separator, not any `_` separators. Do not use `?` or other characters that are special in JavaScript.

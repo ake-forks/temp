@@ -1,65 +1,65 @@
 (ns darbylaw.api.case-test
   (:require
     [clojure.test :refer :all]
-    [darbylaw.test.common :as test-common :refer [submap?]]
+    [darbylaw.test.common :as t :refer [submap?]]
     [darbylaw.handler :refer [ring-handler]]
     [cognitect.transit :as transit]
     [darbylaw.api.setup :as sample]))
 
 (use-fixtures :once
-  (test-common/use-mount-states test-common/ring-handler-states))
+  (t/use-mount-states t/ring-handler-states))
 
-(defn read-body [resp]
-  (cond-> resp
-    (:body resp)
-    (update :body #(transit/read (transit/reader % :json)))))
-
-(deftest create_and_get_cases
+(deftest create_get_update_cases
+  ; Create case
   (let [pr-info sample/pr-info1
-        post-resp (read-body
-                    (ring-handler
-                      {:request-method :post
-                       :uri "/api/case"
-                       :body-params {:personal-representative pr-info}
-                       :headers {"accept" "application/transit+json"}}))]
+        post-resp (t/run-request {:request-method :post
+                                  :uri "/api/case"
+                                  :body-params {:personal-representative pr-info}})]
     (is (<= 200 (:status post-resp) 299))
+    ; Get many cases
     (let [{get-status :status
-           get-body :body} (ring-handler
-                             {:request-method :get
-                              :uri "/api/cases"
-                              :headers {"accept" "application/transit+json"}})
-          cases (transit/read (transit/reader get-body :json))]
+           cases :body} (t/run-request {:request-method :get
+                                        :uri "/api/cases"})]
       (is (= 200 get-status))
       (is (sequential? cases))
       (is (= 1 (count cases)))
       (let [case (first cases)]
         (is (contains? case :id))
         (is (submap? pr-info (:personal-representative case)))))
+    ; Update personal rep
     (let [case-id (-> post-resp :body :id)
           updated-data (assoc pr-info
                          :forename "Joe")]
-      (let [update-resp (ring-handler
-                          {:request-method :put
-                           :uri (str "/api/case/"
-                                  case-id
-                                  "/personal-representative")
-                           :body-params updated-data})]
+      (let [update-resp (t/run-request {:request-method :put
+                                        :uri (str "/api/case/"
+                                               case-id
+                                               "/personal-representative")
+                                        :body-params updated-data})]
         (is (<= 200 (:status update-resp) 299)))
-      (let [{cases :body} (read-body
-                            (ring-handler
-                              {:request-method :get
-                               :uri "/api/cases"
-                               :headers {"accept" "application/transit+json"}}))]
+      ; Get many cases
+      (let [{cases :body} (t/run-request {:request-method :get
+                                          :uri "/api/cases"})]
         (is (= 1 (count cases)))
         (let [case (first cases)]
           (is (contains? case :id))
           (is (submap? updated-data (:personal-representative case)))))
-      (let [{case :body} (read-body
-                           (ring-handler
-                             {:request-method :get
-                              :uri (str "/api/case/" case-id)
-                              :headers {"accept" "application/transit+json"}}))]
-        (is (submap? updated-data (:personal-representative case)))))))
+      ; Get single case
+      (let [{case :body} (t/run-request {:request-method :get
+                                         :uri (str "/api/case/" case-id)})]
+        (is (submap? updated-data (:personal-representative case))))
+      ; Update deceased info
+      (let [deceased sample/deceased
+            update-resp (t/run-request {:request-method :put
+                                        :uri (str "/api/case/"
+                                               case-id
+                                               "/deceased")
+                                        :body-params deceased})
+            _ (is (<= 200 (:status update-resp) 299))
+            {case :body} (t/assert-success
+                           (t/run-request {:request-method :get
+                                           :uri (str "/api/case/" case-id)}))
+            _ (is (submap? deceased (:deceased case)))
+            _ (is (submap? updated-data (:personal-representative case)))]))))
 
 (comment
   (read-body

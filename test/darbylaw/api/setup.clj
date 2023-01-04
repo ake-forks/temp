@@ -13,6 +13,24 @@
    :town "London"
    :postcode "SW1W 0NY"})
 
+(def deceased
+  {:relationship "mother"
+   :registration-district "registration-district"
+   :certificate-number "certificate-number"
+   :entry-number "entry-number"
+   :date-of-death "2023-01-04"
+   :place-of-death "place-of-death"
+   :forename "Jane"
+   :surname "Doe"
+   :sex "female"
+   :maiden-name "Roe"
+   :date-of-birth "2010-01-03"
+   :place-of-birth "London"
+   :occupation "occupation"
+   :cause-of-death "cause-of-death"
+   :name-of-doctor-certifying "name-of-doctor-certifying"
+   :name-of-registrar "name-of-registrar"})
+
 (def accounts1 [{:sort-code "sort-code1"
                  :account-number "account-number1"}
                 {:sort-code "sort-code2"
