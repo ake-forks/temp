@@ -27,7 +27,7 @@
       (let [case (first cases)]
         (is (contains? case :id))
         (is (contains? case :reference))
-        (is (:is-test case))
+        (is (:fake case))
         (is (str/ends-with? (:reference case) "99"))
         (is (submap? pr-info (:personal-representative case)))))
     ; Update personal rep

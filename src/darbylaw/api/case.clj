@@ -57,38 +57,36 @@
    [:name-of-doctor-certifying :string]
    [:name-of-registrar :string]])
 
-(def initialise-case_txn-fn
-  '(fn [ctx case-id pr-id is-test]
-     (let [db (xtdb.api/db ctx)
-           last-case-ref (xtdb.api/entity db ::last-case-ref)
-           new-case-ref (if (nil? last-case-ref)
-                          1
-                          (inc (:value last-case-ref)))
-           ref-suffix (if is-test "99" "00")
-           ;; Pad `new-case-ref` so that it's at least 6 digits total
-           reference (str (format "%04d" new-case-ref) ref-suffix)]
-       ;; Update/initialise the last-case-ref
-       [[::xt/put {:xt/id ::last-case-ref
-                   :value new-case-ref}]
-        ;; Initialise the probate-case
-        [::xt/put {:type :probate.case
-                   :xt/id case-id
-                   :probate.case/personal-representative pr-id
-                   :is-test is-test
-                   :reference reference}]])))
+(defn initialize-case [case-id pr-id fake?]
+  (tx-fns/invoke ::initialize-case [case-id pr-id fake?]
+    '(fn [ctx case-id pr-id fake?]
+       (let [db (xtdb.api/db ctx)
+             last-case-ref (xtdb.api/entity db ::last-case-ref)
+             new-case-ref (if (nil? last-case-ref)
+                            1
+                            (inc (:value last-case-ref)))
+             ref-suffix (if fake? "99" "00")
+             ;; Pad `new-case-ref` so that it's at least 6 digits total
+             reference (str (format "%04d" new-case-ref) ref-suffix)]
+         ;; Update/initialise the last-case-ref
+         [[::xt/put {:xt/id ::last-case-ref
+                     :value new-case-ref}]
+          ;; Initialise the probate-case
+          [::xt/put {:type :probate.case
+                     :xt/id case-id
+                     :probate.case/personal-representative pr-id
+                     :fake fake?
+                     :reference reference}]]))))
 
 (defn create-case [{:keys [xtdb-node user body-params]}]
   (let [case-id (random-uuid)
         pr-id (random-uuid)
         pr-data (get body-params :personal-representative)
-        is-test (not= config/profile :production)]
+        fake? (not= config/profile :production)]
     (xt-util/exec-tx xtdb-node
       (concat
-        [[::xt/put {:xt/id ::initialise-case
-                    :xt/fn initialise-case_txn-fn}]
-         [::xt/fn ::initialise-case case-id pr-id is-test]
-         [::xt/put (merge
-                     pr-data
+        (initialize-case case-id pr-id fake?)
+        [[::xt/put (merge pr-data
                      {:type :probate.personal-representative
                       :xt/id pr-id})]]
         (case-history/put-event {:event :created
@@ -157,7 +155,7 @@
            {:find [(list 'pull 'case
                      ['(:xt/id {:as :id})
                       :reference
-                      :is-test
+                      :fake
                       {'(:probate.case/personal-representative {:as :personal-representative})
                        personal-representative--props}])]
             :where '[[case :type :probate.case]]})
@@ -171,7 +169,7 @@
   {:find [(list 'pull 'case
             ['(:xt/id {:as :id})
              :reference
-             :is-test
+             :fake
              {'(:probate.deceased/_case-id {:as :deceased
                                             :cardinality :one})
               ['*]}
