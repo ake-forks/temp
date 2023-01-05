@@ -99,7 +99,9 @@ With this the idea is that:
 
 We are using the `:type` attribute to specify what data is to be expected in an entity. The type is a keyword that starts with `:probate.`.
 
-For attributes that contain references to ids of other entities, use a key that is qualified by type, such as `:probate.deceased/case-id`. This allows for nice reverse joins in [XTDB's EQL](https://docs.xtdb.com/language-reference/datalog-queries/#pull). (Without the qualifier, a reverse join would obtain any entity types that refer back to the entity at hand).
+For attributes that contain references to ids of other entities, use a key that is qualified by type, such as `:probate.deceased/case`. This allows for nice reverse joins in [XTDB's EQL](https://docs.xtdb.com/language-reference/datalog-queries/#pull). (Without the qualifier, a reverse join would obtain any entity types that refer back to the entity at hand).
+
+Also use just the name of the referred entity, or a name that makes sense, not followed by `-id`. For example: `:probate.deceased/case` instead of `:probate.deceased/case-id`.
 
 Record data in a very concrete way, so that it reflects facts that have happened, not how the data is expected to be used. Leave interpretation, generalizations or abstractions up to applications. This should help preserve flexibility when making use of the data, and prevent data modifications when changing or extending applications.
 

@@ -20,7 +20,7 @@
       {:xt/id (random-uuid)
        :type :event
        :subject-type :probate.case
-       :ref/probate.case.id case-id
+       :event/case case-id
        :event event
        :by (:username user)})))
 

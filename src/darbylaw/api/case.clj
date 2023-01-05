@@ -98,7 +98,7 @@
 (defn update-deceased [{:keys [xtdb-node user path-params body-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
         deceased-data body-params
-        deceased-id {:probate.deceased/case-id case-id}]
+        deceased-id {:probate.deceased/case case-id}]
     (xt-util/exec-tx xtdb-node
       (concat
         [[::xt/put (merge deceased-data
@@ -170,8 +170,8 @@
             ['(:xt/id {:as :id})
              :reference
              :fake
-             {'(:probate.deceased/_case-id {:as :deceased
-                                            :cardinality :one})
+             {'(:probate.deceased/_case {:as :deceased
+                                         :cardinality :one})
               ['*]}
              :bank-accounts
              :funeral-account
@@ -214,35 +214,32 @@
 (defn get-case-history [{:keys [xtdb-node path-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
         results (xt/q (xt/db xtdb-node)
-                  '{:find [(pull event [*]) timestamp]
+                  '{:find [(pull event [(:xt/id {:as :id})
+                                        :timestamp
+                                        :event
+                                        :by])
+                           timestamp]
                     :where [[event :type :event]
-                            [event :ref/probate.case.id case-id]
+                            [event :event/case case-id]
                             [event :timestamp timestamp]]
                     :order-by [[timestamp :asc]]
                     :in [case-id]}
                   case-id)]
     (ring/response
       (->> results
-        (map #(-> %
-                first
-                (select-keys [:xt/id
-                              :timestamp
-                              :event
-                              :by])
-                (clojure.set/rename-keys
-                  {:xt/id :id})))))))
+        (map first)))))
 
 (defn get-event [{:keys [xtdb-node path-params]}]
   (let [event-id (parse-uuid (:event-id path-params))
         event (xt/q (xt/db xtdb-node)
                 '{:find [(pull event [:tx-id
-                                      :ref/probate.case.id])]
+                                      :event/case])]
                   :where [[event :type :event]
                           [event :xt/id event-id]]
                   :in [event-id]}
                 event-id)
         {:keys [tx-id]
-         case-id :ref/probate.case.id} (ffirst event)
+         case-id :event/case} (ffirst event)
         db-before (xt/db xtdb-node {::xt/tx {::xt/tx-id (dec tx-id)}})
         case-before (xt/q db-before get-case__query case-id)
         db-after (xt/db xtdb-node {::xt/tx {::xt/tx-id tx-id}})
