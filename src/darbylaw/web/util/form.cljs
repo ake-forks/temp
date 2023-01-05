@@ -52,7 +52,7 @@
   :label         The label of the inner text field
   :options       The list of options fore the autocomplete
   :inner-config  A map of options to pass to the inner text field
-  <other>        Merged ontop of the built-in config
+  <other>        Merged on top of the built-in config
 
   Example:
   [autocomplete-field
@@ -91,8 +91,8 @@
   
   Config Options:
   :name    The name of the text field and input wrt fork
-  <other>  Merged ontop of the built-in config"
-  [{:keys [values handle-change handle-blur submitting?] :as fork-args}
+  <other>  Merged on top of the built-in config"
+  [{:keys [values errors handle-change handle-blur submitting?] :as fork-args}
    {:keys [name] :as config}]
   (assert name "Missing required arg :name")
   (let [error (get-error name fork-args)
@@ -101,6 +101,8 @@
                :onChange handle-change
                :onBlur handle-blur
                :error (boolean error)
+               :helper-text (when error
+                              (get errors [name]))
                :autoComplete :off
                :InputProps (when error (error-icon-prop))
                :disabled submitting?}
@@ -157,7 +159,7 @@
   :inner-config  A map of options to pass to the inner text field
   :inner-config :label-prefix   Set the prefix of the label, the suffix
                                 is the date-pattern in brackets
-  <other>        Merged ontop of the built-in config
+  <other>        Merged on top of the built-in config
 
   Example:
   [date-picker fork-args

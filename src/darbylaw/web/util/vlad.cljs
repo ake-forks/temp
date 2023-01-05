@@ -107,3 +107,14 @@
 (defmethod v/english-translation ::either-present
   [{:keys [name]}]
   (str name " is required."))
+
+
+(defn currency?
+  "Checks that a string is a valid currency amount"
+  []
+  (v/predicate #(nil? (re-matches #"[0-9]+(\.[0-9]{2})?" %))
+               {:type ::currency?}))
+
+(defmethod v/english-translation ::currency?
+  [{:keys [name]}]
+  (str name " must be a valid currency amount."))
