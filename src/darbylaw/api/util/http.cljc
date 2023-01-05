@@ -5,3 +5,4 @@
 
 (def status-404-not-found 404)
 (def status-409-conflict 409)
+(def status-429-too-many-requests 429)

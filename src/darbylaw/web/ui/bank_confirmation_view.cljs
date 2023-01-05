@@ -18,15 +18,19 @@
 (rf/reg-sub ::values-uploaded?
   :<- [::bank-model/current-bank-data]
   (fn [bank-data]
-    (some? (:valuation-letter-uploaded bank-data))))
+    (some? (:valuation-letter bank-data))))
 
 (rf/reg-sub ::bank-id
   (fn [db]
     (:modal/bank-dialog db)))
 
+(rf/reg-fx ::reset-uploading
+  (fn [_]
+    (reset! uploading? false)))
+
 (rf/reg-event-fx ::load-case-success
   (fn [_ _]
-    (reset! uploading? false)))
+    {::reset-uploading nil}))
 
 (rf/reg-event-fx ::upload-success
   (fn [_ [_ case-id bank-id]]
@@ -35,7 +39,7 @@
 
 (rf/reg-event-fx ::upload-failure
   (fn [_ _]
-    (reset! uploading? false)))
+    {::reset-uploading nil}))
 
 (rf/reg-event-fx ::upload
   (fn [_ [_ case-id bank-id file]]
@@ -44,7 +48,8 @@
        {:method :post
         :uri (str "/api/case/" case-id "/bank/" (name bank-id) "/valuation-pdf")
         :body (doto (js/FormData.)
-                (.append "file" file))
+                (.append "file" file)
+                (.append "filename" (.-name file)))
         :format nil
         :on-success [::upload-success case-id bank-id]
         :on-failure [::upload-failure]})}))

@@ -6,7 +6,8 @@
             [darbylaw.handler :refer [ring-handler]]
             [darbylaw.core :refer [web-server]]
             [xtdb.api :as xt]
-            [cognitect.transit :as transit]))
+            [cognitect.transit :as transit]
+            [clojure.string :as str]))
 
 (def test-states
   {#'profile {:start (fn [] :test)}
@@ -15,7 +16,7 @@
 
 (defn use-mount-states [states]
   (fn [f]
-    (mount/stop (keys test-states))
+    (mount/stop states)
     (mount/start (-> states
                    (mount/swap-states test-states)))
     (f)
@@ -34,12 +35,16 @@
     (-> config :web-server :port)
     path))
 
-(defn submap? [m1 m2]
+(defn submap?
+  "Is m1 a submap of m2?"
+  [m1 m2]
   (clojure.set/subset? (set m1) (set m2)))
 
 (defn read-transit-body [resp]
   (cond-> resp
-    (= 200 (:status resp))
+    (let [content-type (get-in resp [:headers "Content-Type"])]
+      (and (some? content-type)
+           (str/includes? content-type "application/transit+json")))
     (update :body #(transit/read (transit/reader % :json)))))
 
 (defn run-request [req]
@@ -50,5 +55,6 @@
         (update :headers assoc "accept" "application/transit+json")))))
 
 (defn assert-success [resp]
-  (assert (<= 200 (:status resp) 299))
+  (assert (<= 200 (:status resp) 299)
+    (str "Expected success, but received HTTP status " (:status resp)))
   resp)

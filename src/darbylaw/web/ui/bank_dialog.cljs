@@ -88,8 +88,7 @@
 (defn edit-dialog []
   (let [bank-id @(rf/subscribe [::bank-model/bank-dialog])
         case-id @(rf/subscribe [::case-model/case-id])
-        current-bank (filter #(= (:id %) bank-id)
-                       (:bank-accounts @(rf/subscribe [::case-model/current-case])))]
+        current-bank @(rf/subscribe [::bank-model/current-bank-data])]
     [mui/stack {:spacing 1
                 :style {:padding "2rem"
                         :background-color :white
@@ -98,7 +97,7 @@
      [dialog-header bank-id]
      [bank-add/dialog-with-values
       (if (some? bank-id)
-        {:accounts (:accounts (first current-bank))
+        {:accounts (:accounts current-bank)
          :bank-id (name bank-id)})]
      [mui/button {:on-click #(rf/dispatch [::bank-model/generate-notification-letter case-id bank-id])
                   :style {:text-transform "none" :align-self "baseline" :font-size "1rem"}
@@ -149,9 +148,8 @@
 (defn bank-completed-dialog []
   (let [current-case @(rf/subscribe [::case-model/current-case])
         case-id (:id current-case)
-        banks (:bank-accounts current-case)
         bank-id @(rf/subscribe [::bank-model/bank-dialog])
-        current-bank (filter #(= (:id %) bank-id) banks)]
+        current-bank @(rf/subscribe [::bank-model/current-bank-data])]
     [mui/stack {:spacing 1
                 :direction :row
                 :style {:padding "2rem"
