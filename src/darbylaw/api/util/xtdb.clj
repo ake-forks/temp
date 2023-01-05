@@ -24,7 +24,6 @@
               :xt/fn deep-merge--txfn}]
    [::xt/fn ::deep-merge m]])
 
-; TODO: check for txn errors
 (defn exec-tx [xtdb-node tx-ops]
   (xt/await-tx xtdb-node
     (xt/submit-tx xtdb-node
