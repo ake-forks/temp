@@ -6,7 +6,8 @@
             [darbylaw.config :as config]
             [darbylaw.api.util.http :as http]
             [darbylaw.api.case-history :as case-history]
-            [darbylaw.api.util.xtdb :as xt-util]))
+            [darbylaw.api.util.xtdb :as xt-util]
+            [darbylaw.api.util.tx-fns :as tx-fns]))
 
 (def date--schema
   [:re #"^\d{4}-\d{2}-\d{2}$"])
@@ -57,7 +58,7 @@
    [:name-of-registrar :string]])
 
 (def initialise-case_txn-fn
-  '(fn [ctx case-id pr-info-id is-test]
+  '(fn [ctx case-id pr-id is-test]
      (let [db (xtdb.api/db ctx)
            last-case-ref (xtdb.api/entity db ::last-case-ref)
            new-case-ref (if (nil? last-case-ref)
@@ -72,24 +73,24 @@
         ;; Initialise the probate-case
         [::xt/put {:type :probate.case
                    :xt/id case-id
-                   :ref/personal-representative.info.id pr-info-id
+                   :probate.case/personal-representative pr-id
                    :is-test is-test
                    :reference reference}]])))
 
 (defn create-case [{:keys [xtdb-node user body-params]}]
   (let [case-id (random-uuid)
-        pr-info-id (random-uuid)
-        pr-info (get body-params :personal-representative)
+        pr-id (random-uuid)
+        pr-data (get body-params :personal-representative)
         is-test (not= config/profile :production)]
     (xt-util/exec-tx xtdb-node
       (concat
         [[::xt/put {:xt/id ::initialise-case
                     :xt/fn initialise-case_txn-fn}]
-         [::xt/fn ::initialise-case case-id pr-info-id is-test]
+         [::xt/fn ::initialise-case case-id pr-id is-test]
          [::xt/put (merge
-                     pr-info
-                     {:type :probate.personal-representative.info
-                      :xt/id pr-info-id})]]
+                     pr-data
+                     {:type :probate.personal-representative
+                      :xt/id pr-id})]]
         (case-history/put-event {:event :created
                                  :case-id case-id
                                  :user user})))
@@ -112,26 +113,25 @@
     {:status 200
      :body deceased-data}))
 
-(def update-ref__txn-fn
-  '(fn [ctx eid ref-k m]
-     (let [db (xtdb.api/db ctx)
-           entity (xtdb.api/entity db eid)]
-       (assert entity (str "entity not found: " eid))
-       (let [refed-eid (get entity ref-k)
-             _ (assert refed-eid (str "no ref in entity: " ref-k))
-             refed-entity (xtdb.api/entity db refed-eid)]
-         (assert refed-entity (str "refed entity not found: " refed-eid))
-         [[::xt/put (merge m (select-keys refed-entity [:xt/id :type]))]]))))
+(defn update-ref [eid ref-k m]
+  (tx-fns/invoke ::update-ref [eid ref-k m]
+    '(fn [ctx eid ref-k m]
+       (let [db (xtdb.api/db ctx)
+             entity (xtdb.api/entity db eid)]
+         (assert entity (str "entity not found: " eid))
+         (let [refed-eid (get entity ref-k)
+               _ (assert refed-eid (str "no ref in entity: " ref-k))
+               refed-entity (xtdb.api/entity db refed-eid)]
+           (assert refed-entity (str "refed entity not found: " refed-eid))
+           [[::xt/put (merge m (select-keys refed-entity [:xt/id :type]))]])))))
 
 (defn update-pr-info [{:keys [xtdb-node user path-params body-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
         pr-info body-params]
     (xt-util/exec-tx xtdb-node
       (concat
-        [[::xt/put {:xt/id ::update-ref
-                    :xt/fn update-ref__txn-fn}]
-         [::xt/fn ::update-ref case-id :ref/personal-representative.info.id pr-info]]
-        (case-history/put-event {:event :updated.personal-representative.info
+        (update-ref case-id :probate.case/personal-representative pr-info)
+        (case-history/put-event {:event :updated.personal-representative
                                  :case-id case-id
                                  :user user})))
     {:status 200
@@ -155,51 +155,50 @@
   (ring/response
     (->> (xt/q (xt/db xtdb-node)
            {:find [(list 'pull 'case
-                     [:xt/id
+                     ['(:xt/id {:as :id})
                       :reference
                       :is-test
-                      {:ref/personal-representative.info.id
+                      {'(:probate.case/personal-representative {:as :personal-representative})
                        personal-representative--props}])]
             :where '[[case :type :probate.case]]})
       (map (fn [[case]]
-             (-> case
-               (clojure.set/rename-keys {:xt/id :id})
-               (clojure.set/rename-keys {:ref/personal-representative.info.id :personal-representative})))))))
+             case)))))
 
 (comment
   (xt/entity (xt/db darbylaw.xtdb-node/xtdb-node) #uuid"51127427-6ff1-4093-9929-c2c9990c796e"))
 
 (def get-case__query
-  {:find [(list 'pull 'case [:xt/id
-                             :reference
-                             :is-test
-                             {'(:probate.deceased/_case-id {:as :deceased
-                                                            :cardinality :one})
-                              ['*]}
-                             :bank-accounts
-                             :funeral-account
-                             :funeral-expense
-                             :bank
-                             {:ref/personal-representative.info.id
-                              personal-representative--props}
-                             {:bank-accounts [:bank-id
-                                              :accounts
-                                              {:notification-letter ['(:xt/id {:as :id})
-                                                                     :author
-                                                                     :by
-                                                                     :approved]}
-                                              {:valuation-letter [:uploaded-by
-                                                                  :uploaded-at]}]}
+  {:find [(list 'pull 'case
+            ['(:xt/id {:as :id})
+             :reference
+             :is-test
+             {'(:probate.deceased/_case-id {:as :deceased
+                                            :cardinality :one})
+              ['*]}
+             :bank-accounts
+             :funeral-account
+             :funeral-expense
+             :bank
+             {'(:probate.case/personal-representative {:as :personal-representative})
+              personal-representative--props}
+             {:bank-accounts [:bank-id
+                              :accounts
+                              {:notification-letter ['(:xt/id {:as :id})
+                                                     :author
+                                                     :by
+                                                     :approved]}
+                              {:valuation-letter [:uploaded-by
+                                                  :uploaded-at]}]}
 
-                             {:buildsoc-accounts [:buildsoc-id
-                                                  :accounts-unknown
-                                                  :accounts
-                                                  {:notification-letter ['(:xt/id {:as :id})
-                                                                         :author
-                                                                         :by
-                                                                         :approved]}
-                                                  {:valuation-letter [:uploaded-by
-                                                                      :uploaded-at]}]}])]
+             {:buildsoc-accounts [:buildsoc-id
+                                  :accounts-unknown
+                                  :accounts
+                                  {:notification-letter ['(:xt/id {:as :id})
+                                                         :author
+                                                         :by
+                                                         :approved]}
+                                  {:valuation-letter [:uploaded-by
+                                                      :uploaded-at]}]}])]
 
    :where '[[case :type :probate.case]
             [case :xt/id case-id]]
@@ -212,11 +211,7 @@
       {:status http/status-404-not-found}
       (do
         (assert (= 1 (count results)))
-        (ring/response
-          (-> (ffirst results)
-            (clojure.set/rename-keys
-              {:xt/id :id
-               :ref/personal-representative.info.id :personal-representative})))))))
+        (ring/response (ffirst results))))))
 
 (defn get-case-history [{:keys [xtdb-node path-params]}]
   (let [case-id (parse-uuid (:case-id path-params))

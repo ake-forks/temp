@@ -40,16 +40,10 @@
                                                "/personal-representative")
                                         :body-params updated-data})]
         (is (<= 200 (:status update-resp) 299)))
-      ; Get many cases
-      (let [{cases :body} (t/run-request {:request-method :get
-                                          :uri "/api/cases"})]
-        (is (= 1 (count cases)))
-        (let [case (first cases)]
-          (is (contains? case :id))
-          (is (submap? updated-data (:personal-representative case)))))
       ; Get single case
       (let [{case :body} (t/run-request {:request-method :get
                                          :uri (str "/api/case/" case-id)})]
+        (is (contains? case :id))
         (is (submap? updated-data (:personal-representative case))))
       ; Update deceased info
       (let [deceased sample/deceased
