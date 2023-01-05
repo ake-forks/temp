@@ -103,6 +103,8 @@ For attributes that contain references to ids of other entities, use a key that 
 
 Also use just the name of the referred entity, or a name that makes sense, not followed by `-id`. For example: `:probate.deceased/case` instead of `:probate.deceased/case-id`.
 
+As a general rule, we are not using abbreviations for attribute names.
+
 Record data in a very concrete way, so that it reflects facts that have happened, not how the data is expected to be used. Leave interpretation, generalizations or abstractions up to applications. This should help preserve flexibility when making use of the data, and prevent data modifications when changing or extending applications.
 
 As a general rule, split nested data to separate referenced entities. This should allow for using `xtdb.api/match` for implementing transactions around that data as a unit. It should also allow for easier access and modification of that data.

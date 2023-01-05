@@ -61,7 +61,7 @@
   (tx-fns/invoke ::initialize-case [case-id pr-id fake?]
     '(fn [ctx case-id pr-id fake?]
        (let [db (xtdb.api/db ctx)
-             last-case-ref (xtdb.api/entity db ::last-case-ref)
+             last-case-ref (xtdb.api/entity db :probate/last-case-reference)
              new-case-ref (if (nil? last-case-ref)
                             1
                             (inc (:value last-case-ref)))
@@ -69,7 +69,7 @@
              ;; Pad `new-case-ref` so that it's at least 6 digits total
              reference (str (format "%04d" new-case-ref) ref-suffix)]
          ;; Update/initialise the last-case-ref
-         [[::xt/put {:xt/id ::last-case-ref
+         [[::xt/put {:xt/id :probate/last-case-reference
                      :value new-case-ref}]
           ;; Initialise the probate-case
           [::xt/put {:type :probate.case
@@ -134,20 +134,6 @@
                                  :user user})))
     {:status 200
      :body pr-info}))
-
-(comment
-  (xt/submit-tx darbylaw.xtdb-node/xtdb-node
-    [[::xt/put {:xt/id ::update-ref
-                :xt/fn update-ref__txn-fn}]])
-
-  (update-pr-info {:xtdb-node darbylaw.xtdb-node/xtdb-node
-                   :path-params {:case-id "be757deb-9cda-4424-a1a2-00e7176dc579"}
-                   :body-params {:forename "changed!"}})
-  (xt/entity (xt/db darbylaw.xtdb-node/xtdb-node) ::update-ref)
-  (xt/submit-tx darbylaw.xtdb-node/xtdb-node
-    [[::xt/evict ::update-ref]])
-
-  (xt/entity (xt/db darbylaw.xtdb-node/xtdb-node) #uuid"be757deb-9cda-4424-a1a2-00e7176dc579"),)
 
 (def common-case-eql
   ['(:xt/id {:as :id})
