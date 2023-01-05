@@ -10,7 +10,7 @@
     [darbylaw.web.ui.case-model :as case-model]))
 
 (rf/reg-event-fx ::complete-buildsoc-success
-  (fn [{:keys [db]} [_ case-id {:keys [path values]} response]]
+  (fn [{:keys [db]} [_ case-id {:keys [path values]}]]
     {:db (fork/set-submitting db path false)
      :fx [[:dispatch [::model/generate-notification case-id (:buildsoc-id values)]]
           [:dispatch [::model/hide-dialog]]
@@ -37,15 +37,13 @@
         :on-success [::complete-buildsoc-success case-id fork-params]
         :on-failure [::complete-buildsoc-failure fork-params]})}))
 
-
 (rf/reg-event-fx ::submit!
   (fn [{:keys [db]} [_ case-id fork-params]]
     {:dispatch [::complete-buildsoc case-id fork-params]}))
 
 (defn layout [{:keys [values handle-submit] :as fork-args}]
   (let [current-case @(rf/subscribe [::case-model/current-case])
-        dialog-data @(rf/subscribe [::model/get-dialog])
-        buildsoc-id (:id dialog-data)]
+        buildsoc-id @(rf/subscribe [::model/current-buildsoc-id])]
     [:form {:on-submit handle-submit}
      [mui/dialog-title
       [shared/header buildsoc-id 0]]
@@ -70,7 +68,6 @@
 
 
 (defn panel []
-  (let [buildsoc-id (:id @(rf/subscribe [::model/get-dialog]))
-        values (model/build-soc-data buildsoc-id)
+  (let [values @(rf/subscribe [::model/current-buildsoc-data])
         case-id @(rf/subscribe [::case-model/case-id])]
     [form/form layout values #(rf/dispatch [::submit! case-id %])]))

@@ -14,13 +14,17 @@
        (let [e (xtdb.api/entity (xtdb.api/db ctx) eid)]
          [[::xt/put (merge e {:accounts [] :accounts-unknown true})]]))))
 
-(defn update-and-complete [asset-id accounts unknown]
-  (tx-fns/invoke ::update-and-complete [asset-id accounts unknown]
-    '(fn [ctx asset-id accounts unknown]
-       (let [asset (xtdb.api/entity (xtdb.api/db ctx) asset-id)]
-         [[::xt/put (merge asset {:accounts accounts
-                                  :accounts-unknown unknown
-                                  :notification-status :started})]]))))
+(defn update-and-complete
+  ([asset-id accounts] (tx-fns/invoke ::update-and-complete [asset-id accounts]
+                         '(fn [ctx asset-id accounts]
+                            (let [asset (xtdb.api/entity (xtdb.api/db ctx) asset-id)]
+                              [[::xt/put (merge asset {:accounts accounts})]]))))
+  ([asset-id accounts unknown] (tx-fns/invoke ::update-and-complete [asset-id accounts unknown]
+                                 '(fn [ctx asset-id accounts unknown]
+                                    (let [asset (xtdb.api/entity (xtdb.api/db ctx) asset-id)]
+                                      [[::xt/put (merge asset {:accounts accounts
+                                                               :accounts-unknown unknown})]])))))
+
 
 (defn update-buildsoc-accounts [op {:keys [xtdb-node user path-params body-params]}]
   (let [buildsoc-id (:buildsoc-id body-params)
@@ -37,12 +41,13 @@
                                {:xt/id asset-id}))
           (case op
             :add (if (= true accounts-unknown)
-                   (tx-fns/append asset-id [:accounts-unknown] [accounts-unknown])
+                   (tx-fns/set-value asset-id [:accounts-unknown] accounts-unknown)
                    (tx-fns/append asset-id [:accounts] accounts))
             :update (if (= true accounts-unknown)
                       (set-accounts-unknown asset-id)
                       (tx-fns/set-value asset-id [:accounts] accounts))
-            :complete (update-and-complete asset-id accounts accounts-unknown))
+            :complete (update-and-complete asset-id accounts accounts-unknown)
+            :valuation (update-and-complete asset-id accounts))
           (tx-fns/append-unique case-id [:buildsoc-accounts] [asset-id])
           (case-history/put-event {:event :updated.buildsoc-accounts
                                    :case-id case-id
@@ -51,22 +56,6 @@
                                    :buildsoc-id buildsoc-id
                                    :accounts accounts}))))
     {:status http/status-204-no-content}))
-
-(defn notification-letter-status [op {:keys [xtdb-node user path-params body-params]}]
-  (let [buildsoc-id (:buildsoc-id body-params)
-        case-id (parse-uuid (:case-id path-params))
-        asset-id {:type :probate.buildsoc-accounts
-                  :case-id case-id
-                  :buildsoc-id buildsoc-id}]
-    (do
-      (xt-util/exec-tx xtdb-node
-        (concat
-          (case op
-            :started (tx-fns/set-value asset-id [:notification-letter] [:started])
-            :approved (tx-fns/set-value asset-id [:notification-letter] [:approved]))))
-      {:status http/status-204-no-content})))
-
-
 
 (def body-schema
   [:map
@@ -78,6 +67,17 @@
       [:roll-number {:optional true} :string]
       [:estimated-value {:optional true} :string]
       [:confirmed-value {:optional true} :string]]]]])
+
+(def final-valuation-schema
+  [:map
+   [:buildsoc-id :keyword]
+   [:accounts
+    [:vector
+     [:map
+      [:roll-number :string]
+      [:estimated-value {:optional true} :string]
+      [:confirmed-value :string]]]]])
+
 
 (defn routes []
   ["/buildingsociety"
@@ -93,4 +93,8 @@
     ["/complete-buildsoc-accounts"
      {:post {:handler (partial update-buildsoc-accounts :complete)
              :coercion reitit.coercion.malli/coercion
-             :parameters {:body body-schema}}}]]])
+             :parameters {:body body-schema}}}]
+    ["/value-buildsoc-accounts"
+     {:post {:handler (partial update-buildsoc-accounts :valuation)
+             :coercion reitit.coercion.malli/coercion
+             :parameters {:body final-valuation-schema}}}]]])

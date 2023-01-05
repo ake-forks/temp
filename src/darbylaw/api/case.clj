@@ -219,7 +219,6 @@
                              {:buildsoc-accounts [:buildsoc-id
                                                   :accounts-unknown
                                                   :accounts
-                                                  :notification-status
                                                   {:notification-letter ['(:xt/id {:as :id})
                                                                          :author
                                                                          :by

@@ -2,7 +2,6 @@
   (:require
     [clojure.java.io :as io]
     [darbylaw.api.bank-list :as banks]
-    [darbylaw.api.bank-notification-template :as template]
     [darbylaw.api.bank-notification.letter-store :as letter-store]
     [darbylaw.api.case-history :as case-history]
     [darbylaw.api.pdf :as pdf]
@@ -198,7 +197,7 @@
                  (tx-fns/assert-equals asset-id [:notification-letter] letter-id)
                  (tx-fns/set-value letter-id [:approved] {:by (:username user)
                                                           :timestamp (xt-util/now)})
-                 ;TODO do we want to remove this notification-status key and instead derive it from :notification-letter?
+
                  (tx-fns/set-value asset-id [:notification-status] :approved)
                  (case-history/put-event
                    {:event (keyword (str type "-notification.letter-approved"))
@@ -210,12 +209,68 @@
         {:status http/status-204-no-content}
         {:status http/status-404-not-found}))))
 
+(defn post-valuation [type {:keys [xtdb-node user path-params multipart-params]}]
+  (let [case-id (parse-uuid (:case-id path-params))
+        id-keyword (keyword (str type "-id"))
+        institution-id (keyword (id-keyword path-params))
+        {:keys [tempfile content-type]} (get multipart-params "file")
+        _ (assert (= content-type "application/pdf"))
+        filename (get multipart-params "filename")
+        ;TODO add util/strip-end function back in, remove "valuation":
+        letter-id (str (random-uuid)
+                    ".valuation")]
+
+    (try
+      (doc-store/store (letter-store/s3-key case-id institution-id letter-id ".pdf") tempfile)
+      (finally
+        (.delete tempfile)))
+    (do
+      (xt-util/exec-tx xtdb-node
+        (concat
+          [[::xt/put {:type :probate.received-bank-letter
+                      :xt/id letter-id
+                      :case-id case-id
+                      id-keyword institution-id
+                      :original-filename filename
+                      :contains-valuation true
+                      :uploaded-by (:username user)
+                      :uploaded-at (xt-util/now)}]]
+          ; This should be obsolete when we support multiple valuation letters:
+          (tx-fns/set-value (build-asset-id case-id institution-id type)
+            [:valuation-letter] letter-id)
+          (case-history/put-event
+            {:event (keyword (str type "-notification.valuation-letter-updated"))
+             :user user
+             :case-id case-id
+             id-keyword institution-id
+             :letter-id letter-id}))))
+    {:status 204}))
+
+
+(defn get-valuation [type {:keys [xtdb-node path-params]}]
+  (let [case-id (parse-uuid (:case-id path-params))
+        id-keyword (keyword (str type "-id"))
+        institution-id (keyword (id-keyword path-params))
+        asset-id (build-asset-id case-id institution-id type)
+        {letter-id :valuation-letter} (xt/pull (xt/db xtdb-node)
+                                        [:valuation-letter] asset-id)
+        input-stream (doc-store/fetch
+                       (letter-store/s3-key case-id institution-id letter-id ".pdf"))]
+    {:status 200
+     :headers {"Content-Type" "application/pdf"}
+     :body input-stream}))
+
 (defn routes []
   [["/case/:case-id/buildsoc/:buildsoc-id"
+    ;move "buildsoc" higher in the path hierarchy so don't have to pass via partial every time
     ["/generate-notification-letter" {:post {:handler (partial generate-notification-letter "buildsoc")}}]
     ["/notification-pdf" {:get {:handler (partial get-notification "buildsoc" :pdf)}}]
     ["/notification-docx" {:get {:handler (partial get-notification "buildsoc" :docx)}
                            :post {:handler (partial post-notification "buildsoc")}}]
-    ["/approve-notification-letter/:letter-id" {:post {:handler (partial approve-notification-letter "buildsoc")}}]]])
+    ["/approve-notification-letter/:letter-id" {:post {:handler (partial approve-notification-letter "buildsoc")}}]
+
+    ;TODO i think this should be in buildingsociety.clj
+    ["/valuation-pdf" {:get {:handler (partial get-valuation "buildsoc")}
+                       :post {:handler (partial post-valuation "buildsoc")}}]]])
 ;["/case/:case-id/bank/:bank-id"
 ;["/generate-notification-letter" {:post {:handler (partial generate-notification-letter "bank")}}]]])

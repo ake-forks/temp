@@ -34,34 +34,41 @@
     (try
       (:dialog/building-society db))))
 
-(defn build-soc-data [buildsoc-id]
-  (let [all-data @(rf/subscribe [::building-societies])]
-    (first (filter #(= (:buildsoc-id %) buildsoc-id) all-data))))
+(rf/reg-sub ::current-buildsoc-id
+  :<- [::get-dialog]
+  (fn [dialog]
+    (:id dialog)))
+
+(rf/reg-sub ::current-buildsoc-data
+  :<- [::current-buildsoc-id]
+  :<- [::building-societies]
+  (fn [[buildsoc-id all-buildsocs]]
+    (first (filter #(= (:buildsoc-id %) buildsoc-id) all-buildsocs))))
+
+(rf/reg-sub ::notification-letter-id
+  :<- [::current-buildsoc-data]
+  (fn [buildsoc-data]
+    (get-in buildsoc-data [:notification-letter :id])))
 
 
-;TODO which is better? Not creating new subs but deriving from rf/reg-sub ::building-societies:
-(defn notification-letter-id [buildsoc-id]
-  (get-in (build-soc-data buildsoc-id) [:notification-letter :id]))
-
-;TODO or using a nested reg-sub (example from bank-model):
-#_(rf/reg-sub ::notification-letter-id
-    :<- [::current-bank-data]
-    (fn [bank-data]
-      (get-in bank-data [:notification-letter :id])))
-
-
-(defn get-process-stage [id]
-  (let [all-buildsocs @(rf/subscribe [::building-societies])
-        dialog @(rf/subscribe [::get-dialog])]
+(defn get-process-stage []
+  (let [dialog @(rf/subscribe [::get-dialog])
+        buildsoc-data @(rf/subscribe [::current-buildsoc-data])]
     (if (= (:stage dialog) :add)
       :add
-      (if (some? (filter #(= :buildsoc-id %) all-buildsocs))
-        (if (= (:notification-status (build-soc-data id)) :started)
-          :notify
-          (if (contains? (:notification-letter (build-soc-data id)) :approved)
+      ;if it contains a buildsoc-id
+      (if (contains? buildsoc-data :notification-letter)
+        (if (contains? (:notification-letter buildsoc-data) :approved)
+          (if (contains? (first (:accounts buildsoc-data)) :confirmed-value)
+            :complete
+            :valuation)
+          :notify)
+        :edit))))
 
-            :valuation
-            :edit))))))
+; edit =
+; notify = notification letter not approved
+; valuation = notification letter approved
+; completed = :accounts contains :confirmed-value
 
 
 ;generating and approving notification letters
@@ -85,8 +92,9 @@
         :on-failure [::generate-notification-failure case-id buildsoc-id]})}))
 
 (rf/reg-event-fx ::approve-notification-letter-success
-  (fn [{:keys [db]} [_ case-id buildsoc-id]]
-    {:fx [[:dispatch [::case-model/load-case! case-id]]]}))
+  (fn [{:keys [db]} [_ case-id]]
+    {:fx [[:dispatch [::hide-dialog]]
+          [:dispatch [::case-model/load-case! case-id]]]}))
 
 (rf/reg-event-fx ::approve-notification-letter
   (fn [{:keys [db]} [_ case-id buildsoc-id letter-id]]
@@ -139,8 +147,7 @@
   (fn [db [_ id]]
     (assoc-in db [:dialog/building-society]
       {:open true
-       :id id
-       :stage :edit #_(get-process-stage id)})))
+       :id id})))
 
 (rf/reg-event-db
   ::show-add-dialog
