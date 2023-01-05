@@ -4,18 +4,31 @@
     [re-frame.core :as rf]
     [reagent.format :as format]
     [darbylaw.web.theme :as theme]
-    [darbylaw.web.ui.case-model :as case-model]))
+    [darbylaw.web.ui.case-model :as case-model]
+    [darbylaw.web.ui.funeral.model :as funeral-model]
+    [clojure.string :as str]))
+
+(defn parse-float
+  [s]
+  (if (str/blank? s)
+    0
+    (js/parseFloat s)))
 
 (defn get-value []
-  (let [bank-accounts (:bank-accounts @(rf/subscribe [::case-model/current-case]))]
-    (reduce + (map
-                (fn [bank]
-                  (reduce + (map (fn [account]
-                                   (if (clojure.string/blank? (:estimated-value account))
-                                     0
-                                     (js/parseFloat (:estimated-value account))))
-                              (:accounts bank))))
-                bank-accounts))))
+  (let [bank-accounts (:bank-accounts @(rf/subscribe [::case-model/current-case]))
+        funeral-account @(rf/subscribe [::funeral-model/account])
+        funeral-expenses @(rf/subscribe [::funeral-model/expense-list])
+        
+        assets (->> bank-accounts
+                    (mapcat :accounts)
+                    (map :estimated-value)
+                    (map parse-float))
+        debts (concat [(-> funeral-account :value parse-float)]
+                      (->> funeral-expenses
+                           (map :value)
+                           (map parse-float)))]
+    (println (clj->js bank-accounts))
+    (- (reduce + assets) (reduce + debts))))
 
 (defn overview-card []
   [mui/card {:style {:width "large" :background-color theme/off-white}}
