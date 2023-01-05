@@ -149,54 +149,48 @@
 
   (xt/entity (xt/db darbylaw.xtdb-node/xtdb-node) #uuid"be757deb-9cda-4424-a1a2-00e7176dc579"),)
 
+(def common-case-eql
+  ['(:xt/id {:as :id})
+   :reference
+   :fake
+   {'(:probate.case/personal-representative {:as :personal-representative})
+    personal-representative--props}])
+
 (defn get-cases [{:keys [xtdb-node]}]
   (ring/response
     (->> (xt/q (xt/db xtdb-node)
-           {:find [(list 'pull 'case
-                     ['(:xt/id {:as :id})
-                      :reference
-                      :fake
-                      {'(:probate.case/personal-representative {:as :personal-representative})
-                       personal-representative--props}])]
+           {:find [(list 'pull 'case common-case-eql)]
             :where '[[case :type :probate.case]]})
       (map (fn [[case]]
              case)))))
 
-(comment
-  (xt/entity (xt/db darbylaw.xtdb-node/xtdb-node) #uuid"51127427-6ff1-4093-9929-c2c9990c796e"))
-
 (def get-case__query
   {:find [(list 'pull 'case
-            ['(:xt/id {:as :id})
-             :reference
-             :fake
-             {'(:probate.deceased/_case {:as :deceased
-                                         :cardinality :one})
-              ['*]}
-             :bank-accounts
-             :funeral-account
-             :funeral-expense
-             :bank
-             {'(:probate.case/personal-representative {:as :personal-representative})
-              personal-representative--props}
-             {:bank-accounts [:bank-id
-                              :accounts
-                              {:notification-letter ['(:xt/id {:as :id})
-                                                     :author
-                                                     :by
-                                                     :approved]}
-                              {:valuation-letter [:uploaded-by
-                                                  :uploaded-at]}]}
+            (into common-case-eql
+              [{'(:probate.deceased/_case {:as :deceased
+                                           :cardinality :one})
+                ['*]}
+               :funeral-account
+               :funeral-expense
+               :bank
+               {:bank-accounts [:bank-id
+                                :accounts
+                                {:notification-letter ['(:xt/id {:as :id})
+                                                       :author
+                                                       :by
+                                                       :approved]}
+                                {:valuation-letter [:uploaded-by
+                                                    :uploaded-at]}]}
 
-             {:buildsoc-accounts [:buildsoc-id
-                                  :accounts-unknown
-                                  :accounts
-                                  {:notification-letter ['(:xt/id {:as :id})
-                                                         :author
-                                                         :by
-                                                         :approved]}
-                                  {:valuation-letter [:uploaded-by
-                                                      :uploaded-at]}]}])]
+               {:buildsoc-accounts [:buildsoc-id
+                                    :accounts-unknown
+                                    :accounts
+                                    {:notification-letter ['(:xt/id {:as :id})
+                                                           :author
+                                                           :by
+                                                           :approved]}
+                                    {:valuation-letter [:uploaded-by
+                                                        :uploaded-at]}]}]))]
 
    :where '[[case :type :probate.case]
             [case :xt/id case-id]]
