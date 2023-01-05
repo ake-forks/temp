@@ -4,7 +4,8 @@
     [darbylaw.test.common :as t :refer [submap?]]
     [darbylaw.handler :refer [ring-handler]]
     [cognitect.transit :as transit]
-    [darbylaw.api.setup :as sample]))
+    [darbylaw.api.setup :as sample]
+    [clojure.string :as str]))
 
 (use-fixtures :once
   (t/use-mount-states t/ring-handler-states))
@@ -25,6 +26,9 @@
       (is (= 1 (count cases)))
       (let [case (first cases)]
         (is (contains? case :id))
+        (is (contains? case :reference))
+        (is (:is-test case))
+        (is (str/ends-with? (:reference case) "99"))
         (is (submap? pr-info (:personal-representative case)))))
     ; Update personal rep
     (let [case-id (-> post-resp :body :id)

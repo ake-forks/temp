@@ -96,24 +96,21 @@
     {:status 200
      :body {:id case-id}}))
 
-(def merge__txn-fn
-  '(fn [ctx eid m]
-     (when-let [e (xtdb.api/entity (xtdb.api/db ctx) eid)]
-       [[::xt/put (merge e m)]])))
-
-(defn update-deceased-info [{:keys [xtdb-node user path-params body-params]}]
+(defn update-deceased [{:keys [xtdb-node user path-params body-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
-        deceased-info body-params]
+        deceased-data body-params
+        deceased-id {:probate.deceased/case-id case-id}]
     (xt-util/exec-tx xtdb-node
       (concat
-        [[::xt/put {:xt/id ::merge
-                    :xt/fn merge__txn-fn}]
-         [::xt/fn ::merge case-id {:deceased.info deceased-info}]]
-        (case-history/put-event {:event :updated.deceased.info
+        [[::xt/put (merge deceased-data
+                     deceased-id
+                     {:xt/id deceased-id
+                      :type :probate.deceased})]]
+        (case-history/put-event {:event :updated.deceased
                                  :case-id case-id
                                  :user user})))
     {:status 200
-     :body deceased-info}))
+     :body deceased-data}))
 
 (def update-ref__txn-fn
   '(fn [ctx eid ref-k m]
@@ -160,6 +157,7 @@
            {:find [(list 'pull 'case
                      [:xt/id
                       :reference
+                      :is-test
                       {:ref/personal-representative.info.id
                        personal-representative--props}])]
             :where '[[case :type :probate.case]]})
@@ -174,7 +172,10 @@
 (def get-case__query
   {:find [(list 'pull 'case [:xt/id
                              :reference
-                             :deceased.info
+                             :is-test
+                             {'(:probate.deceased/_case-id {:as :deceased
+                                                            :cardinality :one})
+                              ['*]}
                              :bank-accounts
                              :funeral-account
                              :funeral-expense
@@ -215,8 +216,7 @@
           (-> (ffirst results)
             (clojure.set/rename-keys
               {:xt/id :id
-               :ref/personal-representative.info.id :personal-representative
-               :deceased.info :deceased})))))))
+               :ref/personal-representative.info.id :personal-representative})))))))
 
 (defn get-case-history [{:keys [xtdb-node path-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
@@ -287,7 +287,7 @@
              :parameters {:body personal-representative--schema}}}]
 
      ["/deceased"
-      {:put {:handler update-deceased-info
+      {:put {:handler update-deceased
              :coercion reitit.coercion.malli/coercion
              :parameters {:body deceased--schema}}}]]]
 
