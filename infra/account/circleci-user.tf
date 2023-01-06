@@ -111,7 +111,8 @@ resource "aws_iam_user_policy" "circleci" {
         Effect = "Allow"
         Resource = [
           "arn:aws:s3:::${aws_s3_bucket.tf-state-bucket.bucket}",
-          "arn:aws:s3:::${aws_s3_bucket.tf-state-bucket.bucket}/env:/*/app/*"
+          "arn:aws:s3:::${aws_s3_bucket.tf-state-bucket.bucket}/env:/*/app/*",
+          "arn:aws:s3:::darbylaw-docs-*",
         ]
       }
     ]

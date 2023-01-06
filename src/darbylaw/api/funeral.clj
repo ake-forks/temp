@@ -5,9 +5,10 @@
             [darbylaw.api.funeral.expense-store :as expense-store]
             [xtdb.api :as xt]
             [darbylaw.api.util.xtdb :as xt-util]
-            [darbylaw.api.util.tx-fns :as tx-fns]))
+            [darbylaw.api.util.tx-fns :as tx-fns]
+            [darbylaw.api.case-history :as case-history]))
 
-(defn upsert-funeral-account [{:keys [xtdb-node parameters path-params multipart-params]}]
+(defn upsert-funeral-account [{:keys [xtdb-node user parameters path-params multipart-params]}]
   (log/info "Upsert funeral account")
   (let [case-id (parse-uuid (:case-id path-params))
         query-params (:query parameters)
@@ -30,7 +31,10 @@
     (xt-util/exec-tx xtdb-node
       (concat
         (tx-fns/merge-value case-id
-          [:funeral-account] account-info)))
+          [:funeral-account] account-info)
+        (case-history/put-event {:event :updated.funeral-account
+                                 :case-id case-id
+                                 :user user})))
     {:status 200
      :body {:success? true}}))
 
@@ -44,7 +48,7 @@
        :headers {"Content-Type" (.getContentType file-metadata)}
        :body (.getObjectContent s3-file)})))
 
-(defn add-other-expense [{:keys [xtdb-node parameters path-params multipart-params]}]
+(defn add-other-expense [{:keys [xtdb-node user parameters path-params multipart-params]}]
   (log/info "Add other funeral expense")
   (let [case-id (parse-uuid (:case-id path-params))
         query-params (:query parameters)
@@ -66,11 +70,14 @@
     (xt-util/exec-tx xtdb-node
       (concat
         (tx-fns/set-value case-id
-          [:funeral-expense expense-id] expense-info)))
+          [:funeral-expense expense-id] expense-info)
+        (case-history/put-event {:event :added.other-expense
+                                 :case-id case-id
+                                 :user user})))
     {:status 200
      :body {:id expense-id}}))
 
-(defn update-other-expense [{:keys [xtdb-node parameters path-params multipart-params]}]
+(defn update-other-expense [{:keys [xtdb-node user parameters path-params multipart-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
         expense-id (parse-uuid (:expense-id path-params))
         query-params (:query parameters)
@@ -93,7 +100,10 @@
     (xt-util/exec-tx xtdb-node
       (concat
         (tx-fns/set-value case-id
-          [:funeral-expense expense-id] expense-info)))
+          [:funeral-expense expense-id] expense-info)
+        (case-history/put-event {:event :updated.other-expense
+                                 :case-id case-id
+                                 :user user})))
     {:status 200
      :body {:id expense-id}}))
 
@@ -142,7 +152,7 @@
    ["/account"
     {:put {:handler upsert-funeral-account
            :parameters {:query funeral-account-schema}}}]
-   ["/account/"
+   ["/account"
     ["/receipt"
      {:get {:handler (get-funeral-file "receipt")}}]
     ["/invoice"

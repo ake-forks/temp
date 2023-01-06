@@ -9,7 +9,8 @@
     [darbylaw.web.ui.funeral.util :as util]
     [darbylaw.web.ui :as ui]
     [darbylaw.web.util.form :as form]
-    [vlad.core :as v]))
+    [vlad.core :as v]
+    [darbylaw.web.util.vlad :as v-util]))
 
 (defn submit-buttons [{:keys [submitting?] :as fork-args}]
   [mui/stack {:spacing 1
@@ -97,17 +98,14 @@
        [mui/typography "receipt"]
        [receipt-field fork-args]])
       
-    [submit-buttons]]])
-
-(def currency?
-  (v/matches #"[0-9]+(\.[0-9]{2})?"))
+    [submit-buttons fork-args]]])
 
 (def data-validation
   (v/join
     (v/attr [:title] (v/present))
     (v/attr [:value] (v/chain
                        (v/present)
-                       currency?))))
+                       (v-util/currency?)))))
 
 (defn form [values on-submit]
   (r/with-let [form-state (r/atom nil)]
@@ -117,11 +115,11 @@
       :on-submit on-submit
       :keywordize-keys true
       :prevent-default? true
-      ;:validation (fn [data]
-      ;              (try (v/field-errors data-validation data)
-      ;                (catch :default e
-      ;                  (js/console.log "Error during validation: " e)
-      ;                  [{:type ::validation-error :error e}]))
+      :validation (fn [data]
+                    (try (v/field-errors data-validation data)
+                      (catch :default e
+                        (js/console.log "Error during validation: " e)
+                        [{:type ::validation-error :error e}])))
       :initial-values values}
      (fn [fork-args]
         [layout (ui/mui-fork-args fork-args)])]

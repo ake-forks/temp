@@ -147,7 +147,7 @@ workflows:
           workspace: staging
           filters:
             branches:
-              only: main
+              only: staging
           requires:
             - build
       - deploy:
@@ -155,6 +155,6 @@ workflows:
           workspace: production
           filters:
             branches:
-              only: main
+              only: production
           requires:
             - build

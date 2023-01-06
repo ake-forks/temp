@@ -8,7 +8,9 @@
     [darbylaw.web.ui.funeral.model :as funeral-model]
     [darbylaw.web.ui.funeral.util :as util]
     [darbylaw.web.ui :as ui]
-    [darbylaw.web.util.form :as form]))
+    [darbylaw.web.util.form :as form]
+    [vlad.core :as v]
+    [darbylaw.web.util.vlad :as v-util]))
 
 (defn submit-buttons [{:keys [submitting?] :as fork-args}]
   [mui/stack {:spacing 1
@@ -114,6 +116,11 @@
       
     [submit-buttons]]])
 
+(def data-validation
+  (v/join
+    (v/attr [:title] (v/present))
+    (v/attr [:value] (v/chain (v/present) (v-util/currency?)))))
+
 (defn form [values on-submit]
   (r/with-let [form-state (r/atom nil)]
     [fork/form
@@ -122,8 +129,11 @@
       :on-submit on-submit
       :keywordize-keys true
       :prevent-default? true
-      ;; TODO: validation
-      ;:validation (fn [data])
+      :validation (fn [data]
+                    (try (v/field-errors data-validation data)
+                      (catch :default e
+                        (js/console.log "Error during validation: " e)
+                        [{:type ::validation-error :error e}])))
       :initial-values values}
      (fn [fork-args]
         [layout (ui/mui-fork-args fork-args)])]

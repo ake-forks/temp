@@ -77,3 +77,20 @@ console in a more readable way.
 ```sh
 aws-vault exec juxtegg --no-session -- terraform apply -var "probatetree_docker_tag=b3ef7a1b5d5c40d13783c905405ed13c4db91e47"
 ```
+
+## Git Strategy
+
+The project currently has two environments to deploy to, staging and production.
+A goal of ours is that the staging can get unfinished changes, but production only gets finished changes.
+
+To that end, this repo has two "special" branches: `staging` and `production`.
+
+The `staging` is the set as the default branch in github, so new PRs are created against that.
+Commits to `staging` will trigger the CI to deploy the code to staging.
+Commits to `production` will trigger the CI to deploy the code to production.
+
+With this the idea is that:
+- In-progress changes will go to `staging`
+- Once we're happy with `staging` a PR will be created to merge `staging` into `production`
+  - Maybe named something like "Release 1.0"
+- If there's a production issue, branches or commits can be merged into `production` but should be quickly merged into `staging`

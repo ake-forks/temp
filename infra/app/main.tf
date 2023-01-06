@@ -104,6 +104,10 @@ resource "aws_ecs_task_definition" "probatetree" {
             "value" : terraform.workspace
           },
           {
+            "name" : "DOC_STORE_BUCKET"
+            "value" : aws_s3_bucket.doc-store.bucket
+          },
+          {
             "name" : "DATABASE_HOST"
             "value" : aws_db_instance.xtdb-backend.address
           },
