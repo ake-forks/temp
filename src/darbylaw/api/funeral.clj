@@ -21,7 +21,7 @@
                                        true))]
     (when tempfile
       (let [s3-name (if (:paid? account-info) "receipt" "invoice")]
-        (try 
+        (try
           (doc-store/store
             (expense-store/s3-key case-id s3-name)
             tempfile
@@ -60,7 +60,7 @@
     (println expense-info)
     (when tempfile
       (let [s3-name (str expense-id "/receipt")]
-        (try 
+        (try
           (doc-store/store
             (expense-store/s3-key case-id s3-name)
             tempfile
@@ -90,7 +90,7 @@
     (println expense-info)
     (when tempfile
       (let [s3-name (str expense-id "/receipt")]
-        (try 
+        (try
           (doc-store/store
             (expense-store/s3-key case-id s3-name)
             tempfile
@@ -112,23 +112,21 @@
         case-id-str "aca8c621-e44b-4b75-9786-4297b89e72ce"
         case-id (parse-uuid case-id-str)
         expense-id (parse-uuid "3a941e79-04f8-4207-9913-74d64321f160")]
-    #_
-    (update-other-expense
-      {:xtdb-node xtdb-node
-       :path-params {:case-id (str case-id)
-                     :expense-id (str expense-id)}
-       :body-params {:title "My Test Account"
-                     :value 2345
-                     :paid? true
-                     :paid-by "Jim"}})
-    #_
-    (xt-util/exec-tx xtdb-node
-      (concat
-        (tx-fns/set-value case-id
-          [:funeral-account] nil)))
+    #_(update-other-expense
+        {:xtdb-node xtdb-node
+         :path-params {:case-id (str case-id)
+                       :expense-id (str expense-id)}
+         :body-params {:title "My Test Account"
+                       :value 2345
+                       :paid? true
+                       :paid-by "Jim"}})
+    #_(xt-util/exec-tx xtdb-node
+        (concat
+          (tx-fns/set-value case-id
+            [:funeral-account] nil)))
     (xt/q (xt/db xtdb-node)
-     {:find ['(pull case [*])]
-      :where [['case :xt/id case-id]]})))
+      {:find ['(pull case [*])]
+       :where [['case :xt/id case-id]]})))
 
 (def funeral-account-schema
   [:map

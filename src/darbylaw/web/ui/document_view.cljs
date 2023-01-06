@@ -2,8 +2,8 @@
   (:require
     [reagent-mui.components :as mui]
     [darbylaw.web.ui.case-model :as case-model]
-    [re-frame.core :as rf]
-    [reagent.core :as r]))
+    [re-frame.core :as rf]))
+
 
 
 (rf/reg-sub ::pdf-view
@@ -31,26 +31,32 @@
                :width "100%"
                :height "100%"}]]))
 
-(defn toggle-pdf [data]
-  "data format:
-     {:name name
-      :source path-to-source}"
-  (let [current-pdf @(rf/subscribe [::pdf-view])
-        active? (= (:name current-pdf) (:name data))]
+(defn toggle-pdf [data pdf-view]
+  (let [active? (= (:name pdf-view) (:name data))]
     (if active?
       (rf/dispatch [::hide-pdf])
       (rf/dispatch [::show-pdf data]))))
 
 (defn pdf-button [{:keys [name source]} pdf-view]
+  "data format:
+     {:name name
+      :source path-to-source}"
   (let [active? (= (:name pdf-view) name)]
     [mui/button {:variant (if active? :outlined :contained)
+                 :full-width true
                  :onClick #(toggle-pdf {:name name
-                                        :source source})}
+                                        :source source}
+                             pdf-view)}
      (if active? "close" name)]))
 
 (defn view-pdf-dialog [{:keys [buttons]}]
-  (let [pdf-view @(rf/subscribe [::pdf-view])
-        case-id @(rf/subscribe [::case-model/case-id])]
+  "param format:
+     {:buttons
+       [{:name name
+         :source path-to-source}
+        {:name name
+         :source path-to-source}]}"
+  (let [pdf-view @(rf/subscribe [::pdf-view])]
     [mui/stack {:spacing 1
                 :style {:background-color :white}}
      [mui/box {:style {:width "100%"}}
@@ -59,7 +65,8 @@
         [mui/stack {:spacing 1}
          (map
            (fn [btn-params]
-             [pdf-button btn-params pdf-view])
+             [mui/box
+              [pdf-button btn-params pdf-view]])
            buttons)])]]))
 
 

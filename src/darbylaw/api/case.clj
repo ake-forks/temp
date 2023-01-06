@@ -94,7 +94,7 @@
            last-case-ref (xtdb.api/entity db ::last-case-ref)
            new-case-ref (if (nil? last-case-ref)
                           1
-                          (inc (:value last-case-ref))) 
+                          (inc (:value last-case-ref)))
            ref-suffix (if is-test "99" "00")
            ;; Pad `new-case-ref` so that it's at least 6 digits total
            reference (str (format "%04d" new-case-ref) ref-suffix)]
@@ -214,7 +214,18 @@
                                                                      :by
                                                                      :approved]}
                                               {:valuation-letter [:uploaded-by
-                                                                  :uploaded-at]}]}])]
+                                                                  :uploaded-at]}]}
+
+                             {:buildsoc-accounts [:buildsoc-id
+                                                  :accounts-unknown
+                                                  :accounts
+                                                  {:notification-letter ['(:xt/id {:as :id})
+                                                                         :author
+                                                                         :by
+                                                                         :approved]}
+                                                  {:valuation-letter [:uploaded-by
+                                                                      :uploaded-at]}]}])]
+
    :where '[[case :type :probate.case]
             [case :xt/id case-id]]
    :in '[case-id]})

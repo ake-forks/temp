@@ -19,6 +19,8 @@
     [darbylaw.api.settings :as settings-api]
     [darbylaw.api.case :as case-api]
     [darbylaw.api.bank :as bank-api]
+    [darbylaw.api.buildingsociety :as buildsoc-api]
+    [darbylaw.api.notification :as notification-api]
     [darbylaw.api.funeral :as funeral-api]
     [darbylaw.api.bank-notification :as bank-notification-api]
     [darbylaw.api.bank-notification.mailing-job :as mailing]
@@ -68,8 +70,10 @@
      (settings-api/routes)
      (case-api/routes)
      (bank-api/routes)
+     (buildsoc-api/routes)
      (funeral-api/routes)
      (bank-notification-api/routes)
+     (notification-api/routes)
      (mailing/routes)]]])
 
 (defn make-router []
