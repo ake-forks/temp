@@ -56,7 +56,7 @@
          [mui/typography {:variant :body1}
           (str "To the best of your knowledge, enter the details for your late "
             (-> current-case :deceased :relationship)
-            (if-let [name (:buildsoc-id values)]
+            (if-let [name (model/buildsoc-label buildsoc-id)]
               (str "'s accounts with " name)
               "'s accounts."))]
          [form/accounts-unknown fork-args]

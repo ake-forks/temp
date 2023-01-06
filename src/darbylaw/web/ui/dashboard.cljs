@@ -154,7 +154,7 @@
        (fn [buildsoc]
          (let [id (:buildsoc-id buildsoc)]
            ^{:key id}
-           [asset-item {:title (:buildsoc-id buildsoc)
+           [asset-item {:title (buildsoc-model/buildsoc-label id)
                         :value (reduce + (map (fn [acc] (js/parseInt (:estimated-value acc))) (:accounts buildsoc)))
                         :on-click #(rf/dispatch [::buildsoc-model/show-process-dialog id])}]))
        (:buildsoc-accounts current-case))

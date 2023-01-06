@@ -73,7 +73,7 @@
    [mui/list-item {:disable-padding true}
     [mui/list-item-icon
      [ui/icon-edit]]
-    [mui/list-item-text "edit it in Word - take care to preserve the address format"]]
+    [mui/list-item-text "edit it in Word - take care to preserve the address format and placement"]]
    [mui/list-item {:disable-padding true}
     [mui/list-item-icon
      [ui/icon-upload]]
@@ -92,8 +92,8 @@
        "If you would like to make changes, use the controls at the bottom to:"]
       [process-list]
       [mui/typography {:variant :body1}
-       (str "Once you are happy with the letter, you can approve it to be posted to " buildsoc-id " via Royal Mail.")]]
-     [shared/accounts-view (:accounts (first buildsoc-data)) {:estimated? true :confirmed? false}]
+       (str "Once you are happy with the letter, you can approve it to be posted to " (model/buildsoc-label buildsoc-id) " via Royal Mail.")]]
+     [shared/accounts-view (:accounts buildsoc-data) {:estimated? true :confirmed? false}]
      [mui/stack {:spacing 1}
       [mui/typography {:variant :h6} "edit and approve letter"]
       [control-buttons case-id buildsoc-id]

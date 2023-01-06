@@ -1,9 +1,11 @@
 (ns darbylaw.web.ui.buildingsociety.model
-  (:require [re-frame.core :as rf]
-            [darbylaw.web.ui :as ui]
-            [darbylaw.web.ui.case-model :as case-model]
-            [reagent-mui.components :as mui]
-            [reagent.core :as r]))
+  (:require
+    [darbylaw.api.buildsoc-list :as buildsoc-list]
+    [re-frame.core :as rf]
+    [darbylaw.web.ui :as ui]
+    [darbylaw.web.ui.case-model :as case-model]
+    [reagent-mui.components :as mui]
+    [reagent.core :as r]))
 
 (def buildsoc-options
   [{:id :bath-building-society
@@ -24,6 +26,18 @@
     :common-name "Cambridge Building Society"
     :accounts [{:roll-number 987 :estimated-value 400.50}
                {:roll-number 432 :estimated-value 105}]}])
+
+
+(def buildsoc-list
+  buildsoc-list/buildsoc-list)
+(def buildsoc-list-by-id
+  (into {} (map (juxt :id identity) buildsoc-list/buildsoc-list)))
+
+(defn all-buildsoc-ids []
+  (map :id buildsoc-list/buildsoc-list))
+
+(defn buildsoc-label [buildsoc-id]
+  (get-in buildsoc-list-by-id [buildsoc-id :common-name]))
 
 (rf/reg-sub ::building-societies
   (fn [db]
@@ -49,6 +63,9 @@
   :<- [::current-buildsoc-data]
   (fn [buildsoc-data]
     (get-in buildsoc-data [:notification-letter :id])))
+
+(defn valuation-letter-present? []
+  (contains? @(rf/subscribe [::current-buildsoc-data]) :valuation-letter))
 
 
 (defn get-process-stage []

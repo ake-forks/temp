@@ -8,14 +8,14 @@
   (:require-macros [reagent-mui.util :refer [react-component]]))
 
 
+(defn buildsoc-label [buildsoc-id-str]
+  (assert (string? buildsoc-id-str))
+  (model/buildsoc-label (keyword buildsoc-id-str)))
 
-(defn buildsoc-label [buildsoc-id]
-  (assert (string? buildsoc-id))
-  (clojure.string/replace buildsoc-id "-" " "))
 
 (defn buildsoc-select [{:keys [values set-handle-change handle-blur touched errors] :as fork-args}]
   [mui/autocomplete
-   {:options (map :id model/buildsoc-options)
+   {:options (model/all-buildsoc-ids)
     :value (get values :buildsoc-id)
     :getOptionLabel buildsoc-label
     :onChange (fn [_evt new-value]
@@ -87,8 +87,8 @@
                 :full-width false
                 :start-icon (r/as-element [ui/icon-add-circle])}
     (str "add another "
-      (if-let [buildsoc-id (get-in props [:values :buildsoc-id])]
-        (str buildsoc-id " account")
+      (if-let [buildsoc-name (model/buildsoc-label (get-in props [:values :buildsoc-id]))]
+        (str buildsoc-name " account")
         "account"))]])
 
 (defn account-array-component [fork-args]

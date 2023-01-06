@@ -33,45 +33,47 @@
    [close-button]])
 
 
-(defn header [text stage]
+(defn header [buildsoc-id stage]
   [mui/stack {:spacing 2}
    [mui/stack {:direction :row :justify-content :space-between}
-    [mui/typography {:variant :h4 :sx {:mb 1}} text]
+    [mui/typography {:variant :h4 :sx {:mb 1}} (model/buildsoc-label buildsoc-id)]
     [close-button]]
    [stepper stage]])
 
 (defn accounts-view [accounts {:keys [estimated? confirmed?]}]
   [mui/stack {:spacing 1}
    [mui/typography {:variant :h6} "account information"]
-   (map
-     (fn [account]
-       [mui/stack {:spacing 1 :direction :row}
-        [mui/text-field {:name :roll-number
-                         :value (get account :roll-number)
-                         :label "roll number"
-                         :disabled true
-                         :full-width true}]
-        (if estimated?
-          [mui/text-field {:name :estimated-value
-                           :value (get account :estimated-value)
-                           :label "estimated value"
+   (if (empty? accounts)
+     [mui/typography {:variant :body1} "Account details unknown."]
+     (map
+       (fn [account]
+         [mui/stack {:spacing 1 :direction :row}
+          [mui/text-field {:name :roll-number
+                           :value (get account :roll-number)
+                           :label "roll number"
                            :disabled true
-                           :full-width true
-                           :InputProps
-                           {:start-adornment
-                            (r/as-element [mui/input-adornment
-                                           {:position :start} "£"])}}])
-        (if confirmed?
-          [mui/text-field {:name :confirmed-value
-                           :value (get account :confirmed-value)
-                           :label "confirmed value"
-                           :disabled true
-                           :full-width true
-                           :InputProps
-                           {:start-adornment
-                            (r/as-element [mui/input-adornment
-                                           {:position :start} "£"])}}])])
-     accounts)])
+                           :full-width true}]
+          (if estimated?
+            [mui/text-field {:name :estimated-value
+                             :value (get account :estimated-value)
+                             :label "estimated value"
+                             :disabled true
+                             :full-width true
+                             :InputProps
+                             {:start-adornment
+                              (r/as-element [mui/input-adornment
+                                             {:position :start} "£"])}}])
+          (if confirmed?
+            [mui/text-field {:name :confirmed-value
+                             :value (get account :confirmed-value)
+                             :label "confirmed value"
+                             :disabled true
+                             :full-width true
+                             :InputProps
+                             {:start-adornment
+                              (r/as-element [mui/input-adornment
+                                             {:position :start} "£"])}}])])
+       accounts))])
 
 (defn upload-button [_case-id _buildsoc-id _props _label suffix]
   (r/with-let [_ (reset! model/file-uploading? false)
@@ -101,4 +103,6 @@
   {:style {:height "90vh"}
    :width "70vw"
    :padding "1rem"})
+
+
 

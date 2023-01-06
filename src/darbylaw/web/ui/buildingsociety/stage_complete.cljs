@@ -30,8 +30,8 @@
         "Here is a summary of your late "
         relationship
         "'s accounts with "
-        buildsoc-id
-        ". Using the buttons on the left you can view all correspondence
+        (model/buildsoc-label buildsoc-id)
+        ". Using the buttons on the left you can view all the correspondence
         sent and received in relation to the following accounts.")]
      [shared/accounts-view (:accounts buildsoc-data) {:estimated? false :confirmed? true}]]))
 
