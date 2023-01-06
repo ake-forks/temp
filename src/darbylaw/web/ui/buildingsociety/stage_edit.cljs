@@ -46,7 +46,7 @@
         buildsoc-id @(rf/subscribe [::model/current-buildsoc-id])]
     [:form {:on-submit handle-submit}
      [mui/dialog-title
-      [shared/header buildsoc-id 0]]
+      [shared/header buildsoc-id :edit]]
      [mui/dialog-content
       [mui/box shared/narrow-dialog-props
        [mui/stack {:justify-content :space-between
@@ -56,7 +56,7 @@
          [mui/typography {:variant :body1}
           (str "To the best of your knowledge, enter the details for your late "
             (-> current-case :deceased :relationship)
-            (if-let [name (:buildsoc-id values)]
+            (if-let [name (model/buildsoc-label buildsoc-id)]
               (str "'s accounts with " name)
               "'s accounts."))]
          [form/accounts-unknown fork-args]

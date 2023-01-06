@@ -72,6 +72,6 @@
 
 (defn panel []
   (let [case-id @(rf/subscribe [::case-model/case-id])]
-    [form/form layout {:accounts [{}]} #(rf/dispatch [::submit! case-id %])]))
+    [form/form layout {:accounts [{}]} #(rf/dispatch [::submit! case-id %]) {}]))
 
 

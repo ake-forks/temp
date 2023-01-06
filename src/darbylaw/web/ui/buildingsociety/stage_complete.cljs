@@ -12,10 +12,11 @@
   (let [buildsoc-id (:id @(rf/subscribe [::model/get-dialog]))
         case-id @(rf/subscribe [::case-model/case-id])]
     [mui/stack {:spacing 1}
+     ;TODO add some kind of loading filler
      [mui/typography {:variant :h6} "correspondence"
       [pdf-view/view-pdf-dialog
        {:buttons
-        [{:name "notificaton letter sent"
+        [{:name "notification letter sent"
           :source (str "/api/case/" case-id "/buildsoc/" (name buildsoc-id) "/notification-pdf")}
          {:name "valuation letter received"
           :source (str "/api/case/" case-id "/buildsoc/" (name buildsoc-id) "/valuation-pdf")}]}]]]))
@@ -30,8 +31,8 @@
         "Here is a summary of your late "
         relationship
         "'s accounts with "
-        buildsoc-id
-        ". Using the buttons on the left you can view all correspondence
+        (model/buildsoc-label buildsoc-id)
+        ". Using the buttons on the left you can view all the correspondence
         sent and received in relation to the following accounts.")]
      [shared/accounts-view (:accounts buildsoc-data) {:estimated? false :confirmed? true}]]))
 
@@ -41,7 +42,7 @@
         pdf-view @(rf/subscribe [::pdf-view/pdf-view])]
     [mui/box
      [mui/dialog-title
-      [shared/header buildsoc-id 3]]
+      [shared/header buildsoc-id :complete]]
      [mui/dialog-content
       [mui/box (if (nil? pdf-view)
                  shared/narrow-dialog-props

@@ -36,11 +36,17 @@
   (fn [{:keys [db]} [_ case-id fork-params]]
     {:dispatch [::value-buildsoc-accounts case-id fork-params]}))
 
-(defn layout [{:keys [handle-submit] :as fork-args}]
+(defn accounts-valued? [accounts]
+  (and
+    (not-empty accounts)
+    (every? (fn [acc] (some? (:confirmed-value acc))) accounts)))
+
+(defn layout [{:keys [handle-submit values] :as fork-args}]
   (let [current-case @(rf/subscribe [::case-model/current-case])
         dialog-data @(rf/subscribe [::model/get-dialog])
         case-id @(rf/subscribe [::case-model/case-id])
-        buildsoc-id @(rf/subscribe [::model/current-buildsoc-id])]
+        buildsoc-id @(rf/subscribe [::model/current-buildsoc-id])
+        buildsoc-name (model/buildsoc-label buildsoc-id)]
     [:form {:on-submit handle-submit}
      [mui/box shared/tall-dialog-props
       [mui/stack {:spacing 1
@@ -48,18 +54,20 @@
                   :sx {:height 1}}
        ;left side
        [mui/stack {:spacing 1 :sx {:width 0.5}}
-        [:iframe {:style {:height "100%"}
-                  :src (str "/api/case/" case-id "/buildsoc/" (name buildsoc-id) "/valuation-pdf")}]]
+        (if (model/valuation-letter-present?)
+          [:iframe {:style {:height "100%"}
+                    :src (str "/api/case/" case-id "/buildsoc/" (name buildsoc-id) "/valuation-pdf")}]
+          [mui/typography {:variant :h6} "upload a PDF of the valuation"])]
 
        ;right side
        [mui/stack {:spacing 1 :sx {:width 0.5}}
         [mui/dialog-title
-         [shared/header (:id dialog-data) 2]]
+         [shared/header (:id dialog-data) :valuation]]
         [mui/dialog-content
          [mui/stack {:spacing 2}
           [mui/typography {:variant :body1}
            (str "Once you have received a letter from "
-             buildsoc-id
+             buildsoc-name
              ", upload a scanned pdf using the button below.")]
           [shared/upload-button case-id buildsoc-id
            {:variant :outlined
@@ -71,10 +79,13 @@
            (str "Please enter the confirmed details for each of your late "
              (-> current-case :deceased :relationship)
              "'s accounts with "
-             buildsoc-id ".")]
+             buildsoc-name ".")]
           [form/account-array-component (merge fork-args {:stage :valuation})]]]
         [mui/dialog-actions
-         [form/submit-buttons {:left-label "cancel" :right-label "submit valuations"}]]]]]]))
+         [form/submit-buttons {:left-label "cancel" :right-label "submit valuations"
+                               :right-disabled (not (and (accounts-valued? (:accounts values))
+                                                      (model/valuation-letter-present?)))}]]]]]]))
+
 
 (defn panel []
   (let [case-id @(rf/subscribe [::case-model/case-id])
