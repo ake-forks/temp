@@ -107,4 +107,7 @@
          (mapv (fn [id] [::xt/delete id]))
          (xt/submit-tx xtdb-node)))
 
-  (xt/entity (xt/db xtdb-node) :testing))
+  ;; get all cases in db
+  (xt/q (xt/db xtdb-node)
+        '{:find [(pull case [*])]
+          :where [[case :type :probate.case]]}))

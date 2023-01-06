@@ -57,7 +57,6 @@
         expense-info (cond-> query-params
                        ;; TODO: Add by and when
                        tempfile (assoc :receipt-uploaded true))]
-    (println expense-info)
     (when tempfile
       (let [s3-name (str expense-id "/receipt")]
         (try
@@ -86,8 +85,6 @@
                        ;; TODO: Add by and when
                        tempfile (assoc :receipt-uploaded true))]
     (log/info (str "Update other funeral expense (" expense-id ")"))
-    (println (get multipart-params "file"))
-    (println expense-info)
     (when tempfile
       (let [s3-name (str expense-id "/receipt")]
         (try
@@ -133,16 +130,13 @@
    [:title :string]
    [:value :string]
    [:paid? {:optional true} :boolean]
-   [:receipt {:optional true} :string]
-   [:paid-by {:optional true} :string]
-   [:invoice {:optional true} :string]])
+   [:paid-by {:optional true} :string]])
 
 (def other-expense-schema
   [:map
    [:title :string]
    [:value :string]
    [:paid? {:optional true} :boolean]
-   [:receipt {:optional true} :string]
    [:paid-by {:optional true} :string]])
 
 (defn routes []

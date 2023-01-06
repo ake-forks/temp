@@ -111,6 +111,18 @@ jobs:
               done
       - ecr_push_image:
           image_name: probatetree
+  # Relies on the image build by `build`
+  test:
+    working_directory: /app
+    docker:
+      - image: docker:20.10.18-git
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: Run Application Tests
+          command: docker run probatetree:latest clj -A:runner
   deploy:
     working_directory: /app
     docker:
@@ -142,6 +154,9 @@ workflows:
   build:
     jobs:
       - build
+      - test:
+          requires:
+            - build
       - deploy:
           name: Deploy to Staging
           workspace: staging
