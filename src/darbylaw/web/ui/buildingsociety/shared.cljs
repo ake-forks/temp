@@ -18,14 +18,19 @@
   [mui/icon-button {:on-click #(rf/dispatch [::model/hide-dialog])
                     :style {:align-self "flex-start"}}
    [ui/icon-close]])
-(defn stepper [stage]
-  [mui/stepper {:alternative-label false :active-step stage}
-   [mui/step
-    [mui/step-label "ADD ACCOUNTS"]]
-   [mui/step
-    [mui/step-label "SEND NOTIFICATION"]]
-   [mui/step
-    [mui/step-label "CONFIRM VALUES"]]])
+(defn stepper [stage-keyword]
+  (let [stage (case stage-keyword
+                :edit 0
+                :notify 1
+                :valuation 2
+                :complete 3)]
+    [mui/stepper {:alternative-label false :active-step stage}
+     [mui/step
+      [mui/step-label "ADD ACCOUNTS"]]
+     [mui/step
+      [mui/step-label "SEND NOTIFICATION"]]
+     [mui/step
+      [mui/step-label "CONFIRM VALUES"]]]))
 
 (defn title-only [text]
   [mui/stack {:direction :row :justify-content :space-between}
@@ -33,12 +38,12 @@
    [close-button]])
 
 
-(defn header [buildsoc-id stage]
+(defn header [buildsoc-id stage-keyword]
   [mui/stack {:spacing 2}
    [mui/stack {:direction :row :justify-content :space-between}
     [mui/typography {:variant :h4 :sx {:mb 1}} (model/buildsoc-label buildsoc-id)]
     [close-button]]
-   [stepper stage]])
+   [stepper stage-keyword]])
 
 (defn accounts-view [accounts {:keys [estimated? confirmed?]}]
   [mui/stack {:spacing 1}

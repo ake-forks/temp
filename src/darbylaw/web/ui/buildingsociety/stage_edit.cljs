@@ -46,7 +46,7 @@
         buildsoc-id @(rf/subscribe [::model/current-buildsoc-id])]
     [:form {:on-submit handle-submit}
      [mui/dialog-title
-      [shared/header buildsoc-id 0]]
+      [shared/header buildsoc-id :edit]]
      [mui/dialog-content
       [mui/box shared/narrow-dialog-props
        [mui/stack {:justify-content :space-between

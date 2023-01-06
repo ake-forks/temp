@@ -18,7 +18,8 @@
   ([asset-id accounts] (tx-fns/invoke ::update-and-complete [asset-id accounts]
                          '(fn [ctx asset-id accounts]
                             (let [asset (xtdb.api/entity (xtdb.api/db ctx) asset-id)]
-                              [[::xt/put (merge asset {:accounts accounts})]]))))
+                              [[::xt/put (merge asset {:accounts accounts
+                                                       :accounts-unknown false})]]))))
   ([asset-id accounts unknown] (tx-fns/invoke ::update-and-complete [asset-id accounts unknown]
                                  '(fn [ctx asset-id accounts unknown]
                                     (let [asset (xtdb.api/entity (xtdb.api/db ctx) asset-id)]

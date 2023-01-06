@@ -36,7 +36,12 @@
   (fn [{:keys [db]} [_ case-id fork-params]]
     {:dispatch [::value-buildsoc-accounts case-id fork-params]}))
 
-(defn layout [{:keys [handle-submit] :as fork-args}]
+(defn accounts-valued? [accounts]
+  (and
+    (not-empty accounts)
+    (every? (fn [acc] (some? (:confirmed-value acc))) accounts)))
+
+(defn layout [{:keys [handle-submit values] :as fork-args}]
   (let [current-case @(rf/subscribe [::case-model/current-case])
         dialog-data @(rf/subscribe [::model/get-dialog])
         case-id @(rf/subscribe [::case-model/case-id])
@@ -57,7 +62,7 @@
        ;right side
        [mui/stack {:spacing 1 :sx {:width 0.5}}
         [mui/dialog-title
-         [shared/header (:id dialog-data) 2]]
+         [shared/header (:id dialog-data) :valuation]]
         [mui/dialog-content
          [mui/stack {:spacing 2}
           [mui/typography {:variant :body1}
@@ -77,7 +82,10 @@
              buildsoc-name ".")]
           [form/account-array-component (merge fork-args {:stage :valuation})]]]
         [mui/dialog-actions
-         [form/submit-buttons {:left-label "cancel" :right-label "submit valuations"}]]]]]]))
+         [form/submit-buttons {:left-label "cancel" :right-label "submit valuations"
+                               :right-disabled (not (and (accounts-valued? (:accounts values))
+                                                      (model/valuation-letter-present?)))}]]]]]]))
+
 
 (defn panel []
   (let [case-id @(rf/subscribe [::case-model/case-id])

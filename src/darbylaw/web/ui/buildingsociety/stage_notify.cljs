@@ -117,7 +117,7 @@
         ;right side
         [mui/stack {:spacing 1 :sx {:width 0.5}}
          [mui/dialog-title
-          [shared/header buildsoc-id 1]]
+          [shared/header buildsoc-id :notify]]
          [mui/dialog-content
           [approve-notification-panel]]
          [mui/dialog-actions
