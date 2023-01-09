@@ -94,3 +94,21 @@ With this the idea is that:
 - Once we're happy with `staging` a PR will be created to merge `staging` into `production`
   - Maybe named something like "Release 1.0"
 - If there's a production issue, branches or commits can be merged into `production` but should be quickly merged into `staging`
+
+## Data design guidelines
+
+We are using the `:type` attribute to specify what data is to be expected in an entity. The type is a keyword that starts with `:probate.`.
+
+For attributes that contain references to ids of other entities, use a key that is qualified by type, such as `:probate.deceased/case`. This allows for nice reverse joins in [XTDB's EQL](https://docs.xtdb.com/language-reference/datalog-queries/#pull). (Without the qualifier, a reverse join would obtain any entity types that refer back to the entity at hand).
+
+Also use just the name of the referred entity, or a name that makes sense, not followed by `-id`. For example: `:probate.deceased/case` instead of `:probate.deceased/case-id`.
+
+As a general rule, we are not using abbreviations for attribute names.
+
+Record data in a very concrete way, so that it reflects facts that have happened, not how the data is expected to be used. Leave interpretation, generalizations or abstractions up to applications. This should help preserve flexibility when making use of the data, and prevent data modifications when changing or extending applications.
+
+As a general rule, split nested data to separate referenced entities. This should allow for using `xtdb.api/match` for implementing transactions around that data as a unit. It should also allow for easier access and modification of that data.
+
+Separate PII or any other data that needs to be evicted as entities of their own.
+
+For easier interop, use keywords that have a bijection to/from JavaScript CamelCase properties. For instance, use only the kebab-case `-` separator, not any `_` separators. Do not use `?` or other characters that are special in JavaScript.
