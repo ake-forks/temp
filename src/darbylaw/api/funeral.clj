@@ -14,13 +14,14 @@
         query-params (:query parameters)
         {:keys [tempfile content-type]} (get multipart-params "file")
         account-info (cond-> query-params
-                       tempfile (assoc (if (:paid? query-params)
+                       tempfile (assoc (if (:paid query-params)
                                          :receipt-uploaded
                                          :invoice-uploaded)
                                        ;; TODO: Add by and when
-                                       true))]
+                                       true))
+        account-id {:probate.funeral-account/case case-id}]
     (when tempfile
-      (let [s3-name (if (:paid? account-info) "receipt" "invoice")]
+      (let [s3-name (if (:paid account-info) "receipt" "invoice")]
         (try
           (doc-store/store
             (expense-store/s3-key case-id s3-name)
@@ -30,8 +31,11 @@
             (.delete tempfile)))))
     (xt-util/exec-tx xtdb-node
       (concat
-        (tx-fns/merge-value case-id
-          [:funeral-account] account-info)
+        (tx-fns/merge account-id
+                      (merge account-info
+                             account-id
+                             {:xt/id account-id
+                              :type :probate.funeral-account}))
         (case-history/put-event {:event :updated.funeral-account
                                  :case-id case-id
                                  :user user})))
@@ -48,43 +52,19 @@
        :headers {"Content-Type" (.getContentType file-metadata)}
        :body (.getObjectContent s3-file)})))
 
-(defn add-other-expense [{:keys [xtdb-node user parameters path-params multipart-params]}]
-  (log/info "Add other funeral expense")
-  (let [case-id (parse-uuid (:case-id path-params))
-        query-params (:query parameters)
-        expense-id (random-uuid)
-        {:keys [tempfile content-type]} (get multipart-params "file")
-        expense-info (cond-> query-params
-                       ;; TODO: Add by and when
-                       tempfile (assoc :receipt-uploaded true))]
-    (when tempfile
-      (let [s3-name (str expense-id "/receipt")]
-        (try
-          (doc-store/store
-            (expense-store/s3-key case-id s3-name)
-            tempfile
-            {:content-type content-type})
-          (finally
-            (.delete tempfile)))))
-    (xt-util/exec-tx xtdb-node
-      (concat
-        (tx-fns/set-value case-id
-          [:funeral-expense expense-id] expense-info)
-        (case-history/put-event {:event :added.other-expense
-                                 :case-id case-id
-                                 :user user})))
-    {:status 200
-     :body {:id expense-id}}))
 
-(defn update-other-expense [{:keys [xtdb-node user parameters path-params multipart-params]}]
+(defn upsert-other-expense [op {:keys [xtdb-node user parameters path-params multipart-params]}]
+  (assert (contains? #{:add :update} op))
   (let [case-id (parse-uuid (:case-id path-params))
-        expense-id (parse-uuid (:expense-id path-params))
+        expense-id (case op
+                     :add (random-uuid)
+                     :update (parse-uuid (:expense-id path-params)))
         query-params (:query parameters)
         {:keys [tempfile content-type]} (get multipart-params "file")
         expense-info (cond-> query-params
                        ;; TODO: Add by and when
                        tempfile (assoc :receipt-uploaded true))]
-    (log/info (str "Update other funeral expense (" expense-id ")"))
+    (log/info (str (case :add "Add" :update "Update") " other funeral expense (" expense-id ")"))
     (when tempfile
       (let [s3-name (str expense-id "/receipt")]
         (try
@@ -96,9 +76,15 @@
             (.delete tempfile)))))
     (xt-util/exec-tx xtdb-node
       (concat
-        (tx-fns/set-value case-id
-          [:funeral-expense expense-id] expense-info)
-        (case-history/put-event {:event :updated.other-expense
+        (tx-fns/merge expense-id
+                      (merge expense-info
+                             {:xt/id expense-id
+                              :type :probate.funeral-expense
+                              :probate.funeral-expense/case case-id}))
+        (tx-fns/append-unique case-id [:funeral-expense] [expense-id])
+        (case-history/put-event {:event (case 
+                                          :add :added.other-expense
+                                          :update :updated.other-expense)
                                  :case-id case-id
                                  :user user})))
     {:status 200
@@ -106,17 +92,26 @@
 
 (comment
   (let [xtdb-node darbylaw.xtdb-node/xtdb-node
-        case-id-str "aca8c621-e44b-4b75-9786-4297b89e72ce"
-        case-id (parse-uuid case-id-str)
-        expense-id (parse-uuid "3a941e79-04f8-4207-9913-74d64321f160")]
-    #_(update-other-expense
-        {:xtdb-node xtdb-node
-         :path-params {:case-id (str case-id)
-                       :expense-id (str expense-id)}
-         :body-params {:title "My Test Account"
-                       :value 2345
-                       :paid? true
-                       :paid-by "Jim"}})
+        case-id-str "34a6ff1a-c680-4b51-97f7-f14cebc1fc74"
+        case-id (parse-uuid case-id-str)]
+    (add-other-expense
+      {:xtdb-node xtdb-node
+       :user {:username "test"}
+       :path-params {:case-id (str case-id)}
+       :parameters
+       {:query {:title "Test 1"
+                :value "2345"
+                :paid true
+                :paid-by "Jim"}}})
+    (upsert-funeral-account
+      {:xtdb-node xtdb-node
+       :user {:username "test"}
+       :path-params {:case-id (str case-id)}
+       :parameters
+       {:query {:title "My Test Account"
+                :value "2345"
+                :paid true
+                :paid-by "Jim"}}})
     #_(xt-util/exec-tx xtdb-node
         (concat
           (tx-fns/set-value case-id
@@ -129,14 +124,14 @@
   [:map
    [:title :string]
    [:value :string]
-   [:paid? {:optional true} :boolean]
+   [:paid {:optional true} :boolean]
    [:paid-by {:optional true} :string]])
 
 (def other-expense-schema
   [:map
    [:title :string]
    [:value :string]
-   [:paid? {:optional true} :boolean]
+   [:paid {:optional true} :boolean]
    [:paid-by {:optional true} :string]])
 
 (defn routes []
@@ -150,10 +145,10 @@
     ["/invoice"
      {:get {:handler (get-funeral-file "invoice")}}]]
    ["/other"
-    {:post {:handler add-other-expense
+    {:post {:handler (partial upsert-other-expense :add)
             :parameters {:query other-expense-schema}}}]
    ["/other/:expense-id"
-    {:put {:handler update-other-expense
+    {:put {:handler (partial upsert-other-expense :update)
            :parameters {:query other-expense-schema}}}]
    ["/other/:expense-id/receipt"
     {:get {:handler (fn [{:keys [path-params] :as req}]

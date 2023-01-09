@@ -156,6 +156,15 @@
               [{'(:probate.deceased/_case {:as :deceased
                                            :cardinality :one})
                 ['*]}
+               {'(:probate.funeral-account/_case
+                  {:as :funeral-account
+                   :cardinality :one})
+                [:title :value :paid-by :paid
+                 :receipt-uploaded :invoice-uploaded]}
+               {:funeral-expense
+                ['(:xt/id {:as :expense-id})
+                 :title :value :paid :paid-by
+                 :receipt-uploaded]}
                :funeral-account
                :funeral-expense
                :bank

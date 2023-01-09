@@ -50,9 +50,9 @@
     :control
     (r/as-element
       [mui/checkbox
-       {:name :paid?
-        :value (:paid? values false)
-        :checked (:paid? values false)
+       {:name :paid
+        :value (:paid values false)
+        :checked (:paid values false)
         :on-change #(handle-change %)}])}])
 
 (defn funeral-file-url
@@ -104,7 +104,7 @@
      [amount-field fork-args]
      [paid-field fork-args]]
 
-    (if (:paid? values)
+    (if (:paid values)
       [:<>
        [paid-by-field fork-args]
        [mui/typography "receipt"]

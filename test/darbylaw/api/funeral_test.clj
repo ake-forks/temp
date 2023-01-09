@@ -61,7 +61,7 @@
 
         updated-funeral-account {:title "funeral account"
                                  :value "1.23"
-                                 :paid? true
+                                 :paid true
                                  :paid-by "paid by"}
         add-resp (-> case-id
                      (upsert-funeral-account updated-funeral-account)
@@ -82,9 +82,11 @@
                  :body :id)))
         expenses (get-funeral-expenses case-id)
         _ (is (= (into #{} expense-ids)
-                 (->> expenses keys (into #{}))))
+                 (->> expenses (map :expense-id) (into #{}))))
         _ (is (= (into #{} added-expenses)
-                 (->> expenses vals (into #{}))))
+                 (->> expenses
+                      (map #(dissoc % :expense-id))
+                      (into #{}))))
 
         more-added-expenses [{:title "title 3"
                               :value "3.45"}
@@ -99,9 +101,11 @@
                  :body :id)))
         expenses (get-funeral-expenses case-id)
         _ (is (set/subset? (into #{} more-expense-ids)
-                           (->> expenses keys (into #{}))))
+                           (->> expenses (map :expense-id) (into #{}))))
         _ (is (set/subset? (into #{} added-expenses)
-                           (->> expenses vals (into #{}))))
+                           (->> expenses
+                                (map #(dissoc % :expense-id))
+                                (into #{}))))
 
         updated-expenses (zipmap
                            expense-ids
@@ -116,10 +120,13 @@
                 t/assert-success
                 :body :id)))
         expenses (get-funeral-expenses case-id)
-        _ (is (set/subset? (into #{} updated-expense-ids)
-                           (into #{} (keys expenses))))
+        _ (is (set/subset?
+                (into #{} updated-expense-ids)
+                (->> expenses (map :expense-id) (into #{}))))
+        expense-by-id (zipmap (map :expense-id expenses)
+                              (map #(dissoc % :expense-id) expenses))
         db-updated-expenses (->> updated-expense-ids
-                                 (map #(get expenses %))
+                                 (map #(get expense-by-id %))
                                  (filter some?))
         _ (is (= (->> updated-expenses vals (into #{}))
                  (into #{} db-updated-expenses)))]))

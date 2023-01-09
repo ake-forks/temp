@@ -119,17 +119,17 @@
        ^{:key :funeral-account}
        [asset-item
         {:title (:title account)
-         :value (:value account)
+         :value (js/parseFloat (:value account))
          :on-click #(rf/dispatch [::funeral-model/show-funeral-dialog :edit-account])
          ;; TODO: Make right size
          :icon [mui/skeleton {:variant :circular
                               :width 25}]}])
-     (for [{:keys [id value title]} expenses]
-       ^{:key id}
+     (for [{:keys [expense-id value title]} expenses]
+       ^{:key expense-id}
        [asset-item
         {:title title
-         :value value
-         :on-click #(rf/dispatch [::funeral-model/show-funeral-dialog id])
+         :value (js/parseFloat value)
+         :on-click #(rf/dispatch [::funeral-model/show-funeral-dialog expense-id])
          ;; TODO: Make right size
          :icon [mui/skeleton {:variant :circular
                               :width 25}]}])

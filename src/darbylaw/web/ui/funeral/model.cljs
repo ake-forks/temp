@@ -16,18 +16,18 @@
   (fn [db]
     (:dialog/funeral-dialog-info db)))
 
-(rf/reg-sub ::expenses
+(rf/reg-sub ::expense-list
   :<- [::case/current-case]
   #(:funeral-expense %))
 
-(rf/reg-sub ::expense-list
-  :<- [::expenses]
-  #(->> %
-        (map (fn [[k v]] (assoc v :id k)))
-        (sort-by :title)))
+(rf/reg-sub ::expense-by-id
+  :<- [::expense-list]
+  (fn [expenses]
+    (zipmap (map :expense-id expenses)
+            expenses)))
 
 (rf/reg-sub ::expense
-  :<- [::expenses]
+  :<- [::expense-by-id]
   (fn [expenses [_ id]]
     (get expenses id)))
 

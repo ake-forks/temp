@@ -15,11 +15,10 @@
 (rf/reg-event-fx ::submit!
   (fn [{:keys [db]} [_ case-id {:keys [path values] :as fork-params}]]
     (let [[query-values files] (util/split-map values [:receipt :invoice])
-          file (get files (if (:paid? values)
+          file (get files (if (:paid values)
                             :receipt
                             :invoice))]
       {:db (fork/set-submitting db path true)
-       :dispatch [::submit-success fork-params]
        :http-xhrio
        (ui/build-http
          {:method :put

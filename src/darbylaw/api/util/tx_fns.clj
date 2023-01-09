@@ -13,6 +13,12 @@
        (let [e (xtdb.api/entity (xtdb.api/db ctx) eid)]
          [[::xt/put (assoc-in e ks x)]]))))
 
+(defn merge [eid x]
+  (invoke ::merge [eid x]
+    '(fn [ctx eid x]
+       (let [e (xtdb.api/entity (xtdb.api/db ctx) eid)]
+         [[::xt/put (merge e x)]]))))
+
 (defn merge-value [eid ks x]
   (invoke ::merge-value [eid ks x]
     '(fn [ctx eid ks x]
