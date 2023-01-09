@@ -124,7 +124,8 @@ jobs:
       - run:
           name: Run Application Tests
           command: |
-            # >> Pull Image
+            # >> Config
+            region="$AWS_DEFAULT_REGION"
             account_id=713170488151
 
             # >> Docker Login
