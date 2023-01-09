@@ -63,7 +63,7 @@ resource "aws_db_instance" "xtdb-backend" {
 
   backup_retention_period = 7
   maintenance_window      = "Sun:00:00-Sun:03:00"
-  backup_window           = "09:50-10:00" // "00:00-03:00"
+  backup_window           = "09:50-10:20" // "00:00-03:00"
 
   # TODO: IAM Database Auth?
   # TODO: Setup monitoring
