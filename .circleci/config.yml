@@ -120,9 +120,22 @@ jobs:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
+      - setup_aws_cli
       - run:
           name: Run Application Tests
-          command: docker run probatetree:$CIRCLE_SHA1 clj -A:runner
+          command: |
+            # >> Pull Image
+            account_id=713170488151
+
+            # >> Docker Login
+            ecr_endpoint="$account_id.dkr.ecr.$region.amazonaws.com"
+            aws ecr get-login-password --region $region | docker login --username AWS --password-stdin $ecr_endpoint
+
+            # >> Docker Pull
+            docker pull "$ecr_endpoint:$CIRCLE_SHA1"
+
+            # >> Run tests
+            docker run "$ecr_endpoint:$CIRCLE_SHA1" clj -A:runner
   deploy:
     working_directory: /app
     docker:
