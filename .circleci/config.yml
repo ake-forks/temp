@@ -30,7 +30,7 @@ commands:
     description: |
       Push the given docker image
 
-      Assumes that the image you want to push is built and tagged "<< parameters.image_name >>:latest"
+      Assumes that the image you want to push is built and tagged "<< parameters.image_name >>:$CIRCLE_SHA1"
       Assumes the following Environment Variables have been setup:
       AWS_ACCESS_KEY_ID
       AWS_SECRET_ACCESS_KEY
@@ -58,7 +58,7 @@ commands:
             # <account ecr endpoint>/<image name>:<docker tag>
             # In our case the docker tag is the git hash so we can track down which commit is running
             new_docker_tag="$ecr_endpoint/<< parameters.image_name >>:${CIRCLE_SHA1}"
-            docker tag "<< parameters.image_name >>:latest" $new_docker_tag
+            docker tag "<< parameters.image_name >>:$CIRCLE_SHA1" $new_docker_tag
             docker push $new_docker_tag
 
 
@@ -101,7 +101,7 @@ jobs:
             PREV_TIME=$START_TIME
 
             echo "  start(   prev) | log line"
-            docker build -t probatetree:latest . | \
+            docker build -t probatetree:$CIRCLE_SHA1 . | \
               while read line ; do \
                 now="$(date +%s)"; \
                 since_start="$(diff_fmt $(time_diff $now $START_TIME))"; \
@@ -122,7 +122,7 @@ jobs:
           docker_layer_caching: true
       - run:
           name: Run Application Tests
-          command: docker run probatetree:latest clj -A:runner
+          command: docker run probatetree:$CIRCLE_SHA1 clj -A:runner
   deploy:
     working_directory: /app
     docker:
