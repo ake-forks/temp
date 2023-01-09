@@ -9,6 +9,9 @@ resource "aws_iam_user" "circleci" {
 #       The S3 store is encrypted and private, is that enough?
 resource "aws_iam_access_key" "circleci" {
   user = aws_iam_user.circleci.name
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 output "circleci_access_key_id" {
