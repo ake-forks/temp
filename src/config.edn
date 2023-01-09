@@ -7,7 +7,7 @@
                   :test :none}}
  :database
  #profile {:default {:node-type :rocksdb}
-           :production
+           #{:production :staging}
            {:node-type :postgres
             :db-spec {:host #env DATABASE_HOST
                       :port #env DATABASE_PORT

@@ -61,8 +61,11 @@ resource "aws_db_instance" "xtdb-backend" {
   enabled_cloudwatch_logs_exports = ["postgresql", "upgrade"]
   vpc_security_group_ids          = [aws_security_group.database.id]
 
+  backup_retention_period = 7
+  maintenance_window      = "Sun:00:00-Sun:03:00"
+  backup_window           = "09:50-10:00" // "00:00-03:00"
+
   # TODO: IAM Database Auth?
-  # TODO: Setup mainenance_window and backups
   # TODO: Setup monitoring
 
   # TODO: Remove for real production
