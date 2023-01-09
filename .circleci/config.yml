@@ -164,7 +164,7 @@ workflows:
             branches:
               only: staging
           requires:
-            - build
+            - test
       - deploy:
           name: Deploy to Production
           workspace: production
@@ -172,4 +172,4 @@ workflows:
             branches:
               only: production
           requires:
-            - build
+            - test
