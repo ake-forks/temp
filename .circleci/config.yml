@@ -133,10 +133,10 @@ jobs:
             aws ecr get-login-password --region $region | docker login --username AWS --password-stdin $ecr_endpoint
 
             # >> Docker Pull
-            docker pull "$ecr_endpoint:$CIRCLE_SHA1"
+            docker pull "$ecr_endpoint/probatetree:$CIRCLE_SHA1"
 
             # >> Run tests
-            docker run "$ecr_endpoint:$CIRCLE_SHA1" clj -A:runner
+            docker run "$ecr_endpoint/probatetree:$CIRCLE_SHA1" clj -A:runner
   deploy:
     working_directory: /app
     docker:
