@@ -23,11 +23,6 @@ data "aws_ecr_repository" "probatetree" {
   name = "probatetree"
 }
 
-# NOTE: Deprecated
-resource "aws_ecr_repository" "probatetree-old" {
-  name = "probatetree-${terraform.workspace}"
-}
-
 resource "aws_ecs_cluster" "probatetree" {
   name = "probatetree-${terraform.workspace}"
 }
