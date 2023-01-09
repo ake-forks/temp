@@ -62,8 +62,8 @@ resource "aws_db_instance" "xtdb-backend" {
   vpc_security_group_ids          = [aws_security_group.database.id]
 
   backup_retention_period = 7
-  maintenance_window      = "Sun:00:00-Sun:03:00"
-  backup_window           = "00:00-03:00"
+  maintenance_window      = "Sun:00:00-Sun:01:00"
+  backup_window           = "01:00-02:00"
 
   # TODO: IAM Database Auth?
   # TODO: Setup monitoring
