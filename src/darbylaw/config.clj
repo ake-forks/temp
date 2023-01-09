@@ -14,7 +14,7 @@
   :start (or (some-> (System/getenv "PROFILE")
                      str/lower-case
                      keyword)
-             :staging))
+             :test))
 
 
 
