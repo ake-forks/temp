@@ -145,9 +145,16 @@
                  :sx {:mt "3rem"
                       :mb "1rem"}}
       [mui/typography {:variant :h4} "Cases"]
-      [mui/button {:startIcon (r/as-element [ui/icon-add])
-                   :href (kf/path-for [:create-case])}
-       "Create case"]]
+      [mui/stack {:direction :row
+                  :spacing 2}
+       [mui/button {:startIcon (r/as-element [ui/icon-add])
+                    :href (str (kf/path-for [:create-case]) "?fake=true")
+                    :variant :outlined}
+        "Create fake case"]
+       [mui/button {:startIcon (r/as-element [ui/icon-add])
+                    :href (kf/path-for [:create-case])
+                    :variant :outlined}
+        "Create real case"]]]
      [mui/box {:border-bottom 1 :border-color :divider}
       [mui/tabs {:value (or case-view :card)
                  :on-change (fn [_ value] (rf/dispatch [::set-case-view (keyword value)]))}

@@ -82,7 +82,7 @@
   (let [case-id (random-uuid)
         pr-id (random-uuid)
         pr-data (get body-params :personal-representative)
-        fake? (not= config/profile :production)]
+        fake? (get body-params :fake)]
     (xt-util/exec-tx xtdb-node
       (concat
         (initialize-case case-id pr-id fake?)
@@ -91,7 +91,8 @@
                       :xt/id pr-id})]]
         (case-history/put-event {:event :created
                                  :case-id case-id
-                                 :user user})))
+                                 :user user
+                                 :fake fake?})))
     {:status 200
      :body {:id case-id}}))
 

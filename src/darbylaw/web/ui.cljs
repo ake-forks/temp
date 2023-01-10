@@ -36,7 +36,8 @@
     [kee-frame.router :as kf-router]
     [accountant.core :as accountant]
     ["@mui/material/styles" :as mui-styles]
-    [reagent-mui.util]))
+    [reagent-mui.util]
+    [lambdaisland.uri :refer [query-string->map]]))
 
 (def icon-add reagent-mui.icons.add/add)
 (def icon-arrow-back-sharp reagent-mui.icons.arrow-back-sharp/arrow-back-sharp)
@@ -100,6 +101,10 @@
   (fn [route]
     (:path-params route)))
 
+(rf/reg-sub ::query-params
+  :<- [:kee-frame/route]
+  (fn [route]
+    (query-string->map (:query-string route))))
 
 (defn- add-getAttribute!
   "Adds .getAttribute() method to a Material UI event.

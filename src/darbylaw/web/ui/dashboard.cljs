@@ -177,10 +177,17 @@
          (str "your "
            (-> current-case :deceased :relationship (clojure.string/lower-case))
            "'s estate"))]
-      [mui/typography {:variant :h6}
-       (if (nil? current-case)
-         [mui/skeleton {:width "5rem"}]
-         (str "case " (:reference current-case :reference)))]]
+      [mui/stack {:direction :row
+                  :spacing 1
+                  :align-items :center}
+       [mui/typography {:variant :h6}
+        (if (nil? current-case)
+          [mui/skeleton {:width "5rem"}]
+          (str "case " (:reference current-case :reference)))]
+       [mui/chip {:label (if @(rf/subscribe [::case-model/fake?])
+                           "FAKE"
+                           "REAL")
+                  :variant :outlined}]]]
      [progress-bar/progress-bar]]]])
 
 (defn content [current-case]
