@@ -74,8 +74,8 @@ filters = warning_filters + error_filters
 
 def handler(event, context):
 
-    if "awsLogs" not in event:
-        logger.info("No awsLogs in event")
+    if "awslogs" not in event:
+        logger.info("No awslogs in event")
         return
 
     # >> Parse Event
