@@ -16,7 +16,6 @@ logger.setLevel(logging.INFO)
 ssm = boto3.client('ssm')
 
 
-
 # >> Config
 
 response = ssm.get_parameter(
@@ -30,7 +29,6 @@ headers = {
     'Content-Type': 'application/json',
     'Authorization': 'Bearer ' + slack_token,
 }
-
 
 
 # >> Utils
@@ -50,22 +48,21 @@ def parseLogEvent(awsLogs):
 
     return log_event
 
+
 def logStreamUrl(region, log_group, log_stream):
     return (
         'https://console.aws.amazon.com'
         + '/cloudwatch/home?'
         + 'region={region}'
         + '#logEventViewer:'
-            + 'group={log_group};'
-            + 'stream={log_stream}'
+        + 'group={log_group};'
+        + 'stream={log_stream}'
     ).format(region=region,
              log_group=log_group,
              log_stream=log_stream)
 
 
-
 # >> Handler
-
 warning_filters = [
     re.compile(r'(?i)WARN'),
 ]
@@ -78,7 +75,13 @@ error_filters = [
 
 filters = warning_filters + error_filters
 
+
 def handler(event, context):
+
+    if 'awsLogs' not in event:
+        logger.info('No awsLogs in event')
+        return
+
     # >> Parse Event
     log_event = parseLogEvent(event['awslogs'])
     url = logStreamUrl('eu-west-2',
@@ -113,12 +116,13 @@ def handler(event, context):
         'text': message + "\n<" + url + "|" + link_text + ">",
     }
 
-    response = http.request(
+    http.request(
         'POST',
         base_url + '/chat.postMessage',
         headers=headers,
         body=json.dumps(body)
     )
+
 
 if __name__ == '__main__':
     data = {
@@ -139,7 +143,7 @@ if __name__ == '__main__':
     }
     event = {
         'awsLogs': {
-            'data': base64.b64decode(json.dumps(awsLogs['data'])),
+            'data': base64.b64decode(json.dumps(data)),
         },
     }
-    handler(None, None)
+    handler(event, None)
