@@ -60,6 +60,25 @@ resource "aws_cloudwatch_log_group" "probatetree-logs" {
   retention_in_days = 30
 }
 
+data "aws_lambda_function" "slack_lambda" {
+  function_name = "slack_lambda"
+}
+
+resource "aws_lambda_permission" "webapp_logging" {
+  action        = "lambda:InvokeFunction"
+  function_name = data.aws_lambda_function.slack_lambda.function_name
+  principal     = "logs.${local.region}.amazonaws.com"
+  source_arn    = "${aws_cloudwatch_log_group.probatetree-logs.arn}:*"
+}
+
+resource "aws_cloudwatch_log_subscription_filter" "webapp_logging" {
+  depends_on      = [aws_lambda_permission.webapp_logging]
+  destination_arn = data.aws_lambda_function.slack_lambda.arn
+  filter_pattern  = ""
+  log_group_name  = aws_cloudwatch_log_group.probatetree-logs.name
+  name            = "webapp_to_slack"
+}
+
 
 
 # >> Task Definition

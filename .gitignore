@@ -4,6 +4,7 @@
 /target/
 /*-init.clj
 /*.log
+/**/*.zip
 
 # Leiningen
 /.lein-*

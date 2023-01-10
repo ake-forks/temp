@@ -21,8 +21,12 @@ terraform {
   }
 }
 
-provider "aws" {
+locals {
   region = "eu-west-2"
+}
+
+provider "aws" {
+  region = local.region
 }
 
 provider "random" {
