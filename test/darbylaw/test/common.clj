@@ -5,6 +5,7 @@
             [darbylaw.xtdb-node :refer [xtdb-node]]
             [darbylaw.handler :refer [ring-handler]]
             [darbylaw.core :refer [web-server]]
+            [darbylaw.api.bank-notification-template :refer [templates]]
             [xtdb.api :as xt]
             [cognitect.transit :as transit]
             [clojure.string :as str]))
@@ -24,7 +25,8 @@
     (mount/start states)))
 
 (def ring-handler-states
-  [#'profile #'config #'xtdb-node #'ring-handler])
+  [#'profile #'config #'xtdb-node #'ring-handler
+   #'templates])
 
 (def web-server-states
   (into ring-handler-states

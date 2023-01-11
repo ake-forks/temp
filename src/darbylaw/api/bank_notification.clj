@@ -11,10 +11,14 @@
             [darbylaw.api.case-history :as case-history]
             [darbylaw.api.util.data :as data-util]))
 
-(defn build-asset-id [case-id bank-id]
-  {:type :probate.bank-accounts
+(defn build-asset-id [bank-type case-id bank-id]
+  {:type (case bank-type
+           :bank :probate.bank-accounts
+           :buildsoc :probate.buildsoc-accounts)
    :case-id case-id
-   :bank-id bank-id})
+   (case bank-type
+     :bank :bank-id
+     :buildsoc :buildsoc-id) bank-id})
 
 (defn convert-to-pdf-and-store [case-id bank-id letter-id docx]
   (let [pdf (files-util/create-temp-file letter-id ".pdf")]
@@ -25,24 +29,24 @@
       (finally
         (.delete pdf)))))
 
-(defn generate-notification-letter [{:keys [xtdb-node user path-params]}]
+(defn generate-notification-letter [{:keys [xtdb-node user path-params bank-type]}]
   (let [case-id (parse-uuid (:case-id path-params))
         bank-id (keyword (:bank-id path-params))
         ; First check for existance. Prevent generating docs if not needed.
-        asset-id (build-asset-id case-id bank-id)
+        asset-id (build-asset-id bank-type case-id bank-id)
         assert-letter-not-exists-tx (tx-fns/assert-nil asset-id [:notification-letter])
         tx1 (xt-util/exec-tx xtdb-node assert-letter-not-exists-tx)]
     (if-not (xt/tx-committed? xtdb-node tx1)
       {:status http/status-409-conflict
        :body {:error :already-exists}}
-      (let [letter-template-data (template/get-letter-template-data xtdb-node case-id bank-id)
+      (let [letter-template-data (template/get-letter-template-data xtdb-node bank-type case-id bank-id)
             letter-id (str (:reference letter-template-data)
                         "." (name bank-id)
                         ".bank-notification."
                         (random-uuid))
             docx (files-util/create-temp-file letter-id ".docx")]
         (try
-          (template/render-docx letter-template-data docx)
+          (template/render-docx bank-type letter-template-data docx)
           (convert-to-pdf-and-store case-id bank-id letter-id docx)
           (finally
             (.delete docx)))
@@ -53,6 +57,7 @@
                       [[::xt/put {:type :probate.bank-notification-letter
                                   :xt/id letter-id
                                   :case-id case-id
+                                  :bank-type bank-type
                                   :bank-id bank-id
                                   :author :generated
                                   :by (:username user)}]]
@@ -76,11 +81,11 @@
         [:notification-letter] asset-id)
     :notification-letter))
 
-(defn post-notification [{:keys [xtdb-node user path-params multipart-params]}]
+(defn post-notification [{:keys [xtdb-node user path-params multipart-params bank-type]}]
   (let [case-id (parse-uuid (:case-id path-params))
         bank-id (keyword (:bank-id path-params))
         {:keys [tempfile content-type]} (get multipart-params "file")
-        asset-id (build-asset-id case-id bank-id)
+        asset-id (build-asset-id bank-type case-id bank-id)
         letter-id (fetch-letter-id xtdb-node asset-id)]
     (if-not letter-id
       {:status http/status-404-not-found}
@@ -102,10 +107,10 @@
                :letter-id letter-id})))
         {:status http/status-204-no-content}))))
 
-(defn get-notification [doc-type {:keys [xtdb-node path-params]}]
+(defn get-notification [doc-type {:keys [xtdb-node path-params bank-type]}]
   (let [case-id (parse-uuid (:case-id path-params))
         bank-id (keyword (:bank-id path-params))
-        asset-id (build-asset-id case-id bank-id)
+        asset-id (build-asset-id bank-type case-id bank-id)
         letter-id (fetch-letter-id xtdb-node asset-id)]
     (if-not letter-id
       {:status http/status-404-not-found}
@@ -120,10 +125,10 @@
                                     :pdf "application/pdf")}
          :body input-stream}))))
 
-(defn approve-notification-letter [{:keys [xtdb-node path-params user]}]
+(defn approve-notification-letter [{:keys [xtdb-node path-params user bank-type]}]
   (let [case-id (parse-uuid (:case-id path-params))
         bank-id (keyword (:bank-id path-params))
-        asset-id  (build-asset-id case-id bank-id)
+        asset-id (build-asset-id bank-type case-id bank-id)
         letter-id (:letter-id path-params)]
     (let [tx (xt-util/exec-tx xtdb-node
                (concat
@@ -140,10 +145,10 @@
         {:status http/status-204-no-content}
         {:status http/status-404-not-found}))))
 
-(defn get-valuation [{:keys [xtdb-node path-params]}]
+(defn get-valuation [{:keys [xtdb-node path-params bank-type]}]
   (let [case-id (parse-uuid (:case-id path-params))
         bank-id (keyword (:bank-id path-params))
-        asset-id (build-asset-id case-id bank-id)
+        asset-id (build-asset-id bank-type case-id bank-id)
         {letter-id :valuation-letter} (xt/pull (xt/db xtdb-node)
                                         [:valuation-letter] asset-id)
         input-stream (doc-store/fetch
@@ -152,7 +157,7 @@
      :headers {"Content-Type" "application/pdf"}
      :body input-stream}))
 
-(defn post-valuation [{:keys [xtdb-node user path-params multipart-params]}]
+(defn post-valuation [{:keys [xtdb-node user path-params multipart-params bank-type]}]
   (let [case-id (parse-uuid (:case-id path-params))
         bank-id (keyword (:bank-id path-params))
         {:keys [tempfile content-type]} (get multipart-params "file")
@@ -177,7 +182,7 @@
                       :uploaded-by (:username user)
                       :uploaded-at (xt-util/now)}]]
           ; This should be obsolete when we support multiple valuation letters:
-          (tx-fns/set-value (build-asset-id case-id bank-id)
+          (tx-fns/set-value (build-asset-id bank-type case-id bank-id)
             [:valuation-letter] letter-id)
           (case-history/put-event
             {:event :bank-notification.valuation-letter-updated
@@ -187,12 +192,12 @@
              :letter-id letter-id}))))
     {:status 204}))
 
-(defn mark-values-confirmed [{:keys [xtdb-node user path-params]}]
+(defn mark-values-confirmed [{:keys [xtdb-node user path-params bank-type]}]
   (let [case-id (parse-uuid (:case-id path-params))
         bank-id (keyword (:bank-id path-params))]
     (xt-util/exec-tx xtdb-node
       (concat
-        (tx-fns/set-value (build-asset-id case-id bank-id)
+        (tx-fns/set-value (build-asset-id bank-type case-id bank-id)
           [:values-confirmed]
           {:by (:username user)
            :timestamp (xt-util/now)})
@@ -203,16 +208,34 @@
            :bank-id bank-id})))
     {:status 204}))
 
+(defn wrap-bank-type [handler bank-type]
+  (fn [req]
+    (handler (-> req
+               (assoc :bank-type bank-type)))))
+
+(def common-routes
+  [["/generate-notification-letter"
+    {:post {:handler generate-notification-letter}}]
+   ["/notification-pdf"
+    {:get {:handler (partial get-notification :pdf)}}]
+   ["/notification-docx"
+    {:get {:handler (partial get-notification :docx)}
+     :post {:handler post-notification}}]
+   ["/approve-notification-letter/:letter-id"
+    {:post {:handler approve-notification-letter}}]
+   ["/valuation-pdf"
+    {:get {:handler get-valuation}
+     :post {:handler post-valuation}}]
+   ["/mark-values-confirmed"
+    {:post {:handler mark-values-confirmed}}]])
+
 (defn routes []
   [["/case/:case-id/bank/:bank-id"
-    ["/generate-notification-letter" {:post {:handler generate-notification-letter}}]
-    ["/notification-docx" {:get {:handler (partial get-notification :docx)}
-                           :post {:handler post-notification}}]
-    ["/notification-pdf" {:get {:handler (partial get-notification :pdf)}}]
-    ["/approve-notification-letter/:letter-id" {:post {:handler approve-notification-letter}}]
-    ["/valuation-pdf" {:get {:handler get-valuation}
-                       :post {:handler post-valuation}}]
-    ["/mark-values-confirmed" {:post {:handler mark-values-confirmed}}]]])
+    {:middleware [[wrap-bank-type :bank]]}
+    common-routes]
+   ["/case/:case-id/buildsoc/:bank-id"
+    {:middleware [[wrap-bank-type :buildsoc]]}
+    common-routes]])
 
 (comment
   (def all-case-data
