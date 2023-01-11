@@ -20,7 +20,6 @@
     [darbylaw.api.case :as case-api]
     [darbylaw.api.bank :as bank-api]
     [darbylaw.api.buildingsociety :as buildsoc-api]
-    [darbylaw.api.notification :as notification-api]
     [darbylaw.api.funeral :as funeral-api]
     [darbylaw.api.bank-notification :as bank-notification-api]
     [darbylaw.api.bank-notification.mailing-job :as mailing]
@@ -73,7 +72,6 @@
      (buildsoc-api/routes)
      (funeral-api/routes)
      (bank-notification-api/routes)
-     (notification-api/routes)
      (mailing/routes)]]])
 
 (defn make-router []
@@ -101,7 +99,7 @@
                          coercion/coerce-response-middleware]}}))
 
 (comment
-  (->> (reitit.core/match-by-path (make-router nil) "/api/case")
+  (->> (reitit.core/match-by-path (make-router) "/api/case/1234/buildsoc/4321/generate-notification-letter")
     (clojure.walk/prewalk #(cond-> %
                              (map? %) (dissoc :middleware)))))
 
