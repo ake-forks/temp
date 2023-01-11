@@ -44,18 +44,13 @@
         (= bank-type :bank)
         (assoc :bank (-> bank-data
                        (assoc :name (banks/bank-label bank-id))))))))
-
-(mount/defstate bank-notification-template
-  :start (stencil/prepare (io/resource "darbylaw/templates/bank-notification.docx")))
-
-(mount/defstate buildsoc-notification-template
-  :start (stencil/prepare (io/resource "darbylaw/templates/buildsoc-notification.docx")))
+(mount/defstate templates
+  :start {:bank (stencil/prepare (io/resource "darbylaw/templates/bank-notification.docx"))
+          :buildsoc (stencil/prepare (io/resource "darbylaw/templates/buildsoc-notification.docx"))})
 
 (defn render-docx [bank-type template-data file]
   (stencil/render!
-    (case bank-type
-      :bank bank-notification-template
-      :buildsoc buildsoc-notification-template)
+    (get templates bank-type)
     template-data
     :output file
     :overwrite? true))
