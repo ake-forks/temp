@@ -19,7 +19,7 @@
       (:values-confirmed bank-data)
       :bank-completed
 
-      (get-in bank-data [:notification-letter :approved])
+      (get-in bank-data [:notification-letter :review-timestamp])
       :confirm-values
 
       (:notification-letter bank-data)

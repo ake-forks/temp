@@ -64,14 +64,16 @@
                                               (data-util/keys-to-camel-case))}}
                           letter-template-data))]))
 
-        bank-request (fn [method op]
+        bank-request (fn [method op & [body]]
                        {:request-method method
                         :uri (str "/api/case/" case-id
                                (case bank-type
                                  :bank "/bank/"
                                  :buildsoc "/buildsoc/")
                                (name bank-id)
-                               op)})
+                               op)
+                        :headers {"accept" "application/transit+json"}
+                        :body-params body})
 
         ; There should be no notification letter yet
         resp (t/run-request (bank-request :get "/notification-pdf"))
@@ -113,17 +115,20 @@
 
         letter-id (get-in bank-data [:notification-letter :id])
 
-        ; Approving the wrong letter
+        ; Reviewing the wrong letter
         resp (t/run-request (bank-request :post
-                              "/approve-notification-letter/wrong-letter-id"))
+                              "/notification-letter/wrong-letter-id/review"
+                              {:send-action :send}))
         _ (is (= 404 (:status resp)))
 
-        ; Approving the letter
+        ; Reviewing the letter
         resp (t/run-request (bank-request :post
-                              (str "/approve-notification-letter/" letter-id)))
+                              (str "/notification-letter/" letter-id "/review")
+                              {:send-action :send}))
         _ (is (<= 200 (:status resp) 299))
         bank-data (get (get-bank-data bank-type case-id) bank-id)
-        _ (is (some? (get-in bank-data [:notification-letter :approved])))
+        _ (is (some? (get-in bank-data [:notification-letter :review-by])))
+        _ (is (some? (get-in bank-data [:notification-letter :review-timestamp])))
 
         ; Posting valuation letter
         resp (with-redefs [darbylaw.api.pdf/convert-file (fn [& _])

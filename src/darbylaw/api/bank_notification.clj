@@ -125,18 +125,21 @@
                                     :pdf "application/pdf")}
          :body input-stream}))))
 
-(defn approve-notification-letter [{:keys [xtdb-node path-params user bank-type]}]
+(defn notification-letter-review [{:keys [xtdb-node path-params user body-params bank-type]}]
   (let [case-id (parse-uuid (:case-id path-params))
         bank-id (keyword (:bank-id path-params))
         asset-id (build-asset-id bank-type case-id bank-id)
-        letter-id (:letter-id path-params)]
+        letter-id (:letter-id path-params)
+        send-action (:send-action body-params)]
+    (assert (#{:send :fake-send :do-not-send} send-action))
     (let [tx (xt-util/exec-tx xtdb-node
                (concat
                  (tx-fns/assert-equals asset-id [:notification-letter] letter-id)
-                 (tx-fns/set-value letter-id [:approved] {:by (:username user)
-                                                          :timestamp (xt-util/now)})
+                 (tx-fns/set-value letter-id [:review-by] (:username user))
+                 (tx-fns/set-value letter-id [:review-timestamp] (xt-util/now))
+                 (tx-fns/set-value letter-id [:send-action] send-action)
                  (case-history/put-event
-                   {:event :bank-notification.letter-approved
+                   {:event :bank-notification.letter-reviewed
                     :case-id case-id
                     :user user
                     :bank-id bank-id
@@ -221,8 +224,8 @@
    ["/notification-docx"
     {:get {:handler (partial get-notification :docx)}
      :post {:handler post-notification}}]
-   ["/approve-notification-letter/:letter-id"
-    {:post {:handler approve-notification-letter}}]
+   ["/notification-letter/:letter-id/review"
+    {:post {:handler notification-letter-review}}]
    ["/valuation-pdf"
     {:get {:handler get-valuation}
      :post {:handler post-valuation}}]

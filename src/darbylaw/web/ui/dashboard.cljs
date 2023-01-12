@@ -17,10 +17,9 @@
     [darbylaw.web.ui.overview-tile :as overview]
     [darbylaw.web.ui.tasks-tile :as tasks]
     [re-frame.core :as rf]
-    [reagent.core :as r]
     [reagent.format :as format]
-    [darbylaw.web.theme :as theme]))
-
+    [darbylaw.web.theme :as theme]
+    [darbylaw.web.ui.case-commons :as case-commons]))
 
 (defn bank-item [bank]
   (let [bank-data (bank-list/bank-by-id (:bank-id bank))
@@ -184,10 +183,7 @@
         (if (nil? current-case)
           [mui/skeleton {:width "5rem"}]
           (str "case " (:reference current-case :reference)))]
-       [mui/chip {:label (if @(rf/subscribe [::case-model/fake?])
-                           "FAKE"
-                           "REAL")
-                  :variant :outlined}]]]
+       [case-commons/fake-case-chip (:fake current-case)]]]
      [progress-bar/progress-bar]]]])
 
 (defn content [current-case]

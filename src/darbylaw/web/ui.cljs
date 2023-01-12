@@ -8,6 +8,7 @@
     [reagent-mui.icons.error-outline]
     [reagent-mui.icons.edit]
     [reagent-mui.icons.history]
+    [reagent-mui.icons.history-edu]
     [reagent-mui.icons.keyboard-arrow-up]
     [reagent-mui.icons.keyboard-arrow-down]
     [reagent-mui.icons.launch]
@@ -46,6 +47,7 @@
 (def icon-error-outline reagent-mui.icons.error-outline/error-outline)
 (def icon-edit reagent-mui.icons.edit/edit)
 (def icon-history reagent-mui.icons.history/history)
+(def icon-history-edu reagent-mui.icons.history-edu/history-edu)
 (def icon-keyboard-arrow-up reagent-mui.icons.keyboard-arrow-up/keyboard-arrow-up)
 (def icon-keyboard-arrow-down reagent-mui.icons.keyboard-arrow-down/keyboard-arrow-down)
 (def icon-launch reagent-mui.icons.launch/launch)

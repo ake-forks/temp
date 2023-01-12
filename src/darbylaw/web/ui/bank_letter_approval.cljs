@@ -63,96 +63,130 @@
                            {:active true})])})
 
 (defn panel []
-  (r/with-let [approved? (r/atom false)]
-    (let [case-id @(rf/subscribe [::case-model/case-id])
-          case-reference @(rf/subscribe [::case-model/current-case-reference])
-          bank-id @(rf/subscribe [::bank-model/bank-id])
-          bank-name @(rf/subscribe [::bank-model/bank-name])
-          author @(rf/subscribe [::author])]
-      [mui/box
-       [mui/stepper {:orientation :vertical
-                     :nonLinear true
-                     :activeStep 100}
-        [mui/step {:key :view
-                   :expanded true}
-         [mui/step-label active-step-label-props
-          "Review letter"]
-         [mui/step-content
-          [mui/typography {:variant :body1
-                           :font-weight :bold}
-           (cond
-             (= author :unknown-user)
-             "This letter was modified by a user."
+  (r/with-let [case-id @(rf/subscribe [::case-model/case-id])
+               case-reference @(rf/subscribe [::case-model/current-case-reference])
+               bank-id @(rf/subscribe [::bank-model/bank-id])
+               bank-name @(rf/subscribe [::bank-model/bank-name])
+               author @(rf/subscribe [::author])
+               fake? @(rf/subscribe [::case-model/fake?])
 
-             (string? author)
-             (str "This letter was uploaded by " author)
+               review-result (r/atom nil)
+               fake-send? (r/atom fake?)]
+    [mui/box
+     [mui/stepper {:orientation :vertical
+                   :nonLinear true
+                   :activeStep 100}
+      [mui/step {:key :view
+                 :expanded true}
+       [mui/step-label active-step-label-props
+        "Review letter"]
+       [mui/step-content
+        [mui/typography {:variant :body1
+                         :font-weight :bold}
+         (cond
+           (= author :unknown-user)
+           "This letter was modified by a user."
 
-             :else
-             "This letter was automatically generated from case data.")]
-          [mui/button {:onClick #(rf/dispatch [::regenerate])
-                       :startIcon (r/as-element [ui/icon-refresh])
-                       :variant :outlined
-                       :sx {:mt 1}}
-           "Regenerate letter from case data"]
-          #_[mui/stack {:direction :row
-                        :alignItems :center
-                        :spacing 1
-                        :sx {:mt 2}}
-             [mui/button {:variant :outlined
-                          :startIcon (r/as-element
-                                       (let [flip {:transform "scaleX(-1)"}]
-                                         [ui/icon-launch {:sx flip}]))}
-              "View letter here"]
-             [mui/typography {:variant :body1}
-              "or"]
-             [mui/button {:variant :outlined
-                          :startIcon (r/as-element [ui/icon-download])}
-              "Download for review"]]]]
-        [mui/step {:key :edit
-                   :expanded true}
-         [mui/step-label active-step-label-props
-          "Modify letter if needed"]
-         [mui/step-content
-          [mui/typography {:variant :body1}
-           "You can modify the letter using Word."]
-          [mui/typography {:variant :body2}
-           "(Be careful in keeping the first page layout intact, "
-           "as the address must match the envelope's window)."]
-          [mui/stack {:direction :row
+           (string? author)
+           (str "This letter was uploaded by " author)
+
+           :else
+           "This letter was automatically generated from case data.")]
+        [mui/button {:onClick #(rf/dispatch [::regenerate])
+                     :startIcon (r/as-element [ui/icon-refresh])
+                     :variant :outlined
+                     :sx {:mt 1}}
+         "Regenerate letter from case data"]
+        #_[mui/stack {:direction :row
+                      :alignItems :center
                       :spacing 1
-                      :sx {:mt 1}}
-           [mui/button {:href (str "/api/case/" case-id "/bank/" (name bank-id) "/notification-docx")
-                        :download (str case-reference " - " bank-name " - Bank notification.docx")
-                        :variant :outlined
+                      :sx {:mt 2}}
+           [mui/button {:variant :outlined
+                        :startIcon (r/as-element
+                                     (let [flip {:transform "scaleX(-1)"}]
+                                       [ui/icon-launch {:sx flip}]))}
+            "View letter here"]
+           [mui/typography {:variant :body1}
+            "or"]
+           [mui/button {:variant :outlined
                         :startIcon (r/as-element [ui/icon-download])}
-            "download current letter"]
-           [upload-button case-id bank-id {:variant :outlined
-                                           :startIcon (r/as-element [ui/icon-upload])}
-            "upload replacement"]]]]
-        [mui/step {:key :approve
+            "Download for review"]]]]
+      [mui/step {:key :edit
+                 :expanded true}
+       [mui/step-label active-step-label-props
+        "Modify letter if needed"]
+       [mui/step-content
+        [mui/typography {:variant :body1}
+         "You can modify the letter using Word."]
+        [mui/typography {:variant :body2}
+         "(Be careful in keeping the first page layout intact, "
+         "as the address must match the envelope's window)."]
+        [mui/stack {:direction :row
+                    :spacing 1
+                    :sx {:mt 1}}
+         [mui/button {:href (str "/api/case/" case-id "/bank/" (name bank-id) "/notification-docx")
+                      :download (str case-reference " - " bank-name " - Bank notification.docx")
+                      :variant :outlined
+                      :startIcon (r/as-element [ui/icon-download])}
+          "download current letter"]
+         [upload-button case-id bank-id {:variant :outlined
+                                         :startIcon (r/as-element [ui/icon-upload])}
+          "upload replacement"]]]]
+      [mui/step {:key :approve
+                 :expanded true}
+       [mui/step-label active-step-label-props
+        "Approve and send"]
+       [mui/step-content
+        [mui/radio-group {:value @review-result
+                          :onChange (fn [_ev value]
+                                      (reset! review-result (keyword value)))}
+         [mui/form-control-label
+          {:value :send
+           :label "I approve, the letter is ready to be sent."
+           :control (r/as-element [mui/radio])}]
+         [mui/form-control-label
+          {:value :do-not-send
+           :label "Do not send, bank will be notified by other means."
+           :control (r/as-element [mui/radio])}]]
+
+        [mui/alert {:severity :info
+                    :sx (merge
+                          {:mt 2}
+                          (when (= @review-result :do-not-send)
+                            {:visibility :hidden}))}
+         "The letter will be posted automatically through ordinary mail. "
+         "We will wait for an answer from the bank for the final valuation step."]]]
+
+      (when fake?
+        [mui/step {:key :fake
                    :expanded true}
          [mui/step-label active-step-label-props
-          "Approve and send"]
+          "Fake case options"]
          [mui/step-content
+          [mui/typography {:sx {:mb 1}}
+           "This is a fake case, and by default no real letter will be posted. "
+           "You can override that and send a real letter for testing purposes."]
           [mui/form-control-label
-           {:control (r/as-element
-                       [mui/checkbox {:checked @approved?
-                                      :onChange #(reset! approved? (.. % -target -checked))}])
-            :label "I approve, the letter is ready to be sent."}]
-          [mui/alert {:severity :info}
-           [mui/stack
-            "The letter will be posted automatically through ordinary mail. "
-            "We will wait for an answer from the bank for the final valuation step."]]]]]
-       [mui/stack {:direction :row :spacing 1 :sx {:mt 1}}
-        [mui/button {:onClick #(rf/dispatch [::bank-model/hide-bank-dialog])
+           {:value @fake-send?
+            :control (r/as-element [mui/switch])
+            :label "Post a real letter. Ensure there is a proper test address on the letter!"}]]])]
+     [mui/stack {:direction :row :spacing 1 :sx {:mt 1}}
+      [mui/button {:onClick #(rf/dispatch [::bank-model/hide-bank-dialog])
+                   :variant :contained
+                   :full-width true} "cancel"]
+      (let [letter-id @(rf/subscribe [::bank-model/notification-letter-id])]
+        [mui/button {:on-click #(let [send-action (case @review-result
+                                                    :send (if @fake-send?
+                                                            :fake-send
+                                                            :send)
+                                                    :do-not-send :do-not-send)]
+                                  (rf/dispatch [::bank-model/review-notification-letter send-action case-id bank-id letter-id]))
                      :variant :contained
-                     :full-width true} "cancel"]
-        (let [letter-id @(rf/subscribe [::bank-model/notification-letter-id])]
-          [mui/button {:on-click #(rf/dispatch [::bank-model/approve-notification-letter case-id bank-id letter-id])
-                       :variant :contained
-                       :startIcon (r/as-element [ui/icon-send])
-                       :disabled (not @approved?)
-                       :full-width true}
-           "Send letter"])]])))
-
-
+                     :startIcon (case @review-result
+                                  :do-not-send (r/as-element [ui/icon-arrow-forwards])
+                                  (r/as-element [ui/icon-send]))
+                     :disabled (nil? @review-result)
+                     :full-width true}
+         (case @review-result
+           :do-not-send "Skip send"
+           "Send letter")])]]))

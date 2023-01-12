@@ -3,7 +3,6 @@
             [reitit.coercion]
             [reitit.coercion.malli]
             [ring.util.response :as ring]
-            [darbylaw.config :as config]
             [darbylaw.api.util.http :as http]
             [darbylaw.api.case-history :as case-history]
             [darbylaw.api.util.xtdb :as xt-util]
@@ -151,6 +150,15 @@
       (map (fn [[case]]
              case)))))
 
+(def letter-props
+  [{:notification-letter ['(:xt/id {:as :id})
+                          :author
+                          :by
+                          :review-by
+                          :review-timestamp]}
+   {:valuation-letter [:uploaded-by
+                       :uploaded-at]}])
+
 (def get-case__query
   {:find [(list 'pull 'case
             (into common-case-eql
@@ -158,8 +166,8 @@
                                            :cardinality :one})
                 ['*]}
                {'(:probate.funeral-account/_case
-                  {:as :funeral-account
-                   :cardinality :one})
+                   {:as :funeral-account
+                    :cardinality :one})
                 [:title :value :paid-by :paid
                  :receipt-uploaded :invoice-uploaded]}
                {:funeral-expense
@@ -169,25 +177,15 @@
                :funeral-account
                :funeral-expense
                :bank
-               {:bank-accounts [:bank-id
-                                :accounts
-                                {:notification-letter ['(:xt/id {:as :id})
-                                                       :author
-                                                       :by
-                                                       :approved]}
-                                {:valuation-letter [:uploaded-by
-                                                    :uploaded-at]}]}
-
-               {:buildsoc-accounts [:buildsoc-id
-                                    :accounts-unknown
-                                    :accounts
-                                    {:notification-letter ['(:xt/id {:as :id})
-                                                           :author
-                                                           :by
-                                                           :approved]}
-                                    {:valuation-letter [:uploaded-by
-                                                        :uploaded-at]}]}]))]
-
+               {:bank-accounts (into
+                                 [:bank-id
+                                  :accounts]
+                                 letter-props)}
+               {:buildsoc-accounts (into
+                                     [:buildsoc-id
+                                      :accounts-unknown
+                                      :accounts]
+                                     letter-props)}]))]
    :where '[[case :type :probate.case]
             [case :xt/id case-id]]
    :in '[case-id]})
