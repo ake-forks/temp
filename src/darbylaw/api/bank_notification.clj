@@ -73,6 +73,46 @@
             {:status http/status-409-conflict
              :body {:error :already-exists}}))))))
 
+(defn regenerate-notification-letter [{:keys [xtdb-node user path-params bank-type]}]
+  (let [case-id (parse-uuid (:case-id path-params))
+        bank-id (keyword (:bank-id path-params))
+        asset-id (build-asset-id bank-type case-id bank-id)
+        letter-id (:letter-id path-params)
+        asset (xt/pull (xt/db xtdb-node) '[{:notification-letter [*]}] asset-id)
+        letter (:notification-letter asset)]
+    (cond
+      (not= (:xt/id letter) letter-id)
+      {:status http/status-404-not-found}
+
+      (some? (:send-action letter))
+      {:status http/status-409-conflict}
+
+      :else
+      ; There is a race-condition here, that could happen if 2 users are regenerating concurrently.
+      ; It could be solved if we generated a new bank-notification-letter altogether,
+      ; but then we'd need to deal with deleting S3 files.
+      (let [letter-template-data (template/get-letter-template-data xtdb-node bank-type case-id bank-id)
+            docx (files-util/create-temp-file letter-id ".docx")]
+        (try
+          (template/render-docx bank-type letter-template-data docx)
+          (convert-to-pdf-and-store case-id bank-id letter-id docx)
+          (finally
+            (.delete docx)))
+        (xt-util/exec-tx xtdb-node
+          (concat
+            (tx-fns/set-values letter-id
+              {:author :generated
+               :by (:username user)
+               :review-by nil
+               :review-timestamp nil})
+            (case-history/put-event
+              {:event :bank-notification.letter-generated
+               :case-id case-id
+               :user user
+               :bank-id bank-id
+               :letter-id letter-id})))
+        {:status http/status-204-no-content}))))
+
 (def docx-mime-type
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
 
@@ -219,6 +259,8 @@
 (def common-routes
   [["/generate-notification-letter"
     {:post {:handler generate-notification-letter}}]
+   ["/notification-letter/:letter-id/regenerate"
+    {:post {:handler regenerate-notification-letter}}]
    ["/notification-pdf"
     {:get {:handler (partial get-notification :pdf)}}]
    ["/notification-docx"

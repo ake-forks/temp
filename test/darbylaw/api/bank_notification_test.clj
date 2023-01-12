@@ -116,10 +116,22 @@
         letter-id (get-in bank-data [:notification-letter :id])
 
         ; Reviewing the wrong letter
-        resp (t/run-request (bank-request :post
-                              "/notification-letter/wrong-letter-id/review"
+        resp (t/run-request (bank-request :post "/notification-letter/wrong-letter-id/review"
                               {:send-action :send}))
         _ (is (= 404 (:status resp)))
+
+        ; Regenerating the wrong letter
+        resp (t/run-request (bank-request :post "/notification-letter/wrong-letter-id/regenerate"))
+        _ (is (= 404 (:status resp)))
+
+        ; Regenerating the letter
+        resp (with-redefs [darbylaw.api.pdf/convert-file (fn [& _])
+                           darbylaw.doc-store/store (fn [& _])]
+               (t/run-request (bank-request :post (str "/notification-letter/" letter-id "/regenerate"))))
+        _ (is (= 204 (:status resp)))
+        bank-data (get (get-bank-data bank-type case-id) bank-id)
+        _ (is (= :generated (get-in bank-data [:notification-letter :author])))
+        _ (is (= "dev" (get-in bank-data [:notification-letter :by])))
 
         ; Reviewing the letter
         resp (t/run-request (bank-request :post
@@ -129,6 +141,10 @@
         bank-data (get (get-bank-data bank-type case-id) bank-id)
         _ (is (some? (get-in bank-data [:notification-letter :review-by])))
         _ (is (some? (get-in bank-data [:notification-letter :review-timestamp])))
+
+        ; Regenerating the letter after reviewed is not allowed
+        resp (t/run-request (bank-request :post (str "/notification-letter/" letter-id "/regenerate")))
+        _ (is (= 409 (:status resp)))
 
         ; Posting valuation letter
         resp (with-redefs [darbylaw.api.pdf/convert-file (fn [& _])

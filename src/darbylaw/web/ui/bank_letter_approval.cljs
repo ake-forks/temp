@@ -50,6 +50,19 @@
                    :hidden true                             ;TODO not working as before. why?
                    :sx {:display :none}}]])))
 
+(rf/reg-event-fx ::regenerate--success
+  (fn [{:keys [db]} [_ case-id bank-id]]
+    {:fx [[:dispatch [::case-model/load-case! case-id]]]}))
+
+(rf/reg-event-fx ::regenerate
+  (fn [{:keys [db]} [_ case-id bank-id letter-id]]
+    {:http-xhrio
+     (ui/build-http
+       {:method :post
+        :uri (str "/api/case/" case-id "/bank/" (name bank-id)
+               "/notification-letter/" letter-id "/regenerate")
+        :on-success [::regenerate--success case-id bank-id]})}))
+
 (rf/reg-sub ::author
   :<- [::case-model/current-case]
   :<- [::bank-model/bank-id]
@@ -67,6 +80,7 @@
                case-reference @(rf/subscribe [::case-model/current-case-reference])
                bank-id @(rf/subscribe [::bank-model/bank-id])
                bank-name @(rf/subscribe [::bank-model/bank-name])
+               letter-id @(rf/subscribe [::bank-model/notification-letter-id])
                author @(rf/subscribe [::author])
                fake? @(rf/subscribe [::case-model/fake?])
 
@@ -92,7 +106,7 @@
 
            :else
            "This letter was automatically generated from case data.")]
-        [mui/button {:onClick #(rf/dispatch [::regenerate])
+        [mui/button {:onClick #(rf/dispatch [::regenerate case-id bank-id letter-id])
                      :startIcon (r/as-element [ui/icon-refresh])
                      :variant :outlined
                      :sx {:mt 1}}
@@ -174,19 +188,18 @@
       [mui/button {:onClick #(rf/dispatch [::bank-model/hide-bank-dialog])
                    :variant :contained
                    :full-width true} "cancel"]
-      (let [letter-id @(rf/subscribe [::bank-model/notification-letter-id])]
-        [mui/button {:on-click #(let [send-action (case @review-result
-                                                    :send (if @fake-send?
-                                                            :fake-send
-                                                            :send)
-                                                    :do-not-send :do-not-send)]
-                                  (rf/dispatch [::bank-model/review-notification-letter send-action case-id bank-id letter-id]))
-                     :variant :contained
-                     :startIcon (case @review-result
-                                  :do-not-send (r/as-element [ui/icon-arrow-forwards])
-                                  (r/as-element [ui/icon-send]))
-                     :disabled (nil? @review-result)
-                     :full-width true}
-         (case @review-result
-           :do-not-send "Skip send"
-           "Send letter")])]]))
+      [mui/button {:on-click #(let [send-action (case @review-result
+                                                  :send (if @fake-send?
+                                                          :fake-send
+                                                          :send)
+                                                  :do-not-send :do-not-send)]
+                                (rf/dispatch [::bank-model/review-notification-letter send-action case-id bank-id letter-id]))
+                   :variant :contained
+                   :startIcon (case @review-result
+                                :do-not-send (r/as-element [ui/icon-arrow-forwards])
+                                (r/as-element [ui/icon-send]))
+                   :disabled (nil? @review-result)
+                   :full-width true}
+       (case @review-result
+         :do-not-send "Skip send"
+         "Send letter")]]]))
