@@ -50,18 +50,27 @@
                    :hidden true                             ;TODO not working as before. why?
                    :sx {:display :none}}]])))
 
+(def regenerating? (r/atom false))
+
+(rf/reg-event-fx ::reset-regenerating
+  (fn [_ _]
+    (reset! regenerating? false)))
+
 (rf/reg-event-fx ::regenerate--success
   (fn [{:keys [db]} [_ case-id bank-id]]
-    {:fx [[:dispatch [::case-model/load-case! case-id]]]}))
+    {:fx [[:dispatch [::case-model/load-case! case-id
+                      {:on-success [::reset-regenerating]}]]]}))
 
 (rf/reg-event-fx ::regenerate
   (fn [{:keys [db]} [_ case-id bank-id letter-id]]
+    (reset! regenerating? true)
     {:http-xhrio
      (ui/build-http
        {:method :post
         :uri (str "/api/case/" case-id "/bank/" (name bank-id)
                "/notification-letter/" letter-id "/regenerate")
-        :on-success [::regenerate--success case-id bank-id]})}))
+        :on-success [::regenerate--success case-id bank-id]
+        :on-failure [::reset-regenerating]})}))
 
 (rf/reg-sub ::author
   :<- [::case-model/current-case]
@@ -76,7 +85,9 @@
                            {:active true})])})
 
 (defn panel []
-  (r/with-let [case-id @(rf/subscribe [::case-model/case-id])
+  (r/with-let [_ (reset! regenerating? false)
+
+               case-id @(rf/subscribe [::case-model/case-id])
                case-reference @(rf/subscribe [::case-model/current-case-reference])
                bank-id @(rf/subscribe [::bank-model/bank-id])
                bank-name @(rf/subscribe [::bank-model/bank-name])
@@ -106,10 +117,11 @@
 
            :else
            "This letter was automatically generated from case data.")]
-        [mui/button {:onClick #(rf/dispatch [::regenerate case-id bank-id letter-id])
-                     :startIcon (r/as-element [ui/icon-refresh])
-                     :variant :outlined
-                     :sx {:mt 1}}
+        [ui/loading-button {:onClick #(rf/dispatch [::regenerate case-id bank-id letter-id])
+                            :loading @regenerating?
+                            :startIcon (r/as-element [ui/icon-refresh])
+                            :variant :outlined
+                            :sx {:mt 1}}
          "Regenerate letter from case data"]
         #_[mui/stack {:direction :row
                       :alignItems :center

@@ -107,13 +107,13 @@
                   :start-icon (r/as-element [ui/icon-check])}
       "mark accounts complete"]]))
 
-(defn approve-letter-pdf [uploading? case-id bank-id]
+(defn approve-letter-pdf [case-id bank-id uploading? regenerating?]
   [mui/box {:style {:width "50%"}}
-   (if (false? @uploading?)
+   (if (or @uploading? @regenerating?)
+     [reagent-mui.lab.loading-button/loading-button {:loading true :full-width true}]
      [:iframe {:src (str "/api/case/" case-id "/bank/" (name bank-id) "/notification-pdf")
                :width "100%"
-               :height "100%"}]
-     [reagent-mui.lab.loading-button/loading-button {:loading true :full-width true}])])
+               :height "100%"}])])
 
 (defn approve-letter-dialog []
   (let [bank-id @(rf/subscribe [::bank-model/bank-dialog])
@@ -124,7 +124,9 @@
                         :height "90vh"
                         :width "90vw"}}
      [mui/stack {:direction :row :spacing 1 :style {:height "inherit"}}
-      [approve-letter-pdf bank-letter-approval/uploading? case-id bank-id]
+      [approve-letter-pdf case-id bank-id
+       bank-letter-approval/uploading?
+       bank-letter-approval/regenerating?]
       [mui/stack {:spacing 1 :style {:width "50%"}}
        [mui/typography {:variant :h4} (list/bank-label bank-id)]
        [bank-progress-bar]
