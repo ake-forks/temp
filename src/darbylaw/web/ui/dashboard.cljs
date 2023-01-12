@@ -17,10 +17,9 @@
     [darbylaw.web.ui.overview-tile :as overview]
     [darbylaw.web.ui.tasks-tile :as tasks]
     [re-frame.core :as rf]
-    [reagent.core :as r]
     [reagent.format :as format]
-    [darbylaw.web.theme :as theme]))
-
+    [darbylaw.web.theme :as theme]
+    [darbylaw.web.ui.case-commons :as case-commons]))
 
 (defn bank-item [bank]
   (let [bank-data (bank-list/bank-by-id (:bank-id bank))
@@ -66,7 +65,7 @@
        :fullWidth true}
       [bank-dialog/base-dialog]]]))
 
-(defn asset-card [{:keys [title on-add]} & body]
+(defn asset-card [{:keys [title _on-add]} & body]
   [mui/card
    [mui/card-content
     [mui/typography {:variant :h5
@@ -177,10 +176,14 @@
          (str "your "
            (-> current-case :deceased :relationship (clojure.string/lower-case))
            "'s estate"))]
-      [mui/typography {:variant :h6}
-       (if (nil? current-case)
-         [mui/skeleton {:width "5rem"}]
-         (str "case " (:reference current-case :reference)))]]
+      [mui/stack {:direction :row
+                  :spacing 1
+                  :align-items :center}
+       [mui/typography {:variant :h6}
+        (if (nil? current-case)
+          [mui/skeleton {:width "5rem"}]
+          (str "case " (:reference current-case :reference)))]
+       [case-commons/fake-case-chip (:fake current-case)]]]
      [progress-bar/progress-bar]]]])
 
 (defn content [current-case]
