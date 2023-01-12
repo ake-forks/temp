@@ -66,7 +66,7 @@
        :fullWidth true}
       [bank-dialog/base-dialog]]]))
 
-(defn asset-card [{:keys [title on-add]} & body]
+(defn asset-card [{:keys [title _on-add]} & body]
   [mui/card
    [mui/card-content
     [mui/typography {:variant :h5

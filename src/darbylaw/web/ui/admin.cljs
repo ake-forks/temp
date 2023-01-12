@@ -42,7 +42,7 @@
 ;; >> Cards
 
 (defn case-item
-  [{:keys [id reference loading?] :as case
+  [{:keys [id reference fake loading?] :as _case
     {:keys [surname forename postcode]} :personal-representative}]
   [mui/card
    [mui/card-content
