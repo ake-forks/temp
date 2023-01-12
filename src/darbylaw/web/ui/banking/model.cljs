@@ -1,43 +1,35 @@
-(ns darbylaw.web.ui.buildingsociety.model
+(ns darbylaw.web.ui.banking.model
   (:require
     [darbylaw.api.buildsoc-list :as buildsoc-list]
+    [darbylaw.api.bank-list :as bank-list]
     [re-frame.core :as rf]
     [darbylaw.web.ui :as ui]
     [darbylaw.web.ui.case-model :as case-model]
     [reagent-mui.components :as mui]
     [reagent.core :as r]))
 
-(def buildsoc-options
-  [{:id :bath-building-society
-    :common-name "Bath Building Society"}
-   {:id :cambridge-building-society
-    :common-name "Cambridge Building Society"}
-   {:id :darlington-building-society
-    :common-name "Darlington Building Society"}
-   {:id :harpenden-building-society
-    :common-name "Harpenden Building Society"}])
 
-(def buildsoc-accounts
-  [{:buildsoc-id :bath-building-society
-    :common-name "Bath Building Society"
-    :accounts [{:roll-number 123 :estimated-value 100}
-               {:roll-number 567 :estimated-value 250}]}
-   {:buildsoc-id :cambridge-building-society
-    :common-name "Cambridge Building Society"
-    :accounts [{:roll-number 987 :estimated-value 400.50}
-               {:roll-number 432 :estimated-value 105}]}])
+(defn institution-list [type]
+  (if (some? type)
+    (case type
+      "buildsoc" buildsoc-list/buildsoc-list
+      "bank" bank-list/bank-list)))
+(defn institution-list-by-id [type]
+  (if (some? type)
+    (case type
+      "buildsoc" (into {} (map (juxt :id identity) buildsoc-list/buildsoc-list))
+      "bank" (into {} (map (juxt :id identity) bank-list/bank-list)))))
 
 
-(def buildsoc-list
-  buildsoc-list/buildsoc-list)
-(def buildsoc-list-by-id
-  (into {} (map (juxt :id identity) buildsoc-list/buildsoc-list)))
+(defn all-institution-ids [type]
+  (case type
+    "buildsoc" (map :id buildsoc-list/buildsoc-list)
+    "bank" (map :id bank-list/bank-list)))
 
-(defn all-buildsoc-ids []
-  (map :id buildsoc-list/buildsoc-list))
+(defn asset-label [type asset-id]
+  (get-in (institution-list-by-id type) [asset-id :common-name]))
 
-(defn buildsoc-label [buildsoc-id]
-  (get-in buildsoc-list-by-id [buildsoc-id :common-name]))
+
 
 (rf/reg-sub ::building-societies
   (fn [db]
@@ -46,7 +38,12 @@
 (rf/reg-sub ::get-dialog
   (fn [db]
     (try
-      (:dialog/building-society db))))
+      (:dialog/banking db))))
+
+(rf/reg-sub ::get-type
+  :<- [::get-dialog]
+  (fn [dialog]
+    (:type dialog)))
 
 (rf/reg-sub ::current-buildsoc-id
   :<- [::get-dialog]
@@ -162,19 +159,20 @@
 (rf/reg-event-db
   ::show-process-dialog
   (fn [db [_ id]]
-    (assoc-in db [:dialog/building-society]
+    (assoc-in db [:dialog/banking]
       {:open true
        :id id})))
 
 (rf/reg-event-db
   ::show-add-dialog
-  (fn [db]
-    (assoc-in db [:dialog/building-society]
+  (fn [db [_ type]]
+    (assoc-in db [:dialog/banking]
       {:open true
        :id nil
-       :stage :add})))
+       :stage :add
+       :type type})))
 
 (rf/reg-event-db
   ::hide-dialog
   (fn [db]
-    (assoc-in db [:dialog/building-society] nil)))
+    (assoc-in db [:dialog/banking] nil)))

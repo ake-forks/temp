@@ -1,8 +1,8 @@
-(ns darbylaw.web.ui.buildingsociety.shared
+(ns darbylaw.web.ui.banking.shared
   (:require
     [darbylaw.web.ui :as ui]
-    [darbylaw.web.ui.buildingsociety.model :as model]
-    [darbylaw.web.ui.buildingsociety.form :as form]
+    [darbylaw.web.ui.banking.model :as model]
+    [darbylaw.web.ui.banking.form :as form]
     [re-frame.core :as rf]
     [reagent-mui.components :as mui]
     [reagent.core :as r]))
@@ -38,10 +38,10 @@
    [close-button]])
 
 
-(defn header [buildsoc-id stage-keyword]
+(defn header [type asset-id stage-keyword]
   [mui/stack {:spacing 2}
    [mui/stack {:direction :row :justify-content :space-between}
-    [mui/typography {:variant :h4 :sx {:mb 1}} (model/buildsoc-label buildsoc-id)]
+    [mui/typography {:variant :h4 :sx {:mb 1}} (model/asset-label type asset-id)]
     [close-button]]
    [stepper stage-keyword]])
 

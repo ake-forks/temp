@@ -1,11 +1,11 @@
-(ns darbylaw.web.ui.buildingsociety.stage-notify
+(ns darbylaw.web.ui.banking.stage-notify
   (:require
     [re-frame.core :as rf]
     [reagent.core :as r]
     [darbylaw.web.ui :as ui]
     [reagent-mui.components :as mui]
-    [darbylaw.web.ui.buildingsociety.shared :as shared]
-    [darbylaw.web.ui.buildingsociety.model :as model]
+    [darbylaw.web.ui.banking.shared :as shared]
+    [darbylaw.web.ui.banking.model :as model]
     [darbylaw.web.ui.case-model :as case-model]))
 
 
@@ -82,7 +82,8 @@
 (defn approve-notification-panel []
   (let [buildsoc-id @(rf/subscribe [::model/current-buildsoc-id])
         case-id @(rf/subscribe [::case-model/case-id])
-        buildsoc-data @(rf/subscribe [::model/current-buildsoc-data])]
+        buildsoc-data @(rf/subscribe [::model/current-buildsoc-data])
+        type @(rf/subscribe [::model/get-type])]
     [mui/stack {:spacing 3}
      [mui/stack {:spacing 1}
       [mui/typography {:variant :h5} "review notification letter"]
@@ -92,7 +93,7 @@
        "If you would like to make changes, use the controls at the bottom to:"]
       [process-list]
       [mui/typography {:variant :body1}
-       (str "Once you are happy with the letter, you can approve it to be posted to " (model/buildsoc-label buildsoc-id) " via Royal Mail.")]]
+       (str "Once you are happy with the letter, you can approve it to be posted to " (model/asset-label type buildsoc-id) " via Royal Mail.")]]
      [shared/accounts-view (:accounts buildsoc-data) {:estimated? true :confirmed? false}]
      [mui/stack {:spacing 1}
       [mui/typography {:variant :h6} "edit and approve letter"]
@@ -102,7 +103,8 @@
 
 (defn panel []
   (let [buildsoc-id (:id @(rf/subscribe [::model/get-dialog]))
-        case-id @(rf/subscribe [::case-model/case-id])]
+        case-id @(rf/subscribe [::case-model/case-id])
+        type @(rf/subscribe [::model/get-type])]
     (if (some? buildsoc-id)
       [mui/box shared/tall-dialog-props
        [mui/stack {:spacing 1
@@ -117,7 +119,7 @@
         ;right side
         [mui/stack {:spacing 1 :sx {:width 0.5}}
          [mui/dialog-title
-          [shared/header buildsoc-id :notify]]
+          [shared/header type buildsoc-id :notify]]
          [mui/dialog-content
           [approve-notification-panel]]
          [mui/dialog-actions

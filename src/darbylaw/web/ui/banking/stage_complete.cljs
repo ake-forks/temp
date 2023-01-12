@@ -1,7 +1,7 @@
-(ns darbylaw.web.ui.buildingsociety.stage-complete
+(ns darbylaw.web.ui.banking.stage-complete
   (:require
-    [darbylaw.web.ui.buildingsociety.shared :as shared]
-    [darbylaw.web.ui.buildingsociety.model :as model]
+    [darbylaw.web.ui.banking.shared :as shared]
+    [darbylaw.web.ui.banking.model :as model]
     [darbylaw.web.ui.document-view :as pdf-view]
     [darbylaw.web.ui.case-model :as case-model]
     [re-frame.core :as rf]
@@ -23,7 +23,8 @@
 (defn summary-panel []
   (let [buildsoc-id (:id @(rf/subscribe [::model/get-dialog]))
         buildsoc-data @(rf/subscribe [::model/current-buildsoc-data])
-        relationship @(rf/subscribe [::case-model/relationship])]
+        relationship @(rf/subscribe [::case-model/relationship])
+        type @(rf/subscribe [::model/get-type])]
     [mui/stack {:spacing 1}
      [mui/typography {:variant :h6} "summary"]
      [mui/typography {:variant :body1}
@@ -31,7 +32,7 @@
         "Here is a summary of your late "
         relationship
         "'s accounts with "
-        (model/buildsoc-label buildsoc-id)
+        (model/asset-label type buildsoc-id)
         ". Using the buttons on the left you can view all the correspondence
         sent and received in relation to the following accounts.")]
      [shared/accounts-view (:accounts buildsoc-data) {:estimated? false :confirmed? true}]]))
@@ -39,10 +40,11 @@
 
 (defn panel []
   (let [buildsoc-id (:id @(rf/subscribe [::model/get-dialog]))
-        pdf-view @(rf/subscribe [::pdf-view/pdf-view])]
+        pdf-view @(rf/subscribe [::pdf-view/pdf-view])
+        type @(rf/subscribe [::model/get-type])]
     [mui/box
      [mui/dialog-title
-      [shared/header buildsoc-id :complete]]
+      [shared/header type buildsoc-id :complete]]
      [mui/dialog-content
       [mui/box (if (nil? pdf-view)
                  shared/narrow-dialog-props

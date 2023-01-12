@@ -1,12 +1,12 @@
-(ns darbylaw.web.ui.buildingsociety.stage-edit
+(ns darbylaw.web.ui.banking.stage-edit
   (:require
     [darbylaw.web.ui :as ui]
     [fork.re-frame :as fork]
     [re-frame.core :as rf]
     [reagent-mui.components :as mui]
-    [darbylaw.web.ui.buildingsociety.shared :as shared]
-    [darbylaw.web.ui.buildingsociety.form :as form]
-    [darbylaw.web.ui.buildingsociety.model :as model]
+    [darbylaw.web.ui.banking.shared :as shared]
+    [darbylaw.web.ui.banking.form :as form]
+    [darbylaw.web.ui.banking.model :as model]
     [darbylaw.web.ui.case-model :as case-model]))
 
 (rf/reg-event-fx ::complete-buildsoc-success
@@ -43,10 +43,11 @@
 
 (defn layout [{:keys [values handle-submit] :as fork-args}]
   (let [current-case @(rf/subscribe [::case-model/current-case])
-        buildsoc-id @(rf/subscribe [::model/current-buildsoc-id])]
+        buildsoc-id @(rf/subscribe [::model/current-buildsoc-id])
+        type @(rf/subscribe [::model/get-type])]
     [:form {:on-submit handle-submit}
      [mui/dialog-title
-      [shared/header buildsoc-id :edit]]
+      [shared/header type buildsoc-id :edit]]
      [mui/dialog-content
       [mui/box shared/narrow-dialog-props
        [mui/stack {:justify-content :space-between
@@ -56,13 +57,13 @@
          [mui/typography {:variant :body1}
           (str "To the best of your knowledge, enter the details for your late "
             (-> current-case :deceased :relationship)
-            (if-let [name (model/buildsoc-label buildsoc-id)]
+            (if-let [name (model/asset-label type buildsoc-id)]
               (str "'s accounts with " name)
               "'s accounts."))]
          [form/accounts-unknown fork-args]
          (if (:accounts-unknown values)
            [:<>]
-           [form/account-array-component fork-args])]]]]
+           [form/account-array-component type fork-args])]]]]
      [mui/dialog-actions
       [shared/submit-buttons {:left-label "cancel" :right-label "accounts complete"}]]]))
 

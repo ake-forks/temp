@@ -1,13 +1,13 @@
-(ns darbylaw.web.ui.buildingsociety.stage-valuation
+(ns darbylaw.web.ui.banking.stage-valuation
   (:require
     [fork.re-frame :as fork]
     [re-frame.core :as rf]
     [reagent.core :as r]
     [darbylaw.web.ui :as ui]
-    [darbylaw.web.ui.buildingsociety.form :as form]
+    [darbylaw.web.ui.banking.form :as form]
     [reagent-mui.components :as mui]
-    [darbylaw.web.ui.buildingsociety.shared :as shared]
-    [darbylaw.web.ui.buildingsociety.model :as model]
+    [darbylaw.web.ui.banking.shared :as shared]
+    [darbylaw.web.ui.banking.model :as model]
     [darbylaw.web.ui.case-model :as case-model]))
 
 (rf/reg-event-fx ::value-buildsoc-success
@@ -45,8 +45,9 @@
   (let [current-case @(rf/subscribe [::case-model/current-case])
         dialog-data @(rf/subscribe [::model/get-dialog])
         case-id @(rf/subscribe [::case-model/case-id])
+        type @(rf/subscribe [::model/get-type])
         buildsoc-id @(rf/subscribe [::model/current-buildsoc-id])
-        buildsoc-name (model/buildsoc-label buildsoc-id)]
+        buildsoc-name (model/asset-label type buildsoc-id)]
     [:form {:on-submit handle-submit}
      [mui/box shared/tall-dialog-props
       [mui/stack {:spacing 1
@@ -62,7 +63,7 @@
        ;right side
        [mui/stack {:spacing 1 :sx {:width 0.5}}
         [mui/dialog-title
-         [shared/header (:id dialog-data) :valuation]]
+         [shared/header type (:id dialog-data) :valuation]]
         [mui/dialog-content
          [mui/stack {:spacing 2}
           [mui/typography {:variant :body1}
