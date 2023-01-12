@@ -91,9 +91,9 @@
         current-bank @(rf/subscribe [::bank-model/current-bank-data])]
     [mui/stack {:spacing 1
                 :style {:padding "2rem"
-                        :background-color :white
-                        :height "700px"
-                        :width "1130px"}}
+                        :background-color :white}}
+                        ;:height "700px"
+                        ;:width "1130px"}}
      [dialog-header bank-id]
      [bank-add/dialog-with-values
       (if (some? bank-id)
@@ -121,8 +121,8 @@
     [mui/stack {:spacing 1
                 :style {:padding "2rem"
                         :background-color :white
-                        :height "90vh"
-                        :width "90vw"}}
+                        :height "90vh"}}
+                        ;:width "90vw"}}
      [mui/stack {:direction :row :spacing 1 :style {:height "inherit"}}
       [approve-letter-pdf case-id bank-id
        bank-letter-approval/uploading?
@@ -137,8 +137,8 @@
     [mui/stack {:spacing 1
                 :style {:padding "2rem"
                         :background-color :white
-                        :height "90vh"
-                        :width "90vw"}}
+                        :height "90vh"}}
+                        ;:width "90vw"}}
      [mui/stack {:direction :row :spacing 2 :style {:height "inherit"}}
       [mui/box {:width "50%"}
        [confirmation-view/upload-valuation-pdf]]
@@ -196,12 +196,21 @@
   (let [bank-id @(rf/subscribe [::bank-model/bank-dialog])
         case-id (-> @(rf/subscribe [::ui/path-params]) :case-id)]
     (rf/dispatch [::case-model/load-case! case-id])
-    [mui/box
-     (if (= bank-id :add-bank)
-       [bank-add/dialog]
-       (let [stage @(rf/subscribe [::stage])]
+    (if (= bank-id :add-bank)
+      [mui/dialog
+       {:open (some? bank-id)
+        :maxWidth :md
+        :fullWidth true}
+       [bank-add/dialog]]
+      (let [stage @(rf/subscribe [::stage])]
+        [mui/dialog
+         {:open (some? bank-id)
+          :maxWidth (case stage
+                      :edit-accounts :md
+                      :xl)
+          :fullWidth true}
          (cond
            (= stage :edit-accounts) [edit-dialog]
            (= stage :approve-letter) [approve-letter-dialog]
            (= stage :confirm-values) [confirm-values-dialog]
-           (= stage :bank-completed) [bank-completed-dialog])))]))
+           (= stage :bank-completed) [bank-completed-dialog])]))))

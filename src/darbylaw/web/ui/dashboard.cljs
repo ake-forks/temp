@@ -50,20 +50,15 @@
     [ui/icon-add]]])
 
 (defn bank-card [current-case]
-  (let [bank-dialog @(rf/subscribe [::bank-model/bank-dialog])]
-    [mui/card
-     [mui/card-content
-      [mui/typography {:variant :h5 :sx {:font-weight 600}} "bank accounts"]
-      [mui/divider]
-      (for [bank (:bank-accounts current-case)]
-        ^{:key (:bank-id bank)}
-        [bank-item bank])
-      [add-bank]]
-     [mui/dialog
-      {:open (some? bank-dialog)
-       :maxWidth :md
-       :fullWidth true}
-      [bank-dialog/base-dialog]]]))
+  [mui/card
+   [mui/card-content
+    [mui/typography {:variant :h5 :sx {:font-weight 600}} "bank accounts"]
+    [mui/divider]
+    (for [bank (:bank-accounts current-case)]
+      ^{:key (:bank-id bank)}
+      [bank-item bank])
+    [add-bank]]
+   [bank-dialog/base-dialog]])
 
 (defn asset-card [{:keys [title _on-add]} & body]
   [mui/card
