@@ -39,11 +39,8 @@ def parseLogEvent(awsLogs):
     uncompressed_payload = gzip.decompress(compressed_payload)
     log_event = json.loads(uncompressed_payload)
 
-    full_msg = ""
-    for event in log_event["logEvents"]:
-        full_msg += event["message"]
-
-    log_event["message"] = full_msg
+    messages = [event["message"] for event in log_event["logEvents"]]
+    log_event["message"] = "\n".join(messages)
 
     return log_event
 
