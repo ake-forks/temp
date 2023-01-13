@@ -272,5 +272,3 @@
     ;TODO i think this should be in buildingsociety.clj
     ["/valuation-pdf" {:get {:handler (partial get-valuation "buildsoc")}
                        :post {:handler (partial post-valuation "buildsoc")}}]]])
-;["/case/:case-id/bank/:bank-id"
-;["/generate-notification-letter" {:post {:handler (partial generate-notification-letter "bank")}}]]])
