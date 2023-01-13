@@ -8,6 +8,7 @@
     [reagent-mui.icons.error-outline]
     [reagent-mui.icons.edit]
     [reagent-mui.icons.history]
+    [reagent-mui.icons.history-edu]
     [reagent-mui.icons.keyboard-arrow-up]
     [reagent-mui.icons.keyboard-arrow-down]
     [reagent-mui.icons.launch]
@@ -36,7 +37,8 @@
     [kee-frame.router :as kf-router]
     [accountant.core :as accountant]
     ["@mui/material/styles" :as mui-styles]
-    [reagent-mui.util]))
+    [reagent-mui.util]
+    [lambdaisland.uri :refer [query-string->map]]))
 
 (def icon-add reagent-mui.icons.add/add)
 (def icon-arrow-back-sharp reagent-mui.icons.arrow-back-sharp/arrow-back-sharp)
@@ -45,6 +47,7 @@
 (def icon-error-outline reagent-mui.icons.error-outline/error-outline)
 (def icon-edit reagent-mui.icons.edit/edit)
 (def icon-history reagent-mui.icons.history/history)
+(def icon-history-edu reagent-mui.icons.history-edu/history-edu)
 (def icon-keyboard-arrow-up reagent-mui.icons.keyboard-arrow-up/keyboard-arrow-up)
 (def icon-keyboard-arrow-down reagent-mui.icons.keyboard-arrow-down/keyboard-arrow-down)
 (def icon-launch reagent-mui.icons.launch/launch)
@@ -100,6 +103,10 @@
   (fn [route]
     (:path-params route)))
 
+(rf/reg-sub ::query-params
+  :<- [:kee-frame/route]
+  (fn [route]
+    (query-string->map (:query-string route))))
 
 (defn- add-getAttribute!
   "Adds .getAttribute() method to a Material UI event.

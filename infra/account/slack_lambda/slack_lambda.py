@@ -18,6 +18,7 @@ ssm = boto3.client("ssm")
 
 # >> Config
 
+region = "eu-west-2"
 response = ssm.get_parameter(Name="ProbateTree_SlackToken", WithDecryption=True)
 slack_token = response["Parameter"]["Value"]
 
@@ -51,14 +52,37 @@ def logStreamUrl(region, log_group, log_stream):
     return (
         "https://console.aws.amazon.com"
         + "/cloudwatch/home?"
-        + "region={region}"
+        + f"region={region}"
         + "#logEventViewer:"
-        + "group={log_group};"
-        + "stream={log_stream}"
-    ).format(region=region, log_group=log_group, log_stream=log_stream)
+        + f"group={log_group};"
+        + f"stream={log_stream}"
+    )
+
+
+def ecsTaskUrl(region, cluster, task_id):
+    return (
+        f"https://{region}.console.aws.amazon.com"
+        + "/ecs/v2"
+        + f"/clusters/{cluster}"
+        + f"/tasks/{task_id}"
+    )
+
+
+def send_slack_message(channel, text):
+    body = {
+        "channel": channel,
+        "text": text,
+    }
+
+    logger.debug("Sending message to slack")
+
+    http.request(
+        "POST", base_url + "/chat.postMessage", headers=headers, body=json.dumps(body)
+    )
 
 
 # >> Handler
+
 warning_filters = [
     re.compile(r"(?i)WARN"),
 ]
@@ -72,15 +96,14 @@ error_filters = [
 filters = warning_filters + error_filters
 
 
-def handler(event, context):
-
+def handle_awslogs(event, context):
     if "awslogs" not in event:
         logger.info("No awslogs in event")
         return
 
     # >> Parse Event
     log_event = parseLogEvent(event["awslogs"])
-    url = logStreamUrl("eu-west-2", log_event["logGroup"], log_event["logStream"])
+    url = logStreamUrl(region, log_event["logGroup"], log_event["logStream"])
     # TODO: Truncate?
     message = log_event["message"]
 
@@ -102,17 +125,54 @@ def handler(event, context):
         return
 
     # >> Send message on to slack
-    logger.debug("Sending message to slack")
-
     link_text = "Logs " + log_event["logGroup"]
-    body = {
-        "channel": "darbylaw-ops",
-        "text": message + "\n<" + url + "|" + link_text + ">",
-    }
+    text = message + f"\n<{url}|{link_text}>"
+    send_slack_message("darbylaw-ops", text)
 
-    http.request(
-        "POST", base_url + "/chat.postMessage", headers=headers, body=json.dumps(body)
+
+def handle_ecs_task_state_change(event, context):
+    detail = event["detail"]
+
+    # >> Collect info
+    cluster_name = detail["clusterArn"].split("/")[-1]
+    task_id = detail["taskArn"].split("/")[-1]
+    last_status = detail["lastStatus"]
+
+    logger.debug("Cluster: %s", cluster_name)
+    logger.debug("Task ID: %s", task_id)
+    logger.debug("Last Status: %s", last_status)
+
+    container_statuses = []
+    for container in detail["containers"]:
+        container_name = container["name"]
+        container_status = container["lastStatus"]
+        logger.debug("Container: %s", container_name)
+        logger.debug("Container Status: %s", container_status)
+
+        container_statuses.append(f"{container_name}: `{container_status}`")
+
+    # >> Write message
+    task_url = ecsTaskUrl(region, cluster_name, task_id)
+
+    truncated_task_id = task_id[:8]
+    message = (
+        f"<{task_url}|{cluster_name}/{truncated_task_id}> -> `{last_status}`"
+        + "\nContainers:"
+        + "\n"
+        + "\n".join(container_statuses)
     )
+
+    send_slack_message("darbylaw-ops", message)
+
+
+def handler(event, context):
+    if "awslogs" in event:
+        handle_awslogs(event, context)
+    elif "detail-type" in event and event["detail-type"] == "ECS Task State Change":
+        handle_ecs_task_state_change(event, context)
+    else:
+        logger.info("Event not recognised")
+        logger.debug("Event: %s", json.dumps(event))
 
 
 if __name__ == "__main__":
@@ -133,7 +193,7 @@ if __name__ == "__main__":
         ],
     }
     event = {
-        "awsLogs": {
+        "awslogs": {
             "data": base64.b64decode(json.dumps(data)),
         },
     }

@@ -3,7 +3,6 @@
             [reitit.coercion]
             [reitit.coercion.malli]
             [ring.util.response :as ring]
-            [darbylaw.config :as config]
             [darbylaw.api.util.http :as http]
             [darbylaw.api.case-history :as case-history]
             [darbylaw.api.util.xtdb :as xt-util]
@@ -82,7 +81,7 @@
   (let [case-id (random-uuid)
         pr-id (random-uuid)
         pr-data (get body-params :personal-representative)
-        fake? (not= config/profile :production)]
+        fake? (get body-params :fake)]
     (xt-util/exec-tx xtdb-node
       (concat
         (initialize-case case-id pr-id fake?)
@@ -91,7 +90,8 @@
                       :xt/id pr-id})]]
         (case-history/put-event {:event :created
                                  :case-id case-id
-                                 :user user})))
+                                 :user user
+                                 :fake fake?})))
     {:status 200
      :body {:id case-id}}))
 
@@ -150,6 +150,15 @@
       (map (fn [[case]]
              case)))))
 
+(def letter-props
+  [{:notification-letter ['(:xt/id {:as :id})
+                          :author
+                          :by
+                          :review-by
+                          :review-timestamp]}
+   {:valuation-letter [:uploaded-by
+                       :uploaded-at]}])
+
 (def get-case__query
   {:find [(list 'pull 'case
             (into common-case-eql
@@ -168,27 +177,15 @@
                :funeral-account
                :funeral-expense
                :bank
-               {:bank-accounts [:bank-id
-                                :accounts
-                                {:notification-letter ['(:xt/id {:as :id})
-                                                       :author
-                                                       :by
-                                                       :approved]}
-                                {:valuation-letter ['(:xt/id {:as :id})
-                                                    :uploaded-by
-                                                    :uploaded-at]}]}
-
-               {:buildsoc-accounts [:buildsoc-id
-                                    :accounts-unknown
-                                    :accounts
-                                    {:notification-letter ['(:xt/id {:as :id})
-                                                           :author
-                                                           :by
-                                                           :approved]}
-                                    {:valuation-letter ['(:xt/id {:as :id})
-                                                        :uploaded-by
-                                                        :uploaded-at]}]}]))]
-
+               {:bank-accounts (into
+                                 [:bank-id
+                                  :accounts]
+                                 letter-props)}
+               {:buildsoc-accounts (into
+                                     [:buildsoc-id
+                                      :accounts-unknown
+                                      :accounts]
+                                     letter-props)}]))]
    :where '[[case :type :probate.case]
             [case :xt/id case-id]]
    :in '[case-id]})

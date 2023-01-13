@@ -86,9 +86,11 @@
         (nil? post-tasks) "Loading..."
         (empty? post-tasks) "No mailing tasks"
         :else
-        (for [{:keys [case bank-id
-                      approved upload-state]} post-tasks]
-          ^{:key (pr-str [(:id case) bank-id])}
+        (for [{case-data :case
+               :keys [bank-id
+                      review-by review-timestamp send-action
+                      upload-state]} post-tasks]
+          ^{:key (pr-str [(:id case-data) bank-id])}
           [mui/card
            [mui/card-content
             [mui/stack {:direction :row
@@ -97,18 +99,30 @@
                                           :m 1}}]
              [mui/box {:flexGrow 2}
               [mui/typography [:strong "type "] "bank notification letter"]
-              [mui/tooltip {:title (str "case id: " (:id case))}
-               [mui/typography [:strong "case "] (:reference case)]]
+              [mui/tooltip {:title (str "case id: " (:id case-data))}
+               [mui/typography [:strong "case "] (:reference case-data)]]
               [mui/typography [:strong "bank "] (or (banks/bank-label bank-id)
                                                     bank-id)]]
              [mui/box
               [mui/typography {:font-weight :bold
                                :text-align :right}
                (cond
-                 (some? upload-state) (name upload-state)
-                 (some? approved) "approved"
-                 :else "not yet approved")]
-              (when (some? approved)
+                 (some? upload-state)
+                 (str (name upload-state)
+                   (when (= send-action :fake-send)
+                     " (fake)"))
+
+                 (some? send-action)
+                 (case send-action
+                   :send "ready to send"
+                   :fake-send "ready to send (fake)"
+                   :do-not-send "not to be sent")
+
+                 :else
+                 "pending approval")]
+              (when (or (some? review-by)
+                        (some? review-timestamp))
                 [mui/typography {:variant :body2
                                  :text-align :right}
-                 "approved: " (date-util/show-local-numeric (:timestamp approved))])]]]]))]]))
+                 "reviewed by " review-by
+                 " at "(date-util/show-local-numeric review-timestamp)])]]]]))]]))

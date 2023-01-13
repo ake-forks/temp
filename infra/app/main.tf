@@ -76,7 +76,7 @@ resource "aws_cloudwatch_log_subscription_filter" "webapp_logging" {
   destination_arn = data.aws_lambda_function.slack_lambda.arn
   filter_pattern  = ""
   log_group_name  = aws_cloudwatch_log_group.probatetree-logs.name
-  name            = "webapp_to_slack"
+  name            = "webapp_to_slack-${terraform.workspace}"
 }
 
 
@@ -352,4 +352,31 @@ resource "aws_ecs_service" "probatetree" {
   # lifecycle {
   #   ignore_changes = [desired_count]
   # }
+}
+
+resource "aws_cloudwatch_event_rule" "task_state_change" {
+  name        = "probatetree-task-state-change-${terraform.workspace}"
+  description = "Capture each ProbateTree task state change"
+
+  event_pattern = <<EOF
+{
+  "source": ["aws.ecs"],
+  "detail-type": ["ECS Task State Change"],
+  "detail": {
+    "clusterArn": ["${aws_ecs_cluster.probatetree.arn}"]
+  }
+}
+EOF
+}
+
+resource "aws_cloudwatch_event_target" "example" {
+  arn  = data.aws_lambda_function.slack_lambda.arn
+  rule = aws_cloudwatch_event_rule.task_state_change.id
+}
+
+resource "aws_lambda_permission" "task_state_change" {
+  action        = "lambda:InvokeFunction"
+  function_name = data.aws_lambda_function.slack_lambda.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.task_state_change.arn
 }

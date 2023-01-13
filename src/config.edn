@@ -21,12 +21,16 @@
  {:s3-bucket #profile {:default "darbylaw-docs-test"
                        #{:staging :production} #env DOC_STORE_BUCKET}}
 
- :post-service
+ :mailing-service
  {:ssh #profile {:default #edn #env POST_SERVICE_MAP
-                 :dev {:host "localhost"
-                       :port 2222
-                       :username "none"
-                       :password "none"}}
+                 :dev {:fake {:host "localhost"
+                              :port 2222
+                              :username "none"
+                              :password "none"}
+                       :real {:host "localhost"
+                              :port 2222
+                              :username "none"
+                              :password "none"}}}
   :local-sftp-server {:enabled? #profile {:default false
                                           :dev true}
                       :port 2222}}}

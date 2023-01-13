@@ -14,7 +14,7 @@
            (org.apache.sshd.scp.server ScpCommandFactory$Builder)))
 
 (mount/defstate ^SshServer ssh-server
-  :start (let [{:keys [enabled? port]} (-> config/config :post-service :local-sftp-server)]
+  :start (let [{:keys [enabled? port]} (-> config/config :mailing-service :local-sftp-server)]
            (when enabled?
              (let [dir (Paths/get ".post-sftp" (into-array String nil))]
                (Files/createDirectories dir (into-array FileAttribute nil))

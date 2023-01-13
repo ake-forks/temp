@@ -31,10 +31,15 @@
    :name-of-doctor-certifying "name-of-doctor-certifying"
    :name-of-registrar "name-of-registrar"})
 
-(def accounts1 [{:sort-code "sort-code1"
-                 :account-number "account-number1"}
-                {:sort-code "sort-code2"
-                 :account-number "account-number2"}])
+(def bank-accounts1 [{:sort-code "sort-code1"
+                      :account-number "account-number1"}
+                     {:sort-code "sort-code2"
+                      :account-number "account-number2"}])
+
+(def buildsoc-accounts1 [{:roll-number "roll-number1"
+                          :confirmed-value "confirmed-value1"}
+                         {:roll-number "roll-number2"
+                          :confirmed-value "confirmed-value2"}])
 
 (defn get-case [case-id]
   {:request-method :get
@@ -47,7 +52,7 @@
 
 (defn add-bank-accounts [{:keys [case-id bank-id accounts]
                           :or {bank-id :my-bank-id
-                               accounts accounts1}}]
+                               accounts bank-accounts1}}]
   {:request-method :post
    :uri (str "/api/bank/" case-id "/add-bank-accounts")
    :body-params {:bank-id bank-id

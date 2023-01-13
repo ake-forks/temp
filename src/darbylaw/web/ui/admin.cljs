@@ -6,7 +6,8 @@
             [darbylaw.web.ui :as ui]
             [reagent-mui.components :as mui]
             [reagent-mui.x.data-grid :refer [data-grid]]
-            [darbylaw.web.ui.mailing :as mailing]))
+            [darbylaw.web.ui.mailing :as mailing]
+            [darbylaw.web.ui.case-commons :as case-commons]))
 
 (rf/reg-event-db ::load-success
   (fn [db [_ response]]
@@ -42,19 +43,19 @@
 ;; >> Cards
 
 (defn case-item
-  [{:keys [id reference loading?] :as case
+  [{:keys [id reference fake loading?] :as _case
     {:keys [surname forename postcode]} :personal-representative}]
   [mui/card
    [mui/card-content
     [mui/stack {:direction :row
                 :justify-content :space-between
-                :align-items :center}
+                :align-items :stretch}
      [mui/card-action-area {:href (when-not loading?
                                     (kf/path-for [:dashboard {:case-id id}]))}
       [mui/stack
        [mui/typography {:sx {:fontSize 14} :color :text.secondary}
         (if-not loading?
-          (str "case #" reference)
+          (str "case " reference)
           [mui/skeleton {:width 100}])]
        [mui/typography {:variant :h5}
         (if-not loading?
@@ -64,10 +65,16 @@
         (if-not loading?
           (str "at " postcode)
           [mui/skeleton {:width 130}])]]]
-     [mui/stack
-      [mui/tooltip {:title "See history"
-                    :href (kf/path-for [:case-history {:case-id id}])}
-       [mui/icon-button [ui/icon-history]]]]]]])
+     [mui/stack {:justify-content :space-between
+                 :align-items :end}
+      [mui/box
+       (when fake
+         (case-commons/fake-case-chip fake))]
+      [mui/tooltip {:title "Go to case history"}
+       [mui/icon-button {:href (kf/path-for [:case-history {:case-id id}])}
+        [ui/icon-history-edu]]
+       #_[mui/link {:href (kf/path-for [:case-history {:case-id id}])}
+          "history"]]]]]])
 
 (defn no-cases-found
   []
@@ -145,9 +152,16 @@
                  :sx {:mt "3rem"
                       :mb "1rem"}}
       [mui/typography {:variant :h4} "Cases"]
-      [mui/button {:startIcon (r/as-element [ui/icon-add])
-                   :href (kf/path-for [:create-case])}
-       "Create case"]]
+      [mui/stack {:direction :row
+                  :spacing 2}
+       [mui/button {:startIcon (r/as-element [ui/icon-add])
+                    :href (str (kf/path-for [:create-case]) "?fake=true")
+                    :variant :outlined}
+        "Create fake case"]
+       [mui/button {:startIcon (r/as-element [ui/icon-add])
+                    :href (kf/path-for [:create-case])
+                    :variant :outlined}
+        "Create real case"]]]
      [mui/box {:border-bottom 1 :border-color :divider}
       [mui/tabs {:value (or case-view :card)
                  :on-change (fn [_ value] (rf/dispatch [::set-case-view (keyword value)]))}

@@ -52,7 +52,7 @@
       (into {}))))
 
 (rf/reg-event-fx ::submit
-  (fn [{:keys [db]} [_ create|edit case-id {:keys [path values] :as fork-params}]]
+  (fn [{:keys [db]} [_ create|edit case-id fake? {:keys [path values] :as fork-params}]]
     {:db (fork/set-submitting db path true)
      :http-xhrio
      (ui/build-http
@@ -60,7 +60,8 @@
          (case create|edit
            :create {:method :post
                     :uri "/api/case"
-                    :params {:personal-representative (transform-on-submit values)}}
+                    :params (cond-> {:personal-representative (transform-on-submit values)}
+                              fake? (merge {:fake true}))}
            :edit {:method :put
                   :uri (str "/api/case/" case-id "/personal-representative")
                   :params (transform-on-submit values)})
@@ -245,13 +246,12 @@
 (defonce form-state (r/atom nil))
 
 (defn user-details-form [create|edit {:keys [initial-values]}]
-  (r/with-let []
+  (r/with-let [case-id @(rf/subscribe [::case-model/case-id])
+               fake? (= "true" (:fake @(rf/subscribe [::ui/query-params])))]
     [fork/form
      {:state form-state
       :clean-on-unmount? true
-      :on-submit (let [case-id (when (= create|edit :edit)
-                                 @(rf/subscribe [::case-model/case-id]))]
-                   #(rf/dispatch [::submit create|edit case-id %]))
+      :on-submit #(rf/dispatch [::submit create|edit case-id fake? %])
       :keywordize-keys true
       :prevent-default? true
       :initial-values (adapt-initial-values initial-values)

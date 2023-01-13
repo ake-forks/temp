@@ -24,12 +24,13 @@
       (is (= 200 get-status))
       (is (sequential? cases))
       (is (= 1 (count cases)))
-      (let [case (first cases)]
-        (is (contains? case :id))
-        (is (contains? case :reference))
-        (is (:fake case))
-        (is (str/ends-with? (:reference case) "99"))
-        (is (submap? pr-info (:personal-representative case)))))
+      (let [case-data (first cases)]
+        (is (contains? case-data :id))
+        (is (contains? case-data :reference))
+        (is (not (:fake case-data)))
+        (is (str/ends-with? (:reference case-data) "00"))
+        (is (submap? pr-info (:personal-representative case-data)))))
+
     ; Update personal rep
     (let [case-id (-> post-resp :body :id)
           updated-data (assoc pr-info
@@ -41,10 +42,10 @@
                                         :body-params updated-data})]
         (is (<= 200 (:status update-resp) 299)))
       ; Get single case
-      (let [{case :body} (t/run-request {:request-method :get
-                                         :uri (str "/api/case/" case-id)})]
-        (is (contains? case :id))
-        (is (submap? updated-data (:personal-representative case))))
+      (let [{case-data :body} (t/run-request {:request-method :get
+                                              :uri (str "/api/case/" case-id)})]
+        (is (contains? case-data :id))
+        (is (submap? updated-data (:personal-representative case-data))))
       ; Update deceased info
       (let [deceased sample/deceased
             update-resp (t/run-request {:request-method :put
@@ -58,6 +59,18 @@
                                            :uri (str "/api/case/" case-id)}))
             _ (is (submap? deceased (:deceased case)))
             _ (is (submap? updated-data (:personal-representative case)))]))))
+
+(deftest create-fake-case
+  (let [post-resp (t/run-request {:request-method :post
+                                  :uri "/api/case"
+                                  :body-params {:fake true
+                                                :personal-representative sample/pr-info1}})
+        _ (is (<= 200 (:status post-resp) 299))
+        case-id (-> post-resp :body :id)
+        {case-data :body} (t/run-request {:request-method :get
+                                          :uri (str "/api/case/" case-id)})
+        _ (is (:fake case-data))
+        _ (is (str/ends-with? (:reference case-data) "99"))]))
 
 (comment
   (read-body

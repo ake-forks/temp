@@ -31,11 +31,11 @@
             (.delete tempfile)))))
     (xt-util/exec-tx xtdb-node
       (concat
-        (tx-fns/merge account-id
-                      (merge account-info
-                             account-id
-                             {:xt/id account-id
-                              :type :probate.funeral-account}))
+        (tx-fns/set-values account-id
+                           (merge account-info
+                                  account-id
+                                  {:xt/id account-id
+                                   :type :probate.funeral-account}))
         (case-history/put-event {:event :updated.funeral-account
                                  :case-id case-id
                                  :user user})))
@@ -76,11 +76,11 @@
             (.delete tempfile)))))
     (xt-util/exec-tx xtdb-node
       (concat
-        (tx-fns/merge expense-id
-                      (merge expense-info
-                             {:xt/id expense-id
-                              :type :probate.funeral-expense
-                              :probate.funeral-expense/case case-id}))
+        (tx-fns/set-values expense-id
+                            (merge expense-info
+                                   {:xt/id expense-id
+                                    :type :probate.funeral-expense
+                                    :probate.funeral-expense/case case-id}))
         (tx-fns/append-unique case-id [:funeral-expense] [expense-id])
         (case-history/put-event {:event (case 
                                           :add :added.other-expense
