@@ -76,6 +76,10 @@
   (let [asset-data (get-asset-data type)]
     (get-in asset-data [:notification-letter :id])))
 
+(defn get-author [type]
+  (let [asset-data (get-asset-data type)]
+    (get-in asset-data [:notification-letter :author])))
+
 (rf/reg-sub ::notification-letter-id
   (fn [_ [_ type]]
     (let [asset-data (get-asset-data type)]
@@ -92,7 +96,7 @@
       :add
       ;if it contains a buildsoc-id
       (if (contains? asset-data :notification-letter)
-        (if (contains? (:notification-letter asset-data) :approved)
+        (if (contains? (:notification-letter asset-data) :review-timestamp)
           (if (contains? (first (:accounts asset-data)) :confirmed-value)
             :complete
             :valuation)
@@ -160,6 +164,19 @@
         :uri (str "/api/case/" case-id "/" type "/" (name asset-id) "/approve-notification-letter/" letter-id)
         :on-success [::approve-notification-letter-success case-id asset-id]})}))
 
+(rf/reg-event-fx ::review-notification-letter--success
+  (fn [{:keys [db]} [_ case-id asset-id]]
+    {:fx [[:dispatch [::case-model/load-case! case-id]]]}))
+
+(rf/reg-event-fx ::review-notification-letter
+  (fn [{:keys [db]} [_ type send-action case-id asset-id letter-id]]
+    {:http-xhrio
+     (ui/build-http
+       {:method :post
+        :uri (str "/api/case/" case-id "/" type "/" (name asset-id)
+               "/notification-letter/" letter-id "/review")
+        :params {:send-action send-action}
+        :on-success [::review-notification-letter--success case-id asset-id]})}))
 
 ;uploading files
 (def file-uploading? (r/atom false))
