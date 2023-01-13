@@ -5,6 +5,7 @@
             [darbylaw.xtdb-node :refer [xtdb-node]]
             [darbylaw.handler :refer [ring-handler]]
             [darbylaw.core :refer [web-server]]
+            [darbylaw.api.bank-notification :refer [blank-page]]
             [darbylaw.api.bank-notification-template :refer [templates]]
             [darbylaw.api.death-cert-verif-template :refer [death-certificate-verification-form-template]]
             [xtdb.api :as xt]
@@ -27,7 +28,8 @@
 
 (def ring-handler-states
   [#'profile #'config #'xtdb-node #'ring-handler
-   #'templates #'death-certificate-verification-form-template])
+   #'templates #'death-certificate-verification-form-template
+   #'blank-page])
 
 (def web-server-states
   (into ring-handler-states
