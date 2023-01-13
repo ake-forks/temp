@@ -104,13 +104,10 @@
       ; There is a race-condition here, that could happen if 2 users are regenerating concurrently.
       ; It could be solved if we generated a new bank-notification-letter altogether,
       ; but then we'd need to deal with deleting S3 files.
-      (let [letter-template-data (template/get-letter-template-data xtdb-node bank-type case-id bank-id)
-            docx (files-util/create-temp-file letter-id ".docx")]
-        (try
+      (let [letter-template-data (template/get-letter-template-data xtdb-node bank-type case-id bank-id)]
+        (with-delete [docx (files-util/create-temp-file letter-id ".docx")]
           (template/render-docx bank-type letter-template-data docx)
-          (convert-to-pdf-and-store case-id bank-id letter-id docx)
-          (finally
-            (.delete docx)))
+          (convert-to-pdf-and-store xtdb-node case-id bank-id letter-id docx))
         (xt-util/exec-tx xtdb-node
           (concat
             (tx-fns/set-values letter-id

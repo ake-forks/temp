@@ -129,7 +129,8 @@
 
         ; Regenerating the letter
         resp (with-redefs [darbylaw.api.pdf/convert-file (fn [& _])
-                           darbylaw.doc-store/store (fn [& _])]
+                           darbylaw.doc-store/store (fn [& _])
+                           clj-pdf.core/collate (fn [& _])]
                (t/run-request (bank-request :post (str "/notification-letter/" letter-id "/regenerate"))))
         _ (is (= 204 (:status resp)))
         bank-data (get (get-bank-data bank-type case-id) bank-id)
