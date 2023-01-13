@@ -14,24 +14,26 @@
     :where '[[case :type :probate.case]
              [case :xt/id case-id]
              [bank-accounts :type :probate.bank-accounts]
-             [bank-accounts :bank-id bank-id]]
+             [bank-accounts :bank-id bank-id]
+             [bank-accounts :case-id case-id]]
     :in '[case-id
           bank-id]}
    case-id
    bank-id])
 
-(defn buildsoc-letter-template-query [case-id bank-id]
+(defn buildsoc-letter-template-query [case-id buildsoc-id]
   [{:find ['(pull case [:reference
                         :deceased.info])
-           '(pull bank-accounts [:accounts])]
+           '(pull buildsoc-accounts [:accounts])]
     :where '[[case :type :probate.case]
              [case :xt/id case-id]
-             [bank-accounts :type :probate.buildsoc-accounts]
-             [bank-accounts :buildsoc-id bank-id]]
+             [buildsoc-accounts :type :probate.buildsoc-accounts]
+             [buildsoc-accounts :buildsoc-id buildsoc-id]
+             [buildsoc-accounts :case-id case-id]]
     :in '[case-id
-          bank-id]}
+          buildsoc-id]}
    case-id
-   bank-id])
+   buildsoc-id])
 
 (defn get-letter-template-data [xtdb-node bank-type case-id bank-id]
   (let [[case-data bank-data] (xt-util/fetch-one

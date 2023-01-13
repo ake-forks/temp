@@ -93,20 +93,7 @@
                   :on-change #(reset! approved? (not @approved?))}])
      :label "I approve, the letter is ready to be sent."}]])
 
-(defn process-list []
-  [mui/list
-   [mui/list-item {:disable-padding true}
-    [mui/list-item-icon
-     [ui/icon-download]]
-    [mui/list-item-text "download the generated letter as docx file"]]
-   [mui/list-item {:disable-padding true}
-    [mui/list-item-icon
-     [ui/icon-edit]]
-    [mui/list-item-text "edit it in Word - take care to preserve the address format and placement"]]
-   [mui/list-item {:disable-padding true}
-    [mui/list-item-icon
-     [ui/icon-upload]]
-    [mui/list-item-text "upload the edited file as a replacement"]]])
+
 
 (def active-step-label-props
   {:StepIconComponent (react-component [props]
@@ -203,28 +190,7 @@
 
 
 
-(defn approve-notification-panel []
-  (let [asset-id @(rf/subscribe [::model/current-asset-id])
-        case-id @(rf/subscribe [::case-model/case-id])
-        type @(rf/subscribe [::model/get-type])
-        asset-data (model/get-asset-data type)]
-    [mui/stack {:spacing 3}
-     [mui/stack {:spacing 1}
-      [mui/typography {:variant :h5} "review notification letter"]
-      [mui/typography {:variant :body1}
-       "A notification letter has been generated using a standard template and the data from this case."]
-      [mui/typography {:variant :body1}
-       "If you would like to make changes, use the controls at the bottom to:"]
-      [process-list]
-      [mui/typography {:variant :body1}
-       (str "Once you are happy with the letter, you can approve it to be posted to " (model/asset-label type asset-id) " via Royal Mail.")]]
-     (if (= type "bank")
-       [shared/bank-accounts-view (:accounts asset-data) {:estimated? true :confirmed? false}]
-       [shared/buildsoc-accounts-view (:accounts asset-data) {:estimated? true :confirmed? false}])
-     [mui/stack {:spacing 1}
-      [mui/typography {:variant :h6} "edit and approve letter"]
-      [control-buttons case-id asset-id]
-      [approval]]]))
+
 
 
 (defn panel []
