@@ -1,18 +1,20 @@
 (ns darbylaw.api.bank-notification
   (:require [xtdb.api :as xt]
+            [clojure.java.io :as io]
+            [mount.core :as mount]
             [darbylaw.api.bank-notification-template :as template]
             [darbylaw.api.death-cert-verif-template :as death-cert-template]
             [darbylaw.doc-store :as doc-store]
             [darbylaw.api.pdf :as pdf]
-            [clj-pdf.core :as clj-pdf]
+            [pdfboxing.merge :as pdf-merge]
+            [pdfboxing.info :as pdf-info]
             [darbylaw.api.util.xtdb :as xt-util]
             [darbylaw.api.util.http :as http]
             [darbylaw.api.util.files :as files-util :refer [with-delete]]
             [darbylaw.api.bank-notification.letter-store :as letter-store]
             [darbylaw.api.util.tx-fns :as tx-fns]
             [darbylaw.api.case-history :as case-history]
-            [darbylaw.api.util.data :as data-util]
-            [clojure.java.io :as io]))
+            [darbylaw.api.util.data :as data-util]))
 
 (defn build-asset-id [bank-type case-id bank-id]
   {:type (case bank-type
@@ -22,6 +24,9 @@
    (case bank-type
      :bank :bank-id
      :buildsoc :buildsoc-id) bank-id})
+
+(mount/defstate blank-page
+  :start (io/resource "darbylaw/templates/blank-page.pdf"))
 
 (defn convert-to-pdf [xtdb-node case-id bank-id letter-id docx]
   (with-delete [letter-pdf (files-util/create-temp-file (str letter-id "-interim") ".pdf")
@@ -34,10 +39,18 @@
       (pdf/convert-file docx letter-pdf)
       (death-cert-template/render-docx template-data death-cert-docx)
       (pdf/convert-file death-cert-docx death-cert-pdf)
-      (clj-pdf/collate 
-        (java.io.FileOutputStream. final-pdf)
-        (io/input-stream letter-pdf)
-        (io/input-stream death-cert-pdf))
+      (pdf-merge/merge-pdfs
+        :input (->> [(.getAbsolutePath letter-pdf)
+                     ;; We want death-cert-pdf to be on an odd numbered
+                     ;; page so that when the final-pdf is printed
+                     ;; double sided it's on it's own page.
+                     ;; To do this we insert a blank page when
+                     ;; letter-pdf has an odd number of pages.
+                     (when (odd? (pdf-info/page-number letter-pdf))
+                       (.toURI blank-page))
+                     (.getAbsolutePath death-cert-pdf)]
+                    (remove nil?))
+        :output (.getAbsolutePath final-pdf))
       final-pdf)))
 
 (defn convert-to-pdf-and-store [xtdb-node case-id bank-id letter-id docx]
