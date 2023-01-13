@@ -6,6 +6,7 @@
             [darbylaw.handler :refer [ring-handler]]
             [darbylaw.core :refer [web-server]]
             [darbylaw.api.bank-notification-template :refer [templates]]
+            [darbylaw.api.death-cert-verif-template :refer [death-certificate-verification-form-template]]
             [xtdb.api :as xt]
             [cognitect.transit :as transit]
             [clojure.string :as str]))
@@ -26,7 +27,7 @@
 
 (def ring-handler-states
   [#'profile #'config #'xtdb-node #'ring-handler
-   #'templates])
+   #'templates #'death-certificate-verification-form-template])
 
 (def web-server-states
   (into ring-handler-states

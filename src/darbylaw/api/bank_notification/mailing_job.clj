@@ -4,7 +4,7 @@
             [clojure.tools.logging :as log]
             [darbylaw.api.bank-notification.letter-store :as letter-store]
             [darbylaw.doc-store :as doc-store]
-            [darbylaw.api.util.files :as files-util]
+            [darbylaw.api.util.files :as files-util :refer [with-delete]]
             [darbylaw.api.services.mailing :as mailing]
             [mount.core :as mount]
             [darbylaw.xtdb-node :refer [xtdb-node]]
@@ -52,7 +52,7 @@
             own? (xt/tx-committed? xtdb-node tx)]
         (when own?
           (try
-            (let [temp-file (files-util/create-temp-file letter-id ".pdf")]
+            (with-delete [temp-file (files-util/create-temp-file letter-id ".pdf")]
               (try
                 (doc-store/fetch-to-file
                   (letter-store/s3-key case-id bank-id letter-id ".pdf")
@@ -66,9 +66,7 @@
                   (if (= (-> exc ex-data :error) ::doc-store/not-found)
                     (xt-util/exec-tx xtdb-node
                       (tx-fns/set-value letter-id [:upload-state] :not-found))
-                    (throw exc)))
-                (finally
-                  (.delete temp-file))))
+                    (throw exc)))))
             (catch Exception exc
               (log/warn exc "Error while uploading letter; will retry later.")
               (xt-util/exec-tx xtdb-node

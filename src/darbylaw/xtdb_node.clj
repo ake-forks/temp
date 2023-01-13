@@ -100,12 +100,16 @@
   ;; delete everything
   (let [res (xt/q (xt/db xtdb-node)
                   '{:find [id]
-                    :where [[id :type anything]]})
+                    :where [[id :xt/id _]]})
         ids (map first res)]
-    (->> res
-         (map first)
+    (->> ids
          (mapv (fn [id] [::xt/delete id]))
          (xt/submit-tx xtdb-node)))
+
+  ;; get everything
+  (xt/q (xt/db xtdb-node)
+        '{:find [id]
+          :where [[id :xt/id _]]})
 
   ;; get all cases in db
   (xt/q (xt/db xtdb-node)

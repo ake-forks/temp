@@ -6,7 +6,8 @@
             [xtdb.api :as xt]
             [darbylaw.api.util.xtdb :as xt-util]
             [darbylaw.api.util.tx-fns :as tx-fns]
-            [darbylaw.api.case-history :as case-history]))
+            [darbylaw.api.case-history :as case-history]
+            [darbylaw.api.util.files :refer [with-delete]]))
 
 (defn upsert-funeral-account [{:keys [xtdb-node user parameters path-params multipart-params]}]
   (log/info "Upsert funeral account")
@@ -22,13 +23,11 @@
         account-id {:probate.funeral-account/case case-id}]
     (when tempfile
       (let [s3-name (if (:paid account-info) "receipt" "invoice")]
-        (try
+        (with-delete [tempfile tempfile]
           (doc-store/store
             (expense-store/s3-key case-id s3-name)
             tempfile
-            {:content-type content-type})
-          (finally
-            (.delete tempfile)))))
+            {:content-type content-type}))))
     (xt-util/exec-tx xtdb-node
       (concat
         (tx-fns/set-values account-id
@@ -67,13 +66,11 @@
     (log/info (str (case :add "Add" :update "Update") " other funeral expense (" expense-id ")"))
     (when tempfile
       (let [s3-name (str expense-id "/receipt")]
-        (try
+        (with-delete [tempfile tempfile]
           (doc-store/store
             (expense-store/s3-key case-id s3-name)
             tempfile
-            {:content-type content-type})
-          (finally
-            (.delete tempfile)))))
+            {:content-type content-type}))))
     (xt-util/exec-tx xtdb-node
       (concat
         (tx-fns/set-values expense-id

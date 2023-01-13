@@ -81,7 +81,8 @@
 
         ; Generate letter for the first time
         resp (with-redefs [darbylaw.api.pdf/convert-file (fn [& _])
-                           darbylaw.doc-store/store (fn [& _])]
+                           darbylaw.doc-store/store (fn [& _])
+                           clj-pdf.core/collate (fn [& _])]
                (t/run-request (bank-request :post "/generate-notification-letter")))
         _ (is (<= 200 (:status resp) 299))
         bank-data (get (get-bank-data bank-type case-id) bank-id)
@@ -98,13 +99,15 @@
 
         ; Generating letter a second time should fail
         resp (with-redefs [darbylaw.api.pdf/convert-file (fn [& _])
-                           darbylaw.doc-store/store (fn [& _])]
+                           darbylaw.doc-store/store (fn [& _])
+                           clj-pdf.core/collate (fn [& _])]
                (t/run-request (bank-request :post "/generate-notification-letter")))
         _ (is (<= 400 (:status resp) 499))
 
         ; Replacing the letter
         resp (with-redefs [darbylaw.api.pdf/convert-file (fn [& _])
-                           darbylaw.doc-store/store (fn [& _])]
+                           darbylaw.doc-store/store (fn [& _])
+                           clj-pdf.core/collate (fn [& _])]
                (t/run-request (merge (bank-request :post "/notification-docx")
                                 {:multipart-params {"file" {:tempfile (files-util/create-temp-file nil ".docx")
                                                             :content-type bank-notification/docx-mime-type}}})))
@@ -148,7 +151,8 @@
 
         ; Posting valuation letter
         resp (with-redefs [darbylaw.api.pdf/convert-file (fn [& _])
-                           darbylaw.doc-store/store (fn [& _])]
+                           darbylaw.doc-store/store (fn [& _])
+                           clj-pdf.core/collate (fn [& _])]
                (t/run-request (merge (bank-request :post "/valuation-pdf")
                                 {:multipart-params {"file" {:tempfile (files-util/create-temp-file nil ".pdf")
                                                             :content-type "application/pdf"}

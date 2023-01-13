@@ -1,15 +1,18 @@
 (ns darbylaw.api.bank-notification
   (:require [xtdb.api :as xt]
             [darbylaw.api.bank-notification-template :as template]
+            [darbylaw.api.death-cert-verif-template :as death-cert-template]
             [darbylaw.doc-store :as doc-store]
             [darbylaw.api.pdf :as pdf]
+            [clj-pdf.core :as clj-pdf]
             [darbylaw.api.util.xtdb :as xt-util]
             [darbylaw.api.util.http :as http]
-            [darbylaw.api.util.files :as files-util]
+            [darbylaw.api.util.files :as files-util :refer [with-delete]]
             [darbylaw.api.bank-notification.letter-store :as letter-store]
             [darbylaw.api.util.tx-fns :as tx-fns]
             [darbylaw.api.case-history :as case-history]
-            [darbylaw.api.util.data :as data-util]))
+            [darbylaw.api.util.data :as data-util]
+            [clojure.java.io :as io]))
 
 (defn build-asset-id [bank-type case-id bank-id]
   {:type (case bank-type
@@ -20,14 +23,27 @@
      :bank :bank-id
      :buildsoc :buildsoc-id) bank-id})
 
-(defn convert-to-pdf-and-store [case-id bank-id letter-id docx]
-  (let [pdf (files-util/create-temp-file letter-id ".pdf")]
-    (try
-      (pdf/convert-file docx pdf)
-      (doc-store/store (letter-store/s3-key case-id bank-id letter-id ".docx") docx)
-      (doc-store/store (letter-store/s3-key case-id bank-id letter-id ".pdf") pdf)
-      (finally
-        (.delete pdf)))))
+(defn convert-to-pdf [xtdb-node case-id bank-id letter-id docx]
+  (with-delete [letter-pdf (files-util/create-temp-file (str letter-id "-interim") ".pdf")
+                death-cert-docx (files-util/create-temp-file (str letter-id "-death-cert") ".docx")
+                death-cert-pdf (files-util/create-temp-file (str letter-id "-death-cert") ".pdf")]
+    (let [;; Don't clean up final-pdf as we need to return it
+          final-pdf (files-util/create-temp-file letter-id ".pdf")
+          template-data (death-cert-template/get-letter-template-data
+                          xtdb-node case-id)]
+      (pdf/convert-file docx letter-pdf)
+      (death-cert-template/render-docx template-data death-cert-docx)
+      (pdf/convert-file death-cert-docx death-cert-pdf)
+      (clj-pdf/collate 
+        (java.io.FileOutputStream. final-pdf)
+        (io/input-stream letter-pdf)
+        (io/input-stream death-cert-pdf))
+      final-pdf)))
+
+(defn convert-to-pdf-and-store [xtdb-node case-id bank-id letter-id docx]
+  (with-delete [final-pdf (convert-to-pdf xtdb-node case-id bank-id letter-id docx)]
+    (doc-store/store (letter-store/s3-key case-id bank-id letter-id ".docx") docx)
+    (doc-store/store (letter-store/s3-key case-id bank-id letter-id ".pdf") final-pdf)))
 
 (defn generate-notification-letter [{:keys [xtdb-node user path-params bank-type]}]
   (let [case-id (parse-uuid (:case-id path-params))
@@ -43,13 +59,10 @@
             letter-id (str (:reference letter-template-data)
                         "." (name bank-id)
                         ".bank-notification."
-                        (random-uuid))
-            docx (files-util/create-temp-file letter-id ".docx")]
-        (try
+                        (random-uuid))]
+        (with-delete [docx (files-util/create-temp-file letter-id ".docx")]
           (template/render-docx bank-type letter-template-data docx)
-          (convert-to-pdf-and-store case-id bank-id letter-id docx)
-          (finally
-            (.delete docx)))
+          (convert-to-pdf-and-store xtdb-node case-id bank-id letter-id docx))
         (let [tx2 (xt-util/exec-tx xtdb-node
                     (concat
                       ; Second check inside tx.
@@ -130,11 +143,9 @@
     (if-not letter-id
       {:status http/status-404-not-found}
       (let [username (:username user)]
-        (try
+        (with-delete [tempfile tempfile]
           (assert (= content-type docx-mime-type))
-          (convert-to-pdf-and-store case-id bank-id letter-id tempfile)
-          (finally
-            (.delete tempfile)))
+          (convert-to-pdf-and-store xtdb-node case-id bank-id letter-id tempfile))
         (xt-util/exec-tx xtdb-node
           (concat
             (tx-fns/set-value letter-id [:author] username)
@@ -209,10 +220,8 @@
         letter-id (str (random-uuid)
                        "."
                        (data-util/strip-end filename ".pdf"))]
-    (try
-      (doc-store/store (letter-store/s3-key case-id bank-id letter-id ".pdf") tempfile)
-      (finally
-        (.delete tempfile)))
+    (with-delete [tempfile tempfile]
+      (doc-store/store (letter-store/s3-key case-id bank-id letter-id ".pdf") tempfile))
     (do
       (xt-util/exec-tx xtdb-node
         (concat

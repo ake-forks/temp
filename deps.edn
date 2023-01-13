@@ -36,6 +36,7 @@
         ;; Documents
         org.jodconverter/jodconverter-local {:mvn/version "4.4.4"}
         io.github.erdos/stencil-core {:mvn/version "0.4.7"}
+        clj-pdf/clj-pdf {:mvn/version "2.6.1"}
         ;; Data
         camel-snake-kebab/camel-snake-kebab {:mvn/version "0.4.3"}
         ;; AWS API
