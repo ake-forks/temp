@@ -15,7 +15,7 @@
 (def fake-send? (r/atom @(rf/subscribe [::case-model/fake?])))
 (defn submit-buttons [case-id asset-id]
   (let [type @(rf/subscribe [::model/get-type])
-        letter-id (model/get-letter-id type)]
+        letter-id @(rf/subscribe [::model/notification-letter-id])]
     [mui/stack {:spacing 1
                 :direction :row
                 :justify-content :space-between
@@ -107,7 +107,7 @@
                case-reference @(rf/subscribe [::case-model/current-case-reference])
                asset-type @(rf/subscribe [::model/get-type])
                asset-data (model/get-asset-data type)
-               letter-id (model/get-letter-id type)
+               letter-id @(rf/subscribe [::model/notification-letter-id])
                fake? @(rf/subscribe [::case-model/fake?])
                author (model/get-author type)]
 

@@ -49,6 +49,11 @@
   (fn [dialog]
     (:type dialog)))
 
+(rf/reg-sub ::banking-type
+  :<- [::get-type]
+  (fn [type-str]
+    (keyword type-str)))
+
 (rf/reg-sub ::current-asset-id
   :<- [::get-dialog]
   (fn [dialog]
@@ -72,6 +77,20 @@
       @(rf/subscribe [::current-bank-data])
       @(rf/subscribe [::current-buildsoc-data]))))
 
+(rf/reg-sub ::asset-data
+  :<- [::banking-type]
+  :<- [::current-bank-data]
+  :<- [::current-buildsoc-data]
+  (fn [[type bank-data buildsoc-data]]
+    (case type
+      :bank bank-data
+      :buildsoc buildsoc-data)))
+
+(rf/reg-sub ::notification-letter-id
+  :<- [::asset-data]
+  (fn [asset-data]
+    (get-in asset-data [:notification-letter :id])))
+
 (defn get-letter-id [type]
   (let [asset-data (get-asset-data type)]
     (get-in asset-data [:notification-letter :id])))
@@ -79,11 +98,6 @@
 (defn get-author [type]
   (let [asset-data (get-asset-data type)]
     (get-in asset-data [:notification-letter :author])))
-
-(rf/reg-sub ::notification-letter-id
-  (fn [_ [_ type]]
-    (let [asset-data (get-asset-data type)]
-      (get-in asset-data [:notification-letter :id]))))
 
 (defn valuation-letter-present? [type]
   (contains? (get-asset-data type) :valuation-letter))
