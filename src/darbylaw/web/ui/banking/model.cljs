@@ -96,7 +96,7 @@
       :add
       ;if it contains a buildsoc-id
       (if (contains? asset-data :notification-letter)
-        (if (contains? (:notification-letter asset-data) :review-timestamp)
+        (if (some? (get (:notification-letter asset-data) :review-timestamp))
           (if (contains? (first (:accounts asset-data)) :confirmed-value)
             :complete
             :valuation)
