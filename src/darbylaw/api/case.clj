@@ -51,6 +51,7 @@
    [:date-of-birth date--schema]
    [:place-of-birth :string]
    [:occupation :string]
+   [:name-of-informant :string]
 
    [:cause-of-death :string]
    [:name-of-doctor-certifying :string]

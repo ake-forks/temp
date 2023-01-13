@@ -27,6 +27,7 @@
    :date-of-birth "2010-01-03"
    :place-of-birth "London"
    :occupation "occupation"
+   :name-of-informant "name-of-informant"
    :cause-of-death "cause-of-death"
    :name-of-doctor-certifying "name-of-doctor-certifying"
    :name-of-registrar "name-of-registrar"})

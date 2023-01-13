@@ -231,6 +231,14 @@
        fork-args)
      (r/as-element section-divider)
      (textfield-with-tooltip
+       {:name :name-of-informant
+        :label "Name of Informant"
+        :required true
+        :full-width true}
+       "informant.png"
+       fork-args)
+     (r/as-element section-divider)
+     (textfield-with-tooltip
        {:name :cause-of-death
         :label "Cause of Death"
         :required true
@@ -322,6 +330,7 @@
                    :date-of-death (dayjs/read "2022-11-05"),
                    :registration-district "registration district",
                    :occupation "occupation",
+                   :name-of-informant "informant",
                    :relationship "mother",
                    :surname "surname",
                    :date-of-birth (dayjs/read "1982-01-06"),
