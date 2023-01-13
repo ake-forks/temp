@@ -1,18 +1,19 @@
-(ns darbylaw.web.ui.buildingsociety.dialog
+(ns darbylaw.web.ui.banking.dialog
   (:require
     [re-frame.core :as rf]
     [reagent-mui.components :as mui]
-    [darbylaw.web.ui.buildingsociety.stage-add :as add]
-    [darbylaw.web.ui.buildingsociety.stage-edit :as edit]
-    [darbylaw.web.ui.buildingsociety.stage-notify :as notify]
-    [darbylaw.web.ui.buildingsociety.stage-valuation :as valuation]
-    [darbylaw.web.ui.buildingsociety.stage-complete :as complete]
-    [darbylaw.web.ui.buildingsociety.model :as model]))
+    [darbylaw.web.ui.banking.stage-add :as add]
+    [darbylaw.web.ui.banking.stage-edit :as edit]
+    [darbylaw.web.ui.banking.stage-notify :as notify]
+    [darbylaw.web.ui.banking.stage-valuation :as valuation]
+    [darbylaw.web.ui.banking.stage-complete :as complete]
+    [darbylaw.web.ui.banking.model :as model]))
 
 
 
 (defn dialog []
   (let [dialog-data @(rf/subscribe [::model/get-dialog])
+        type @(rf/subscribe [::model/get-type])
         stage (model/get-process-stage)]
     [mui/dialog
      {:open (or (:open dialog-data) false)

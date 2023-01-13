@@ -1,19 +1,19 @@
-(ns darbylaw.web.ui.buildingsociety.stage-notify
+(ns darbylaw.web.ui.banking.stage-notify
   (:require
     [re-frame.core :as rf]
     [reagent.core :as r]
     [darbylaw.web.ui :as ui]
     [reagent-mui.components :as mui]
-    [darbylaw.web.ui.buildingsociety.shared :as shared]
-    [darbylaw.web.ui.buildingsociety.model :as model]
+    [darbylaw.web.ui.banking.shared :as shared]
+    [darbylaw.web.ui.banking.model :as model]
     [darbylaw.web.ui.case-model :as case-model]))
 
 
 
 (def approved? (r/atom false))
-(defn submit-buttons [case-id buildsoc-id]
-  ;TODO amalgamate with buttons in form ns
-  (let [letter-id @(rf/subscribe [::model/notification-letter-id])]
+(defn submit-buttons [case-id asset-id]
+  (let [type @(rf/subscribe [::model/get-type])
+        letter-id (model/get-letter-id type)]
     [mui/stack {:spacing 1
                 :direction :row
                 :justify-content :space-between
@@ -28,22 +28,23 @@
                   :disabled (not @approved?)
                   :full-width true
                   :startIcon (r/as-element [ui/icon-send])
-                  :on-click #(do (rf/dispatch [::model/approve-notification-letter case-id buildsoc-id letter-id])
+                  :on-click #(do (rf/dispatch [::model/approve-notification-letter type case-id asset-id letter-id])
                                  (reset! approved? false))}
       "send letter"]]))
 
 (defn control-buttons []
   (let [case-id @(rf/subscribe [::case-model/case-id])
         case-reference [::case-model/current-case-reference]
-        buildsoc-id (:id @(rf/subscribe [::model/get-dialog]))]
+        asset-id @(rf/subscribe [::model/current-asset-id])
+        type @(rf/subscribe [::model/get-type])]
     [mui/stack {:direction :row :spacing 1}
-     [mui/button {:href (str "/api/case/" case-id "/buildsoc/" (name buildsoc-id) "/notification-docx")
-                  :download (str case-reference " - " (name buildsoc-id) " - Building Society notification.docx")
+     [mui/button {:href (str "/api/case/" case-id "/" type "/" (name asset-id) "/notification-docx")
+                  :download (str case-reference " - " (name asset-id) " - notification.docx")
                   :variant :outlined
                   :full-width true
                   :startIcon (r/as-element [ui/icon-download])}
       "download current letter"]
-     [shared/upload-button case-id buildsoc-id
+     [shared/upload-button type case-id asset-id
       {:variant :outlined
        :full-width true
        :startIcon (r/as-element [ui/icon-upload])}
@@ -80,9 +81,10 @@
     [mui/list-item-text "upload the edited file as a replacement"]]])
 
 (defn approve-notification-panel []
-  (let [buildsoc-id @(rf/subscribe [::model/current-buildsoc-id])
+  (let [asset-id @(rf/subscribe [::model/current-asset-id])
         case-id @(rf/subscribe [::case-model/case-id])
-        buildsoc-data @(rf/subscribe [::model/current-buildsoc-data])]
+        type @(rf/subscribe [::model/get-type])
+        asset-data (model/get-asset-data type)]
     [mui/stack {:spacing 3}
      [mui/stack {:spacing 1}
       [mui/typography {:variant :h5} "review notification letter"]
@@ -92,18 +94,21 @@
        "If you would like to make changes, use the controls at the bottom to:"]
       [process-list]
       [mui/typography {:variant :body1}
-       (str "Once you are happy with the letter, you can approve it to be posted to " (model/buildsoc-label buildsoc-id) " via Royal Mail.")]]
-     [shared/accounts-view (:accounts buildsoc-data) {:estimated? true :confirmed? false}]
+       (str "Once you are happy with the letter, you can approve it to be posted to " (model/asset-label type asset-id) " via Royal Mail.")]]
+     (if (= type "bank")
+       [shared/bank-accounts-view (:accounts asset-data) {:estimated? true :confirmed? false}]
+       [shared/buildsoc-accounts-view (:accounts asset-data) {:estimated? true :confirmed? false}])
      [mui/stack {:spacing 1}
       [mui/typography {:variant :h6} "edit and approve letter"]
-      [control-buttons case-id buildsoc-id]
+      [control-buttons case-id asset-id]
       [approval]]]))
 
 
 (defn panel []
-  (let [buildsoc-id (:id @(rf/subscribe [::model/get-dialog]))
-        case-id @(rf/subscribe [::case-model/case-id])]
-    (if (some? buildsoc-id)
+  (let [asset-id (:id @(rf/subscribe [::model/get-dialog]))
+        case-id @(rf/subscribe [::case-model/case-id])
+        type @(rf/subscribe [::model/get-type])]
+    (if (some? asset-id)
       [mui/box shared/tall-dialog-props
        [mui/stack {:spacing 1
                    :direction :row
@@ -113,12 +118,12 @@
          (if @model/file-uploading?
            [reagent-mui.lab.loading-button/loading-button {:loading true :full-width true}]
            [:iframe {:style {:height "100%"}
-                     :src (str "/api/case/" case-id "/buildsoc/" (name buildsoc-id) "/notification-pdf")}])]
+                     :src (str "/api/case/" case-id "/" type "/" (name asset-id) "/notification-pdf")}])]
         ;right side
         [mui/stack {:spacing 1 :sx {:width 0.5}}
          [mui/dialog-title
-          [shared/header buildsoc-id :notify]]
+          [shared/header type asset-id :notify]]
          [mui/dialog-content
           [approve-notification-panel]]
          [mui/dialog-actions
-          [submit-buttons case-id buildsoc-id]]]]])))
+          [submit-buttons case-id asset-id]]]]])))

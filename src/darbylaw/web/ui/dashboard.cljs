@@ -9,8 +9,8 @@
     [darbylaw.web.ui.funeral.dialog :as funeral-dialog]
     [darbylaw.web.ui.bank-model :as bank-model]
     [darbylaw.web.ui.case-model :as case-model]
-    [darbylaw.web.ui.buildingsociety.model :as buildsoc-model]
-    [darbylaw.web.ui.buildingsociety.dialog :as buildsoc-dialog]
+    [darbylaw.web.ui.banking.model :as banking-model]
+    [darbylaw.web.ui.banking.dialog :as banking-dialog]
     [darbylaw.web.ui.bank-dialog :as bank-dialog]
     [darbylaw.api.bank-list :as bank-list]
     [darbylaw.web.ui.progress-bar :as progress-bar]
@@ -26,7 +26,7 @@
         bank-id (:bank-id bank)
         accounts (:accounts bank)]
     [mui/box
-     [mui/card-action-area {:on-click #(rf/dispatch [::bank-model/show-bank-dialog bank-id])
+     [mui/card-action-area {:on-click #(rf/dispatch [::banking-model/show-process-dialog "bank" bank-id])
                             :sx {:padding-top "0.5rem" :padding-bottom "0.5rem"}}
       [mui/stack {:direction :row :spacing 1}
        [mui/box {:component :img
@@ -44,7 +44,7 @@
      [mui/divider {:variant "middle"}]]))
 
 (defn add-bank []
-  [mui/card-action-area {:on-click #(rf/dispatch [::bank-model/show-bank-dialog :add-bank]) :sx {:padding-top "0.5rem"}}
+  [mui/card-action-area {:on-click #(rf/dispatch [::banking-model/show-add-dialog "bank"]) :sx {:padding-top "0.5rem"}}
    [mui/stack {:direction :row :spacing 2 :align-items :baseline}
     [mui/typography {:variant :h5} "add bank account"]
     [ui/icon-add]]])
@@ -143,18 +143,18 @@
 (defn buildsoc-card []
   (let [current-case @(rf/subscribe [::case-model/current-case])]
     [asset-card {:title "building societies"}
-     [buildsoc-dialog/dialog]
+     [banking-dialog/dialog]
      (map
        (fn [buildsoc]
          (let [id (:buildsoc-id buildsoc)]
            ^{:key id}
-           [asset-item {:title (buildsoc-model/buildsoc-label id)
+           [asset-item {:title (banking-model/asset-label "buildsoc" id)
                         :value (reduce + (map (fn [acc] (js/parseInt (:estimated-value acc))) (:accounts buildsoc)))
-                        :on-click #(rf/dispatch [::buildsoc-model/show-process-dialog id])}]))
+                        :on-click #(rf/dispatch [::banking-model/show-process-dialog "buildsoc" id])}]))
        (:buildsoc-accounts current-case))
      [asset-add-button
       {:title "add building society"
-       :on-click #(rf/dispatch [::buildsoc-model/show-add-dialog])}]]))
+       :on-click #(rf/dispatch [::banking-model/show-add-dialog "buildsoc"])}]]))
 
 
 (defn heading [current-case]

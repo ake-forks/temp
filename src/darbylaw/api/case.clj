@@ -156,7 +156,8 @@
                           :by
                           :review-by
                           :review-timestamp]}
-   {:valuation-letter [:uploaded-by
+   {:valuation-letter ['(:xt/id {:as :id})
+                       :uploaded-by
                        :uploaded-at]}])
 
 (def get-case__query
