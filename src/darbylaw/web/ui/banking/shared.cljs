@@ -45,7 +45,47 @@
     [close-button]]
    [stepper stage-keyword]])
 
-(defn accounts-view [accounts {:keys [estimated? confirmed?]}]
+(defn bank-accounts-view [accounts {:keys [estimated? confirmed?]}]
+  [mui/stack {:spacing 1}
+   [mui/typography {:variant :h6} "account information"]
+   (if (empty? accounts)
+     [mui/typography {:variant :body1} "Account details unknown."]
+     (map
+       (fn [account]
+         [mui/stack {:spacing 1 :direction :row}
+          [mui/text-field {:name :sort-code
+                           :value (get account :sort-code)
+                           :label "sort code"
+                           :disabled true
+                           :full-width true}]
+          [mui/text-field {:name :account-number
+                           :value (get account :account-number)
+                           :label "account number"
+                           :disabled true
+                           :full-width true}]
+          (if estimated?
+            [mui/text-field {:name :estimated-value
+                             :value (get account :estimated-value)
+                             :label "estimated value"
+                             :disabled true
+                             :full-width true
+                             :InputProps
+                             {:start-adornment
+                              (r/as-element [mui/input-adornment
+                                             {:position :start} "£"])}}])
+          (if confirmed?
+            [mui/text-field {:name :confirmed-value
+                             :value (get account :confirmed-value)
+                             :label "confirmed value"
+                             :disabled true
+                             :full-width true
+                             :InputProps
+                             {:start-adornment
+                              (r/as-element [mui/input-adornment
+                                             {:position :start} "£"])}}])])
+       accounts))])
+
+(defn buildsoc-accounts-view [accounts {:keys [estimated? confirmed?]}]
   [mui/stack {:spacing 1}
    [mui/typography {:variant :h6} "account information"]
    (if (empty? accounts)
@@ -80,17 +120,17 @@
                                              {:position :start} "£"])}}])])
        accounts))])
 
-(defn upload-button [_case-id _buildsoc-id _props _label suffix]
+(defn upload-button [_type _case-id _asset-id _props _label suffix]
   (r/with-let [_ (reset! model/file-uploading? false)
                filename (r/atom "")]
-    (fn [case-id buildsoc-id props label]
+    (fn [type case-id asset-id props label]
       [ui/loading-button (merge props {:component "label"
                                        :loading @model/file-uploading?})
        label
        [mui/input {:type :file
                    :value @filename
                    :onChange #(let [selected-file (-> % .-target .-files first)]
-                                (rf/dispatch [::model/upload-file case-id buildsoc-id selected-file suffix])
+                                (rf/dispatch [::model/upload-file type case-id asset-id selected-file suffix])
                                 (reset! filename "")
                                 (reset! model/file-uploading? true))
                    :hidden true

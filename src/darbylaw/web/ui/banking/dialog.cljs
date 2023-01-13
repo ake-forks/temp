@@ -13,6 +13,7 @@
 
 (defn dialog []
   (let [dialog-data @(rf/subscribe [::model/get-dialog])
+        type @(rf/subscribe [::model/get-type])
         stage (model/get-process-stage)]
     [mui/dialog
      {:open (or (:open dialog-data) false)

@@ -119,15 +119,15 @@
                                 (r/as-element [mui/input-adornment
                                                {:position :start} "£"])}}]
               [:<>])]))))
-   [mui/button {:on-click #(insert {:roll-number "" :estimated-value ""})
+   [mui/button {:on-click #(insert {:sort-code "" :account-number "" :estimated-value ""})
                 :style {:text-transform "none" :align-self "baseline" :font-size "1rem"}
                 :variant :text
                 :size "large"
                 :full-width false
                 :start-icon (r/as-element [ui/icon-add-circle])}
     (str "add another "
-      (if-let [buildsoc-name (model/asset-label "buildsoc" (get-in props [:values :buildsoc-id]))]
-        (str buildsoc-name " account")
+      (if-let [bank-name (model/asset-label "bank" (get-in props [:values :bank-id]))]
+        (str bank-name " account")
         "account"))]])
 
 ;accounts can

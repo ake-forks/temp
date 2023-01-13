@@ -27,7 +27,7 @@
         bank-id (:bank-id bank)
         accounts (:accounts bank)]
     [mui/box
-     [mui/card-action-area {:on-click #(rf/dispatch [::bank-model/show-bank-dialog bank-id])
+     [mui/card-action-area {:on-click #(rf/dispatch [::banking-model/show-process-dialog "bank" bank-id])
                             :sx {:padding-top "0.5rem" :padding-bottom "0.5rem"}}
       [mui/stack {:direction :row :spacing 1}
        [mui/box {:component :img
@@ -156,7 +156,7 @@
            ^{:key id}
            [asset-item {:title (banking-model/asset-label "buildsoc" id)
                         :value (reduce + (map (fn [acc] (js/parseInt (:estimated-value acc))) (:accounts buildsoc)))
-                        :on-click #(rf/dispatch [::banking-model/show-process-dialog id])}]))
+                        :on-click #(rf/dispatch [::banking-model/show-process-dialog "buildsoc" id])}]))
        (:buildsoc-accounts current-case))
      [asset-add-button
       {:title "add building society"

@@ -9,23 +9,28 @@
     [darbylaw.web.ui.banking.model :as model]
     [darbylaw.web.ui.case-model :as case-model]))
 
-(rf/reg-event-fx ::complete-buildsoc-success
+(rf/reg-event-fx ::complete-success
   (fn [{:keys [db]} [_ case-id {:keys [path values]}]]
     {:db (fork/set-submitting db path false)
-     :fx [[:dispatch [::model/generate-notification case-id (:buildsoc-id values)]]
+     :fx [[:dispatch [::model/generate-notification case-id values]]
           [:dispatch [::model/hide-dialog]]
           [:dispatch [::case-model/load-case! case-id]]]}))
 
-(rf/reg-event-fx ::complete-buildsoc-failure
+(rf/reg-event-fx ::complete-failure
   (fn [{:keys [db]} [_ {:keys [path]} response]]
     {:db (do (assoc db :failure response)
              (fork/set-submitting db path false))}))
 
-(defn transform-on-submit [values]
-  (if (= true (:accounts-unknown values))
-    {:buildsoc-id (keyword (:buildsoc-id values)) :accounts [] :accounts-unknown true}
-    {:buildsoc-id (keyword (:buildsoc-id values)) :accounts (:accounts values) :accounts-unknown false}))
-
+(rf/reg-event-fx ::complete-bank
+  (fn [{:keys [db]} [_ case-id {:keys [path values] :as fork-params}]]
+    {:db (fork/set-submitting db path true)
+     :http-xhrio
+     (ui/build-http
+       {:method :post
+        :uri (str "/api/bank/" case-id "/update-bank-accounts")
+        :params (model/bank-transform-on-submit values)
+        :on-success [::complete-success case-id fork-params]
+        :on-failure [::complete-failure fork-params]})}))
 (rf/reg-event-fx ::complete-buildsoc
   (fn [{:keys [db]} [_ case-id {:keys [path values] :as fork-params}]]
     {:db (fork/set-submitting db path true)
@@ -33,21 +38,23 @@
      (ui/build-http
        {:method :post
         :uri (str "/api/buildingsociety/" case-id "/complete-buildsoc-accounts")
-        :params (transform-on-submit values)
-        :on-success [::complete-buildsoc-success case-id fork-params]
-        :on-failure [::complete-buildsoc-failure fork-params]})}))
+        :params (model/buildsoc-transform-on-submit values)
+        :on-success [::complete-success case-id fork-params]
+        :on-failure [::complete-failure fork-params]})}))
 
 (rf/reg-event-fx ::submit!
-  (fn [{:keys [db]} [_ case-id fork-params]]
-    {:dispatch [::complete-buildsoc case-id fork-params]}))
+  (fn [{:keys [db]} [_ type case-id fork-params]]
+    (if (= type "bank")
+      {:dispatch [::complete-bank case-id fork-params]}
+      {:dispatch [::complete-buildsoc case-id fork-params]})))
 
 (defn layout [{:keys [values handle-submit] :as fork-args}]
   (let [current-case @(rf/subscribe [::case-model/current-case])
-        buildsoc-id @(rf/subscribe [::model/current-buildsoc-id])
+        asset-id @(rf/subscribe [::model/current-asset-id])
         type @(rf/subscribe [::model/get-type])]
     [:form {:on-submit handle-submit}
      [mui/dialog-title
-      [shared/header type buildsoc-id :edit]]
+      [shared/header type asset-id :edit]]
      [mui/dialog-content
       [mui/box shared/narrow-dialog-props
        [mui/stack {:justify-content :space-between
@@ -57,10 +64,11 @@
          [mui/typography {:variant :body1}
           (str "To the best of your knowledge, enter the details for your late "
             (-> current-case :deceased :relationship)
-            (if-let [name (model/asset-label type buildsoc-id)]
+            (if-let [name (model/asset-label type asset-id)]
               (str "'s accounts with " name)
               "'s accounts."))]
-         [form/accounts-unknown fork-args]
+         (if (= type "buildsoc")
+           [form/accounts-unknown fork-args])
          (if (:accounts-unknown values)
            [:<>]
            [form/account-array-component type fork-args])]]]]
@@ -69,6 +77,7 @@
 
 
 (defn panel []
-  (let [values @(rf/subscribe [::model/current-buildsoc-data])
-        case-id @(rf/subscribe [::case-model/case-id])]
-    [form/form layout values #(rf/dispatch [::submit! case-id %])]))
+  (let [type @(rf/subscribe [::model/get-type])
+        case-id @(rf/subscribe [::case-model/case-id])
+        values (model/get-asset-data type)]
+    [form/form layout values #(rf/dispatch [::submit! type case-id %])]))

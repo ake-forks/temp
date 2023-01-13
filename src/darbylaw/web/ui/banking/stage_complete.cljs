@@ -9,22 +9,23 @@
 
 
 (defn pdf-panel []
-  (let [buildsoc-id (:id @(rf/subscribe [::model/get-dialog]))
-        case-id @(rf/subscribe [::case-model/case-id])]
+  (let [asset-id @(rf/subscribe [::model/current-asset-id])
+        case-id @(rf/subscribe [::case-model/case-id])
+        type @(rf/subscribe [::model/get-type])]
     [mui/stack {:spacing 1}
      ;TODO add some kind of loading filler
      [mui/typography {:variant :h6} "correspondence"
       [pdf-view/view-pdf-dialog
        {:buttons
         [{:name "notification letter sent"
-          :source (str "/api/case/" case-id "/buildsoc/" (name buildsoc-id) "/notification-pdf")}
+          :source (str "/api/case/" case-id "/" type "/" (name asset-id) "/notification-pdf")}
          {:name "valuation letter received"
-          :source (str "/api/case/" case-id "/buildsoc/" (name buildsoc-id) "/valuation-pdf")}]}]]]))
+          :source (str "/api/case/" case-id "/" type "/" (name asset-id) "/valuation-pdf")}]}]]]))
 (defn summary-panel []
-  (let [buildsoc-id (:id @(rf/subscribe [::model/get-dialog]))
-        buildsoc-data @(rf/subscribe [::model/current-buildsoc-data])
-        relationship @(rf/subscribe [::case-model/relationship])
-        type @(rf/subscribe [::model/get-type])]
+  (let [asset-id @(rf/subscribe [::model/current-asset-id])
+        type @(rf/subscribe [::model/get-type])
+        asset-data (model/get-asset-data type)
+        relationship @(rf/subscribe [::case-model/relationship])]
     [mui/stack {:spacing 1}
      [mui/typography {:variant :h6} "summary"]
      [mui/typography {:variant :body1}
@@ -32,10 +33,12 @@
         "Here is a summary of your late "
         relationship
         "'s accounts with "
-        (model/asset-label type buildsoc-id)
+        (model/asset-label type asset-id)
         ". Using the buttons on the left you can view all the correspondence
         sent and received in relation to the following accounts.")]
-     [shared/accounts-view (:accounts buildsoc-data) {:estimated? false :confirmed? true}]]))
+     (if (= type "bank")
+       [shared/bank-accounts-view (:accounts asset-data) {:estimated? false :confirmed? true}]
+       [shared/buildsoc-accounts-view (:accounts asset-data) {:estimated? false :confirmed? true}])]))
 
 
 (defn panel []

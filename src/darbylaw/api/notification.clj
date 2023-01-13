@@ -216,9 +216,9 @@
         {:keys [tempfile content-type]} (get multipart-params "file")
         _ (assert (= content-type "application/pdf"))
         filename (get multipart-params "filename")
-        ;TODO add util/strip-end function back in, remove "valuation":
         letter-id (str (random-uuid)
-                    ".valuation")]
+                    "."
+                    (data-util/strip-end filename ".pdf"))]
 
     (try
       (doc-store/store (letter-store/s3-key case-id institution-id letter-id ".pdf") tempfile)

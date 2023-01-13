@@ -157,8 +157,8 @@
                                            :cardinality :one})
                 ['*]}
                {'(:probate.funeral-account/_case
-                  {:as :funeral-account
-                   :cardinality :one})
+                   {:as :funeral-account
+                    :cardinality :one})
                 [:title :value :paid-by :paid
                  :receipt-uploaded :invoice-uploaded]}
                {:funeral-expense
@@ -174,7 +174,8 @@
                                                        :author
                                                        :by
                                                        :approved]}
-                                {:valuation-letter [:uploaded-by
+                                {:valuation-letter ['(:xt/id {:as :id})
+                                                    :uploaded-by
                                                     :uploaded-at]}]}
 
                {:buildsoc-accounts [:buildsoc-id
@@ -184,7 +185,8 @@
                                                            :author
                                                            :by
                                                            :approved]}
-                                    {:valuation-letter [:uploaded-by
+                                    {:valuation-letter ['(:xt/id {:as :id})
+                                                        :uploaded-by
                                                         :uploaded-at]}]}]))]
 
    :where '[[case :type :probate.case]

@@ -35,6 +35,10 @@
   (fn [db]
     (:buildsoc-accounts (:current-case db))))
 
+(rf/reg-sub ::banks
+  (fn [db]
+    (:bank-accounts (:current-case db))))
+
 (rf/reg-sub ::get-dialog
   (fn [db]
     (try
@@ -45,39 +49,71 @@
   (fn [dialog]
     (:type dialog)))
 
-(rf/reg-sub ::current-buildsoc-id
+(rf/reg-sub ::current-asset-id
   :<- [::get-dialog]
   (fn [dialog]
     (:id dialog)))
 
 (rf/reg-sub ::current-buildsoc-data
-  :<- [::current-buildsoc-id]
+  :<- [::current-asset-id]
   :<- [::building-societies]
   (fn [[buildsoc-id all-buildsocs]]
     (first (filter #(= (:buildsoc-id %) buildsoc-id) all-buildsocs))))
 
-(rf/reg-sub ::notification-letter-id
-  :<- [::current-buildsoc-data]
-  (fn [buildsoc-data]
-    (get-in buildsoc-data [:notification-letter :id])))
+(rf/reg-sub ::current-bank-data
+  :<- [::current-asset-id]
+  :<- [::banks]
+  (fn [[bank-id all-banks]]
+    (first (filter #(= (:bank-id %) bank-id) all-banks))))
 
-(defn valuation-letter-present? []
-  (contains? @(rf/subscribe [::current-buildsoc-data]) :valuation-letter))
+(defn get-asset-data [type]
+  (if (some? type)
+    (if (= type "bank")
+      @(rf/subscribe [::current-bank-data])
+      @(rf/subscribe [::current-buildsoc-data]))))
+
+(defn get-letter-id [type]
+  (let [asset-data (get-asset-data type)]
+    (get-in asset-data [:notification-letter :id])))
+
+(rf/reg-sub ::notification-letter-id
+  (fn [_ [_ type]]
+    (let [asset-data (get-asset-data type)]
+      (get-in asset-data [:notification-letter :id]))))
+
+(defn valuation-letter-present? [type]
+  (contains? (get-asset-data type) :valuation-letter))
 
 
 (defn get-process-stage []
   (let [dialog @(rf/subscribe [::get-dialog])
-        buildsoc-data @(rf/subscribe [::current-buildsoc-data])]
+        asset-data (get-asset-data (:type dialog))]
     (if (= (:stage dialog) :add)
       :add
       ;if it contains a buildsoc-id
-      (if (contains? buildsoc-data :notification-letter)
-        (if (contains? (:notification-letter buildsoc-data) :approved)
-          (if (contains? (first (:accounts buildsoc-data)) :confirmed-value)
+      (if (contains? asset-data :notification-letter)
+        (if (contains? (:notification-letter asset-data) :approved)
+          (if (contains? (first (:accounts asset-data)) :confirmed-value)
             :complete
             :valuation)
           :notify)
         :edit))))
+
+(defn remove-joint [data]
+  (mapv (fn [acc]
+          (if (false? (:joint-check acc))
+            (apply dissoc acc [:joint-check :joint-info])
+            acc))
+    (:accounts data)))
+
+(defn bank-transform-on-submit [data]
+  (merge {:bank-id (keyword (:bank-id data))
+          :accounts (remove-joint data)}))
+
+(defn buildsoc-transform-on-submit [values]
+  (if (= true (:accounts-unknown values))
+    {:buildsoc-id (keyword (:buildsoc-id values)) :accounts [] :accounts-unknown true}
+    {:buildsoc-id (keyword (:buildsoc-id values)) :accounts (:accounts values) :accounts-unknown false}))
 
 ; edit =
 ; notify = notification letter not approved
@@ -87,23 +123,29 @@
 
 ;generating and approving notification letters
 (rf/reg-event-fx ::generate-notification-failure
-  (fn [{:keys [db]} [_ case-id buildsoc-id response]]
-    {:db (assoc-in db [:current-case :failure buildsoc-id] response)
+  (fn [{:keys [db]} [_ case-id asset-id response]]
+    {:db (assoc-in db [:current-case :failure asset-id] response)
      :dispatch [::case-model/load-case! case-id]}))
 
 (rf/reg-event-fx ::generate-notification-success
-  (fn [{:keys [db]} [_ case-id buildsoc-id response]]
-    {:db (assoc-in db [:current-case :success buildsoc-id] response)
+  (fn [{:keys [db]} [_ case-id asset-id response]]
+    {:db (assoc-in db [:current-case :success asset-id] response)
      :dispatch [::case-model/load-case! case-id]}))
 
 (rf/reg-event-fx ::generate-notification
-  (fn [{:keys [db]} [_ case-id buildsoc-id]]
-    {:http-xhrio
-     (ui/build-http
-       {:method :post
-        :uri (str "/api/case/" case-id "/buildsoc/" (name buildsoc-id) "/generate-notification-letter")
-        :on-success [::generate-notification-success case-id buildsoc-id]
-        :on-failure [::generate-notification-failure case-id buildsoc-id]})}))
+  (fn [{:keys [db]} [_ case-id values]]
+    (let [type (if (some? (:bank-id values))
+                 "bank"
+                 "buildsoc")
+          asset-id (if (= type "bank")
+                     (:bank-id values)
+                     (:buildsoc-id values))]
+      {:http-xhrio
+       (ui/build-http
+         {:method :post
+          :uri (str "/api/case/" case-id "/" type "/" (name asset-id) "/generate-notification-letter")
+          :on-success [::generate-notification-success case-id asset-id]
+          :on-failure [::generate-notification-failure case-id asset-id]})})))
 
 (rf/reg-event-fx ::approve-notification-letter-success
   (fn [{:keys [db]} [_ case-id]]
@@ -111,12 +153,12 @@
           [:dispatch [::case-model/load-case! case-id]]]}))
 
 (rf/reg-event-fx ::approve-notification-letter
-  (fn [{:keys [db]} [_ case-id buildsoc-id letter-id]]
+  (fn [{:keys [db]} [_ type case-id asset-id letter-id]]
     {:http-xhrio
      (ui/build-http
        {:method :post
-        :uri (str "/api/case/" case-id "/buildsoc/" (name buildsoc-id) "/approve-notification-letter/" letter-id)
-        :on-success [::approve-notification-letter-success case-id buildsoc-id]})}))
+        :uri (str "/api/case/" case-id "/" type "/" (name asset-id) "/approve-notification-letter/" letter-id)
+        :on-success [::approve-notification-letter-success case-id asset-id]})}))
 
 
 ;uploading files
@@ -144,13 +186,14 @@
     (reset! upload-error true)))
 
 (rf/reg-event-fx ::upload-file
-  (fn [_ [_ case-id buildsoc-id file suffix]]
+  (fn [_ [_ type case-id asset-id file suffix]]
     {:http-xhrio
      (ui/build-http
        {:method :post
-        :uri (str "/api/case/" case-id "/buildsoc/" (name buildsoc-id) suffix)
+        :uri (str "/api/case/" case-id "/" type "/" (name asset-id) suffix)
         :body (doto (js/FormData.)
-                (.append "file" file))
+                (.append "file" file)
+                (.append "filename" (.-name file)))
         :format nil
         :on-success [::upload-success case-id]
         :on-failure [::upload-failure]})}))
@@ -158,10 +201,11 @@
 ;show/hide dialogs
 (rf/reg-event-db
   ::show-process-dialog
-  (fn [db [_ id]]
+  (fn [db [_ type id]]
     (assoc-in db [:dialog/banking]
       {:open true
-       :id id})))
+       :id id
+       :type type})))
 
 (rf/reg-event-db
   ::show-add-dialog

@@ -19,15 +19,7 @@
   (fn [{:keys [db]} [_ {:keys [path]} response]]
     {:db (do (assoc db :failure response)
              (fork/set-submitting db path false))}))
-(defn remove-joint [data]
-  (mapv (fn [acc]
-          (if (false? (:joint-check acc))
-            (apply dissoc acc [:joint-check :joint-info])
-            acc))
-    (:accounts data)))
-(defn bank-transform-on-submit [data]
-  (merge {:bank-id (keyword (:bank-id data))
-          :accounts (remove-joint data)}))
+
 
 (rf/reg-event-fx ::add-bank
   (fn [{:keys [db]} [_ case-id {:keys [path values] :as fork-params}]]
@@ -36,12 +28,11 @@
      (ui/build-http
        {:method :post
         :uri (str "/api/bank/" case-id "/add-bank-accounts")
-        :params (bank-transform-on-submit values)
+        :params (model/bank-transform-on-submit values)
         :on-success [::add-success case-id fork-params]
         :on-failure [::add-failure fork-params]})}))
 
-(defn buildsoc-transform-on-submit [values]
-  (assoc values :buildsoc-id (keyword (:buildsoc-id values))))
+
 (rf/reg-event-fx ::add-buildsoc
   (fn [{:keys [db]} [_ case-id {:keys [path values] :as fork-params}]]
     {:db (fork/set-submitting db path true)
@@ -49,7 +40,7 @@
      (ui/build-http
        {:method :post
         :uri (str "/api/buildingsociety/" case-id "/add-buildsoc-accounts")
-        :params (buildsoc-transform-on-submit values)
+        :params (model/buildsoc-transform-on-submit values)
         :on-success [::add-success case-id fork-params]
         :on-failure [::add-failure fork-params]})}))
 (rf/reg-event-fx ::submit!
@@ -98,7 +89,8 @@
          - organisations can usually retrieve the information they need
          with just a name and date of birth.
          If this is the case please check the box below."]
-          [form/accounts-unknown fork-args]
+          (if (= type "buildsoc")
+            [form/accounts-unknown fork-args])
           (if (:accounts-unknown values)
             [:<>]
             [form/account-array-component type fork-args])]]]]]
