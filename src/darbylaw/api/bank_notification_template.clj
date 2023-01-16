@@ -11,7 +11,7 @@
     [clojure.java.io :as io])
   (:import (java.time LocalDate)))
 
-(defn generate-vector [data]
+(defn generate-address-vector [data]
   (vector
     (:address-street-no data)
     (:address-house-name data)
@@ -23,10 +23,9 @@
     (:address-county data)
     (:address-country data)))
 
-
 (defn generate-mailing-address [type asset-id]
   (let [asset-data (if (= type :bank) (banks/get-bank-info asset-id))
-        address-vector (generate-vector asset-data)]
+        address-vector (generate-address-vector asset-data)]
     {:org-name (:org-name asset-data)
      :org-address (string/join "\n"
                     (remove string/blank? address-vector))}))
@@ -42,12 +41,12 @@
 
 (defn bank-letter-template-query [case-id bank-id]
   [{:find ['(pull case [:reference
-                        :deceased.info])
-           '(pull bank-accounts [:accounts])
-           '(pull deceased [:forename :surname :date-of-death])]
+                        :deceased {(:probate.deceased/_case {:as :deceased
+                                                             :cardinality :one})
+                                   [:forename :surname :date-of-death]}])
+           '(pull bank-accounts [:accounts])]
     :where '[[case :type :probate.case]
              [case :xt/id case-id]
-             [deceased :probate.deceased/case case-id]
              [bank-accounts :type :probate.bank-accounts]
              [bank-accounts :bank-id bank-id]
              [bank-accounts :case-id case-id]]
@@ -58,12 +57,12 @@
 
 (defn buildsoc-letter-template-query [case-id buildsoc-id]
   [{:find ['(pull case [:reference
-                        :deceased.info])
-           '(pull buildsoc-accounts [:accounts])
-           '(pull deceased [:forename :surname :date-of-death])]
+                        {(:probate.deceased/_case {:as :deceased
+                                                   :cardinality :one})
+                         [:forename :surname :date-of-death]}])
+           '(pull buildsoc-accounts [:accounts])]
     :where '[[case :type :probate.case]
              [case :xt/id case-id]
-             [deceased :probate.deceased/case case-id]
              [buildsoc-accounts :type :probate.buildsoc-accounts]
              [buildsoc-accounts :buildsoc-id buildsoc-id]
              [buildsoc-accounts :case-id case-id]]
@@ -73,31 +72,30 @@
    buildsoc-id])
 
 (defn get-letter-template-data [xtdb-node bank-type case-id bank-id]
-  (let [[case-data bank-data deceased-data] (xt-util/fetch-one
-                                              (apply xt/q (xt/db xtdb-node)
-                                                (case bank-type
-                                                  :bank (bank-letter-template-query case-id bank-id)
-                                                  :buildsoc (buildsoc-letter-template-query case-id bank-id))))]
+  (let [[case-data bank-data] (xt-util/fetch-one
+                                (apply xt/q (xt/db xtdb-node)
+                                  (case bank-type
+                                    :bank (bank-letter-template-query case-id bank-id)
+                                    :buildsoc (buildsoc-letter-template-query case-id bank-id))))]
 
     (data-util/keys-to-camel-case
       (cond
         (= bank-type :bank)
         (-> case-data
-          (assoc :bank (-> bank-data
-                         (assoc :name (banks/bank-label bank-id))
-                         (assoc :account-string (generate-account-info (:accounts bank-data) bank-type))
-                         (assoc :name (banks/bank-label bank-id))
-                         (merge (generate-mailing-address bank-type bank-id))))
-          (assoc :deceased deceased-data)
+          (assoc-in [:bank] (-> bank-data
+                              (assoc :name (banks/bank-label bank-id))
+                              (assoc :accounts (:accounts bank-data))
+                              (merge (generate-mailing-address bank-type bank-id))))
+
           (assoc :date (.toString (LocalDate/now))))
+
         (= bank-type :buildsoc)
         (-> case-data
           (assoc :buildsoc (-> bank-data
                              (assoc :name (buildsocs/buildsoc-label bank-id))
-                             (assoc :account-string (generate-account-info (:accounts bank-data) bank-type))
-                             (assoc :name (buildsocs/buildsoc-label bank-id))
+                             (assoc :accounts (:accounts bank-data))
                              (merge (generate-mailing-address bank-type bank-id))))
-          (assoc :deceased deceased-data)
+
           (assoc :date (.toString (LocalDate/now))))))))
 
 
