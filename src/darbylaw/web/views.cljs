@@ -26,8 +26,9 @@
 
 (rf/reg-sub ::active-panel
   (fn [db _]
-    (when-some [route (-> db :kee-frame/route :data :name)]
-      (add-panel-suffix route))))
+    (if-some [route (-> db :kee-frame/route :data :name)]
+      (add-panel-suffix route)
+      :waiting-for-routes)))
 
 (defn main-panel []
   (let [active-panel (rf/subscribe [::active-panel])]
