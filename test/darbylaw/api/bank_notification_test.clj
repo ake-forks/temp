@@ -59,9 +59,12 @@
         ; Check data for rendering letter template
         _ (when (= bank-type :bank)
             (let [_ (is (t/submap?
-                          {:bank {:name bank-name
-                                  :accounts (-> setup/bank-accounts1
-                                              (data-util/keys-to-camel-case))}}
+                          {:bank (merge {:name bank-name
+                                         :accounts (-> setup/bank-accounts1
+                                                     (data-util/keys-to-camel-case))}
+                                   (data-util/keys-to-camel-case
+                                     (bank-notification-template/generate-mailing-address :bank bank-id)))}
+
                           letter-template-data))]))
 
         bank-request (fn [method op & [body]]

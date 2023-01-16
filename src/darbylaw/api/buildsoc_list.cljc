@@ -86,3 +86,12 @@
     :common-name "West Bromwich Building Society"}
    {:id :yorkshire-building-society,
     :common-name "Yorkshire Building Society"}])
+
+(def buildsoc-by-id
+  (into {} (map (juxt :id identity) buildsoc-list)))
+
+(defn buildsoc-label [buildsoc-id]
+  (get-in buildsoc-by-id [buildsoc-id :common-name]))
+
+(defn get-buildsoc-info [buildsoc-id]
+  (get buildsoc-by-id buildsoc-id))

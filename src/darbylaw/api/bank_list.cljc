@@ -1,152 +1,405 @@
 (ns darbylaw.api.bank-list)
 
 (def bank-list
-  [{:id :aberdeen-standard-investments,
+  [{:id :aberdeen-standard,
     :common-name "Aberdeen Standard Investments",
-    :org-name "Aberdeen Standard Investments"
-    :icon "Aberdeen-Standard-Investments-icon.svg"}
-   {:id :barclays-bank-plc,
+    :org-name "Aberdeen Standard Investments",
+    :address-street-no "",
+    :address-house-name "",
+    :address-line-1 "PO Box 12233",
+    :address-line-2 "",
+    :address-line-3 "",
+    :address-town "Chelmsford",
+    :address-postcode "CM99 2EE",
+    :address-county "",
+    :address-country "",
+    :logo "Aberdeen-Standard-Investments-icon.svg"}
+   {:id :barclays,
     :common-name "Barclays",
-    :org-name "Barclays Bank Plc"
-    :icon "Barclays-Bank-icon.svg"}
+    :org-name "Barclays Bank Plc",
+    :address-street-no "",
+    :address-house-name "",
+    :address-line-1 "Service Centre",
+    :address-line-2 "",
+    :address-line-3 "",
+    :address-town "Leicester",
+    :address-postcode "LE87 2BB",
+    :address-county "",
+    :address-country "",
+    :logo "Barclays-Bank-icon.svg"}
    {:id :birmingham-midshires,
     :common-name "Birmingham Midshires",
-    :org-name "Birmingham Midshires"
-    :icon "Birmingham-Midshires-icon.svg"}
-   {:id :britannia-bereavement-team,
+    :org-name "Birmingham Midshires",
+    :address-street-no "",
+    :address-house-name "",
+    :address-line-1 "Po Box 81 Pendeford Business Park",
+    :address-line-2 "Wobaston Road",
+    :address-line-3 "",
+    :address-town "Wolverhampton",
+    :address-postcode "WV9 5HZ",
+    :address-county "",
+    :address-country "",
+    :logo "Birmingham-Midshires-icon.svg"}
+   {:id :britannia,
     :common-name "Britannia",
-    :org-name "Britannia Bereavement Team"
-    :icon "Britannia-Bereavement-Team.svg"}
-   {:id :charter-savings-bank,
+    :org-name "Britannia Bereavement Team",
+    :address-street-no "",
+    :address-house-name "Freepost (15796)",
+    :address-line-1 "Dept CO33",
+    :address-line-2 "",
+    :address-line-3 "",
+    :address-town "Leek",
+    :address-postcode "ST13 5RG",
+    :address-county "Staffordshire",
+    :address-country "",
+    :logo "Britannia-Bereavement-Team.svg"}
+   {:id :charter-savings,
     :common-name "Charter Savings Bank",
-    :org-name "Charter Savings Bank"
-    :icon "Charter-Savings-Bank-icon.svg"}
-   {:id :citibank-international-plc,
+    :org-name "Charter Savings Bank",
+    :address-street-no "",
+    :address-house-name "",
+    :address-line-1 "PO Box 855",
+    :address-line-2 "",
+    :address-line-3 "",
+    :address-town "Wallsend",
+    :address-postcode "NE28 5BL",
+    :address-county "",
+    :address-country "",
+    :logo "Charter-Savings-Bank-icon.svg"}
+   {:id :citibank,
     :common-name "Citibank",
-    :org-name "Citibank International plc"
-    :icon "Citibank-International.svg"}
-   {:id :coventry-building-society,
-    :common-name "Coventry Building Society",
-    :org-name "Coventry Building Society"
-    :icon "Coventry-Building-Societ-icon.svg"}
-   {:id :credit-agricole-cotes-darmor,
+    :org-name "Citibank International plc",
+    :address-street-no "33",
+    :address-house-name "",
+    :address-line-1 "Citigroup Centre",
+    :address-line-2 "Canada Square",
+    :address-line-3 "Canary Wharf",
+    :address-town "London",
+    :address-postcode "E14 5LB",
+    :address-county "",
+    :address-country "",
+    :logo "Citibank-International.svg"}
+   {:id :credit-agricole,
     :common-name "Credit Agricole Cotes D'Armor",
-    :org-name "Credit Agricole Cotes D'Armor"
-    :icon "Credit-Agricole-Cotes-D_Armor.svg"}
+    :org-name "Credit Agricole Cotes D'Armor",
+    :address-street-no "5",
+    :address-house-name "Gouarec",
+    :address-line-1 "Rue Du Moulin",
+    :address-line-2 "22570 Gouarec",
+    :address-line-3 "",
+    :address-town "",
+    :address-postcode "",
+    :address-county "",
+    :address-country "FRANCE",
+    :logo "Credit-Agricole-Cotes-D_Armor.svg"}
    {:id :first-direct,
     :common-name "First Direct",
-    :org-name "First Direct"
-    :icon "First-Direc-icon.svg"}
+    :org-name "First Direct",
+    :address-street-no "",
+    :address-house-name "",
+    :address-line-1 "Bereavement Support Team",
+    :address-line-2 "40 Wakefield Road",
+    :address-line-3 "",
+    :address-town "Leeds",
+    :address-postcode "LS98 1FD",
+    :address-county "",
+    :address-country "",
+    :logo "First-Direc-icon.svg"}
    {:id :firstsave,
     :common-name "FirstSave",
-    :org-name "FirstSave"
-    :icon "FirstSave.svg"}
+    :org-name "FirstSave",
+    :address-street-no "",
+    :address-house-name "",
+    :address-line-1 "PO Box 1195",
+    :address-line-2 "",
+    :address-line-3 "",
+    :address-town "Newcastle Upon Tyne",
+    :address-postcode "NE99 1DE",
+    :address-county "",
+    :address-country "",
+    :logo "FirstSave.svg"}
    {:id :ford-money,
     :common-name "Ford Money",
-    :org-name "Ford Money"
-    :icon "Ford Money.svg"}
-   {:id :halifax-and-hbos,
+    :org-name "Ford Money",
+    :address-street-no "",
+    :address-house-name "",
+    :address-line-1 "PO Box 871",
+    :address-line-2 "",
+    :address-line-3 "",
+    :address-town "Wallsend",
+    :address-postcode "NE28 5BT",
+    :address-county "",
+    :address-country "",
+    :logo "Ford Money.svg"}
+   {:id :halifax,
     :common-name "Halifax",
-    :org-name "Halifax and HBOS"
-    :icon "Halifax.svg"}
-   {:id :hampshire-trust-bank,
+    :org-name "Halifax and HBOS",
+    :address-street-no "",
+    :address-house-name "",
+    :address-line-1 "Bereavement Service Centre",
+    :address-line-2 "PO Box 692",
+    :address-line-3 "",
+    :address-town "Leeds",
+    :address-postcode "LS1 9EJ",
+    :address-county "Yorkshire",
+    :address-country "",
+    :logo "Halifax.svg"}
+   {:id :hampshire-trust,
     :common-name "Hampshire Trust Bank",
-    :org-name "Hampshire Trust Bank"
-    :icon "Hampshire-Trust-Bank-icon.svg"}
-   {:id :hsbc-bereavement-team,
+    :org-name "Hampshire Trust Bank",
+    :address-street-no "",
+    :address-house-name "",
+    :address-line-1 "Savings",
+    :address-line-2 "PO Box 74003",
+    :address-line-3 "",
+    :address-town "London",
+    :address-postcode "EC2P 2QR",
+    :address-county "",
+    :address-country "",
+    :logo "Hampshire-Trust-Bank-icon.svg"}
+   {:id :hsbc,
     :common-name "HSBC",
-    :org-name "HSBC Bereavement Team"
-    :icon "HSBC-bereavement-team-icon.svg"}
+    :org-name "HSBC Bereavement Team",
+    :address-street-no "51",
+    :address-house-name "",
+    :address-line-1 "Saffron Road",
+    :address-line-2 "",
+    :address-line-3 "",
+    :address-town "Wigston",
+    :address-postcode "LE18 4AG",
+    :address-county "Leicester",
+    :address-country "",
+    :logo "HSBC-bereavement-team-icon.svg"}
    {:id :kent-reliance,
     :common-name "Kent Reliance",
-    :org-name "Kent Reliance"
-    :icon "Kent-Reliance.svg"}
-   {:id :leeds-building-society,
-    :common-name "Leeds Building Society",
-    :org-name "Leeds Building Society"
-    :icon "Leeds-Building-Society.svg"}
+    :org-name "Kent Reliance",
+    :address-street-no "",
+    :address-house-name "",
+    :address-line-1 "Po Box 601",
+    :address-line-2 "",
+    :address-line-3 "",
+    :address-town "Chatham",
+    :address-postcode "ME4 9DX",
+    :address-county "Kent",
+    :address-country "",
+    :logo "Kent-Reliance.svg"}
    {:id :lloyds-bank,
     :common-name "Lloyds Bank",
-    :org-name "Lloyds Bank"
-    :icon "Lloyds-Bank-icon.svg"}
+    :org-name "Lloyds Bank",
+    :address-street-no "",
+    :address-house-name "Bereavement Unit",
+    :address-line-1 "Department 62 42",
+    :address-line-2 "Box 4",
+    :address-line-3 "",
+    :address-town "",
+    :address-postcode "BX1 1LT",
+    :address-county "",
+    :address-country "",
+    :logo "Lloyds-Bank-icon.svg"}
    {:id :lloyds-bank-international,
     :common-name "Lloyds Bank International",
-    :org-name "Lloyds Bank International"
-    :icon "Lloyds-Bank-icon.svg"}
-   {:id :marks-and-spencer-bereavement,
+    :org-name "Lloyds Bank International",
+    :address-street-no "",
+    :address-house-name "Villiers House",
+    :address-line-1 "2nd Floor",
+    :address-line-2 "2 Victoria Street",
+    :address-line-3 "Douglas",
+    :address-town "Isle Of Man",
+    :address-postcode "IM1 2LN",
+    :address-county "",
+    :address-country "",
+    :logo "Lloyds-Bank-icon.svg"}
+   {:id :m-and-s-bank,
     :common-name "Marks and Spencer Bank",
-    :org-name "Marks and Spencer Bereavement"
-    :icon "Marks-and-Spencer-Bereavement.svg"}
-   {:id :mbna-europe-bank-ltd,
+    :org-name "Marks and Spencer Bereavement",
+    :address-street-no "",
+    :address-house-name "",
+    :address-line-1 "PO Box 3849",
+    :address-line-2 "",
+    :address-line-3 "",
+    :address-town "Chester",
+    :address-postcode "CH1 9FN",
+    :address-county "Cheshire",
+    :address-country "",
+    :logo "Marks-and-Spencer-Bereavement.svg"}
+   {:id :mbna-europe,
     :common-name "MBNA Europe Bank Ltd",
-    :org-name "MBNA Europe Bank Ltd"
-    :icon "mbna.svg"}
-   {:id :national-savings--investments,
+    :org-name "MBNA Europe Bank Ltd",
+    :address-street-no "",
+    :address-house-name "Stansfield House",
+    :address-line-1 "Chester Business Park",
+    :address-line-2 "",
+    :address-line-3 "",
+    :address-town "Chester",
+    :address-postcode "CH4 9WW",
+    :address-county "Cheshire",
+    :address-country "",
+    :logo "mbna.svg"}
+   {:id :n-s-and-i,
     :common-name "NS&I: National Savings & Investments",
-    :org-name "National Savings & Investments"
-    :icon "National-Savings-and-Investments.svg"}
-   {:id :nationwide-bereavement-services,
-    :common-name "Nationwide",
-    :org-name "Nationwide Bereavement Services"
-    :icon "Nationwide-Bereavement-Services-icon.svg"}
+    :org-name "National Savings & Investments",
+    :address-street-no "",
+    :address-house-name "",
+    :address-line-1 "",
+    :address-line-2 "",
+    :address-line-3 "",
+    :address-town "Glasgow",
+    :address-postcode "G58 1SB",
+    :address-county "",
+    :address-country "",
+    :logo "National-Savings-and-Investments.svg"}
    {:id :natwest,
     :common-name "Natwest",
-    :org-name "Natwest"
-    :icon "NatWest-icon.svg"}
-   {:id :paragon-bank-plc,
+    :org-name "Natwest",
+    :address-street-no "",
+    :address-house-name "Natwest Bereavement Service Team",
+    :address-line-1 "Waterside Court",
+    :address-line-2 "Western Avenue",
+    :address-line-3 "Chatham Maritime",
+    :address-town "Chatham",
+    :address-postcode "ME4 4RT",
+    :address-county "Kent",
+    :address-country "",
+    :logo "NatWest-icon.svg"}
+   {:id :paragon-bank,
     :common-name "Paragon Bank PLC",
-    :org-name "Paragon Bank PLC"
-    :icon "Paragon-Bank-icon.svg"}
-   {:id :post-office-money-savings,
+    :org-name "Paragon Bank PLC",
+    :address-street-no "",
+    :address-house-name "",
+    :address-line-1 "PO Box 850",
+    :address-line-2 "",
+    :address-line-3 "",
+    :address-town "Wallsend",
+    :address-postcode "NE28 5BJ",
+    :address-county "",
+    :address-country "",
+    :logo "Paragon-Bank-icon.svg"}
+   {:id :post-office-money,
     :common-name "Post Office Savings",
-    :org-name "Post Office Money Savings"
-    :icon "Post-Office-Account.svg"}
-   {:id :rbs-bereavement-service-team,
+    :org-name "Post Office Money Savings",
+    :address-street-no "",
+    :address-house-name "",
+    :address-line-1 "PO Box 87",
+    :address-line-2 "",
+    :address-line-3 "",
+    :address-town "Armagh",
+    :address-postcode "BT61 0BN",
+    :address-county "",
+    :address-country "",
+    :logo "Post-Office-Account.svg"}
+   {:id :rbs,
     :common-name "Royal Bank of Scotland",
-    :org-name "RBS Bereavement Service Team"
-    :icon "RBS-Bereavement-Service-Team-icon.svg"}
+    :org-name "RBS Bereavement Service Team",
+    :address-street-no "",
+    :address-house-name "Waterside Court",
+    :address-line-1 "Western Avenue",
+    :address-line-2 "Chatham Maritime",
+    :address-line-3 "",
+    :address-town "Chatham",
+    :address-postcode "ME4 4RT",
+    :address-county "Kent",
+    :address-country "",
+    :logo "RBS-Bereavement-Service-Team-icon.svg"}
    {:id :saga,
     :common-name "Saga",
-    :org-name "Saga"
-    :icon "SAGA.svg"}
+    :org-name "Saga",
+    :address-street-no "",
+    :address-house-name "",
+    :address-line-1 "Saga Savings Team",
+    :address-line-2 "Po Box 81 Pendeford Business Park",
+    :address-line-3 "Wobaston Road",
+    :address-town "Wolverhampton",
+    :address-postcode "WV9 5HZ",
+    :address-county "",
+    :address-country "",
+    :logo "SAGA.svg"}
    {:id :sainsburys-bank,
     :common-name "Sainsbury's Bank",
-    :org-name "Sainsbury's Bank"
-    :icon "Sainsbury_s-Bank-icon.svg"}
+    :org-name "Sainsbury's Bank",
+    :address-street-no "",
+    :address-house-name "",
+    :address-line-1 "PO Box 4955",
+    :address-line-2 "",
+    :address-line-3 "",
+    :address-town "Worthing",
+    :address-postcode "BN11 9ZA",
+    :address-county "",
+    :address-country "",
+    :logo "Sainsbury_s-Bank-icon.svg"}
    {:id :santander,
     :common-name "Santander",
-    :org-name "Santander"
-    :icon "Santander-icon.svg"}
-   {:id :skipton-building-society,
-    :common-name "Skipton Building Society",
-    :org-name "Skipton Building Society"
-    :icon "Skipton-Building-Society.svg"}
+    :org-name "Santander",
+    :address-street-no "",
+    :address-house-name "",
+    :address-line-1 "Customer Service Centre",
+    :address-line-2 "Narborough",
+    :address-line-3 "",
+    :address-town "Leicester",
+    :address-postcode "LE19 0AL",
+    :address-county "",
+    :address-country "",
+    :logo "Santander-icon.svg"}
    {:id :tesco-bank,
     :common-name "Tesco Bank",
-    :org-name "Tesco Bank"
-    :icon "Tesco-Bank-stacked.svg"}
+    :org-name "Tesco Bank",
+    :address-street-no "",
+    :address-house-name "Bereavement Team",
+    :address-line-1 "Broadway One 199 Renfield Street",
+    :address-line-2 "",
+    :address-line-3 "",
+    :address-town "Glasgow",
+    :address-postcode "G2 3AX",
+    :address-county "",
+    :address-country "Scotland",
+    :logo "Tesco-Bank-stacked.svg"}
    {:id :the-cooperative-bank,
     :common-name "The Co-operative Bank",
-    :org-name "The Co-operative Bank"
-    :icon "Co-operative-Bank-stack.svg"}
-   {:id :tsb-estate-settlement-unit,
+    :org-name "The Co-operative Bank",
+    :address-street-no "",
+    :address-house-name "",
+    :address-line-1 "Bereavement Team",
+    :address-line-2 "PO Box 638",
+    :address-line-3 "",
+    :address-town "Salford",
+    :address-postcode "M5 0JQ",
+    :address-county "",
+    :address-country "",
+    :logo "Co-operative-Bank-stack.svg"}
+   {:id :tsb,
     :common-name "TSB Bank",
-    :org-name "TSB Estate Settlement Unit"
-    :icon "TSB-Estate-Settlement-Unit.svg"}
+    :org-name "TSB Estate Settlement Unit",
+    :address-street-no "",
+    :address-house-name "",
+    :address-line-1 "PO Box 373",
+    :address-line-2 "Manston Lane",
+    :address-line-3 "",
+    :address-town "Leeds",
+    :address-postcode "LS14 9GQ",
+    :address-county "Yorkshire",
+    :address-country "",
+    :logo "TSB-Estate-Settlement-Unit.svg"}
    {:id :virgin-money,
     :common-name "Virgin Money",
-    :org-name "Virgin Money"
-    :icon "Virgin-Mone-stacked.svg"}
-   {:id :yorkshire-building-society,
-    :common-name "Yorkshire Building Society",
-    :org-name "Yorkshire Building Society"
-    :icon "Yorkshire-Building-Societ-icon.svg"}])
+    :org-name "Virgin Money",
+    :address-street-no "",
+    :address-house-name "Jubilee House",
+    :address-line-1 "Gosforth",
+    :address-line-2 "",
+    :address-line-3 "",
+    :address-town "Newcastle Upon Tyne",
+    :address-postcode "NE3 4PL",
+    :address-county "",
+    :address-country "",
+    :logo "Virgin-Mone-stacked.svg"}])
 
 (def bank-by-id
   (into {} (map (juxt :id identity) bank-list)))
 
 (defn all-bank-ids []
   (map :id bank-list))
+
+(defn get-bank-info [bank-id]
+  (get bank-by-id bank-id))
 
 (defn bank-label [bank-id]
   (get-in bank-by-id [bank-id :common-name]))
