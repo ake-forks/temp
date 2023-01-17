@@ -57,8 +57,8 @@
             "Ensure there is a proper test address on the letter!"])]))))
 
 (defn submit-buttons [case-id asset-id]
-  (let [type @(rf/subscribe [::model/get-type])
-        letter-id @(rf/subscribe [::model/notification-letter-id])
+  (let [type @(rf/subscribe [::model/current-banking-type])
+        {letter-id :id} @(rf/subscribe [::model/current-notification-letter])
         fake? @(rf/subscribe [::case-model/fake?])
         send-action (case @review-result
                       :send (if (and fake? (not @override-fake-send?))
@@ -111,8 +111,8 @@
 (defn control-buttons []
   (let [case-id @(rf/subscribe [::case-model/case-id])
         case-reference [::case-model/current-case-reference]
-        asset-id @(rf/subscribe [::model/current-asset-id])
-        type @(rf/subscribe [::model/get-type])]
+        asset-id @(rf/subscribe [::model/current-banking-id])
+        type @(rf/subscribe [::model/current-banking-type])]
     [mui/stack {:direction :row :spacing 1}
      [mui/button {:href (str "/api/case/" case-id "/" (name type) "/" (name asset-id) "/notification-docx")
                   :download (str case-reference " - " (name asset-id) " - notification.docx")
@@ -131,12 +131,11 @@
 
 (defn approve-notification []
   (r/with-let [_ (reset! model/file-uploading? false)]
-    (let [asset-id @(rf/subscribe [::model/current-asset-id])
+    (let [asset-id @(rf/subscribe [::model/current-banking-id])
           case-id @(rf/subscribe [::case-model/case-id])
           case-reference @(rf/subscribe [::case-model/current-case-reference])
-          asset-type @(rf/subscribe [::model/get-type])
-          letter-id @(rf/subscribe [::model/notification-letter-id])
-          author @(rf/subscribe [::model/author])]
+          asset-type @(rf/subscribe [::model/current-banking-type])
+          {letter-id :id author :author} @(rf/subscribe [::model/current-notification-letter])]
       [:<>
        [mui/backdrop {:open (or @model/file-uploading?
                               @regenerating?)}]
@@ -182,9 +181,9 @@
        [fake-options]])))
 
 (defn panel []
-  (let [asset-id @(rf/subscribe [::model/current-asset-id])
+  (let [asset-id @(rf/subscribe [::model/current-banking-id])
         case-id @(rf/subscribe [::case-model/case-id])
-        type @(rf/subscribe [::model/get-type])]
+        type @(rf/subscribe [::model/current-banking-type])]
     (if (some? asset-id)
       [mui/stack {:spacing 1
                   :direction :row

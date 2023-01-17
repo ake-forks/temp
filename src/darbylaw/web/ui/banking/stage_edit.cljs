@@ -50,8 +50,8 @@
 
 (defn layout [{:keys [values handle-submit] :as fork-args}]
   (let [current-case @(rf/subscribe [::case-model/current-case])
-        asset-id @(rf/subscribe [::model/current-asset-id])
-        type @(rf/subscribe [::model/get-type])]
+        asset-id @(rf/subscribe [::model/current-banking-id])
+        type @(rf/subscribe [::model/current-banking-type])]
     [:form {:on-submit handle-submit}
      [mui/dialog-title
       [shared/header type asset-id :edit]]
@@ -77,7 +77,7 @@
 
 
 (defn panel []
-  (let [type @(rf/subscribe [::model/get-type])
+  (let [type @(rf/subscribe [::model/current-banking-type])
         case-id @(rf/subscribe [::case-model/case-id])
-        values (model/get-asset-data type)]
+        values @(rf/subscribe [::model/current-asset-data])]
     [form/form layout values #(rf/dispatch [::submit! type case-id %])]))

@@ -26,8 +26,8 @@
     :buildsoc (map :id buildsoc-list/buildsoc-list)
     :bank (map :id bank-list/bank-list)))
 
-(defn asset-label [type asset-id]
-  (get-in (institution-list-by-id type) [asset-id :common-name]))
+(defn asset-label [type banking-id]
+  (get-in (institution-list-by-id type) [banking-id :common-name]))
 
 
 
@@ -39,46 +39,39 @@
   (fn [db]
     (:bank-accounts (:current-case db))))
 
-(rf/reg-sub ::get-dialog
+(rf/reg-sub ::dialog
   (fn [db]
-    (try
-      (:dialog/banking db))))
+    (:dialog/banking db)))
 
-(rf/reg-sub ::get-type
-  :<- [::get-dialog]
+(rf/reg-sub ::current-banking-type
+  :<- [::dialog]
   (fn [dialog]
     (:type dialog)))
 
-(rf/reg-sub ::banking-type
-  :<- [::get-type]
-  (fn [type-str]
-    (keyword type-str)))
+(rf/reg-sub ::dialog-open
+  :<- [::dialog]
+  (fn [dialog]
+    (:open dialog)))
 
-(rf/reg-sub ::current-asset-id
-  :<- [::get-dialog]
+(rf/reg-sub ::current-banking-id
+  :<- [::dialog]
   (fn [dialog]
     (:id dialog)))
 
 (rf/reg-sub ::current-buildsoc-data
-  :<- [::current-asset-id]
+  :<- [::current-banking-id]
   :<- [::building-societies]
   (fn [[buildsoc-id all-buildsocs]]
     (first (filter #(= (:buildsoc-id %) buildsoc-id) all-buildsocs))))
 
 (rf/reg-sub ::current-bank-data
-  :<- [::current-asset-id]
+  :<- [::current-banking-id]
   :<- [::banks]
   (fn [[bank-id all-banks]]
     (first (filter #(= (:bank-id %) bank-id) all-banks))))
 
-(defn get-asset-data [type]
-  (if (some? type)
-    (case type
-      :bank @(rf/subscribe [::current-bank-data])
-      :buildsoc @(rf/subscribe [::current-buildsoc-data]))))
-
-(rf/reg-sub ::asset-data
-  :<- [::banking-type]
+(rf/reg-sub ::current-asset-data
+  :<- [::current-banking-type]
   :<- [::current-bank-data]
   :<- [::current-buildsoc-data]
   (fn [[type bank-data buildsoc-data]]
@@ -86,23 +79,15 @@
       :bank bank-data
       :buildsoc buildsoc-data)))
 
-(rf/reg-sub ::notification-letter-id
-  :<- [::asset-data]
+(rf/reg-sub ::current-notification-letter
+  :<- [::current-asset-data]
   (fn [asset-data]
-    (get-in asset-data [:notification-letter :id])))
+    (:notification-letter asset-data)))
 
-(defn get-letter-id [type]
-  (let [asset-data (get-asset-data type)]
-    (get-in asset-data [:notification-letter :id])))
-
-(rf/reg-sub ::author
-  :<- [::asset-data]
+(rf/reg-sub ::current-valuation-letter
+  :<- [::current-asset-data]
   (fn [asset-data]
-    (get-in asset-data [:notification-letter :author])))
-
-(defn valuation-letter-present? [type]
-  (contains? (get-asset-data type) :valuation-letter))
-
+    (:valuation-letter asset-data)))
 
 (defn get-asset-stage
   [asset-data]
@@ -120,9 +105,10 @@
     :else
     :complete))
 
-(defn get-process-stage []
-  (let [dialog @(rf/subscribe [::get-dialog])
-        asset-data (get-asset-data (:type dialog))]
+(rf/reg-sub ::current-process-stage
+  :<- [::dialog]
+  :<- [::current-asset-data]
+  (fn [[dialog asset-data]]
     (if (= (:stage dialog) :add)
       :add
       (get-asset-stage asset-data))))
@@ -151,13 +137,13 @@
 
 ;generating and approving notification letters
 (rf/reg-event-fx ::generate-notification-failure
-  (fn [{:keys [db]} [_ case-id asset-id response]]
-    {:db (assoc-in db [:current-case :failure asset-id] response)
+  (fn [{:keys [db]} [_ case-id banking-id response]]
+    {:db (assoc-in db [:current-case :failure banking-id] response)
      :dispatch [::case-model/load-case! case-id]}))
 
 (rf/reg-event-fx ::generate-notification-success
-  (fn [{:keys [db]} [_ case-id asset-id response]]
-    {:db (assoc-in db [:current-case :success asset-id] response)
+  (fn [{:keys [db]} [_ case-id banking-id response]]
+    {:db (assoc-in db [:current-case :success banking-id] response)
      :dispatch [::case-model/load-case! case-id]}))
 
 (rf/reg-event-fx ::generate-notification
@@ -165,15 +151,15 @@
     (let [type (if (some? (:bank-id values))
                  :bank
                  :buildsoc)
-          asset-id (case type
-                     :bank (:bank-id values)
-                     :buildsoc (:buildsoc-id values))]
+          banking-id (case type
+                       :bank (:bank-id values)
+                       :buildsoc (:buildsoc-id values))]
       {:http-xhrio
        (ui/build-http
          {:method :post
-          :uri (str "/api/case/" case-id "/" (name type) "/" (name asset-id) "/generate-notification-letter")
-          :on-success [::generate-notification-success case-id asset-id]
-          :on-failure [::generate-notification-failure case-id asset-id]})})))
+          :uri (str "/api/case/" case-id "/" (name type) "/" (name banking-id) "/generate-notification-letter")
+          :on-success [::generate-notification-success case-id banking-id]
+          :on-failure [::generate-notification-failure case-id banking-id]})})))
 
 (rf/reg-event-fx ::approve-notification-letter-success
   (fn [{:keys [db]} [_ case-id]]
@@ -181,26 +167,26 @@
           [:dispatch [::case-model/load-case! case-id]]]}))
 
 (rf/reg-event-fx ::approve-notification-letter
-  (fn [{:keys [db]} [_ type case-id asset-id letter-id]]
+  (fn [{:keys [db]} [_ type case-id banking-id letter-id]]
     {:http-xhrio
      (ui/build-http
        {:method :post
-        :uri (str "/api/case/" case-id "/" (name type) "/" (name asset-id) "/approve-notification-letter/" letter-id)
-        :on-success [::approve-notification-letter-success case-id asset-id]})}))
+        :uri (str "/api/case/" case-id "/" (name type) "/" (name banking-id) "/approve-notification-letter/" letter-id)
+        :on-success [::approve-notification-letter-success case-id banking-id]})}))
 
 (rf/reg-event-fx ::review-notification-letter--success
-  (fn [{:keys [db]} [_ case-id asset-id]]
+  (fn [{:keys [db]} [_ case-id banking-id]]
     {:fx [[:dispatch [::case-model/load-case! case-id]]]}))
 
 (rf/reg-event-fx ::review-notification-letter
-  (fn [{:keys [db]} [_ type send-action case-id asset-id letter-id]]
+  (fn [{:keys [db]} [_ type send-action case-id banking-id letter-id]]
     {:http-xhrio
      (ui/build-http
        {:method :post
-        :uri (str "/api/case/" case-id "/" (name type) "/" (name asset-id)
+        :uri (str "/api/case/" case-id "/" (name type) "/" (name banking-id)
                "/notification-letter/" letter-id "/review")
         :params {:send-action send-action}
-        :on-success [::review-notification-letter--success case-id asset-id]})}))
+        :on-success [::review-notification-letter--success case-id banking-id]})}))
 
 ;uploading files
 (def file-uploading? (r/atom false))
@@ -228,11 +214,11 @@
     (reset! upload-error true)))
 
 (rf/reg-event-fx ::upload-file
-  (fn [_ [_ type case-id asset-id file suffix]]
+  (fn [_ [_ type case-id banking-id file suffix]]
     {:http-xhrio
      (ui/build-http
        {:method :post
-        :uri (str "/api/case/" case-id "/" (name type) "/" (name asset-id) suffix)
+        :uri (str "/api/case/" case-id "/" (name type) "/" (name banking-id) suffix)
         :body (doto (js/FormData.)
                 (.append "file" file)
                 (.append "filename" (.-name file)))

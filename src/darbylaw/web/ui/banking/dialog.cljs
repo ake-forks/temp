@@ -10,40 +10,41 @@
     [darbylaw.web.ui.banking.model :as model]))
 
 (defn dialog []
-  (let [dialog-data @(rf/subscribe [::model/get-dialog])
-        stage (model/get-process-stage)
-        default-props {:open (:open dialog-data)
+  (let [open @(rf/subscribe [::model/dialog-open])
+        banking-type @(rf/subscribe [::model/current-banking-type])
+        default-props {:open open
                        :maxWidth false
                        :scroll :paper}]
-    (if (some? stage)
-      (case stage
-        ;dialog-content and dialog-action-area are within each respective panel,
-        ;so that the body can be scrolled and action buttons are fixed to the bottom edge
+    (when banking-type
+      (when-let [stage @(rf/subscribe [::model/current-process-stage])]
+        (case stage
+          ;dialog-content and dialog-action-area are within each respective panel,
+          ;so that the body can be scrolled and action buttons are fixed to the bottom edge
 
-        ;add a new build soc
-        :add
-        [mui/dialog default-props
-         [add/panel]]
+          ;add a new build soc
+          :add
+          [mui/dialog default-props
+           [add/panel]]
 
-        ;editing stage
-        :edit
-        [mui/dialog default-props
+          ;editing stage
+          :edit
+          [mui/dialog default-props
 
-         [edit/panel]]
+           [edit/panel]]
 
-        ;approve notification letter and trigger mailing process
-        :notify
-        [mui/dialog (merge default-props
-                      {:maxWidth :xl
-                       :fullWidth true})
-         [notify/panel]]
+          ;approve notification letter and trigger mailing process
+          :notify
+          [mui/dialog (merge default-props
+                        {:maxWidth :xl
+                         :fullWidth true})
+           [notify/panel]]
 
-        ;upload pdf of letter of valuation received from bank and confirm account values
-        :valuation
-        [mui/dialog default-props
-         [valuation/panel]]
+          ;upload pdf of letter of valuation received from bank and confirm account values
+          :valuation
+          [mui/dialog default-props
+           [valuation/panel]]
 
-        ;summary, can view correspondence
-        :complete
-        [mui/dialog default-props
-         [complete/panel]]))))
+          ;summary, can view correspondence
+          :complete
+          [mui/dialog default-props
+           [complete/panel]])))))

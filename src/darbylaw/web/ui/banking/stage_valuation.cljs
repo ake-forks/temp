@@ -57,9 +57,10 @@
 (defn layout [{:keys [handle-submit values] :as fork-args}]
   (let [current-case @(rf/subscribe [::case-model/current-case])
         case-id @(rf/subscribe [::case-model/case-id])
-        type @(rf/subscribe [::model/get-type])
-        asset-id @(rf/subscribe [::model/current-asset-id])
-        asset-label (model/asset-label type asset-id)]
+        type @(rf/subscribe [::model/current-banking-type])
+        asset-id @(rf/subscribe [::model/current-banking-id])
+        asset-label (model/asset-label type asset-id)
+        valuation-letter @(rf/subscribe [::model/current-valuation-letter])]
     [:form {:on-submit handle-submit}
      [mui/box shared/tall-dialog-props
       [mui/stack {:spacing 1
@@ -67,7 +68,7 @@
                   :sx {:height 1}}
        ;left side
        [mui/stack {:spacing 1 :sx {:width 0.5}}
-        (if (model/valuation-letter-present? type)
+        (if valuation-letter
           [:iframe {:style {:height "100%"}
                     :src (str "/api/case/" case-id "/" (name type) "/" (name asset-id) "/valuation-pdf")}]
           [mui/typography {:variant :h6} "upload a PDF of the valuation"])]
@@ -97,11 +98,11 @@
         [mui/dialog-actions
          [form/submit-buttons {:left-label "cancel" :right-label "submit valuations"
                                :right-disabled (not (and (accounts-valued? (:accounts values))
-                                                         (model/valuation-letter-present? type)))}]]]]]]))
+                                                         valuation-letter))}]]]]]]))
 
 
 (defn panel []
   (let [case-id @(rf/subscribe [::case-model/case-id])
-        type @(rf/subscribe [::model/get-type])
-        values (model/get-asset-data type)]
+        type @(rf/subscribe [::model/current-banking-type])
+        values @(rf/subscribe [::model/current-asset-data])]
     [form/form layout values #(rf/dispatch [::submit! type case-id %])]))

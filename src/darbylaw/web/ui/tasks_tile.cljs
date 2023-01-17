@@ -77,6 +77,8 @@
     [mui/stack {:sx {:overflow-y :auto :max-height 280}}
      [case-tasks @(rf/subscribe [::case-model/current-case])]
      (for [bank @(rf/subscribe [::banking-model/banks])]
+       ^{:key (:bank-id bank)}
        [banking-task :bank bank])
-     (for [bank @(rf/subscribe [::banking-model/building-societies])]
-       [banking-task :buildsoc bank])]]])
+     (for [buildsoc @(rf/subscribe [::banking-model/building-societies])]
+       ^{:key (:buildsoc-id buildsoc)}
+       [banking-task :buildsoc buildsoc])]]])

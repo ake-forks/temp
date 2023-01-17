@@ -69,7 +69,7 @@
 
 (defn layout [{:keys [values handle-submit] :as fork-args}]
   (let [current-case @(rf/subscribe [::case-model/current-case])
-        type @(rf/subscribe [::model/get-type])]
+        type @(rf/subscribe [::model/current-banking-type])]
     [:form {:on-submit handle-submit}
      [mui/dialog-title
       [shared/title-only (str "add a "
@@ -103,7 +103,7 @@
 
 (defn panel []
   (let [case-id @(rf/subscribe [::case-model/case-id])
-        type @(rf/subscribe [::model/get-type])]
+        type @(rf/subscribe [::model/current-banking-type])]
     [form/form layout {:accounts [{}]} #(rf/dispatch [::submit! type case-id %]) {}]))
 
 
