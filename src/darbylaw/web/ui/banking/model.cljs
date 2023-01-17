@@ -104,19 +104,28 @@
   (contains? (get-asset-data type) :valuation-letter))
 
 
+(defn get-asset-stage
+  [asset-data]
+  (cond
+    (not (contains? asset-data :notification-letter))
+    :edit
+    
+    (not (some? (get-in asset-data [:notification-letter :review-timestamp])))
+    :notify
+
+    (not (every? #(contains? % :confirmed-values)
+                 (:accounts asset-data)))
+    :valuation
+
+    :else
+    :complete))
+
 (defn get-process-stage []
   (let [dialog @(rf/subscribe [::get-dialog])
         asset-data (get-asset-data (:type dialog))]
     (if (= (:stage dialog) :add)
       :add
-      ;if it contains a buildsoc-id
-      (if (contains? asset-data :notification-letter)
-        (if (some? (get (:notification-letter asset-data) :review-timestamp))
-          (if (contains? (first (:accounts asset-data)) :confirmed-value)
-            :complete
-            :valuation)
-          :notify)
-        :edit))))
+      (get-asset-stage asset-data))))
 
 (defn remove-joint [data]
   (mapv (fn [acc]
