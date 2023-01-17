@@ -252,4 +252,4 @@
 (rf/reg-event-db
   ::hide-dialog
   (fn [db]
-    (assoc-in db [:dialog/banking] nil)))
+    (assoc-in db [:dialog/banking :open] nil)))
