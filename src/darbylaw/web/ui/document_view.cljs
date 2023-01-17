@@ -63,8 +63,9 @@
       (if (not (nil? pdf-view))
         [view-pdf]
         [mui/stack {:spacing 1}
-         (map
-           (fn [btn-params]
+         (map-indexed
+           (fn [idx btn-params]
+             ^{:key idx}
              [mui/box
               [pdf-button btn-params pdf-view]])
            buttons)])]]))

@@ -27,7 +27,6 @@
                       (->> funeral-expenses
                            (map :value)
                            (map parse-float)))]
-    (println (clj->js bank-accounts))
     (- (reduce + assets) (reduce + debts))))
 
 (defn overview-card []

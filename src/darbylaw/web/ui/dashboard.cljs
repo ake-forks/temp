@@ -67,7 +67,7 @@
                      :sx {:font-weight 600}}
      title]
     [mui/divider]
-    body]])
+    (into [:<>] body)]])
 
 (defn asset-add-button [{:keys [title on-click]}]
   [mui/card-action-area {:on-click on-click
@@ -110,7 +110,6 @@
         expenses @(rf/subscribe [::funeral-model/expense-list])]
     [asset-card {:title "funeral expenses"}
      (when account
-       ^{:key :funeral-account}
        [asset-item
         {:title (:title account)
          :value (js/parseFloat (:value account))
@@ -128,16 +127,13 @@
          :icon [mui/skeleton {:variant :circular
                               :width 25}]}])
      (when-not account
-       ^{:key :add-account-button}
        [asset-add-button
         {:title "add funeral account"
          :on-click #(rf/dispatch [::funeral-model/show-funeral-dialog :add-funeral-director])}])
-     ^{:key :add-expense-button}
      [asset-add-button
       {:title "add other expense"
        :on-click #(rf/dispatch [::funeral-model/show-funeral-dialog :add-other])}]
      (when dialog-info
-       ^{:key :funeral-dialog}
        [funeral-dialog/main-dialog])]))
 
 (defn buildsoc-card []

@@ -57,16 +57,6 @@
           :on-success [::submit-success case-id fork-params]
           :on-failure [::submit-failure case-id fork-params]})})))
 
-(rf/reg-event-fx ::submit-success
-  (fn [{:keys [db]} [_ case-id {:keys [path values]}]]
-    {:db (fork/set-submitting db path false)
-     :fx [[:dispatch [::funeral-model/hide-funeral-dialog]]
-          [:dispatch [::case-model/load-case! case-id]]]}))
-
-(rf/reg-event-fx ::submit-failure
-  (fn [{:keys [db]} [_ case-id {:keys [path values]}]]
-    {:db (fork/set-submitting db path false)}))
-
 
 
 ;; >> Dialog
