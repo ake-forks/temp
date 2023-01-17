@@ -186,21 +186,20 @@
         case-id @(rf/subscribe [::case-model/case-id])
         type @(rf/subscribe [::model/get-type])]
     (if (some? asset-id)
-      [mui/box shared/tall-dialog-props
-       [mui/stack {:spacing 1
-                   :direction :row
-                   :sx {:height 1}}
-        ;left side
-        [mui/stack {:spacing 1 :sx {:width 0.5}}
-         (if @model/file-uploading?
-           [reagent-mui.lab.loading-button/loading-button {:loading true :full-width true}]
-           [:iframe {:style {:height "100%"}
-                     :src (str "/api/case/" case-id "/" (name type) "/" (name asset-id) "/notification-pdf")}])]
-        ;right side
-        [mui/stack {:spacing 1 :sx {:width 0.5}}
-         [mui/dialog-title
-          [shared/header type asset-id :notify]]
-         [mui/dialog-content
-          [approve-notification]]
-         [mui/dialog-actions
-          [submit-buttons case-id asset-id]]]]])))
+      [mui/stack {:spacing 1
+                  :direction :row
+                  :sx {:height "95vh"}}
+       ;left side
+       [mui/stack {:spacing 1 :sx {:flex-grow 2}}
+        (if @model/file-uploading?
+          [reagent-mui.lab.loading-button/loading-button {:loading true :full-width true}]
+          [:iframe {:style {:height "100%"}
+                    :src (str "/api/case/" case-id "/" (name type) "/" (name asset-id) "/notification-pdf")}])]
+       ;right side
+       [mui/stack {:spacing 1 :sx {:width 620}}
+        [mui/dialog-title
+         [shared/header type asset-id :notify]]
+        [mui/dialog-content
+         [approve-notification]]
+        [mui/dialog-actions
+         [submit-buttons case-id asset-id]]]])))
