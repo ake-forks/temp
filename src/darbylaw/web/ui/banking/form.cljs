@@ -1,12 +1,12 @@
 (ns darbylaw.web.ui.banking.form
   (:require
-    [darbylaw.web.util.bank :as bank-utils]
     [reagent-mui.components :as mui]
     [reagent.core :as r]
     [re-frame.core :as rf]
     [fork.re-frame :as fork]
     [darbylaw.web.ui :as ui]
-    [darbylaw.web.ui.banking.model :as model])
+    [darbylaw.web.ui.banking.model :as model]
+    [darbylaw.web.ui.banking.validation :as validation])
   (:require-macros [reagent-mui.util :refer [react-component]]))
 
 
@@ -19,7 +19,7 @@
   (model/asset-label :bank (keyword bank-id-str)))
 
 
-(defn buildsoc-select [{:keys [values set-handle-change handle-blur touched errors] :as fork-args}]
+(defn buildsoc-select [{:keys [values set-handle-change handle-blur touched errors]}]
   [mui/autocomplete
    {:options (model/all-institution-ids :buildsoc)
     :value (get values :buildsoc-id)
@@ -32,9 +32,13 @@
                                      {:name :buildsoc-id
                                       :label "building society name"
                                       :required true
-                                      :onBlur handle-blur})])}])
+                                      :onBlur handle-blur
+                                      :error (validation/get-id-error errors touched :buildsoc-id)
+                                      :helperText (if
+                                                    (boolean (validation/get-id-error errors touched :buildsoc-id))
+                                                    "required")})])}])
 
-(defn bank-select [{:keys [values set-handle-change handle-blur touched errors] :as fork-args}]
+(defn bank-select [{:keys [values set-handle-change handle-blur touched errors]}]
   [mui/autocomplete
    {:options (model/all-institution-ids :bank)
     :value (get values :bank-id)
@@ -47,7 +51,11 @@
                                      {:name :bank-id
                                       :label "bank name"
                                       :required true
-                                      :onBlur handle-blur})])}])
+                                      :onBlur handle-blur
+                                      :error (validation/get-id-error errors touched :bank-id)
+                                      :helperText (if
+                                                    (boolean (validation/get-id-error errors touched :bank-id))
+                                                    "required")})])}])
 (defn bank-account-array
   [{:keys [stage errors] :as props}
    {:fieldarray/keys [fields
@@ -72,9 +80,9 @@
                               :on-blur #(handle-blur % idx)
                               :required true
                               :full-width true
-                              :error (boolean (bank-utils/get-account-error errors touched :sort-code idx))
+                              :error (boolean (validation/get-account-error errors touched :sort-code idx))
                               :helper-text (if
-                                             (boolean (bank-utils/get-account-error errors touched :sort-code idx))
+                                             (boolean (validation/get-account-error errors touched :sort-code idx))
                                              "format 00-00-00")}]
 
              [mui/text-field {:name :account-number
@@ -85,9 +93,9 @@
                               :on-blur #(handle-blur % idx)
                               :required true
                               :full-width true
-                              :error (boolean (bank-utils/get-account-error errors touched :account-number idx))
+                              :error (boolean (validation/get-account-error errors touched :account-number idx))
                               :helper-text (if
-                                             (boolean (bank-utils/get-account-error errors touched :account-number idx))
+                                             (boolean (validation/get-account-error errors touched :account-number idx))
                                              "8 digits")}]
 
              [mui/text-field {:name :estimated-value
@@ -96,9 +104,9 @@
                               :on-change #(handle-change % idx)
                               :on-blur #(handle-blur % idx)
                               :full-width true
-                              :error (boolean (bank-utils/get-account-error errors touched :estimated-value idx))
+                              :error (boolean (validation/get-account-error errors touched :estimated-value idx))
                               :helper-text (if
-                                             (boolean (bank-utils/get-account-error errors touched :estimated-value idx))
+                                             (boolean (validation/get-account-error errors touched :estimated-value idx))
                                              "check formatting")
                               :disabled (= stage :valuation)
                               :InputProps
@@ -114,6 +122,10 @@
                                :on-blur #(handle-blur % idx)
                                :required true
                                :full-width true
+                               :error (boolean (validation/get-account-error errors touched :confirmed-value idx))
+                               :helper-text (if
+                                              (boolean (validation/get-account-error errors touched :confirmed-value idx))
+                                              "check formatting")
                                :InputProps
                                {:start-adornment
                                 (r/as-element [mui/input-adornment
@@ -132,12 +144,13 @@
 
 ;accounts can
 (defn buildsoc-account-array
-  [{:keys [stage] :as props}
+  [{:keys [stage errors] :as props}
    {:fieldarray/keys [fields
                       insert
                       remove
                       handle-change
-                      handle-blur]}]
+                      handle-blur
+                      touched]}]
   [mui/stack {:spacing 2}
    (doall
      (->> fields
@@ -161,6 +174,10 @@
                               :required false
                               :full-width true
                               :disabled (= stage :valuation)
+                              :error (boolean (validation/get-account-error errors touched :estimated-value idx))
+                              :helper-text (if
+                                             (boolean (validation/get-account-error errors touched :estimated-value idx))
+                                             "check formatting")
                               :InputProps
                               {:start-adornment
                                (r/as-element [mui/input-adornment
@@ -175,6 +192,10 @@
                                :on-blur #(handle-blur % idx)
                                :required true
                                :full-width true
+                               :error (boolean (validation/get-account-error errors touched :confirmed-value idx))
+                               :helper-text (if
+                                              (boolean (validation/get-account-error errors touched :confirmed-value idx))
+                                              "check formatting")
                                :InputProps
                                {:start-adornment
                                 (r/as-element [mui/input-adornment
@@ -198,7 +219,7 @@
      :bank bank-account-array
      :buildsoc buildsoc-account-array)])
 
-(defn accounts-unknown [{:keys [values handle-change handle-blur touched errors] :as fork-args}]
+(defn accounts-unknown [{:keys [values handle-change]}]
   [mui/form-group
    [mui/form-control-label {
                             :control (r/as-element
@@ -218,19 +239,9 @@
                 :variant :contained :full-width true} left-label]
    [mui/button {:type :submit :variant :contained :full-width true} right-label]])
 
-
-(defn form-component [{:keys [values handle-submit] :as fork-args}]
-  [:form {:on-submit handle-submit}
-   [mui/stack {:spacing 1}
-    [buildsoc-select fork-args]
-    [mui/typography {:variant :body1}]]])
-
-
-
-
 (defonce form-state (r/atom nil))
 
-(defn form [form-component initial-values submit-fn]
+(defn form [form-component initial-values submit-fn validation-fn]
   (r/with-let []
     (let [case-id (-> @(rf/subscribe [::ui/path-params]) :case-id)]
       [fork/form
@@ -239,7 +250,13 @@
         :on-submit submit-fn
         :keywordize-keys true
         :prevent-default? true
-        :initial-values initial-values}
+        :initial-values initial-values
+        :validation (fn [data]
+                      (try
+                        (validation-fn data)
+                        (catch :default e
+                          (js/console.error "Error during validation: " e)
+                          [{:type ::validation-error :error e}])))}
        (fn [fork-args]
          [form-component (ui/mui-fork-args fork-args)])])
     (finally

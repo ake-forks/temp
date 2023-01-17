@@ -7,10 +7,11 @@
     [darbylaw.web.ui.banking.form :as form]
     [darbylaw.web.ui.banking.model :as model]
     [darbylaw.web.ui.case-model :as case-model]
-    [darbylaw.web.ui.banking.shared :as shared]))
+    [darbylaw.web.ui.banking.shared :as shared]
+    [darbylaw.web.ui.banking.validation :as validation]))
 
 (rf/reg-event-fx ::add-success
-  (fn [{:keys [db]} [_ case-id {:keys [path]} response]]
+  (fn [{:keys [db]} [_ case-id {:keys [path]}]]
     {:db (fork/set-submitting db path false)
      :fx [[:dispatch [::model/hide-dialog]]
           [:dispatch [::case-model/load-case! case-id]]]}))
@@ -51,7 +52,7 @@
 
 (defn subheading [type values relationship]
   (case type
-    :bank 
+    :bank
     [mui/typography {:variant :h5}
      (str "To the best of your knowledge, enter the details for your late "
        relationship
@@ -73,9 +74,9 @@
     [:form {:on-submit handle-submit}
      [mui/dialog-title
       [shared/title-only (str "add a "
-                              (case type
-                                :bank "bank"
-                                :buildsoc "building society"))]]
+                           (case type
+                             :bank "bank"
+                             :buildsoc "building society"))]]
      [mui/dialog-content
 
       [mui/box shared/narrow-dialog-props
@@ -104,6 +105,9 @@
 (defn panel []
   (let [case-id @(rf/subscribe [::case-model/case-id])
         type @(rf/subscribe [::model/get-type])]
-    [form/form layout {:accounts [{}]} #(rf/dispatch [::submit! type case-id %]) {}]))
+    [form/form layout {:accounts [{}]} #(rf/dispatch [::submit! type case-id %])
+     (case type
+       :bank validation/add-bank-validation
+       :buildsoc validation/add-buildsoc-validation)]))
 
 

@@ -1,6 +1,7 @@
 (ns darbylaw.web.ui.banking.stage-edit
   (:require
     [darbylaw.web.ui :as ui]
+    [darbylaw.web.ui.banking.validation :as validation]
     [fork.re-frame :as fork]
     [re-frame.core :as rf]
     [reagent-mui.components :as mui]
@@ -80,4 +81,7 @@
   (let [type @(rf/subscribe [::model/get-type])
         case-id @(rf/subscribe [::case-model/case-id])
         values (model/get-asset-data type)]
-    [form/form layout values #(rf/dispatch [::submit! type case-id %])]))
+    [form/form layout values #(rf/dispatch [::submit! type case-id %])
+     (case type
+       :bank validation/add-bank-validation
+       :buildsoc validation/add-buildsoc-validation)]))

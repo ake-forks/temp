@@ -1,5 +1,6 @@
 (ns darbylaw.web.ui.banking.stage-valuation
   (:require
+    [darbylaw.web.ui.banking.validation :as validation]
     [fork.re-frame :as fork]
     [re-frame.core :as rf]
     [reagent.core :as r]
@@ -97,11 +98,14 @@
         [mui/dialog-actions
          [form/submit-buttons {:left-label "cancel" :right-label "submit valuations"
                                :right-disabled (not (and (accounts-valued? (:accounts values))
-                                                         (model/valuation-letter-present? type)))}]]]]]]))
+                                                      (model/valuation-letter-present? type)))}]]]]]]))
 
 
 (defn panel []
   (let [case-id @(rf/subscribe [::case-model/case-id])
         type @(rf/subscribe [::model/get-type])
         values (model/get-asset-data type)]
-    [form/form layout values #(rf/dispatch [::submit! type case-id %])]))
+    [form/form layout values #(rf/dispatch [::submit! type case-id %])
+     (case type
+       :bank validation/value-bank-validation
+       :buildsoc validation/value-buildsoc-validation)]))
