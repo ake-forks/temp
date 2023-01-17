@@ -30,7 +30,7 @@
                             :sx {:padding-top "0.5rem" :padding-bottom "0.5rem"}}
       [mui/stack {:direction :row :spacing 1}
        [mui/box {:component :img
-                 :src (str "/images/bank-logos/" (:icon bank-data))
+                 :src (str "/images/bank-logos/" (:logo bank-data))
                  :sx {:width 25 :mr 1}}]
        [mui/stack {:spacing 0.5 :direction :row :justify-content :space-between :style {:width "100%"}}
         [mui/typography {:variant :body1} (:common-name bank-data)]]
