@@ -83,7 +83,7 @@
        "Upload now!"]]
      [mui/stack {:spacing 1}
       (cond
-        (nil? post-tasks) "Loading..."
+        (nil? post-tasks) [:<>]
         (empty? post-tasks) "No mailing tasks"
         :else
         (for [{case-data :case

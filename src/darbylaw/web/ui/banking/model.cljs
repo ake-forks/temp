@@ -95,8 +95,9 @@
   (let [asset-data (get-asset-data type)]
     (get-in asset-data [:notification-letter :id])))
 
-(defn get-author [type]
-  (let [asset-data (get-asset-data type)]
+(rf/reg-sub ::author
+  :<- [::asset-data]
+  (fn [asset-data]
     (get-in asset-data [:notification-letter :author])))
 
 (defn valuation-letter-present? [type]
@@ -202,17 +203,18 @@
                  :on-close #(reset! upload-error false)}
    [mui/alert {:severity "error" :on-close #(reset! upload-error false)}
     (str "There was a problem uploading this file. " message)]])
-(rf/reg-event-fx ::load-case-success
-  (fn [_ _]
+
+(ui/reg-fx+event ::reset-file-uploading
+  (fn [_]
     (reset! file-uploading? false)))
+
 (rf/reg-event-fx ::upload-success
   (fn [_ [_ case-id]]
     {:dispatch [::case-model/load-case! case-id
-                {:on-success [::load-case-success]
-                 :on-failure [::load-case-failure]}]}))
+                {:on-success [::reset-file-uploading]}]}))
 
-(rf/reg-event-fx ::upload-failure
-  (fn [_ _]
+(ui/reg-fx+event ::upload-failure
+  (fn [_]
     (reset! file-uploading? false)
     (reset! upload-error true)))
 
