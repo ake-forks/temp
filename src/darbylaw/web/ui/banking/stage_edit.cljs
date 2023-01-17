@@ -44,9 +44,9 @@
 
 (rf/reg-event-fx ::submit!
   (fn [{:keys [db]} [_ type case-id fork-params]]
-    (if (= type "bank")
-      {:dispatch [::complete-bank case-id fork-params]}
-      {:dispatch [::complete-buildsoc case-id fork-params]})))
+    (case type
+      :bank {:dispatch [::complete-bank case-id fork-params]}
+      :buildsoc {:dispatch [::complete-buildsoc case-id fork-params]})))
 
 (defn layout [{:keys [values handle-submit] :as fork-args}]
   (let [current-case @(rf/subscribe [::case-model/current-case])
@@ -67,7 +67,7 @@
             (if-let [name (model/asset-label type asset-id)]
               (str "'s accounts with " name)
               "'s accounts."))]
-         (if (= type "buildsoc")
+         (if (= type :buildsoc)
            [form/accounts-unknown fork-args])
          (if (:accounts-unknown values)
            [:<>]

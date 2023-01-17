@@ -45,23 +45,26 @@
         :on-failure [::add-failure fork-params]})}))
 (rf/reg-event-fx ::submit!
   (fn [{:keys [db]} [_ type case-id fork-params]]
-    (if (= type "bank")
-      {:dispatch [::add-bank case-id fork-params]}
-      {:dispatch [::add-buildsoc case-id fork-params]})))
+    (case type
+      :bank {:dispatch [::add-bank case-id fork-params]}
+      :buildsoc {:dispatch [::add-buildsoc case-id fork-params]})))
 
 (defn subheading [type values relationship]
-  (if (= type "bank")
+  (case type
+    :bank 
     [mui/typography {:variant :h5}
      (str "To the best of your knowledge, enter the details for your late "
        relationship
        (if (some? (:bank-id values))
-         (str "'s accounts with " (model/asset-label "bank" (keyword (:bank-id values))))
+         (str "'s accounts with " (model/asset-label :bank (keyword (:bank-id values))))
          (str "'s accounts.")))]
+
+    :buildsoc
     [mui/typography {:variant :h5}
      (str "To the best of your knowledge, enter the details for your late "
        relationship
        (if (some? (:buildsoc-id values))
-         (str "'s accounts with " (model/asset-label "buildsoc" (keyword (:buildsoc-id values))))
+         (str "'s accounts with " (model/asset-label :buildsoc (keyword (:buildsoc-id values))))
          (str "'s accounts.")))]))
 
 (defn layout [{:keys [values handle-submit] :as fork-args}]
@@ -69,9 +72,10 @@
         type @(rf/subscribe [::model/get-type])]
     [:form {:on-submit handle-submit}
      [mui/dialog-title
-      [shared/title-only (str "add a " (case type
-                                         "bank" "bank"
-                                         "buildsoc" "building society"))]]
+      [shared/title-only (str "add a "
+                              (case type
+                                :bank "bank"
+                                :buildsoc "building society"))]]
      [mui/dialog-content
 
       [mui/box shared/narrow-dialog-props
@@ -80,16 +84,16 @@
         [mui/stack {:justify-content :space-between
                     :sx {:height 1}}
          [mui/stack {:spacing 2}
-          (if (= type "bank")
-            [form/bank-select fork-args]
-            [form/buildsoc-select fork-args])
+          (case type
+            :bank [form/bank-select fork-args]
+            :buildsoc [form/buildsoc-select fork-args])
           [subheading type values (-> current-case :deceased :relationship)]
           [mui/typography {:variant :body1}
            "If you don't have any account details, don't worry
          - organisations can usually retrieve the information they need
          with just a name and date of birth.
          If this is the case please check the box below."]
-          (if (= type "buildsoc")
+          (if (= type :buildsoc)
             [form/accounts-unknown fork-args])
           (if (:accounts-unknown values)
             [:<>]

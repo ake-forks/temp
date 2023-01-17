@@ -12,19 +12,19 @@
 (defn institution-list [type]
   (if (some? type)
     (case type
-      "buildsoc" buildsoc-list/buildsoc-list
-      "bank" bank-list/bank-list)))
+      :buildsoc buildsoc-list/buildsoc-list
+      :bank bank-list/bank-list)))
+
 (defn institution-list-by-id [type]
   (if (some? type)
     (case type
-      "buildsoc" (into {} (map (juxt :id identity) buildsoc-list/buildsoc-list))
-      "bank" (into {} (map (juxt :id identity) bank-list/bank-list)))))
-
+      :buildsoc (into {} (map (juxt :id identity) buildsoc-list/buildsoc-list))
+      :bank (into {} (map (juxt :id identity) bank-list/bank-list)))))
 
 (defn all-institution-ids [type]
   (case type
-    "buildsoc" (map :id buildsoc-list/buildsoc-list)
-    "bank" (map :id bank-list/bank-list)))
+    :buildsoc (map :id buildsoc-list/buildsoc-list)
+    :bank (map :id bank-list/bank-list)))
 
 (defn asset-label [type asset-id]
   (get-in (institution-list-by-id type) [asset-id :common-name]))
@@ -73,9 +73,9 @@
 
 (defn get-asset-data [type]
   (if (some? type)
-    (if (= type "bank")
-      @(rf/subscribe [::current-bank-data])
-      @(rf/subscribe [::current-buildsoc-data]))))
+    (case type
+      :bank @(rf/subscribe [::current-bank-data])
+      :buildsoc @(rf/subscribe [::current-buildsoc-data]))))
 
 (rf/reg-sub ::asset-data
   :<- [::banking-type]
@@ -113,7 +113,7 @@
     (not (some? (get-in asset-data [:notification-letter :review-timestamp])))
     :notify
 
-    (not (every? #(contains? % :confirmed-values)
+    (not (every? #(contains? % :confirmed-value)
                  (:accounts asset-data)))
     :valuation
 
@@ -163,15 +163,15 @@
 (rf/reg-event-fx ::generate-notification
   (fn [{:keys [db]} [_ case-id values]]
     (let [type (if (some? (:bank-id values))
-                 "bank"
-                 "buildsoc")
-          asset-id (if (= type "bank")
-                     (:bank-id values)
-                     (:buildsoc-id values))]
+                 :bank
+                 :buildsoc)
+          asset-id (case type
+                     :bank (:bank-id values)
+                     :buildsoc (:buildsoc-id values))]
       {:http-xhrio
        (ui/build-http
          {:method :post
-          :uri (str "/api/case/" case-id "/" type "/" (name asset-id) "/generate-notification-letter")
+          :uri (str "/api/case/" case-id "/" (name type) "/" (name asset-id) "/generate-notification-letter")
           :on-success [::generate-notification-success case-id asset-id]
           :on-failure [::generate-notification-failure case-id asset-id]})})))
 
@@ -185,7 +185,7 @@
     {:http-xhrio
      (ui/build-http
        {:method :post
-        :uri (str "/api/case/" case-id "/" type "/" (name asset-id) "/approve-notification-letter/" letter-id)
+        :uri (str "/api/case/" case-id "/" (name type) "/" (name asset-id) "/approve-notification-letter/" letter-id)
         :on-success [::approve-notification-letter-success case-id asset-id]})}))
 
 (rf/reg-event-fx ::review-notification-letter--success
@@ -197,7 +197,7 @@
     {:http-xhrio
      (ui/build-http
        {:method :post
-        :uri (str "/api/case/" case-id "/" type "/" (name asset-id)
+        :uri (str "/api/case/" case-id "/" (name type) "/" (name asset-id)
                "/notification-letter/" letter-id "/review")
         :params {:send-action send-action}
         :on-success [::review-notification-letter--success case-id asset-id]})}))
@@ -232,7 +232,7 @@
     {:http-xhrio
      (ui/build-http
        {:method :post
-        :uri (str "/api/case/" case-id "/" type "/" (name asset-id) suffix)
+        :uri (str "/api/case/" case-id "/" (name type) "/" (name asset-id) suffix)
         :body (doto (js/FormData.)
                 (.append "file" file)
                 (.append "filename" (.-name file)))

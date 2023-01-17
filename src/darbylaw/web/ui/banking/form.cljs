@@ -12,16 +12,16 @@
 
 (defn buildsoc-label [buildsoc-id-str]
   (assert (string? buildsoc-id-str))
-  (model/asset-label "buildsoc" (keyword buildsoc-id-str)))
+  (model/asset-label :buildsoc (keyword buildsoc-id-str)))
 
 (defn bank-label [bank-id-str]
   (assert (string? bank-id-str))
-  (model/asset-label "bank" (keyword bank-id-str)))
+  (model/asset-label :bank (keyword bank-id-str)))
 
 
 (defn buildsoc-select [{:keys [values set-handle-change handle-blur touched errors] :as fork-args}]
   [mui/autocomplete
-   {:options (model/all-institution-ids "buildsoc")
+   {:options (model/all-institution-ids :buildsoc)
     :value (get values :buildsoc-id)
     :getOptionLabel buildsoc-label
     :onChange (fn [_evt new-value]
@@ -36,7 +36,7 @@
 
 (defn bank-select [{:keys [values set-handle-change handle-blur touched errors] :as fork-args}]
   [mui/autocomplete
-   {:options (model/all-institution-ids "bank")
+   {:options (model/all-institution-ids :bank)
     :value (get values :bank-id)
     :getOptionLabel bank-label
     :onChange (fn [_evt new-value]
@@ -126,7 +126,7 @@
                 :full-width false
                 :start-icon (r/as-element [ui/icon-add-circle])}
     (str "add another "
-      (if-let [bank-name (model/asset-label "bank" (get-in props [:values :bank-id]))]
+      (if-let [bank-name (model/asset-label :bank (get-in props [:values :bank-id]))]
         (str bank-name " account")
         "account"))]])
 
@@ -187,18 +187,16 @@
                 :full-width false
                 :start-icon (r/as-element [ui/icon-add-circle])}
     (str "add another "
-      (if-let [buildsoc-name (model/asset-label "buildsoc" (get-in props [:values :buildsoc-id]))]
+      (if-let [buildsoc-name (model/asset-label :buildsoc (get-in props [:values :buildsoc-id]))]
         (str buildsoc-name " account")
         "account"))]])
 
 (defn account-array-component [type fork-args]
-  (if (= type "bank")
-    [fork/field-array {:props fork-args
-                       :name :accounts}
-     bank-account-array]
-    [fork/field-array {:props fork-args
-                       :name :accounts}
-     buildsoc-account-array]))
+  [fork/field-array {:props fork-args
+                     :name :accounts}
+   (case type
+     :bank bank-account-array
+     :buildsoc buildsoc-account-array)])
 
 (defn accounts-unknown [{:keys [values handle-change handle-blur touched errors] :as fork-args}]
   [mui/form-group

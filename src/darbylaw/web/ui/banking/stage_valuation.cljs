@@ -45,9 +45,9 @@
 
 (rf/reg-event-fx ::submit!
   (fn [{:keys [db]} [_ type case-id fork-params]]
-    (if (= type "bank")
-      {:dispatch [::value-bank-accounts case-id fork-params]}
-      {:dispatch [::value-buildsoc-accounts case-id fork-params]})))
+    (case type
+      :bank {:dispatch [::value-bank-accounts case-id fork-params]}
+      :buildsoc {:dispatch [::value-buildsoc-accounts case-id fork-params]})))
 
 (defn accounts-valued? [accounts]
   (and
@@ -56,7 +56,6 @@
 
 (defn layout [{:keys [handle-submit values] :as fork-args}]
   (let [current-case @(rf/subscribe [::case-model/current-case])
-        dialog-data @(rf/subscribe [::model/get-dialog])
         case-id @(rf/subscribe [::case-model/case-id])
         type @(rf/subscribe [::model/get-type])
         asset-id @(rf/subscribe [::model/current-asset-id])
@@ -70,13 +69,13 @@
        [mui/stack {:spacing 1 :sx {:width 0.5}}
         (if (model/valuation-letter-present? type)
           [:iframe {:style {:height "100%"}
-                    :src (str "/api/case/" case-id "/" type "/" (name asset-id) "/valuation-pdf")}]
+                    :src (str "/api/case/" case-id "/" (name type) "/" (name asset-id) "/valuation-pdf")}]
           [mui/typography {:variant :h6} "upload a PDF of the valuation"])]
 
        ;right side
        [mui/stack {:spacing 1 :sx {:width 0.5}}
         [mui/dialog-title
-         [shared/header type (:id dialog-data) :valuation]]
+         [shared/header type asset-id :valuation]]
         [mui/dialog-content
          [mui/stack {:spacing 2}
           [mui/typography {:variant :body1}
@@ -98,7 +97,7 @@
         [mui/dialog-actions
          [form/submit-buttons {:left-label "cancel" :right-label "submit valuations"
                                :right-disabled (not (and (accounts-valued? (:accounts values))
-                                                      (model/valuation-letter-present? type)))}]]]]]]))
+                                                         (model/valuation-letter-present? type)))}]]]]]]))
 
 
 (defn panel []

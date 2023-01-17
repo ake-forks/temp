@@ -36,7 +36,9 @@
 
 (defn banking-task [type {:keys [bank-id] :as asset-data}]
   (let [stage (banking-model/get-asset-stage asset-data)
-        id (get asset-data (if (= type "bank") :bank-id :buildsoc-id))]
+        id (get asset-data (case type
+                             :bank :bank-id
+                             :buildsoc :buildsoc-id))]
     (when-not (= stage :complete)
       [task-item
        {:title (str "tasks for "
@@ -75,6 +77,6 @@
     [mui/stack {:sx {:overflow-y :auto :max-height 280}}
      [case-tasks @(rf/subscribe [::case-model/current-case])]
      (for [bank @(rf/subscribe [::banking-model/banks])]
-       [banking-task "bank" bank])
+       [banking-task :bank bank])
      (for [bank @(rf/subscribe [::banking-model/building-societies])]
-       [banking-task "buildsoc" bank])]]])
+       [banking-task :buildsoc bank])]]])

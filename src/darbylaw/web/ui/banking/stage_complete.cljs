@@ -18,9 +18,9 @@
       [pdf-view/view-pdf-dialog
        {:buttons
         [{:name "notification letter sent"
-          :source (str "/api/case/" case-id "/" type "/" (name asset-id) "/notification-pdf")}
+          :source (str "/api/case/" case-id "/" (name type) "/" (name asset-id) "/notification-pdf")}
          {:name "valuation letter received"
-          :source (str "/api/case/" case-id "/" type "/" (name asset-id) "/valuation-pdf")}]}]]]))
+          :source (str "/api/case/" case-id "/" (name type) "/" (name asset-id) "/valuation-pdf")}]}]]]))
 (defn summary-panel []
   (let [asset-id @(rf/subscribe [::model/current-asset-id])
         type @(rf/subscribe [::model/get-type])
@@ -36,18 +36,20 @@
         (model/asset-label type asset-id)
         ". Using the buttons on the left you can view all the correspondence
         sent and received in relation to the following accounts.")]
-     (if (= type "bank")
+     (case type
+       :bank 
        [shared/bank-accounts-view (:accounts asset-data) {:estimated? false :confirmed? true}]
+       :buildsoc 
        [shared/buildsoc-accounts-view (:accounts asset-data) {:estimated? false :confirmed? true}])]))
 
 
 (defn panel []
-  (let [buildsoc-id (:id @(rf/subscribe [::model/get-dialog]))
+  (let [asset-id @(rf/subscribe [::model/current-asset-id])
         pdf-view @(rf/subscribe [::pdf-view/pdf-view])
         type @(rf/subscribe [::model/get-type])]
     [mui/box
      [mui/dialog-title
-      [shared/header type buildsoc-id :complete]]
+      [shared/header type asset-id :complete]]
      [mui/dialog-content
       [mui/box (if (nil? pdf-view)
                  shared/narrow-dialog-props
@@ -55,7 +57,7 @@
        [mui/stack {:direction :row :spacing 2}
         ;left side
         [mui/box {:sx {:width 0.5}}
-         (if (some? buildsoc-id)
+         (if (some? asset-id)
            [pdf-panel])]
 
         ;right side

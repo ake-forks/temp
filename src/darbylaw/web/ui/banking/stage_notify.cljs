@@ -103,7 +103,7 @@
     {:http-xhrio
      (ui/build-http
        {:method :post
-        :uri (str "/api/case/" case-id "/" type "/" (name asset-id)
+        :uri (str "/api/case/" case-id "/" (name type) "/" (name asset-id)
                "/notification-letter/" letter-id "/regenerate")
         :on-success [::regenerate-finished case-id]
         :on-failure [::regenerate-finished case-id]})}))
@@ -114,7 +114,7 @@
         asset-id @(rf/subscribe [::model/current-asset-id])
         type @(rf/subscribe [::model/get-type])]
     [mui/stack {:direction :row :spacing 1}
-     [mui/button {:href (str "/api/case/" case-id "/" type "/" (name asset-id) "/notification-docx")
+     [mui/button {:href (str "/api/case/" case-id "/" (name type) "/" (name asset-id) "/notification-docx")
                   :download (str case-reference " - " (name asset-id) " - notification.docx")
                   :variant :outlined
                   :full-width true
@@ -166,7 +166,7 @@
        [mui/stack {:direction :row
                    :spacing 1
                    :sx {:mt 1}}
-        [mui/button {:href (str "/api/case/" case-id "/" asset-type "/" (name asset-id) "/notification-docx")
+        [mui/button {:href (str "/api/case/" case-id "/" (name asset-type) "/" (name asset-id) "/notification-docx")
                      :download (str case-reference " - " (name asset-id) " - notification.docx")
                      :variant :outlined
                      :full-width true
@@ -182,7 +182,7 @@
        [fake-options]])))
 
 (defn panel []
-  (let [asset-id (:id @(rf/subscribe [::model/get-dialog]))
+  (let [asset-id @(rf/subscribe [::model/current-asset-id])
         case-id @(rf/subscribe [::case-model/case-id])
         type @(rf/subscribe [::model/get-type])]
     (if (some? asset-id)
@@ -195,7 +195,7 @@
          (if @model/file-uploading?
            [reagent-mui.lab.loading-button/loading-button {:loading true :full-width true}]
            [:iframe {:style {:height "100%"}
-                     :src (str "/api/case/" case-id "/" type "/" (name asset-id) "/notification-pdf")}])]
+                     :src (str "/api/case/" case-id "/" (name type) "/" (name asset-id) "/notification-pdf")}])]
         ;right side
         [mui/stack {:spacing 1 :sx {:width 0.5}}
          [mui/dialog-title
