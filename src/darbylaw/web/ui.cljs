@@ -76,6 +76,15 @@
               :icon (r/as-element [icon-help-outline {:fontSize :inherit}])}
    message])
 
+(defn reg-fx+event
+  "Registers an effect like re-frame's reg-fx, and registers
+  an event with the same id that runs the effect."
+  [id handler]
+  (rf/reg-fx id handler)
+  (rf/reg-event-fx id
+    (fn [_ [_ v]]
+      {:fx [[id v]]})))
+
 (defn coerce-route [route]
   (cond
     (vector? route) route
