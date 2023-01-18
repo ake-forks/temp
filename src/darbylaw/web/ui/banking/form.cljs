@@ -18,26 +18,6 @@
   (assert (string? bank-id-str))
   (model/asset-label :bank (keyword bank-id-str)))
 
-
-(defn buildsoc-select [{:keys [values set-handle-change handle-blur touched errors]}]
-  [mui/autocomplete
-   {:options (model/all-institution-ids :buildsoc)
-    :value (get values :buildsoc-id)
-    :getOptionLabel buildsoc-label
-    :onChange (fn [_evt new-value]
-                (set-handle-change {:value new-value
-                                    :path [:buildsoc-id]}))
-    :renderInput (react-component [props]
-                   [mui/text-field (merge props
-                                     {:name :buildsoc-id
-                                      :label "building society name"
-                                      :required true
-                                      :onBlur handle-blur
-                                      :error (validation/get-id-error errors touched :buildsoc-id)
-                                      :helperText (if
-                                                    (boolean (validation/get-id-error errors touched :buildsoc-id))
-                                                    "required")})])}])
-
 (defn bank-select [{:keys [values set-handle-change handle-blur touched errors]}]
   [mui/autocomplete
    {:options (model/all-institution-ids :bank)
@@ -52,12 +32,26 @@
                                       :label "bank name"
                                       :required true
                                       :onBlur handle-blur
-                                      :error (validation/get-id-error errors touched :bank-id)
-                                      :helperText (if
-                                                    (boolean (validation/get-id-error errors touched :bank-id))
-                                                    "required")})])}])
+                                      })])}])
+
+(defn buildsoc-select [{:keys [values set-handle-change handle-blur touched errors]}]
+  [mui/autocomplete
+   {:options (model/all-institution-ids :buildsoc)
+    :value (get values :buildsoc-id)
+    :getOptionLabel buildsoc-label
+    :onChange (fn [_evt new-value]
+                (set-handle-change {:value new-value
+                                    :path [:buildsoc-id]}))
+    :renderInput (react-component [props]
+                   [mui/text-field (merge props
+                                     {:name :buildsoc-id
+                                      :label "building society name"
+                                      :required true
+                                      :onBlur handle-blur})])}])
+
+
 (defn bank-account-array
-  [{:keys [stage errors] :as props}
+  [{:keys [stage errors values] :as props}
    {:fieldarray/keys [fields
                       insert
                       remove
@@ -165,7 +159,11 @@
                               :on-change #(handle-change % idx)
                               :on-blur #(handle-blur % idx)
                               :required true
-                              :full-width true}]
+                              :full-width true
+                              :error (boolean (validation/get-account-error errors touched :roll-number idx))
+                              :helper-text (if
+                                             (boolean (validation/get-account-error errors touched :roll-number idx))
+                                             "required")}]
              [mui/text-field {:name :estimated-value
                               :value (get field :estimated-value)
                               :label "estimated value"
@@ -230,14 +228,17 @@
                                                       :onChange handle-change}])
                             :label "account details not known"}]])
 
-(defn submit-buttons [{:keys [left-label right-label]}]
+(defn submit-buttons [{:keys [left-label right-label right-disabled]}]
   [mui/stack {:spacing 1
               :direction :row
               :justify-content :space-between
               :sx {:width 1}}
    [mui/button {:onClick #(rf/dispatch [::model/hide-dialog])
                 :variant :contained :full-width true} left-label]
-   [mui/button {:type :submit :variant :contained :full-width true} right-label]])
+   [mui/button {:type :submit
+                :variant :contained
+                :full-width true
+                :disabled right-disabled} right-label]])
 
 (defonce form-state (r/atom nil))
 

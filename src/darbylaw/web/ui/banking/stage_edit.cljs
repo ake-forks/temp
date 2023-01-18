@@ -44,7 +44,7 @@
         :on-failure [::complete-failure fork-params]})}))
 
 (rf/reg-event-fx ::submit!
-  (fn [{:keys [db]} [_ type case-id fork-params]]
+  (fn [_ [_ type case-id fork-params]]
     (case type
       :bank {:dispatch [::complete-bank case-id fork-params]}
       :buildsoc {:dispatch [::complete-buildsoc case-id fork-params]})))
@@ -74,7 +74,7 @@
            [:<>]
            [form/account-array-component type fork-args])]]]]
      [mui/dialog-actions
-      [shared/submit-buttons {:left-label "cancel" :right-label "accounts complete"}]]]))
+      [form/submit-buttons {:left-label "cancel" :right-label "accounts complete" :right-disabled false}]]]))
 
 
 (defn panel []
