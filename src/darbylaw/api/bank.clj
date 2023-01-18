@@ -9,17 +9,23 @@
 (defn update-bank-accounts [op {:keys [xtdb-node user path-params body-params]}]
   (let [bank-id (:bank-id body-params)
         accounts (:accounts body-params)
+        accounts-unknown (:accounts-unknown body-params)
         case-id (parse-uuid (:case-id path-params))
         asset-id {:type :probate.bank-accounts
                   :case-id case-id
                   :bank-id bank-id}]
-    (when (seq accounts)
+    (when (or accounts-unknown (seq accounts))
       (xt-util/exec-tx xtdb-node
         (concat
           (tx-fns/put-unique (merge asset-id
                                {:xt/id asset-id}))
           (case op
-            :add (tx-fns/append asset-id [:accounts] accounts)
+            :add
+            (if accounts-unknown
+              (tx-fns/set-values asset-id
+                {:accounts accounts
+                 :accounts-unknown accounts-unknown})
+              (tx-fns/append asset-id [:accounts] accounts))
             :update (tx-fns/set-value asset-id [:accounts] accounts))
           (tx-fns/append-unique case-id [:bank-accounts] [asset-id])
           (case-history/put-event {:event :updated.bank-accounts

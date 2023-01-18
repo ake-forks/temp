@@ -35,18 +35,21 @@
         asset-id {:type :probate.buildsoc-accounts
                   :case-id case-id
                   :buildsoc-id buildsoc-id}]
-    (when (seq accounts)
+    (when (or accounts-unknown (seq accounts))
       (xt-util/exec-tx xtdb-node
         (concat
           (tx-fns/put-unique (merge asset-id
                                {:xt/id asset-id}))
           (case op
-            :add (if (= true accounts-unknown)
-                   (tx-fns/set-value asset-id [:accounts-unknown] accounts-unknown)
-                   (tx-fns/append asset-id [:accounts] accounts))
-            :update (if (= true accounts-unknown)
-                      (set-accounts-unknown asset-id)
-                      (tx-fns/set-value asset-id [:accounts] accounts))
+            :add
+            (if accounts-unknown
+              (tx-fns/set-values asset-id
+                {:accounts accounts
+                 :accounts-unknown accounts-unknown})
+              (tx-fns/append asset-id [:accounts] accounts))
+            :update (tx-fns/set-values asset-id
+                      {:accounts accounts
+                       :accounts-unknown accounts-unknown})
             :complete (update-and-complete asset-id accounts accounts-unknown)
             :valuation (update-and-complete asset-id accounts))
           (tx-fns/append-unique case-id [:buildsoc-accounts] [asset-id])
