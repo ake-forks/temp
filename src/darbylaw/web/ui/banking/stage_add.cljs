@@ -52,7 +52,7 @@
 
 (defn subheading [type values relationship]
   (case type
-    :bank 
+    :bank
     [mui/typography {:variant :h5}
      (str "To the best of your knowledge, enter the details for your late "
        relationship
@@ -104,7 +104,7 @@
 
 (defn panel []
   (let [case-id @(rf/subscribe [::case-model/case-id])
-        type @(rf/subscribe [::model/get-type])]
+        type @(rf/subscribe [::model/current-banking-type])]
     [form/form layout {:accounts [{}]} #(rf/dispatch [::submit! type case-id %])
      (case type
        :bank validation/add-bank-validation
