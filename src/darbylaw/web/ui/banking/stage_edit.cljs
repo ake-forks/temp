@@ -1,6 +1,7 @@
 (ns darbylaw.web.ui.banking.stage-edit
   (:require
     [darbylaw.web.ui :as ui]
+    [darbylaw.web.ui.banking.validation :as validation]
     [fork.re-frame :as fork]
     [re-frame.core :as rf]
     [reagent-mui.components :as mui]
@@ -73,11 +74,14 @@
            [:<>]
            [form/account-array-component type fork-args])]]]]
      [mui/dialog-actions
-      [shared/submit-buttons {:left-label "cancel" :right-label "accounts complete"}]]]))
+      [form/submit-buttons {:left-label "cancel" :right-label "accounts complete" :right-disabled false}]]]))
 
 
 (defn panel []
   (let [type @(rf/subscribe [::model/current-banking-type])
         case-id @(rf/subscribe [::case-model/case-id])
         values @(rf/subscribe [::model/current-asset-data])]
-    [form/form layout values #(rf/dispatch [::submit! type case-id %])]))
+    [form/form layout values #(rf/dispatch [::submit! type case-id %])
+     (case type
+       :bank validation/add-bank-validation
+       :buildsoc validation/add-buildsoc-validation)]))
