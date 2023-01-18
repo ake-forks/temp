@@ -1,5 +1,6 @@
 (ns darbylaw.web.ui.dashboard
   (:require
+    [clojure.string :as str]
     [reagent-mui.components :as mui]
     [darbylaw.web.ui.app-layout :as c]
     [darbylaw.web.ui :as ui]
@@ -35,12 +36,16 @@
        [mui/stack {:spacing 0.5 :direction :row :justify-content :space-between :style {:width "100%"}}
         [mui/typography {:variant :body1} (:common-name bank-data)]]
        [mui/typography {:variant :body1 :sx {:font-weight :bold}}
-        (str "£" (format/format "%.2f"
-                   (reduce + (map (fn [account]
-                                    (if (clojure.string/blank? (:estimated-value account))
-                                      0
-                                      (js/parseFloat (:estimated-value account)))) accounts))))]]]
-
+        (->> accounts
+             (map #(if-let [confirmed-value (:confirmed-value %)]
+                     confirmed-value
+                     (:estimated-value %)))
+             (map #(if (str/blank? %)
+                     0
+                     (js/parseFloat %)))
+             (reduce +)
+             (format/format "%.2f")
+             (str "£"))]]]
      [mui/divider {:variant "middle"}]]))
 
 (defn add-bank []
@@ -145,7 +150,15 @@
          (let [id (:buildsoc-id buildsoc)]
            ^{:key id}
            [asset-item {:title (banking-model/asset-label :buildsoc id)
-                        :value (reduce + (map (fn [acc] (js/parseInt (:estimated-value acc))) (:accounts buildsoc)))
+                        :value (->> buildsoc
+                                    :accounts
+                                    (map #(if-let [confirmed-value (:confirmed-value %)]
+                                            confirmed-value
+                                            (:estimated-value %)))
+                                    (map #(if (str/blank? %)
+                                            0
+                                            (js/parseFloat %)))
+                                    (reduce +))
                         :on-click #(rf/dispatch [::banking-model/show-process-dialog :buildsoc id])}]))
        (:buildsoc-accounts current-case))
      [asset-add-button

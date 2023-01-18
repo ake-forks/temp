@@ -4,7 +4,7 @@
     [re-frame.core :as rf]
     [reagent.format :as format]
     [darbylaw.web.theme :as theme]
-    [darbylaw.web.ui.case-model :as case-model]
+    [darbylaw.web.ui.banking.model :as bank-model]
     [darbylaw.web.ui.funeral.model :as funeral-model]
     [clojure.string :as str]))
 
@@ -15,13 +15,16 @@
     (js/parseFloat s)))
 
 (defn get-value []
-  (let [bank-accounts (:bank-accounts @(rf/subscribe [::case-model/current-case]))
+  (let [bank-accounts @(rf/subscribe [::bank-model/banks])
+        buildsoc-accounts @(rf/subscribe [::bank-model/building-societies])
         funeral-account @(rf/subscribe [::funeral-model/account])
         funeral-expenses @(rf/subscribe [::funeral-model/expense-list])
         
-        assets (->> bank-accounts
+        assets (->> (concat bank-accounts buildsoc-accounts)
                     (mapcat :accounts)
-                    (map :estimated-value)
+                    (map #(if-let [confirmed-value (:confirmed-value %)]
+                            confirmed-value
+                            (:estimated-value %)))
                     (map parse-float))
         debts (concat [(-> funeral-account :value parse-float)]
                       (->> funeral-expenses

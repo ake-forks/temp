@@ -44,15 +44,15 @@
         :on-failure [::complete-failure fork-params]})}))
 
 (rf/reg-event-fx ::submit!
-  (fn [_ [_ type case-id fork-params]]
+  (fn [{:keys [db]} [_ type case-id fork-params]]
     (case type
       :bank {:dispatch [::complete-bank case-id fork-params]}
       :buildsoc {:dispatch [::complete-buildsoc case-id fork-params]})))
 
 (defn layout [{:keys [values handle-submit] :as fork-args}]
   (let [current-case @(rf/subscribe [::case-model/current-case])
-        asset-id @(rf/subscribe [::model/current-asset-id])
-        type @(rf/subscribe [::model/get-type])]
+        asset-id @(rf/subscribe [::model/current-banking-id])
+        type @(rf/subscribe [::model/current-banking-type])]
     [:form {:on-submit handle-submit}
      [mui/dialog-title
       [shared/header type asset-id :edit]]
@@ -78,9 +78,9 @@
 
 
 (defn panel []
-  (let [type @(rf/subscribe [::model/get-type])
+  (let [type @(rf/subscribe [::model/current-banking-type])
         case-id @(rf/subscribe [::case-model/case-id])
-        values (model/get-asset-data type)]
+        values @(rf/subscribe [::model/current-asset-data])]
     [form/form layout values #(rf/dispatch [::submit! type case-id %])
      (case type
        :bank validation/add-bank-validation

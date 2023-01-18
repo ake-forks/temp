@@ -9,9 +9,9 @@
 
 
 (defn pdf-panel []
-  (let [asset-id @(rf/subscribe [::model/current-asset-id])
+  (let [asset-id @(rf/subscribe [::model/current-banking-id])
         case-id @(rf/subscribe [::case-model/case-id])
-        type @(rf/subscribe [::model/get-type])]
+        type @(rf/subscribe [::model/current-banking-type])]
     [mui/stack {:spacing 1}
      ;TODO add some kind of loading filler
      [mui/typography {:variant :h6} "correspondence"
@@ -21,10 +21,11 @@
           :source (str "/api/case/" case-id "/" (name type) "/" (name asset-id) "/notification-pdf")}
          {:name "valuation letter received"
           :source (str "/api/case/" case-id "/" (name type) "/" (name asset-id) "/valuation-pdf")}]}]]]))
+
 (defn summary-panel []
-  (let [asset-id @(rf/subscribe [::model/current-asset-id])
-        type @(rf/subscribe [::model/get-type])
-        asset-data (model/get-asset-data type)
+  (let [asset-id @(rf/subscribe [::model/current-banking-id])
+        type @(rf/subscribe [::model/current-banking-type])
+        asset-data @(rf/subscribe [::model/current-asset-data])
         relationship @(rf/subscribe [::case-model/relationship])]
     [mui/stack {:spacing 1}
      [mui/typography {:variant :h6} "summary"]
@@ -37,16 +38,16 @@
         ". Using the buttons on the left you can view all the correspondence
         sent and received in relation to the following accounts.")]
      (case type
-       :bank 
+       :bank
        [shared/bank-accounts-view (:accounts asset-data) {:estimated? false :confirmed? true}]
-       :buildsoc 
+       :buildsoc
        [shared/buildsoc-accounts-view (:accounts asset-data) {:estimated? false :confirmed? true}])]))
 
 
 (defn panel []
-  (let [asset-id @(rf/subscribe [::model/current-asset-id])
+  (let [asset-id @(rf/subscribe [::model/current-banking-id])
         pdf-view @(rf/subscribe [::pdf-view/pdf-view])
-        type @(rf/subscribe [::model/get-type])]
+        type @(rf/subscribe [::model/current-banking-type])]
     [mui/box
      [mui/dialog-title
       [shared/header type asset-id :complete]]

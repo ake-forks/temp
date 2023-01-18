@@ -52,7 +52,7 @@
 
 (defn subheading [type values relationship]
   (case type
-    :bank
+    :bank 
     [mui/typography {:variant :h5}
      (str "To the best of your knowledge, enter the details for your late "
        relationship
@@ -70,7 +70,7 @@
 
 (defn layout [{:keys [values handle-submit] :as fork-args}]
   (let [current-case @(rf/subscribe [::case-model/current-case])
-        type @(rf/subscribe [::model/get-type])]
+        type @(rf/subscribe [::model/current-banking-type])]
     [:form {:on-submit handle-submit}
      [mui/dialog-title
       [shared/title-only (str "add a "
