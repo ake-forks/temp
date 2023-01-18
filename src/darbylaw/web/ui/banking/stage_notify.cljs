@@ -135,10 +135,17 @@
           case-id @(rf/subscribe [::case-model/case-id])
           case-reference @(rf/subscribe [::case-model/current-case-reference])
           asset-type @(rf/subscribe [::model/current-banking-type])
+          asset-data @(rf/subscribe [::model/current-asset-data])
           {letter-id :id author :author} @(rf/subscribe [::model/current-notification-letter])]
       [:<>
        [mui/backdrop {:open (or @model/file-uploading?
                               @regenerating?)}]
+       (let [accounts-view
+             (case asset-type
+               :bank shared/bank-accounts-view
+               :buildsoc shared/buildsoc-accounts-view)]
+         [mui/box {:sx {:padding-bottom 1}}
+          [accounts-view (:accounts asset-data) {:estimated? true :confirmed? false}]])
        [mui/typography {:variant :body1
                         :font-weight :bold}
         (cond
