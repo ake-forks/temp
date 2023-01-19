@@ -65,12 +65,15 @@
   ([{:keys [type values]}]
    (let [case-id (:case-id @(rf/subscribe [::ui/path-params]))]
      [mui/stack {:spacing 1 :sx {:padding 2}}
-      [mui/typography {:variant :h5}
-       (if (= type :add)
-         "add other expense"
-         "edit other expense")
-       [other-form/form (or values {})
+      [mui/stack {:direction :row :justify-content :space-between}
+       [mui/typography {:variant :h5}
         (if (= type :add)
-          #(rf/dispatch [::add-expense case-id %])
-          (let [expense-id @(rf/subscribe [::funeral-model/dialog-info])]
-            #(rf/dispatch [::edit-expense case-id expense-id %])))]]])))
+          "add other expense"
+          "edit other expense")]
+       [mui/icon-button {:on-click #(rf/dispatch [::funeral-model/hide-funeral-dialog])}
+        [ui/icon-close]]]
+      [other-form/form (or values {})
+       (if (= type :add)
+         #(rf/dispatch [::add-expense case-id %])
+         (let [expense-id @(rf/subscribe [::funeral-model/dialog-info])]
+           #(rf/dispatch [::edit-expense case-id expense-id %])))]])))
