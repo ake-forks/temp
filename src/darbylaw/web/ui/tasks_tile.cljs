@@ -65,13 +65,8 @@
 (defn tasks-tile []
   [mui/card {:style {:height "350px" :background-color theme/off-white}}
    [mui/card-content
-    [mui/stack {:direction :row :spacing 0.5 :justify-content :space-between}
-     [mui/typography {:variant :h5 :sx {:mb 1}}
-      "tasks"]
-     [mui/button {:variant :text
-                  :endIcon (r/as-element [ui/icon-arrow-forwards])}
-      [mui/typography {:variant :body1}
-       "view all"]]]
+    [mui/typography {:variant :h5 :sx {:mb 1}}
+     "tasks"]
     [mui/divider]
 
     [mui/stack {:sx {:overflow-y :auto :max-height 280}}
