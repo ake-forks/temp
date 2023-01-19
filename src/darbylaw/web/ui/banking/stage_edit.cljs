@@ -13,9 +13,7 @@
 (rf/reg-event-fx ::complete-success
   (fn [{:keys [db]} [_ case-id {:keys [path values]}]]
     {:db (fork/set-submitting db path false)
-     :fx [[:dispatch [::model/generate-notification case-id values]]
-          [:dispatch [::model/hide-dialog]]
-          [:dispatch [::case-model/load-case! case-id]]]}))
+     :fx [[:dispatch [::model/generate-notification case-id values]]]}))
 
 (rf/reg-event-fx ::complete-failure
   (fn [{:keys [db]} [_ {:keys [path]} response]]
@@ -45,36 +43,57 @@
 
 (rf/reg-event-fx ::submit!
   (fn [{:keys [db]} [_ type case-id fork-params]]
+    (reset! model/letter-loading? true)
     (case type
       :bank {:dispatch [::complete-bank case-id fork-params]}
       :buildsoc {:dispatch [::complete-buildsoc case-id fork-params]})))
 
+(defn edit-submit-buttons []
+  [mui/stack {:spacing 1
+              :direction :row
+              :justify-content :space-between
+              :sx {:width 1}}
+   [mui/button {:onClick #(rf/dispatch [::model/hide-dialog])
+                :variant :contained
+                :full-width true
+                :disabled @model/letter-loading?} "cancel"]
+   [mui/button {:type :submit
+                :variant :contained
+                :full-width true
+                :disabled @model/letter-loading?} "accounts complete"]])
+
+
 (defn layout [{:keys [values handle-submit] :as fork-args}]
   (let [current-case @(rf/subscribe [::case-model/current-case])
         asset-id @(rf/subscribe [::model/current-banking-id])
-        type @(rf/subscribe [::model/current-banking-type])]
-    [:form {:on-submit handle-submit}
-     [mui/dialog-title
-      [shared/header type asset-id :edit]]
-     [mui/dialog-content
-      [mui/box shared/narrow-dialog-props
-       [mui/stack {:justify-content :space-between
-                   :sx {:height 1}}
-        [mui/stack {:spacing 1}
-         [mui/typography {:variant :h5} "add accounts"]
-         [mui/typography {:variant :body1}
-          (str "To the best of your knowledge, enter the details for your late "
-            (-> current-case :deceased :relationship)
-            (if-let [name (model/asset-label type asset-id)]
-              (str "'s accounts with " name)
-              "'s accounts."))]
-         (if (= type :buildsoc)
-           [form/accounts-unknown fork-args])
-         (if (:accounts-unknown values)
-           [:<>]
-           [form/account-array-component type fork-args])]]]]
-     [mui/dialog-actions
-      [form/submit-buttons {:left-label "cancel" :right-label "accounts complete" :right-disabled false}]]]))
+        type @(rf/subscribe [::model/current-banking-type])
+        loading? @model/letter-loading?]
+    [:<>
+     [mui/backdrop {:open @model/letter-loading?}
+      [mui/circular-progress]]
+
+     [:form {:on-submit handle-submit}
+      [mui/dialog-title
+       [shared/header type asset-id :edit]]
+      [mui/dialog-content
+       [mui/box shared/narrow-dialog-props
+        [mui/stack {:justify-content :space-between
+                    :sx {:height 1}}
+         [mui/stack {:spacing 1}
+          [mui/typography {:variant :h5} "add accounts"]
+          [mui/typography {:variant :body1}
+           (str "To the best of your knowledge, enter the details for your late "
+             (-> current-case :deceased :relationship)
+             (if-let [name (model/asset-label type asset-id)]
+               (str "'s accounts with " name)
+               "'s accounts."))]
+          (if (= type :buildsoc)
+            [form/accounts-unknown fork-args])
+          (if (:accounts-unknown values)
+            [:<>]
+            [form/account-array-component type fork-args])]]]]
+      [mui/dialog-actions
+       [edit-submit-buttons]]]]))
 
 
 (defn panel []
