@@ -31,8 +31,8 @@
                                      {:name :bank-id
                                       :label "bank name"
                                       :required true
-                                      :onBlur handle-blur
-                                      })])}])
+                                      :onBlur handle-blur})])}])
+
 
 (defn buildsoc-select [{:keys [values set-handle-change handle-blur touched errors]}]
   [mui/autocomplete
@@ -132,13 +132,14 @@
                 :full-width false
                 :start-icon (r/as-element [ui/icon-add-circle])}
     (str "add another "
-      (if-let [bank-name (model/asset-label :bank (get-in props [:values :bank-id]))]
+      (if-let [bank-name (model/asset-label :bank (keyword (:bank-id values)))]
         (str bank-name " account")
         "account"))]])
 
+
 ;accounts can
 (defn buildsoc-account-array
-  [{:keys [stage errors] :as props}
+  [{:keys [stage errors values] :as props}
    {:fieldarray/keys [fields
                       insert
                       remove
@@ -206,7 +207,7 @@
                 :full-width false
                 :start-icon (r/as-element [ui/icon-add-circle])}
     (str "add another "
-      (if-let [buildsoc-name (model/asset-label :buildsoc (get-in props [:values :buildsoc-id]))]
+      (if-let [buildsoc-name (model/asset-label :buildsoc (keyword (:buildsoc-id values)))]
         (str buildsoc-name " account")
         "account"))]])
 
