@@ -47,9 +47,12 @@
   ([{:keys [type values]}]
    (let [case-id (:case-id @(rf/subscribe [::ui/path-params]))]
      [mui/stack {:spacing 1 :sx {:padding 2}}
-      [mui/typography {:variant :h5}
-       (if (= type :add)
-         "add funeral account"
-         "edit funeral account")
-       [account-form/form (or values {})
-        #(rf/dispatch [::submit! case-id %])]]])))
+      [mui/stack {:direction :row :justify-content :space-between}
+       [mui/typography {:variant :h5}
+        (if (= type :add)
+          "add funeral account"
+          "edit funeral account")]
+       [mui/icon-button {:on-click #(rf/dispatch [::funeral-model/hide-funeral-dialog])}
+        [ui/icon-close]]]
+      [account-form/form (or values {})
+       #(rf/dispatch [::submit! case-id %])]])))
