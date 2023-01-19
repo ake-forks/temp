@@ -44,7 +44,7 @@
         :on-failure [::complete-failure fork-params]})}))
 
 (rf/reg-event-fx ::submit!
-  (fn [{:keys [db]} [_ type case-id fork-params]]
+  (fn [_ [_ type case-id fork-params]]
     (case type
       :bank {:dispatch [::complete-bank case-id fork-params]}
       :buildsoc {:dispatch [::complete-buildsoc case-id fork-params]})))
@@ -68,8 +68,7 @@
             (if-let [name (model/asset-label type asset-id)]
               (str "'s accounts with " name)
               "'s accounts."))]
-         (if (= type :buildsoc)
-           [form/accounts-unknown fork-args])
+         [form/accounts-unknown fork-args]
          (if (:accounts-unknown values)
            [:<>]
            [form/account-array-component type fork-args])]]]]

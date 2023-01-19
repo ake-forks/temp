@@ -39,13 +39,13 @@
      :http-xhrio
      (ui/build-http
        {:method :post
-        :uri (str "/api/bank/" case-id "/update-bank-accounts")
-        :params (model/bank-transform-on-submit values)
+        :uri (str "/api/bank/" case-id "/value-bank-accounts")
+        :params values
         :on-success [::value-success case-id fork-params]
         :on-failure [::value-failure fork-params]})}))
 
 (rf/reg-event-fx ::submit!
-  (fn [{:keys [db]} [_ type case-id fork-params]]
+  (fn [_ [_ type case-id fork-params]]
     (case type
       :bank {:dispatch [::value-bank-accounts case-id fork-params]}
       :buildsoc {:dispatch [::value-buildsoc-accounts case-id fork-params]})))
@@ -99,7 +99,7 @@
         [mui/dialog-actions
          [form/submit-buttons {:left-label "cancel" :right-label "submit valuations"
                                :right-disabled (not (and (accounts-valued? (:accounts values))
-                                                         valuation-letter))}]]]]]]))
+                                                      valuation-letter))}]]]]]]))
 
 
 (defn panel []

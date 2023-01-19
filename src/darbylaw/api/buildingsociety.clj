@@ -26,7 +26,6 @@
                                       [[::xt/put (merge asset {:accounts accounts
                                                                :accounts-unknown unknown})]])))))
 
-
 (defn update-buildsoc-accounts [op {:keys [xtdb-node user path-params body-params]}]
   (let [buildsoc-id (:buildsoc-id body-params)
         accounts-unknown (:accounts-unknown body-params)
@@ -81,7 +80,6 @@
       [:roll-number :string]
       [:estimated-value {:optional true} :string]
       [:confirmed-value :string]]]]])
-
 
 (defn routes []
   ["/buildingsociety"

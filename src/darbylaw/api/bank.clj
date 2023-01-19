@@ -26,7 +26,16 @@
                 {:accounts accounts
                  :accounts-unknown accounts-unknown})
               (tx-fns/append asset-id [:accounts] accounts))
-            :update (tx-fns/set-value asset-id [:accounts] accounts))
+            :update
+            (if accounts-unknown
+              (tx-fns/set-values asset-id
+                {:accounts accounts
+                 :accounts-unknown accounts-unknown})
+              (tx-fns/append asset-id [:accounts] accounts))
+            :complete
+            (tx-fns/set-values asset-id
+              {:accounts accounts
+               :accounts-unknown false}))
           (tx-fns/append-unique case-id [:bank-accounts] [asset-id])
           (case-history/put-event {:event :updated.bank-accounts
                                    :case-id case-id
@@ -59,5 +68,10 @@
 
     ["/update-bank-accounts"
      {:post {:handler (partial update-bank-accounts :update)
+             :coercion reitit.coercion.malli/coercion
+             :parameters {:body body-schema}}}]
+
+    ["/value-bank-accounts"
+     {:post {:handler (partial update-bank-accounts :complete)
              :coercion reitit.coercion.malli/coercion
              :parameters {:body body-schema}}}]]])
