@@ -17,7 +17,8 @@
 
 (rf/reg-event-fx ::complete-failure
   (fn [{:keys [db]} [_ {:keys [path]} response]]
-    {:db (do (assoc db :failure response)
+    {:dispatch [::model/reset-letter-loading]
+     :db (do (assoc db :failure response)
              (fork/set-submitting db path false))}))
 
 (rf/reg-event-fx ::complete-bank

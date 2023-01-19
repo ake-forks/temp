@@ -136,13 +136,7 @@
 
 
 ;generating and approving notification letters
-
 (def letter-loading? (r/atom false))
-
-(ui/reg-fx+event ::set-file-uploading
-  (fn [_ bool]
-    (reset! letter-loading? bool)))
-
 (ui/reg-fx+event ::reset-letter-loading
   (fn [_]
     (reset! letter-loading? false)))
@@ -150,7 +144,8 @@
 (rf/reg-event-fx ::generate-notification-failure
   (fn [{:keys [db]} [_ case-id banking-id response]]
     {:db (assoc-in db [:current-case :failure banking-id] response)
-     :dispatch [::case-model/load-case! case-id]}))
+     :fx [[:dispatch [::reset-letter-loading]]
+          [:dispatch [::case-model/load-case! case-id]]]}))
 
 (rf/reg-event-fx ::generate-notification-success
   (fn [{:keys [db]} [_ case-id banking-id response]]
