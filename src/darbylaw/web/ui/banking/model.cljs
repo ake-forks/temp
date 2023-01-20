@@ -104,7 +104,7 @@
   (cond
     (not (contains? asset-data :notification-letter))
     :edit
-    
+
     (not (some? (get-in asset-data [:notification-letter :review-timestamp])))
     :notify
 
@@ -131,19 +131,23 @@
             acc))
     (:accounts data)))
 
-(defn bank-transform-on-submit [data]
-  (if (:accounts-unknown data)
-    {:bank-id (keyword (:bank-id data))
+(defn bank-transform-on-submit [values]
+  (if (:accounts-unknown values)
+    {:bank-id (keyword (:bank-id values))
      :accounts []
      :accounts-unknown true}
-    {:bank-id (keyword (:bank-id data))
-     :accounts (remove-joint data)
+    {:bank-id (keyword (:bank-id values))
+     :accounts (remove-joint values)
      :accounts-unknown false}))
 
 (defn buildsoc-transform-on-submit [values]
   (if (= true (:accounts-unknown values))
-    {:buildsoc-id (keyword (:buildsoc-id values)) :accounts [] :accounts-unknown true}
-    {:buildsoc-id (keyword (:buildsoc-id values)) :accounts (:accounts values) :accounts-unknown false}))
+    {:buildsoc-id (keyword (:buildsoc-id values))
+     :accounts []
+     :accounts-unknown true}
+    {:buildsoc-id (keyword (:buildsoc-id values))
+     :accounts (remove-joint values)
+     :accounts-unknown false}))
 
 ; edit =
 ; notify = notification letter not approved
