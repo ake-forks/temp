@@ -94,8 +94,7 @@
          - organisations can usually retrieve the information they need
          with just a name and date of birth.
          If this is the case please check the box below."]
-          (if (= type :buildsoc)
-            [form/accounts-unknown fork-args])
+          [form/accounts-unknown fork-args]
           (if (:accounts-unknown values)
             [:<>]
             [form/account-array-component type fork-args])]]]]]

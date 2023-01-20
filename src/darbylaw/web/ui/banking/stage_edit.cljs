@@ -37,7 +37,7 @@
      :http-xhrio
      (ui/build-http
        {:method :post
-        :uri (str "/api/buildingsociety/" case-id "/complete-buildsoc-accounts")
+        :uri (str "/api/buildingsociety/" case-id "/update-buildsoc-accounts")
         :params (model/buildsoc-transform-on-submit values)
         :on-success [::complete-success case-id fork-params]
         :on-failure [::complete-failure fork-params]})}))
@@ -88,13 +88,12 @@
              (if-let [name (model/asset-label type asset-id)]
                (str "'s accounts with " name)
                "'s accounts."))]
-          (if (= type :buildsoc)
-            [form/accounts-unknown fork-args])
+          [form/accounts-unknown fork-args]]
           (if (:accounts-unknown values)
             [:<>]
-            [form/account-array-component type fork-args])]]]]
+            [form/account-array-component type fork-args])]]]
       [mui/dialog-actions
-       [edit-submit-buttons]]]]))
+        [edit-submit-buttons]]]]))
 
 
 (defn panel []

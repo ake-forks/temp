@@ -39,6 +39,16 @@
   (fn [db]
     (:bank-accounts (:current-case db))))
 
+(rf/reg-sub ::used-bank-ids
+  :<- [::banks]
+  (fn [banks]
+    (set (map :bank-id banks))))
+
+(rf/reg-sub ::used-buildsoc-ids
+  :<- [::building-societies]
+  (fn [buildsoc]
+    (set (map :buildsoc-id buildsoc))))
+
 (rf/reg-sub ::dialog
   (fn [db]
     (:dialog/banking db)))
@@ -94,12 +104,13 @@
   (cond
     (not (contains? asset-data :notification-letter))
     :edit
-
+    
     (not (some? (get-in asset-data [:notification-letter :review-timestamp])))
     :notify
 
-    (not (every? #(contains? % :confirmed-value)
-           (:accounts asset-data)))
+    (or (not (every? #(contains? % :confirmed-value)
+               (:accounts asset-data)))
+      (get asset-data :accounts-unknown))
     :valuation
 
     :else
@@ -121,8 +132,13 @@
     (:accounts data)))
 
 (defn bank-transform-on-submit [data]
-  (merge {:bank-id (keyword (:bank-id data))
-          :accounts (remove-joint data)}))
+  (if (:accounts-unknown data)
+    {:bank-id (keyword (:bank-id data))
+     :accounts []
+     :accounts-unknown true}
+    {:bank-id (keyword (:bank-id data))
+     :accounts (remove-joint data)
+     :accounts-unknown false}))
 
 (defn buildsoc-transform-on-submit [values]
   (if (= true (:accounts-unknown values))

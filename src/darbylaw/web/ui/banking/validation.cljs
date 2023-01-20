@@ -30,11 +30,13 @@
 
 
 (defn add-bank-validation [values]
-  (map (fn [acc]
-         (merge (v/field-errors bank-account-validation acc)
-           (if (not (clojure.string/blank? (:estimated-value acc)))
-             (v/field-errors est-value-validation acc))))
-    (:accounts values)))
+  (if (:accounts-unknown values)
+    {}
+    (map (fn [acc]
+           (merge (v/field-errors bank-account-validation acc)
+             (if (not (clojure.string/blank? (:estimated-value acc)))
+               (v/field-errors est-value-validation acc))))
+      (:accounts values))))
 
 
 

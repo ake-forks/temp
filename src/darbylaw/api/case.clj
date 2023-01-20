@@ -181,6 +181,7 @@
                :bank
                {:bank-accounts (into
                                  [:bank-id
+                                  :accounts-unknown
                                   :accounts]
                                  letter-props)}
                {:buildsoc-accounts (into
