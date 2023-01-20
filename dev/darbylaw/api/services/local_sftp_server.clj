@@ -13,10 +13,12 @@
            (org.apache.sshd.server.shell ProcessShellCommandFactory)
            (org.apache.sshd.scp.server ScpCommandFactory$Builder)))
 
+(def root-dir ".post-sftp")
+
 (mount/defstate ^SshServer ssh-server
   :start (let [{:keys [enabled? port]} (-> config/config :mailing-service :local-sftp-server)]
            (when enabled?
-             (let [dir (Paths/get ".post-sftp" (into-array String nil))]
+             (let [dir (Paths/get root-dir (into-array String nil))]
                (Files/createDirectories dir (into-array FileAttribute nil))
                (doto (SshServer/setUpDefaultServer)
                  (.setPort port)

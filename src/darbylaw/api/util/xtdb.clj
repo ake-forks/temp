@@ -29,10 +29,16 @@
     (xt/submit-tx xtdb-node
       tx-ops)))
 
-(defn exec-txn
-  "Deprecated name. Use `exec-tx`"
-  [xtdb-node tx-ops]
-  (exec-tx xtdb-node tx-ops))
+(defn throw-if-failed-tx [xtdb-node tx-result]
+  (if (xt/tx-committed? xtdb-node tx-result)
+    tx-result
+    (let [tx-id (:tx-id tx-result)]
+      (throw (ex-info (str "Transaction failed with tx-id " tx-id)
+               {::tx-id tx-id})))))
+
+(defn exec-tx-or-throw [xtdb-node tx-ops]
+  (throw-if-failed-tx xtdb-node
+    (exec-tx xtdb-node tx-ops)))
 
 (defn fetch-one [xt-results]
   (assert (= 1 (count xt-results))

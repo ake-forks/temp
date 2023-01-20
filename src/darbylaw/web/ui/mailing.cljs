@@ -89,7 +89,9 @@
         (for [{case-data :case
                :keys [bank-id
                       review-by review-timestamp send-action
-                      upload-state]} post-tasks]
+                      upload-state
+                      send-state
+                      send-error]} post-tasks]
           ^{:key (pr-str [(:id case-data) bank-id])}
           [mui/card
            [mui/card-content
@@ -107,15 +109,25 @@
               [mui/typography {:font-weight :bold
                                :text-align :right}
                (cond
+                 (some? send-state)
+                 (str
+                   (case send-state
+                     :error "send error"
+                     (name send-state))
+                   (when (= send-state :error)
+                     (str " (" send-error ")"))
+                   (when (= send-action :fake-send)
+                     " [fake]"))
+
                  (some? upload-state)
                  (str (name upload-state)
                    (when (= send-action :fake-send)
-                     " (fake)"))
+                     " [fake]"))
 
                  (some? send-action)
                  (case send-action
                    :send "ready to send"
-                   :fake-send "ready to send (fake)"
+                   :fake-send "ready to send [fake]"
                    :do-not-send "not to be sent")
 
                  :else
