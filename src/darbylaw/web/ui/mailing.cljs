@@ -45,26 +45,37 @@
         :on-success [::run-success]
         :on-failure [::run-failure]})}))
 
+(rf/reg-event-fx ::sync-success
+  (fn [_ [_ _response]]))
+
+(rf/reg-event-fx ::sync-failure
+  (fn [_ [_ response]]
+    (println "failure" response)))
+
+(rf/reg-event-fx ::sync
+  (fn [_ _]
+    {:http-xhrio
+     (ui/build-http
+       {:method :post
+        :uri "/api/mailing/sync"
+        :on-success [::sync-success]
+        :on-failure [::sync-failure]})}))
+
 (rf/reg-sub ::post-tasks
   (fn [db]
     (some->> (:post-tasks db)
       (sort-by :created-at >))))
 
-(defn panel []
-  (let [post-tasks @(rf/subscribe [::post-tasks])
-        settings @(rf/subscribe [::app-settings/settings])]
-    [mui/container {:max-width :md}
-     [mui/stack {:direction :row
-                 :spacing 2
-                 :justify-content :space-between
-                 :sx {:mb 2}}
-      [mui/button {:onClick #(rf/dispatch [::load])
-                   :startIcon (r/as-element [ui/icon-refresh])
-                   :variant :outlined}
-       (if (nil? post-tasks)
-         "Load"
-         "Refresh")]
-      (when settings
+(defn manual-controls []
+  (let [settings @(rf/subscribe [::app-settings/settings])]
+    (when settings
+      [mui/accordion
+       [mui/accordion-summary {:expandIcon (r/as-element [ui/icon-expand-more])
+                               :sx {:flex-direction :row-reverse}}
+        [:b "manual controls for mailing"]]
+       [mui/accordion-details
+        [mui/typography
+         [:b "Real"] " letters are sent daily. It can be disabled in case of emergency."]
         [mui/form-group
          [mui/form-control-label
           {:control
@@ -75,12 +86,38 @@
                                         {:post-letters-disabled?
                                          (not (ui/event-target-checked %))}])}])
            :label
-           "Post letters in the background"}]])
-      [mui/button {:onClick #(rf/dispatch [::run])
-                   :startIcon (r/as-element [ui/icon-outbox])
-                   :variant :outlined
-                   :color :error}
-       "Upload now!"]]
+           "Post real letters at 5 PM"}]]
+        [mui/typography {:sx {:mt 2}}
+         [:b "Fake"] " letters are sent and synced only on-demand."]
+        [mui/stack {:direction :row
+                    :spacing 2
+                    :sx {:mt 1}}
+         [mui/button {:onClick #(rf/dispatch [::run])
+                      :startIcon (r/as-element [ui/icon-outbox])
+                      :variant :outlined
+                      :color :error}
+          "Upload fake letters now!"]
+         [mui/button {:onClick #(rf/dispatch [::sync])
+                      :startIcon (r/as-element [ui/icon-cloud-sync])
+                      :variant :outlined}
+          "Sync state of fake letters"]]]])))
+
+
+(defn panel []
+  (let [post-tasks @(rf/subscribe [::post-tasks])]
+    [mui/container {:max-width :md}
+     [mui/stack {:direction :row
+                 :spacing 2
+                 :align-items :flex-start
+                 :sx {:mb 2}}
+      [mui/button {:onClick #(rf/dispatch [::load])
+                   :startIcon (r/as-element [ui/icon-refresh])
+                   :variant :outlined}
+       (if (nil? post-tasks)
+         "Load"
+         "Refresh")]]
+     [mui/box {:sx {:mb 2}}
+      [manual-controls]]
      [mui/stack {:spacing 1}
       (cond
         (nil? post-tasks) [:<>]
