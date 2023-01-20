@@ -47,6 +47,8 @@
         clj-commons/clj-ssh {:mvn/version "0.5.15"}
         org.apache.sshd/sshd-sftp {:mvn/version "2.9.2"}
         org.apache.sshd/sshd-scp {:mvn/version "2.9.2"}
+        ;; Scheduling
+        jarohen/chime {:mvn/version "0.3.3"}
 
         ;; Frontend
         ;; _________________________________________________

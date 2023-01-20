@@ -1,12 +1,16 @@
 (ns darbylaw.api.bank-notification.mailing-sync-job
   (:require
+    [chime.core :as ch]
     [clojure.string :as str]
     [clojure.tools.logging :as log]
     [darbylaw.api.services.mailing :as mailing]
     [darbylaw.api.util.tx-fns :as tx-fns]
     [darbylaw.api.util.xtdb :as xt-util]
-    [xtdb.api :as xt])
-  (:import (com.jcraft.jsch SftpException)))
+    [mount.core :as mount]
+    [xtdb.api :as xt]
+    [darbylaw.xtdb-node :as xtdb-node])
+  (:import (com.jcraft.jsch SftpException)
+           (java.time Duration Instant)))
 
 (defn files->beans [fs]
   (->> fs
@@ -125,3 +129,17 @@
 
   (sync! :fake xtdb-node)
   ,)
+
+(defn sync-job [xtdb-node]
+  (log/info "Starting syncing letter send results...")
+  (try
+    (sync! :real xtdb-node)
+    (finally
+      (log/info "Finished syncing letter send results."))))
+
+(mount/defstate mailing-sync-job
+  :start (ch/chime-at
+           (rest (ch/periodic-seq (Instant/now) (Duration/ofMinutes 5)))
+           (fn [_time]
+             (sync-job xtdb-node/xtdb-node)))
+  :stop (.close mailing-sync-job))

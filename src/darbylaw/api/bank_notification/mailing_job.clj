@@ -1,17 +1,19 @@
 (ns darbylaw.api.bank-notification.mailing-job
-  (:require [xtdb.api :as xt]
-            [darbylaw.api.util.xtdb :as xt-util]
-            [clojure.tools.logging :as log]
-            [darbylaw.api.bank-notification.letter-store :as letter-store]
-            [darbylaw.doc-store :as doc-store]
-            [darbylaw.api.util.files :as files-util :refer [with-delete]]
-            [darbylaw.api.services.mailing :as mailing]
-            [mount.core :as mount]
-            [darbylaw.xtdb-node :refer [xtdb-node]]
-            [darbylaw.api.settings :as settings]
-            [darbylaw.api.util.tx-fns :as tx-fns]
-            [darbylaw.api.util.http :as http])
-  (:import (java.util.concurrent Executors ScheduledExecutorService TimeUnit ScheduledFuture)
+  (:require
+    [xtdb.api :as xt]
+    [darbylaw.api.util.xtdb :as xt-util]
+    [clojure.tools.logging :as log]
+    [darbylaw.api.bank-notification.letter-store :as letter-store]
+    [darbylaw.doc-store :as doc-store]
+    [darbylaw.api.util.files :as files-util :refer [with-delete]]
+    [darbylaw.api.services.mailing :as mailing]
+    [mount.core :as mount]
+    [darbylaw.xtdb-node :as xtdb-node]
+    [darbylaw.api.settings :as settings]
+    [darbylaw.api.util.tx-fns :as tx-fns]
+    [darbylaw.api.util.http :as http]
+    [chime.core :as ch])
+  (:import (java.time LocalTime Period ZoneId ZonedDateTime)
            (clojure.lang ExceptionInfo)))
 
 (defn disabled? [xtdb-node]
@@ -84,7 +86,6 @@
         (try
           (send-off upload-mail-agent
             (fn [_]
-              (upload-mail! xtdb-node :real (fetch-letters-to-send xtdb-node :real))
               (upload-mail! xtdb-node :fake (fetch-letters-to-send xtdb-node :fake))))
           (finally
             (reset! upload-mail-ongoing? false)
@@ -105,22 +106,20 @@
   [["/mailing/run" {:post {:handler upload-mail-handler}}]
    ["/mailing/items" {:get {:handler get-mailing-items}}]])
 
-; Periodic execution disabled.
+(defn upload-mail-job [xtdb-node]
+  (log/info "Starting uploading letters to be mailed...")
+  (try
+    (upload-mail! xtdb-node :real (fetch-letters-to-send xtdb-node :real))
+    (finally
+      (log/info "Finished uploading letters to be mailed."))))
 
-#_(mount/defstate ^ScheduledExecutorService scheduled-executor
-    :start (Executors/newSingleThreadScheduledExecutor)
-    :stop (.shutdown scheduled-executor))
-
-#_(mount/defstate ^ScheduledFuture post-task
-    :start (.scheduleWithFixedDelay scheduled-executor
-             (fn [] (upload-mail! xtdb-node))
-             10 10 TimeUnit/SECONDS)
-    :stop (.cancel post-task false))
-
-(comment
-  (mount/stop #'post-task)
-  (mount/start #'post-task)
-  (.isCancelled post-task))
-
-(comment
-  (upload-mail! xtdb-node))
+(mount/defstate mailing-upload-job
+  :start (ch/chime-at
+           (ch/periodic-seq
+             (-> (LocalTime/of 17 30 00)
+               ^ZonedDateTime (.adjustInto (ZonedDateTime/now (ZoneId/of "Europe/London")))
+               .toInstant)
+             (Period/ofDays 1))
+           (fn [_time]
+             (upload-mail-job xtdb-node/xtdb-node)))
+  :stop (.close mailing-upload-job))
