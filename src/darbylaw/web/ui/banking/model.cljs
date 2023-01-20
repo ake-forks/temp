@@ -39,6 +39,16 @@
   (fn [db]
     (:bank-accounts (:current-case db))))
 
+(rf/reg-sub ::used-bank-ids
+  :<- [::banks]
+  (fn [banks]
+    (set (map :bank-id banks))))
+
+(rf/reg-sub ::used-buildsoc-ids
+  :<- [::building-societies]
+  (fn [buildsoc]
+    (set (map :buildsoc-id buildsoc))))
+
 (rf/reg-sub ::dialog
   (fn [db]
     (:dialog/banking db)))

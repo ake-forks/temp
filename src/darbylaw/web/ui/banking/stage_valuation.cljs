@@ -22,6 +22,11 @@
     {:db (do (assoc db :failure response)
              (fork/set-submitting db path false))}))
 
+(defn transform-on-submit [values type-id]
+  {type-id (keyword (type-id values))
+   :accounts (:accounts values)
+   :accounts-unknown false})
+
 (rf/reg-event-fx ::value-buildsoc-accounts
   (fn [{:keys [db]} [_ case-id {:keys [path values] :as fork-params}]]
     {:db (fork/set-submitting db path true)
@@ -29,7 +34,7 @@
      (ui/build-http
        {:method :post
         :uri (str "/api/buildingsociety/" case-id "/value-buildsoc-accounts")
-        :params values
+        :params (transform-on-submit values :buildsoc-id)
         :on-success [::value-success case-id fork-params]
         :on-failure [::value-failure fork-params]})}))
 
@@ -39,8 +44,8 @@
      :http-xhrio
      (ui/build-http
        {:method :post
-        :uri (str "/api/bank/" case-id "/value-bank-accounts")
-        :params values
+        :uri (str "/api/bank/" case-id "/update-bank-accounts")
+        :params (transform-on-submit values :bank-id)
         :on-success [::value-success case-id fork-params]
         :on-failure [::value-failure fork-params]})}))
 
@@ -100,7 +105,6 @@
          [form/submit-buttons {:left-label "cancel" :right-label "submit valuations"
                                :right-disabled (not (and (accounts-valued? (:accounts values))
                                                       valuation-letter))}]]]]]]))
-
 
 (defn panel []
   (let [case-id @(rf/subscribe [::case-model/case-id])

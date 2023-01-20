@@ -38,7 +38,7 @@
      :http-xhrio
      (ui/build-http
        {:method :post
-        :uri (str "/api/buildingsociety/" case-id "/complete-buildsoc-accounts")
+        :uri (str "/api/buildingsociety/" case-id "/update-buildsoc-accounts")
         :params (model/buildsoc-transform-on-submit values)
         :on-success [::complete-success case-id fork-params]
         :on-failure [::complete-failure fork-params]})}))

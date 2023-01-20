@@ -14,40 +14,47 @@
   (assert (string? buildsoc-id-str))
   (model/asset-label :buildsoc (keyword buildsoc-id-str)))
 
-(defn bank-label [bank-id-str]
-  (assert (string? bank-id-str))
-  (model/asset-label :bank (keyword bank-id-str)))
 
 (defn bank-select [{:keys [values set-handle-change handle-blur touched errors]}]
-  [mui/autocomplete
-   {:options (model/all-institution-ids :bank)
-    :value (get values :bank-id)
-    :getOptionLabel bank-label
-    :onChange (fn [_evt new-value]
-                (set-handle-change {:value new-value
-                                    :path [:bank-id]}))
-    :renderInput (react-component [props]
-                   [mui/text-field (merge props
-                                     {:name :bank-id
-                                      :label "bank name"
-                                      :required true
-                                      :onBlur handle-blur})])}])
+  (let [used-bank-ids @(rf/subscribe [::model/used-bank-ids])]
+    [mui/autocomplete
+     {:options (model/all-institution-ids :bank)
+      :value (get values :bank-id)
+      :getOptionLabel (fn [bank-id]
+                        (str (model/asset-label :bank (keyword bank-id))
+                          (when (contains? used-bank-ids (keyword bank-id))
+                            " (already added)")))
+      :getOptionDisabled (fn [bank-id] (contains? used-bank-ids (keyword bank-id)))
+      :onChange (fn [_evt new-value]
+                  (set-handle-change {:value new-value
+                                      :path [:bank-id]}))
+      :renderInput (react-component [props]
+                     [mui/text-field (merge props
+                                       {:name :bank-id
+                                        :label "bank name"
+                                        :required true
+                                        :onBlur handle-blur})])}]))
 
 
 (defn buildsoc-select [{:keys [values set-handle-change handle-blur touched errors]}]
-  [mui/autocomplete
-   {:options (model/all-institution-ids :buildsoc)
-    :value (get values :buildsoc-id)
-    :getOptionLabel buildsoc-label
-    :onChange (fn [_evt new-value]
-                (set-handle-change {:value new-value
-                                    :path [:buildsoc-id]}))
-    :renderInput (react-component [props]
-                   [mui/text-field (merge props
-                                     {:name :buildsoc-id
-                                      :label "building society name"
-                                      :required true
-                                      :onBlur handle-blur})])}])
+  (let [used-buildsoc-ids @(rf/subscribe [::model/used-buildsoc-ids])]
+    [mui/autocomplete
+     {:options (model/all-institution-ids :buildsoc)
+      :value (get values :buildsoc-id)
+      :getOptionLabel (fn [buildsoc-id]
+                        (str (model/asset-label :buildsoc (keyword buildsoc-id))
+                          (when (contains? used-buildsoc-ids (keyword buildsoc-id))
+                            " (already added)")))
+      :getOptionDisabled (fn [buildsoc-id] (contains? used-buildsoc-ids (keyword buildsoc-id)))
+      :onChange (fn [_evt new-value]
+                  (set-handle-change {:value new-value
+                                      :path [:buildsoc-id]}))
+      :renderInput (react-component [props]
+                     [mui/text-field (merge props
+                                       {:name :buildsoc-id
+                                        :label "building society name"
+                                        :required true
+                                        :onBlur handle-blur})])}]))
 
 
 (defn bank-account-array
