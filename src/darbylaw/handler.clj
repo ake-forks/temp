@@ -11,6 +11,7 @@
     [reitit.coercion]
     [muuntaja.core :as m]
     [ring.middleware.cors :refer [wrap-cors]]
+    [ring.middleware.not-modified :refer [wrap-not-modified]]
     [ring.util.response :as r]
     [hiccup.page :as h]
     [xtdb.api :as xt]
@@ -103,12 +104,27 @@
     (clojure.walk/prewalk #(cond-> %
                              (map? %) (dissoc :middleware)))))
 
+(defn wrap-no-cache [handler]
+  "Add the appropriate headers to tell the browser to not *permanently* cache the results of this request.
+  
+  NOTE: This doesn't mean that the browser won't cache the result.
+        It just means that the browser will check to see if it should update the cache.
+        i.e. It will send a GET request to the server.
+             Which might respond with 304, or the new content. See wrap-not-modified."
+  (fn [req]
+    (-> (handler req)
+        (r/header "Cache-Control" "no-cache") ;; must-revalidate
+        (r/header "Pragma" "no-cache")
+        (r/header "Expires" "0"))))
+
 (defn make-ring-handler []
   (ring/ring-handler
     (make-router)
     (ring/routes
-      (ring/redirect-trailing-slash-handler)                ; TODO: this is not working?
-      (ring/create-resource-handler {:path "/" :root "/public"})
+      (ring/redirect-trailing-slash-handler) ; TODO: this is not working?
+      (-> (ring/create-resource-handler {:path "/" :root "/public"})
+          (wrap-not-modified)
+          (wrap-no-cache))
       (ring/create-default-handler))))
 
 (mount/defstate ring-handler
