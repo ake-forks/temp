@@ -54,5 +54,5 @@
           "edit funeral account")]
        [mui/icon-button {:on-click #(rf/dispatch [::funeral-model/hide-funeral-dialog])}
         [ui/icon-close]]]
-      [account-form/form (or values {})
+      [account-form/form values
        #(rf/dispatch [::submit! case-id %])]])))

@@ -20,17 +20,19 @@
         funeral-account @(rf/subscribe [::funeral-model/account])
         funeral-expenses @(rf/subscribe [::funeral-model/expense-list])
         
-        assets (->> (concat bank-accounts buildsoc-accounts)
-                    (mapcat :accounts)
-                    (map #(if-let [confirmed-value (:confirmed-value %)]
-                            confirmed-value
-                            (:estimated-value %)))
-                    (map parse-float))
-        debts (concat [(-> funeral-account :value parse-float)]
-                      (->> funeral-expenses
-                           (map :value)
-                           (map parse-float)))]
-    (- (reduce + assets) (reduce + debts))))
+        banking (->> (concat bank-accounts buildsoc-accounts)
+                     (mapcat :accounts)
+                     (map #(if-let [confirmed-value (:confirmed-value %)]
+                             confirmed-value
+                             (:estimated-value %)))
+                     (map parse-float))
+        funeral (concat [(-> funeral-account :value parse-float)]
+                        (->> funeral-expenses
+                             (map :value)
+                             (map parse-float)))
+        
+        assets (concat banking funeral)]
+    (reduce + assets)))
 
 (defn overview-card []
   [mui/card {:style {:width "large" :background-color theme/off-white}}

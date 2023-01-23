@@ -20,13 +20,14 @@
 (def buildsoc-account-validation
   (v/attr [:roll-number] (v/present)))
 
+(def currency-amount
+  (v/matches #"-?[1-9][0-9]*(\.[0-9]{2})?"))
+
 (def est-value-validation
-  (v/attr [:estimated-value]
-    (v/matches #"[0-9]*(\.[0-9]{2})?")))
+  (v/attr [:estimated-value] currency-amount))
 
 (def conf-value-validation
-  (v/attr [:confirmed-value]
-    (v/matches #"[0-9]*(\.[0-9]{2})?")))
+  (v/attr [:confirmed-value] currency-amount))
 
 
 (defn add-bank-validation [values]
@@ -65,4 +66,4 @@
            (v/field-errors buildsoc-account-validation acc)
            (if (not (clojure.string/blank? (:confirmed-value acc)))
              (v/field-errors conf-value-validation acc))))
-    (:accounts values))) 1
+    (:accounts values)))

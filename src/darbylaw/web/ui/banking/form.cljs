@@ -5,6 +5,7 @@
     [re-frame.core :as rf]
     [fork.re-frame :as fork]
     [darbylaw.web.ui :as ui]
+    [darbylaw.web.util.form :refer [starts-with? toggle-negative]]
     [darbylaw.web.ui.banking.model :as model]
     [darbylaw.web.ui.banking.validation :as validation])
   (:require-macros [reagent-mui.util :refer [react-component]]))
@@ -58,7 +59,7 @@
 
 
 (defn bank-account-array
-  [{:keys [stage errors values] :as props}
+  [{:keys [state stage errors values] :as props}
    {:fieldarray/keys [fields
                       insert
                       remove
@@ -71,81 +72,102 @@
        (map-indexed
          (fn [idx field]
            ^{:key idx}
-           [mui/stack {:spacing 1}
-            [mui/stack {:spacing 1 :direction :row}
-             [mui/text-field {:name :sort-code
-                              :value (or (get field :sort-code) "")
-                              :label "sort code"
-                              :placeholder "00-00-00"
-                              :on-change #(handle-change % idx)
-                              :on-blur #(handle-blur % idx)
-                              :required true
-                              :full-width true
-                              :error (boolean (validation/get-account-error errors touched :sort-code idx))
-                              :helper-text (if
-                                             (boolean (validation/get-account-error errors touched :sort-code idx))
-                                             "format 00-00-00")}]
-
-             [mui/text-field {:name :account-number
-                              :value (or (get field :account-number) "")
-                              :label "account number"
-                              :placeholder "00000000"
-                              :on-change #(handle-change % idx)
-                              :on-blur #(handle-blur % idx)
-                              :required true
-                              :full-width true
-                              :error (boolean (validation/get-account-error errors touched :account-number idx))
-                              :helper-text (if
-                                             (boolean (validation/get-account-error errors touched :account-number idx))
-                                             "8 digits")}]
-
-             [mui/text-field {:name :estimated-value
-                              :value (or (get field :estimated-value) "")
-                              :label "estimated value"
-                              :on-change #(handle-change % idx)
-                              :on-blur #(handle-blur % idx)
-                              :full-width true
-                              :error (boolean (validation/get-account-error errors touched :estimated-value idx))
-                              :helper-text (if
-                                             (boolean (validation/get-account-error errors touched :estimated-value idx))
-                                             "check formatting")
-                              :disabled (= stage :valuation)
-                              :InputProps
-                              {:start-adornment
-                               (r/as-element [mui/input-adornment {:position :start} "£"])}}]
-             [mui/form-group
-              [mui/form-control-label {
-                                       :control (r/as-element
-                                                  [mui/checkbox {:name :joint-check
-                                                                 :checked (get field :joint-check)
-                                                                 :label "estimated value"
-                                                                 :on-change #(handle-change % idx)}])
-                                       :label "Joint Account?"}]]
-             [mui/icon-button {:on-click #(remove idx)}
-              [ui/icon-delete]]]
-            (if (true? (get field :joint-check))
-              [mui/text-field {:name :joint-info
-                               :value (get field :joint-info)
-                               :label "name of other account holder"
-                               :on-change #(handle-change % idx)}]
-              [:<>])
-            (if (= stage :valuation)
-              [mui/text-field {:name :confirmed-value
-                               :value (get field :confirmed-value)
-                               :label "confirmed value"
+           [mui/stack {:spacing 1 :direction :row :style {:justify-content :center}}
+            [mui/stack {:spacing 1}
+             [mui/stack {:spacing 1 :direction :row}
+              [mui/text-field {:name :sort-code
+                               :value (or (get field :sort-code) "")
+                               :label "sort code"
+                               :placeholder "00-00-00"
                                :on-change #(handle-change % idx)
                                :on-blur #(handle-blur % idx)
                                :required true
                                :full-width true
-                               :error (boolean (validation/get-account-error errors touched :confirmed-value idx))
+                               :error (boolean (validation/get-account-error errors touched :sort-code idx))
                                :helper-text (if
-                                              (boolean (validation/get-account-error errors touched :confirmed-value idx))
+                                              (boolean (validation/get-account-error errors touched :sort-code idx))
+                                              "format 00-00-00")}]
+
+              [mui/text-field {:name :account-number
+                               :value (or (get field :account-number) "")
+                               :label "account number"
+                               :placeholder "00000000"
+                               :on-change #(handle-change % idx)
+                               :on-blur #(handle-blur % idx)
+                               :required true
+                               :full-width true
+                               :error (boolean (validation/get-account-error errors touched :account-number idx))
+                               :helper-text (if
+                                              (boolean (validation/get-account-error errors touched :account-number idx))
+                                              "8 digits")}]
+
+              [mui/text-field {:name :estimated-value
+                               :value (or (get field :estimated-value) "")
+                               :label "estimated value"
+                               :on-change #(handle-change % idx)
+                               :on-blur #(handle-blur % idx)
+                               :full-width true
+                               :error (boolean (validation/get-account-error errors touched :estimated-value idx))
+                               :helper-text (if
+                                              (boolean (validation/get-account-error errors touched :estimated-value idx))
                                               "check formatting")
+                               :disabled (= stage :valuation)
                                :InputProps
                                {:start-adornment
-                                (r/as-element [mui/input-adornment
-                                               {:position :start} "£"])}}]
-              [:<>])]))))
+                                (r/as-element [mui/input-adornment {:position :start} "£"])}}]
+              [mui/form-control-label
+               {:label "debt?"
+                :checked (-> field :estimated-value (or "") (starts-with? "-"))
+                :on-click (when-not (= stage :valuation)
+                            #(swap! state update-in [:values :accounts idx :estimated-value] toggle-negative))
+                :control (r/as-element [mui/switch])
+                :disabled (= stage :valuation)}]
+
+              [mui/form-group
+               [mui/form-control-label
+                {:control (r/as-element
+                            [mui/checkbox
+                             {:name :joint-check
+                              :checked (get field :joint-check)
+                              :label "estimated value"
+                              :on-change #(handle-change % idx)}])
+                 :label "Joint Account?"}]]]
+
+             [mui/stack {:spacing 1 :direction :row}
+              (if (true? (get field :joint-check))
+                [mui/text-field {:name :joint-info
+                                 :value (get field :joint-info)
+                                 :label "name of other account holder"
+                                 :full-width true
+                                 :on-change #(handle-change % idx)}]
+                [:<>])
+
+              (if (= stage :valuation)
+                [:<>
+                 [mui/text-field {:name :confirmed-value
+                                  :value (get field :confirmed-value)
+                                  :label "confirmed value"
+                                  :on-change #(handle-change % idx)
+                                  :on-blur #(handle-blur % idx)
+                                  :required true
+                                  :full-width true
+                                  :error (boolean (validation/get-account-error errors touched :confirmed-value idx))
+                                  :helper-text (if
+                                                 (boolean (validation/get-account-error errors touched :confirmed-value idx))
+                                                 "check formatting")
+                                  :InputProps
+                                  {:start-adornment
+                                   (r/as-element [mui/input-adornment
+                                                  {:position :start} "£"])}}]
+                 [mui/form-control-label
+                  {:label "debt?"
+                   :checked (-> field :confirmed-value (or "") (starts-with? "-"))
+                   :on-click #(swap! state update-in [:values :accounts idx :confirmed-value] toggle-negative)
+                   :control (r/as-element [mui/switch])}]]
+                [:<>])]]
+            [mui/stack {:style {:align-items :center :justify-content :center}}
+             [mui/icon-button {:on-click #(remove idx)}
+              [ui/icon-delete]]]]))))
    [mui/button {:on-click #(insert {:sort-code "" :account-number "" :estimated-value ""})
                 :style {:text-transform "none" :align-self "baseline" :font-size "1rem"}
                 :variant :text
@@ -160,7 +182,7 @@
 
 ;accounts can
 (defn buildsoc-account-array
-  [{:keys [stage errors values] :as props}
+  [{:keys [state stage errors values] :as props}
    {:fieldarray/keys [fields
                       insert
                       remove
@@ -173,68 +195,92 @@
        (map-indexed
          (fn [idx field]
            ^{:key idx}
-           [mui/stack {:spacing 1}
-            [mui/stack {:spacing 1 :direction :row}
-             [mui/text-field {:name :roll-number
-                              :value (get field :roll-number)
-                              :label "roll number"
-                              :on-change #(handle-change % idx)
-                              :on-blur #(handle-blur % idx)
-                              :required true
-                              :full-width true
-                              :error (boolean (validation/get-account-error errors touched :roll-number idx))
-                              :helper-text (if
-                                             (boolean (validation/get-account-error errors touched :roll-number idx))
-                                             "required")}]
-             [mui/text-field {:name :estimated-value
-                              :value (get field :estimated-value)
-                              :label "estimated value"
-                              :on-change #(handle-change % idx)
-                              :on-blur #(handle-blur % idx)
-                              :required false
-                              :full-width true
-                              :disabled (= stage :valuation)
-                              :error (boolean (validation/get-account-error errors touched :estimated-value idx))
-                              :helper-text (if
-                                             (boolean (validation/get-account-error errors touched :estimated-value idx))
-                                             "check formatting")
-                              :InputProps
-                              {:start-adornment
-                               (r/as-element [mui/input-adornment
-                                              {:position :start} "£"])}}]
+           [mui/stack {:spacing 1 :direction :row :style {:justify-content :center}}
+            [mui/stack {:spacing 1}
+             [mui/stack {:spacing 1 :direction :row}
+              [mui/stack {:spacing 1 :direction :row}
+               [mui/text-field {:name :roll-number
+                                :value (get field :roll-number)
+                                :label "roll number"
+                                :on-change #(handle-change % idx)
+                                :on-blur #(handle-blur % idx)
+                                :required true
+                                :full-width true
+                                :error (boolean (validation/get-account-error errors touched :roll-number idx))
+                                :helper-text (if
+                                               (boolean (validation/get-account-error errors touched :roll-number idx))
+                                               "required")}]
+
+               [mui/text-field {:name :estimated-value
+                                :value (get field :estimated-value)
+                                :label "estimated value"
+                                :on-change #(handle-change % idx)
+                                :on-blur #(handle-blur % idx)
+                                :required false
+                                :full-width true
+                                :disabled (= stage :valuation)
+                                :error (boolean (validation/get-account-error errors touched :estimated-value idx))
+                                :helper-text (if
+                                               (boolean (validation/get-account-error errors touched :estimated-value idx))
+                                               "check formatting")
+                                :InputProps
+                                {:start-adornment
+                                 (r/as-element [mui/input-adornment
+                                                {:position :start} "£"])}}]
+               [mui/form-control-label
+                {:label "debt?"
+                 :checked (-> field :estimated-value (or "") (starts-with? "-"))
+                 :on-click (when-not (= stage :valuation)
+                             #(swap! state update-in [:values :accounts idx :estimated-value] toggle-negative))
+                 :control (r/as-element [mui/switch])
+                 :disabled (= stage :valuation)}]
+
+               [mui/form-group
+                [mui/form-control-label
+                 {:control
+                  (r/as-element
+                    [mui/checkbox
+                     {:name :joint-check
+                      :checked (get field :joint-check)
+                      :label "estimated value"
+                      :on-change #(handle-change % idx)}])
+                  :label "Joint Account?"}]]]]
+
+             [mui/stack {:spacing 1 :direction :row}
+              (if (true? (get field :joint-check))
+                [mui/text-field {:name :joint-info
+                                 :value (get field :joint-info)
+                                 :label "name of other account holder"
+                                 :full-width true
+                                 :on-change #(handle-change % idx)}]
+                [:<>])
+
+              (if (= stage :valuation)
+                [:<>
+                 [mui/text-field {:name :confirmed-value
+                                  :value (get field :confirmed-value)
+                                  :label "confirmed value"
+                                  :on-change #(handle-change % idx)
+                                  :on-blur #(handle-blur % idx)
+                                  :required true
+                                  :full-width true
+                                  :error (boolean (validation/get-account-error errors touched :confirmed-value idx))
+                                  :helper-text (if
+                                                 (boolean (validation/get-account-error errors touched :confirmed-value idx))
+                                                 "check formatting")
+                                  :InputProps
+                                  {:start-adornment
+                                   (r/as-element [mui/input-adornment
+                                                  {:position :start} "£"])}}]
+                 [mui/form-control-label
+                  {:label "debt?"
+                   :checked (-> field :confirmed-value (or "") (starts-with? "-"))
+                   :on-click #(swap! state update-in [:values :accounts idx :confirmed-value] toggle-negative)
+                   :control (r/as-element [mui/switch])}]]
+                [:<>])]]
+            [mui/stack {:style {:align-items :center :justify-content :center}}
              [mui/icon-button {:on-click #(remove idx)}
-              [ui/icon-delete]]
-             [mui/form-group
-              [mui/form-control-label {
-                                       :control (r/as-element
-                                                  [mui/checkbox {:name :joint-check
-                                                                 :checked (get field :joint-check)
-                                                                 :label "estimated value"
-                                                                 :on-change #(handle-change % idx)}])
-                                       :label "Joint Account?"}]]]
-            (if (true? (get field :joint-check))
-              [mui/text-field {:name :joint-info
-                               :value (get field :joint-info)
-                               :label "name of other account holder"
-                               :on-change #(handle-change % idx)}]
-              [:<>])
-            (if (= stage :valuation)
-              [mui/text-field {:name :confirmed-value
-                               :value (get field :confirmed-value)
-                               :label "confirmed value"
-                               :on-change #(handle-change % idx)
-                               :on-blur #(handle-blur % idx)
-                               :required true
-                               :full-width true
-                               :error (boolean (validation/get-account-error errors touched :confirmed-value idx))
-                               :helper-text (if
-                                              (boolean (validation/get-account-error errors touched :confirmed-value idx))
-                                              "check formatting")
-                               :InputProps
-                               {:start-adornment
-                                (r/as-element [mui/input-adornment
-                                               {:position :start} "£"])}}]
-              [:<>])]))))
+              [ui/icon-delete]]]]))))
    [mui/button {:on-click #(insert {:roll-number "" :estimated-value ""})
                 :style {:text-transform "none" :align-self "baseline" :font-size "1rem"}
                 :variant :text

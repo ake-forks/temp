@@ -112,9 +112,20 @@
 (defn currency?
   "Checks that a string is a valid currency amount"
   []
-  (v/predicate #(nil? (re-matches #"[0-9]+(\.[0-9]{2})?" %))
+  (v/predicate #(nil? (re-matches #"-?[0-9]+(\.[0-9]{2})?" %))
                {:type ::currency?}))
 
 (defmethod v/english-translation ::currency?
   [{:keys [name]}]
   (str name " must be a valid currency amount."))
+
+
+(defn string-negative?
+  "Checks that the string starts with a `-`."
+  []
+  (v/predicate #(not (str/starts-with? % "-"))
+               {:type ::currency-negative?}))
+
+(defmethod v/english-translation ::currency-negative?
+  [{:keys [name]}]
+  (str name " must be negative."))

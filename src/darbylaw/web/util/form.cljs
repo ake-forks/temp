@@ -3,7 +3,15 @@
   (:require [reagent-mui.components :as mui]
             [reagent-mui.x.date-picker :as mui-date]
             [reagent.core :as r]
-            [darbylaw.web.ui :as ui]))
+            [darbylaw.web.ui :as ui]
+            [clojure.string :as str]))
+
+(def starts-with? (fnil str/starts-with? ""))
+
+(defn toggle-negative [s]
+  (if (starts-with? s "-")
+    (subs s 1)
+    (str "-" s)))
 
 (defn get-error [k {:keys [touched errors attempted-submissions] :as _fork-args}]
   (and (pos? attempted-submissions)

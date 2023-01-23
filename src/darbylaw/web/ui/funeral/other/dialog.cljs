@@ -72,7 +72,7 @@
           "edit other expense")]
        [mui/icon-button {:on-click #(rf/dispatch [::funeral-model/hide-funeral-dialog])}
         [ui/icon-close]]]
-      [other-form/form (or values {})
+      [other-form/form values
        (if (= type :add)
          #(rf/dispatch [::add-expense case-id %])
          (let [expense-id @(rf/subscribe [::funeral-model/dialog-info])]
