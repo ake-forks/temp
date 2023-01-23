@@ -35,20 +35,24 @@
         _ (spit path3 "fake-contents3")
 
         ; Create some letters in DB
+        test-case-id (random-uuid)
+        common-letter-data {:type :probate.bank-notification-letter
+                            :case-id test-case-id
+                            :bank-id :test-bank}
         _ (xt-util/exec-tx xtdb-node
-            [[::xt/put {:xt/id (get letter-ids 1)
-                        :type :probate.bank-notification-letter
-                        :upload-state :uploaded}]
-             [::xt/put {:xt/id (get letter-ids 3)
-                        :type :probate.bank-notification-letter
-                        :upload-state :uploaded}]
-             [::xt/put {:xt/id (get letter-ids 4)
-                        :type :probate.bank-notification-letter
-                        :upload-state :uploaded}]
-             [::xt/put {:xt/id (get letter-ids 5)
-                        :type :probate.bank-notification-letter
-                        :upload-state :uploaded
-                        :send-state :error}]])
+            [[::xt/put (merge common-letter-data
+                         {:xt/id (get letter-ids 1)
+                          :upload-state :uploaded})]
+             [::xt/put (merge common-letter-data
+                         {:xt/id (get letter-ids 3)
+                          :upload-state :uploaded})]
+             [::xt/put (merge common-letter-data
+                         {:xt/id (get letter-ids 4)
+                          :upload-state :uploaded})]
+             [::xt/put (merge common-letter-data
+                         {:xt/id (get letter-ids 5)
+                          :upload-state :uploaded
+                          :send-state :error})]])
 
         _ (sync/sync! :fake xtdb-node)
 

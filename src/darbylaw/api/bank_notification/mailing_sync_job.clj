@@ -3,6 +3,7 @@
     [chime.core :as ch]
     [clojure.string :as str]
     [clojure.tools.logging :as log]
+    [darbylaw.api.case-history :as case-history]
     [darbylaw.api.services.mailing :as mailing]
     [darbylaw.api.util.tx-fns :as tx-fns]
     [darbylaw.api.util.xtdb :as xt-util]
@@ -98,20 +99,26 @@
 
     ; Process all letters that are in upload-state `:uploaded`.
     ; If they are not in root nor errored, mark them as `:sent`.
-    (let [uploaded-ids (map (comp :xt/id first) uploaded)
-          awaiting-ids (map :letter-id (concat awaiting-files errored-files))
-          sent-ids (->> uploaded-ids
-                     (remove (set awaiting-ids)))]
-      (doseq [sent-id sent-ids]
+    (let [awaiting-ids (set (map :letter-id (concat awaiting-files errored-files)))
+          sent-letters (->> uploaded
+                         (map first)
+                         (remove #(contains? awaiting-ids (:xt/id %))))]
+      (doseq [{letter-id :xt/id
+               case-id :case-id
+               bank-id :bank-id} sent-letters]
         (try
           (xt-util/exec-tx-or-throw xtdb-node
             (concat
               ; Sanity check; shouldn't fail:
-              (tx-fns/assert-nil sent-id [:send-state])
-              (tx-fns/set-values sent-id {:send-state :sent
-                                          :send-state-changed (xt-util/now)})))
+              (tx-fns/assert-nil letter-id [:send-state])
+              (tx-fns/set-values letter-id {:send-state :sent
+                                            :send-state-changed (xt-util/now)})
+              (case-history/put-event {:event :bank-notification.letter-sent
+                                       :case-id case-id
+                                       :bank-id bank-id
+                                       :letter-id letter-id})))
           (catch Exception e
-            (log/error e "Failed syncing sent letter" sent-id)))))))
+            (log/error e "Failed syncing sent letter" letter-id)))))))
 
 (comment
   (def xtdb-node darbylaw.xtdb-node/xtdb-node)
