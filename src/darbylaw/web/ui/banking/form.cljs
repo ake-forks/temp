@@ -113,8 +113,22 @@
                               :InputProps
                               {:start-adornment
                                (r/as-element [mui/input-adornment {:position :start} "£"])}}]
+             [mui/form-group
+              [mui/form-control-label {
+                                       :control (r/as-element
+                                                  [mui/checkbox {:name :joint-check
+                                                                 :checked (get field :joint-check)
+                                                                 :label "estimated value"
+                                                                 :on-change #(handle-change % idx)}])
+                                       :label "Joint Account?"}]]
              [mui/icon-button {:on-click #(remove idx)}
               [ui/icon-delete]]]
+            (if (true? (get field :joint-check))
+              [mui/text-field {:name :joint-info
+                               :value (get field :joint-info)
+                               :label "name of other account holder"
+                               :on-change #(handle-change % idx)}]
+              [:<>])
             (if (= stage :valuation)
               [mui/text-field {:name :confirmed-value
                                :value (get field :confirmed-value)
@@ -189,7 +203,21 @@
                                (r/as-element [mui/input-adornment
                                               {:position :start} "£"])}}]
              [mui/icon-button {:on-click #(remove idx)}
-              [ui/icon-delete]]]
+              [ui/icon-delete]]
+             [mui/form-group
+              [mui/form-control-label {
+                                       :control (r/as-element
+                                                  [mui/checkbox {:name :joint-check
+                                                                 :checked (get field :joint-check)
+                                                                 :label "estimated value"
+                                                                 :on-change #(handle-change % idx)}])
+                                       :label "Joint Account?"}]]]
+            (if (true? (get field :joint-check))
+              [mui/text-field {:name :joint-info
+                               :value (get field :joint-info)
+                               :label "name of other account holder"
+                               :on-change #(handle-change % idx)}]
+              [:<>])
             (if (= stage :valuation)
               [mui/text-field {:name :confirmed-value
                                :value (get field :confirmed-value)
