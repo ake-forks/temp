@@ -85,7 +85,8 @@
                    (concat
                      (tx-fns/assert-exists letter-id)
                      (tx-fns/set-values letter-id {:send-state :error
-                                                   :send-error error})))]
+                                                   :send-error error
+                                                   :send-state-changed (xt-util/now)})))]
           (if-not (xt/tx-committed? xtdb-node tx)
             ; This can happen, as we share remote accounts among deployed
             ; environments. Therefore, just a warning.
@@ -107,7 +108,8 @@
             (concat
               ; Sanity check; shouldn't fail:
               (tx-fns/assert-nil sent-id [:send-state])
-              (tx-fns/set-values sent-id {:send-state :sent})))
+              (tx-fns/set-values sent-id {:send-state :sent
+                                          :send-state-changed (xt-util/now)})))
           (catch Exception e
             (log/error e "Failed syncing sent letter" sent-id)))))))
 

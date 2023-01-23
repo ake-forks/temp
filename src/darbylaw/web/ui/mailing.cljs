@@ -127,8 +127,7 @@
                :keys [bank-id
                       review-by review-timestamp send-action
                       upload-state
-                      send-state
-                      send-error]} post-tasks]
+                      send-state send-error send-state-changed]} post-tasks]
           ^{:key (pr-str [(:id case-data) bank-id])}
           [mui/card
            [mui/card-content
@@ -174,4 +173,10 @@
                 [mui/typography {:variant :body2
                                  :text-align :right}
                  "reviewed by " review-by
-                 " at "(date-util/show-local-numeric review-timestamp)])]]]]))]]))
+                 " at "(date-util/show-local-numeric review-timestamp)])
+
+              (when send-state-changed
+                [mui/typography {:variant :body2
+                                 :text-align :right}
+                 "send status changed at " (date-util/show-local-numeric send-state-changed)])]]]]))]]))
+
