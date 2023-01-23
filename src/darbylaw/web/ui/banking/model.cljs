@@ -124,7 +124,7 @@
       :add
       (get-asset-stage asset-data))))
 
-(defn remove-joint [data]
+(defn remove-joint-if-empty [data]
   (mapv (fn [acc]
           (if (false? (:joint-check acc))
             (apply dissoc acc [:joint-check :joint-info])
@@ -137,7 +137,7 @@
      :accounts []
      :accounts-unknown true}
     {:bank-id (keyword (:bank-id values))
-     :accounts (remove-joint values)
+     :accounts (remove-joint-if-empty values)
      :accounts-unknown false}))
 
 (defn buildsoc-transform-on-submit [values]
@@ -146,7 +146,7 @@
      :accounts []
      :accounts-unknown true}
     {:buildsoc-id (keyword (:buildsoc-id values))
-     :accounts (remove-joint values)
+     :accounts (remove-joint-if-empty values)
      :accounts-unknown false}))
 
 ; edit =
