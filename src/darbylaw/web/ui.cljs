@@ -4,9 +4,11 @@
     [reagent-mui.icons.add]
     [reagent-mui.icons.arrow-back-sharp]
     [reagent-mui.icons.help-outline]
+    [reagent-mui.icons.cloud-sync]
     [reagent-mui.icons.download]
     [reagent-mui.icons.error-outline]
     [reagent-mui.icons.edit]
+    [reagent-mui.icons.expand-more]
     [reagent-mui.icons.history]
     [reagent-mui.icons.history-edu]
     [reagent-mui.icons.keyboard-arrow-up]
@@ -43,9 +45,11 @@
 (def icon-add reagent-mui.icons.add/add)
 (def icon-arrow-back-sharp reagent-mui.icons.arrow-back-sharp/arrow-back-sharp)
 (def icon-help-outline reagent-mui.icons.help-outline/help-outline)
+(def icon-cloud-sync reagent-mui.icons.cloud-sync/cloud-sync)
 (def icon-download reagent-mui.icons.download/download)
 (def icon-error-outline reagent-mui.icons.error-outline/error-outline)
 (def icon-edit reagent-mui.icons.edit/edit)
+(def icon-expand-more reagent-mui.icons.expand-more/expand-more)
 (def icon-history reagent-mui.icons.history/history)
 (def icon-history-edu reagent-mui.icons.history-edu/history-edu)
 (def icon-keyboard-arrow-up reagent-mui.icons.keyboard-arrow-up/keyboard-arrow-up)

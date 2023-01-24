@@ -54,6 +54,14 @@
        (let [e* (xtdb.api/entity (xtdb.api/db ctx) (:xt/id e))]
          (when-not e* [[::xt/put e]])))))
 
+(defn assert-exists [eid]
+  (invoke ::assert-exists [eid]
+    '(fn [ctx eid]
+       (let [e (xtdb.api/entity (xtdb.api/db ctx) eid)]
+         (if (some? e)
+           []
+           false)))))
+
 (defn assert-nil [eid ks]
   (assert (sequential? ks))
   (invoke ::assert-nil [eid ks]

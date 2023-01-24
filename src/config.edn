@@ -23,6 +23,10 @@
 
  :mailing-service
  {:ssh #profile {:default #edn #env POST_SERVICE_MAP
+                 :test {:fake {:host "localhost"
+                               :port 2222
+                               :username "none"
+                               :password "none"}}
                  :dev {:fake {:host "localhost"
                               :port 2222
                               :username "none"
@@ -32,5 +36,6 @@
                               :username "none"
                               :password "none"}}}
   :local-sftp-server {:enabled? #profile {:default false
+                                          :test true
                                           :dev true}
                       :port 2222}}}

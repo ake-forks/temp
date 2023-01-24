@@ -75,9 +75,9 @@
     (ssh/sftp session {}
       :put from-path to-path)))
 
-(defn ls [real|fake]
+(defn run-sftp-command [real|fake cmd & args]
   (let [session (obtain-ssh-session real|fake)]
-    (ssh/sftp session {} :ls)))
+    (apply ssh/sftp session {} cmd args)))
 
 (comment
   (mount/stop #'ssh-session-atom)
@@ -86,7 +86,7 @@
   (obtain-ssh-session :fake)
   (available? :fake)
 
-  (ls :fake)
+  (run-sftp-command :fake :ls)
   (post-letter :fake "README.md" "README.md")
   (post-letter :real "README.md" "README.md")
 

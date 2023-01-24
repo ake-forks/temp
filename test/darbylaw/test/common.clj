@@ -26,10 +26,14 @@
     (mount/stop states)
     (mount/start states)))
 
+(def db-states
+  [#'profile #'config #'xtdb-node])
+
 (def ring-handler-states
-  [#'profile #'config #'xtdb-node #'ring-handler
-   #'templates #'death-certificate-verification-form-template
-   #'blank-page])
+  (into db-states
+    [#'ring-handler
+     #'templates #'death-certificate-verification-form-template
+     #'blank-page]))
 
 (def web-server-states
   (into ring-handler-states

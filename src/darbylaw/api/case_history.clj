@@ -13,7 +13,6 @@
 (defn put-event [{:keys [event case-id user] :as event-data}]
   (assert (keyword? event))
   (assert (uuid? case-id))
-  (assert (string? (:username user)))
   (put-with-tx-data
     (merge
       (dissoc event-data :case-id :user)
@@ -21,8 +20,10 @@
        :type :event
        :subject-type :probate.case
        :event/case case-id
-       :event event
-       :by (:username user)})))
+       :event event}
+      (when user
+        (assert (string? (:username user)))
+        {:by (:username user)}))))
 
 (comment
   (put-event {:event :testing-event

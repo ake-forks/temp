@@ -45,26 +45,37 @@
         :on-success [::run-success]
         :on-failure [::run-failure]})}))
 
+(rf/reg-event-fx ::sync-success
+  (fn [_ [_ _response]]))
+
+(rf/reg-event-fx ::sync-failure
+  (fn [_ [_ response]]
+    (println "failure" response)))
+
+(rf/reg-event-fx ::sync
+  (fn [_ _]
+    {:http-xhrio
+     (ui/build-http
+       {:method :post
+        :uri "/api/mailing/sync"
+        :on-success [::sync-success]
+        :on-failure [::sync-failure]})}))
+
 (rf/reg-sub ::post-tasks
   (fn [db]
     (some->> (:post-tasks db)
       (sort-by :created-at >))))
 
-(defn panel []
-  (let [post-tasks @(rf/subscribe [::post-tasks])
-        settings @(rf/subscribe [::app-settings/settings])]
-    [mui/container {:max-width :md}
-     [mui/stack {:direction :row
-                 :spacing 2
-                 :justify-content :space-between
-                 :sx {:mb 2}}
-      [mui/button {:onClick #(rf/dispatch [::load])
-                   :startIcon (r/as-element [ui/icon-refresh])
-                   :variant :outlined}
-       (if (nil? post-tasks)
-         "Load"
-         "Refresh")]
-      (when settings
+(defn manual-controls []
+  (let [settings @(rf/subscribe [::app-settings/settings])]
+    (when settings
+      [mui/accordion
+       [mui/accordion-summary {:expandIcon (r/as-element [ui/icon-expand-more])
+                               :sx {:flex-direction :row-reverse}}
+        [:b "manual controls for mailing"]]
+       [mui/accordion-details
+        [mui/typography
+         [:b "Real"] " letters are sent daily. It can be disabled in case of emergency."]
         [mui/form-group
          [mui/form-control-label
           {:control
@@ -75,12 +86,38 @@
                                         {:post-letters-disabled?
                                          (not (ui/event-target-checked %))}])}])
            :label
-           "Post letters in the background"}]])
-      [mui/button {:onClick #(rf/dispatch [::run])
-                   :startIcon (r/as-element [ui/icon-outbox])
-                   :variant :outlined
-                   :color :error}
-       "Upload now!"]]
+           "Post real letters at 5 PM"}]]
+        [mui/typography {:sx {:mt 2}}
+         [:b "Fake"] " letters are sent and synced only on-demand."]
+        [mui/stack {:direction :row
+                    :spacing 2
+                    :sx {:mt 1}}
+         [mui/button {:onClick #(rf/dispatch [::run])
+                      :startIcon (r/as-element [ui/icon-outbox])
+                      :variant :outlined
+                      :color :error}
+          "Upload fake letters now!"]
+         [mui/button {:onClick #(rf/dispatch [::sync])
+                      :startIcon (r/as-element [ui/icon-cloud-sync])
+                      :variant :outlined}
+          "Sync state of fake letters"]]]])))
+
+
+(defn panel []
+  (let [post-tasks @(rf/subscribe [::post-tasks])]
+    [mui/container {:max-width :md}
+     [mui/stack {:direction :row
+                 :spacing 2
+                 :align-items :flex-start
+                 :sx {:mb 2}}
+      [mui/button {:onClick #(rf/dispatch [::load])
+                   :startIcon (r/as-element [ui/icon-refresh])
+                   :variant :outlined}
+       (if (nil? post-tasks)
+         "Load"
+         "Refresh")]]
+     [mui/box {:sx {:mb 2}}
+      [manual-controls]]
      [mui/stack {:spacing 1}
       (cond
         (nil? post-tasks) [:<>]
@@ -89,7 +126,8 @@
         (for [{case-data :case
                :keys [bank-id
                       review-by review-timestamp send-action
-                      upload-state]} post-tasks]
+                      upload-state
+                      send-state send-error send-state-changed]} post-tasks]
           ^{:key (pr-str [(:id case-data) bank-id])}
           [mui/card
            [mui/card-content
@@ -107,15 +145,25 @@
               [mui/typography {:font-weight :bold
                                :text-align :right}
                (cond
+                 (some? send-state)
+                 (str
+                   (case send-state
+                     :error "send error"
+                     (name send-state))
+                   (when (= send-state :error)
+                     (str " (" send-error ")"))
+                   (when (= send-action :fake-send)
+                     " [fake]"))
+
                  (some? upload-state)
                  (str (name upload-state)
                    (when (= send-action :fake-send)
-                     " (fake)"))
+                     " [fake]"))
 
                  (some? send-action)
                  (case send-action
                    :send "ready to send"
-                   :fake-send "ready to send (fake)"
+                   :fake-send "ready to send [fake]"
                    :do-not-send "not to be sent")
 
                  :else
@@ -125,4 +173,10 @@
                 [mui/typography {:variant :body2
                                  :text-align :right}
                  "reviewed by " review-by
-                 " at "(date-util/show-local-numeric review-timestamp)])]]]]))]]))
+                 " at "(date-util/show-local-numeric review-timestamp)])
+
+              (when send-state-changed
+                [mui/typography {:variant :body2
+                                 :text-align :right}
+                 "send status changed at " (date-util/show-local-numeric send-state-changed)])]]]]))]]))
+
