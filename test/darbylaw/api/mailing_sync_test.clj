@@ -1,7 +1,7 @@
-(ns darbylaw.api.mailing-monitor-test
+(ns darbylaw.api.mailing-sync-test
   (:require
     [clojure.string :as str]
-    [clojure.test :refer :all]
+    [clojure.test :refer [deftest is use-fixtures]]
     [darbylaw.api.util.xtdb :as xt-util]
     [darbylaw.test.common :as t]
     [darbylaw.api.services.local-sftp-server :as local-sftp]
