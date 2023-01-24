@@ -8,7 +8,6 @@
     [darbylaw.web.routes :as routes]
     [darbylaw.web.ui.funeral.model :as funeral-model]
     [darbylaw.web.ui.funeral.dialog :as funeral-dialog]
-    [darbylaw.web.ui.bank-model :as bank-model]
     [darbylaw.web.ui.case-model :as case-model]
     [darbylaw.web.ui.banking.model :as banking-model]
     [darbylaw.web.ui.banking.dialog :as banking-dialog]
@@ -20,7 +19,8 @@
     [re-frame.core :as rf]
     [reagent.format :as format]
     [darbylaw.web.theme :as theme]
-    [darbylaw.web.ui.case-commons :as case-commons]))
+    [darbylaw.web.ui.case-commons :as case-commons]
+    [reagent-mui.lab.masonry :as mui-masonry]))
 
 (defn bank-item [bank]
   (let [bank-data (bank-list/bank-by-id (:bank-id bank))
@@ -165,6 +165,11 @@
       {:title "add building society"
        :on-click #(rf/dispatch [::banking-model/show-add-dialog :buildsoc])}]]))
 
+(defn bills-card []
+  [asset-card {:title "household bills"}
+   [asset-add-button
+    {:title "add bill"
+     :on-click #()}]])
 
 (defn heading [current-case]
   [mui/box {:sx {:background-color theme/off-white :padding-bottom {:xs "2rem" :xl "4rem"}}}
@@ -191,23 +196,15 @@
      [progress-bar/progress-bar]]]])
 
 (defn content [current-case]
-
   [mui/container {:maxWidth :xl}
-
    [mui/stack {:spacing 2 :sx {:pt "1rem" :pb "2rem"}}
     [mui/typography {:variant :h5} "estate details"]
-
-
     [mui/stack {:direction :row :spacing 1 :style {:margin-top "0.5rem"}}
-     [mui/grid {:container true :spacing 1 :columns 3
-                :style {:width "70%"}}
-      [mui/grid {:item true :xs 1}
-       [bank-card current-case]]
-      [mui/grid {:item true :xs 1}
-       [funeral-card current-case]]
-      [mui/grid {:item true :xs 1}
-       [buildsoc-card]]]
-
+     [mui-masonry/masonry {:columns 3}
+      [bank-card current-case]
+      [buildsoc-card]
+      [bills-card]
+      [funeral-card current-case]]
      [mui/stack {:spacing 2 :style {:width "30%"}}
       [tasks/tasks-tile]
       [overview/overview-card]]]]])
