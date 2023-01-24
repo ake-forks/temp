@@ -1,0 +1,2 @@
+{:lint-as {darbylaw.api.util.files/with-delete clojure.core/let
+           mount.core/defstate clojure.core/def}}
