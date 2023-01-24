@@ -70,7 +70,7 @@
         ; Both `ls` operations one just after another to reduce the risk of
         ; in-between changes, and have a snapshot as consistent as possible.
         awaiting-files (mailing/run-sftp-command remote :ls)
-        errored-files (mailing/run-sftp-command remote :ls "Errors")
+        errored-files (mailing/run-sftp-command remote :ls errors-dir)
 
         awaiting-files (digest-files awaiting-files parse-awaiting-filename)
         errored-files (digest-files errored-files parse-errored-filename)]
