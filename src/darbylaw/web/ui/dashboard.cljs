@@ -20,7 +20,8 @@
     [reagent.format :as format]
     [darbylaw.web.theme :as theme]
     [darbylaw.web.ui.case-commons :as case-commons]
-    [reagent-mui.lab.masonry :as mui-masonry]))
+    [reagent-mui.lab.masonry :as mui-masonry]
+    [darbylaw.web.ui.bills.add-dialog :as add-bill-dialog]))
 
 (defn bank-item [bank]
   (let [bank-data (bank-list/bank-by-id (:bank-id bank))
@@ -166,10 +167,12 @@
        :on-click #(rf/dispatch [::banking-model/show-add-dialog :buildsoc])}]]))
 
 (defn bills-card []
-  [asset-card {:title "household bills"}
-   [asset-add-button
-    {:title "add bill"
-     :on-click #()}]])
+  [:<>
+   [add-bill-dialog/dialog]
+   [asset-card {:title "household bills"}
+    [asset-add-button
+     {:title "add bill"
+      :on-click add-bill-dialog/show}]]])
 
 (defn heading [current-case]
   [mui/box {:sx {:background-color theme/off-white :padding-bottom {:xs "2rem" :xl "4rem"}}}
