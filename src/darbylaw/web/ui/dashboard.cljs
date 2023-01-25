@@ -8,7 +8,6 @@
     [darbylaw.web.routes :as routes]
     [darbylaw.web.ui.funeral.model :as funeral-model]
     [darbylaw.web.ui.funeral.dialog :as funeral-dialog]
-    [darbylaw.web.ui.bank-model :as bank-model]
     [darbylaw.web.ui.case-model :as case-model]
     [darbylaw.web.ui.banking.model :as banking-model]
     [darbylaw.web.ui.banking.dialog :as banking-dialog]
@@ -17,6 +16,7 @@
     [darbylaw.web.ui.progress-bar :as progress-bar]
     [darbylaw.web.ui.overview-tile :as overview]
     [darbylaw.web.ui.tasks-tile :as tasks]
+    [darbylaw.web.ui.keydocs.dialog :as key-docs]
     [re-frame.core :as rf]
     [reagent.format :as format]
     [darbylaw.web.theme :as theme]
@@ -37,15 +37,15 @@
         [mui/typography {:variant :body1} (:common-name bank-data)]]
        [mui/typography {:variant :body1 :sx {:font-weight :bold}}
         (->> accounts
-             (map #(if-let [confirmed-value (:confirmed-value %)]
-                     confirmed-value
-                     (:estimated-value %)))
-             (map #(if (str/blank? %)
-                     0
-                     (js/parseFloat %)))
-             (reduce +)
-             (format/format "%.2f")
-             (str "£"))]]]
+          (map #(if-let [confirmed-value (:confirmed-value %)]
+                  confirmed-value
+                  (:estimated-value %)))
+          (map #(if (str/blank? %)
+                  0
+                  (js/parseFloat %)))
+          (reduce +)
+          (format/format "%.2f")
+          (str "£"))]]]
      [mui/divider {:variant "middle"}]]))
 
 (defn add-bank []
@@ -151,14 +151,14 @@
            ^{:key id}
            [asset-item {:title (banking-model/asset-label :buildsoc id)
                         :value (->> buildsoc
-                                    :accounts
-                                    (map #(if-let [confirmed-value (:confirmed-value %)]
-                                            confirmed-value
-                                            (:estimated-value %)))
-                                    (map #(if (str/blank? %)
-                                            0
-                                            (js/parseFloat %)))
-                                    (reduce +))
+                                 :accounts
+                                 (map #(if-let [confirmed-value (:confirmed-value %)]
+                                         confirmed-value
+                                         (:estimated-value %)))
+                                 (map #(if (str/blank? %)
+                                         0
+                                         (js/parseFloat %)))
+                                 (reduce +))
                         :on-click #(rf/dispatch [::banking-model/show-process-dialog :buildsoc id])}]))
        (:buildsoc-accounts current-case))
      [asset-add-button
@@ -210,6 +210,8 @@
 
      [mui/stack {:spacing 2 :style {:width "30%"}}
       [tasks/tasks-tile]
+      [key-docs/dash-button]
+      [key-docs/dialog]
       [overview/overview-card]]]]])
 
 (defn panel* []
