@@ -1,2 +1,4 @@
 {:lint-as {darbylaw.api.util.files/with-delete clojure.core/let
-           mount.core/defstate clojure.core/def}}
+           mount.core/defstate clojure.core/def
+           reagent.core/with-let clojure.core/let
+           reagent-mui.util/react-component clojure.core/fn}}
