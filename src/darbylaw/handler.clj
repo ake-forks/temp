@@ -104,6 +104,16 @@
     (clojure.walk/prewalk #(cond-> %
                              (map? %) (dissoc :middleware)))))
 
+(defn no-cache-response
+  "Adds headers to enable caching of the request if the response is a success."
+  [response]
+  (if (= (:status response) 200)
+    (-> response
+        (r/header "Cache-Control" "no-cache") ;; must-revalidate
+        (r/header "Pragma" "no-cache")
+        (r/header "Expires" "0"))
+    response))
+
 (defn wrap-no-cache [handler]
   "Add the appropriate headers to tell the browser to not *permanently* cache the results of this request.
   
@@ -111,11 +121,13 @@
         It just means that the browser will check to see if it should update the cache.
         i.e. It will send a GET request to the server.
              Which might respond with 304, or the new content. See wrap-not-modified."
-  (fn [req]
-    (-> (handler req)
-        (r/header "Cache-Control" "no-cache") ;; must-revalidate
-        (r/header "Pragma" "no-cache")
-        (r/header "Expires" "0"))))
+  (fn
+    ([request]
+     (-> request handler no-cache-response))
+    ([request respond raise]
+     (handler request
+              (fn [response] (respond (no-cache-response response)))
+              raise))))
 
 (defn make-ring-handler []
   (ring/ring-handler
