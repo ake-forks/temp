@@ -96,21 +96,22 @@
     [mui/stack {}
      [tall
       [centred-vertically
-       [mui/stack {:max-width "450px" ;; TODO: use a grid instead of fixed width?
-                   :spacing 3}
-        [mui/typography {:variant :h4}
-         "probate made easy"]
-        [mui/typography {:variant :text}
-         "Lorem ipsum dolor sit amet, consetetur sadipscing
-elitr, sed diam nonumy eirmod tempor invidunt ut
-labore et dolore magna aliquyam erat, sed diam volu
-ptua. At vero eos et accusam et justo duo dolores et
-ea rebum. Stet clita kasd gubergren, no sea takimata
-sanctus est Lorem."]
-        [mui/box {:sx {:pt 2}}
-         [mui/button {:variant :contained
-                      :on-click #(rf/dispatch [::ui/navigate :create-case])}
-          "do I need probate?"]]]]]
+       [mui/grid {:container true}
+        [mui/grid {:item true :xs 4}
+         [mui/stack {:spacing 3}
+          [mui/typography {:variant :h4}
+            "probate made easy"]
+          [mui/typography {:variant :text}
+           "Lorem ipsum dolor sit amet, consetetur sadipscing
+elitr, s ed diam nonumy eirmod tempor invidunt ut
+labore e t dolore magna aliquyam erat, sed diam volu
+ptua. At  vero eos et accusam et justo duo dolores et
+ea rebum . Stet clita kasd gubergren, no sea takimata
+sanctus  est Lorem."]
+          [mui/box {:sx {:pt 2}}
+           [mui/button {:variant :contained
+                        :on-click #(rf/dispatch [::ui/navigate :create-case])}
+            "do I need probate?"]]]]]]]
      [centred-horizontally
       [mui/stack
        [ui/icon-mouse-outlined]
@@ -173,6 +174,7 @@ tempor invidunt ut labore et dolore."]
          :background-position "top left"
          :background-repeat :repeat
 
+         ;; Have price image fill available space
          :width "100%"
          :height "100%"}}])
 
