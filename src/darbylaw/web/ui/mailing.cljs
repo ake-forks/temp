@@ -102,6 +102,42 @@
                       :variant :outlined}
           "Sync state of fake letters"]]]])))
 
+(rf/reg-sub ::dialog-open
+  (fn [db]
+    (:dialog/mailing-pdf-dialog db)))
+
+(rf/reg-sub ::pdf-url
+  (fn [db]
+    (:mailing-pdf-dialog-url db)))
+
+(rf/reg-event-db ::show-mailing-dialog
+  (fn [db [_ url]]
+    (-> db
+        (assoc :dialog/mailing-pdf-dialog true)
+        (assoc :mailing-pdf-dialog-url url))))
+
+(rf/reg-event-db ::hide-mailing-dialog
+  (fn [db [_]]
+    (assoc db :dialog/mailing-pdf-dialog false)))
+
+(defn dialog []
+  (let [dialog-open @(rf/subscribe [::dialog-open])]
+    [mui/dialog {:open dialog-open
+                 :max-width :xl
+                 :max-height :xl
+                 :full-width true}
+     [mui/dialog-title
+      [mui/stack {:direction :row
+                  :style {:justify-content :space-between}}
+       [mui/typography {:variant :h6} "Notification PDF"]
+       [mui/icon-button {:onClick #(rf/dispatch [::hide-mailing-dialog])}
+        [ui/icon-close]]]]
+     ;; TODO: Fix this "height" hack
+     [mui/dialog-content {:sx {:height "10000px"}}
+      (when-let [url @(rf/subscribe [::pdf-url])]
+        [:iframe {:style {:width "100%"
+                          :height "100%"}
+                  :src url}])]]))
 
 (defn panel []
   (let [post-tasks @(rf/subscribe [::post-tasks])]
@@ -124,7 +160,7 @@
         (empty? post-tasks) "No mailing tasks"
         :else
         (for [{case-data :case
-               :keys [bank-id
+               :keys [bank-id bank-type
                       review-by review-timestamp send-action
                       upload-state
                       send-state send-error send-state-changed]} post-tasks]
@@ -136,7 +172,13 @@
              [ui/icon-mail-outlined {:sx {:alignSelf :center
                                           :m 1}}]
              [mui/box {:flexGrow 2}
-              [mui/typography [:strong "type "] "bank notification letter"]
+              [mui/stack {:direction :row :spacing 1}
+               [mui/typography [:strong "type"]]
+               [:a {:on-click #(rf/dispatch [::show-mailing-dialog (str "/api/case/" (:id case-data) "/" (name bank-type) "/" (name bank-id) "/notification-pdf")])
+                    :href "#"}
+                [mui/stack {:direction :row}
+                 [mui/typography "bank notification letter"]
+                 [ui/icon-open-in-new {:sx {:font-size :small}}]]]]
               [mui/tooltip {:title (str "case id: " (:id case-data))}
                [mui/typography [:strong "case "] (:reference case-data)]]
               [mui/typography [:strong "bank "] (or (banks/bank-label bank-id)
@@ -178,5 +220,6 @@
               (when send-state-changed
                 [mui/typography {:variant :body2
                                  :text-align :right}
-                 "send status changed at " (date-util/show-local-numeric send-state-changed)])]]]]))]]))
+                 "send status changed at " (date-util/show-local-numeric send-state-changed)])]]]]))]
+     [dialog]]))
 
