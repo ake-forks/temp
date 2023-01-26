@@ -5,7 +5,9 @@
     [re-frame.core :as rf]
     [reagent-mui.components :as mui]
     [reagent.core :as r]
-    [darbylaw.web.ui.bills.model :as model]))
+    [darbylaw.web.ui.bills.model :as model]
+    [darbylaw.web.ui.case-model :as case-model]
+    [fork.re-frame :as fork]))
 
 (defn company-select [fork-args]
   [form-util/autocomplete-field fork-args
@@ -15,36 +17,75 @@
     :getOptionLabel @(rf/subscribe [::model/company-id->label])
     :freeSolo true}])
 
-(rf/reg-event-db ::open
+(rf/reg-event-db ::set-dialog-open
   (fn [db [_ show?]]
-    (assoc db ::open? show?)))
+    (assoc db ::dialog-open? show?)))
 
-(rf/reg-sub ::open?
+(rf/reg-sub ::form-submitting?
   (fn [db]
-    (-> db ::open?)))
+    (::form-submitting? db)))
+
+(rf/reg-sub ::dialog-open?
+  (fn [db]
+    (or (::dialog-open? db)
+        (::form-submitting? db))))
 
 (def form-state (r/atom nil))
 
+(defn set-submitting [db fork-params submitting?]
+  (-> db
+    (fork/set-submitting (:path fork-params) submitting?)
+    (assoc ::form-submitting? submitting?)))
+
+(rf/reg-event-fx ::submit-success
+  (fn [{:keys [db]} [_ fork-params _response]]
+    {:db (set-submitting db fork-params false)}
+    (rf/dispatch [#(rf/dispatch [::set-dialog-open false])])))
+
+(rf/reg-event-fx ::submit-failure
+  (fn [{:keys [db]} [_ fork-params error-result]]
+    {:db (set-submitting db fork-params false)
+     ::ui/notify-user-http-error {:message "Error on adding household bill"
+                                  :result error-result}}))
+
+(rf/reg-event-fx ::submit!
+  (fn [{:keys [db]} [_ case-id {:keys [values] :as fork-params}]]
+    {:db (set-submitting db fork-params true)
+     :http-xhrio
+     (ui/build-http
+       {:method :post
+        :uri (str "/api/case/" case-id "/bill")
+        :params values
+        :on-success [::submit-success fork-params]
+        :on-failure [::submit-failure fork-params]})}))
+
 (defn form []
-  [form-util/form {:form-state form-state}
-   (fn [fork-args]
-     [:<>
+  [form-util/form
+   {:form-state form-state
+    :on-submit (let [case-id @(rf/subscribe [::case-model/case-id])]
+                 #(rf/dispatch [::submit! case-id %]))}
+   (fn [{:keys [handle-submit submitting?] :as fork-args}]
+     [:form {:on-submit handle-submit}
       [mui/dialog-content
        [company-select fork-args]]
       [mui/dialog-actions
-       [mui/button {:variant :contained}
+       [ui/loading-button {:type :submit
+                           :loading submitting?
+                           :variant :contained}
         "Add"]
-       [mui/button {:variant :outlined
-                    :onClick #(rf/dispatch [::open false])}
+       [mui/button {:onClick #(rf/dispatch [::set-dialog-open false])
+                    :disabled @(rf/subscribe [::form-submitting?])
+                    :variant :outlined}
         "Cancel"]]])])
 
 (defn dialog []
-  [mui/dialog {:open (boolean @(rf/subscribe [::open?]))}
+  [mui/dialog {:open (boolean @(rf/subscribe [::dialog-open?]))}
    [mui/dialog-title
     "add household bill"
-    [mui/icon-button {:onClick #(rf/dispatch [::open false])}
+    [mui/icon-button {:onClick #(rf/dispatch [::set-dialog-open false])
+                      :disabled @(rf/subscribe [::form-submitting?])}
      [ui/icon-close]]]
    [form]])
 
 (defn show []
-  (rf/dispatch [::open true]))
+  (rf/dispatch [::set-dialog-open true]))
