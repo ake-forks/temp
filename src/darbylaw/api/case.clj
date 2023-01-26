@@ -1,12 +1,16 @@
 (ns darbylaw.api.case
-  (:require [xtdb.api :as xt]
-            [reitit.coercion]
-            [reitit.coercion.malli]
-            [ring.util.response :as ring]
-            [darbylaw.api.util.http :as http]
-            [darbylaw.api.case-history :as case-history]
-            [darbylaw.api.util.xtdb :as xt-util]
-            [darbylaw.api.util.tx-fns :as tx-fns]))
+  (:require
+    [darbylaw.api.util.data :as data-util]
+    [darbylaw.doc-store :as doc-store]
+    [xtdb.api :as xt]
+    [reitit.coercion]
+    [reitit.coercion.malli]
+    [ring.util.response :as ring]
+    [darbylaw.api.util.http :as http]
+    [darbylaw.api.case-history :as case-history]
+    [darbylaw.api.util.xtdb :as xt-util]
+    [darbylaw.api.util.files :refer [with-delete]]
+    [darbylaw.api.util.tx-fns :as tx-fns]))
 
 (def date--schema
   [:re #"^\d{4}-\d{2}-\d{2}$"])
@@ -136,6 +140,44 @@
     {:status 200
      :body pr-info}))
 
+(defn get-reference [xtdb-node case-id]
+  (-> (xt/pull (xt/db xtdb-node)
+        [:reference] case-id)
+    :reference))
+
+(defn post-document [{:keys [xtdb-node user path-params multipart-params]}]
+  (let [case-id (parse-uuid (:case-id path-params))
+        reference (get-reference xtdb-node case-id)
+        {:keys [tempfile content-type]} (get multipart-params "file")
+        _ (assert (= content-type "application/pdf"))
+        filename (data-util/strip-end (get multipart-params "filename") ".pdf")
+        document-name (get multipart-params "document")]
+    (with-delete [tempfile tempfile]
+      (doc-store/store (str case-id "/" document-name "/" reference "." filename) tempfile))
+    (do
+      (xt-util/exec-tx xtdb-node
+        (tx-fns/set-value case-id [:key-documents (keyword document-name)] filename)))
+    {:status 204}))
+
+(defn get-filename [xtdb-node case-id document-name]
+  (-> (xt/pull (xt/db xtdb-node)
+        [:key-documents] case-id)
+    (get-in [:key-documents (keyword document-name)])))
+
+;doc key format:
+;  "01e7dbc7-eac4-4a18-93a0-808a0626c4a3/death-certificate/000600.test")
+(defn get-document [{:keys [xtdb-node path-params query-params]}]
+  (let [case-id (parse-uuid (:case-id path-params))
+        document-name (get query-params "doc-name")
+        filename (get-filename xtdb-node case-id document-name)
+        reference (get-reference xtdb-node case-id)
+        input-stream (doc-store/fetch
+                       (str case-id "/" document-name "/" reference "." filename))]
+    {:status 200
+     :headers {"Content-Type" "application/pdf"}
+     :body input-stream}))
+
+
 (def common-case-eql
   ['(:xt/id {:as :id})
    :reference
@@ -179,6 +221,7 @@
                :funeral-account
                :funeral-expense
                :bank
+               :key-documents
                {:bank-accounts (into
                                  [:bank-id
                                   :accounts-unknown
@@ -270,7 +313,12 @@
      ["/deceased"
       {:put {:handler update-deceased
              :coercion reitit.coercion.malli/coercion
-             :parameters {:body deceased--schema}}}]]]
+             :parameters {:body deceased--schema}}}]
+     ["/upload-document"
+      {:post {:handler post-document}}]
+     ["/get-document"
+      {:get {:handler get-document}}]]]
+
 
    ["/event"
     ["/:event-id" {:get {:handler get-event}}]]
