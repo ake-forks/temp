@@ -1,6 +1,6 @@
 (ns darbylaw.web.ui.bills.model
   (:require [re-frame.core :as rf]
-            [darbylaw.api.bills.data :as bills-data]))
+            [darbylaw.api.bill.data :as bills-data]))
 
 (rf/reg-sub ::companies
   (fn [_]

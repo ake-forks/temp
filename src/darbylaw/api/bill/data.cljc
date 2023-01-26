@@ -1,4 +1,4 @@
-(ns darbylaw.api.bills.data)
+(ns darbylaw.api.bill.data)
 
 (def bill-types
   (array-map
@@ -36,3 +36,19 @@
     :address-county "",
     :address-country "",
     :logo nil}])
+
+(def bill-schema
+  [:map
+   [:company [:or
+              (into [:enum] (map :id companies))
+              [:string {:min 1}]]]
+   [:bill-type [:set (into [:enum] (keys bill-types))]]])
+
+(comment
+  (require '[malli.core :as malli])
+  (malli/explain bill-schema {:company :mine
+                              :bill-type #{:ok}}))
+
+(def bill-props
+  (->> (rest bill-schema)
+    (mapv first)))

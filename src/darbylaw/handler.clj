@@ -22,6 +22,7 @@
     [darbylaw.api.bank :as bank-api]
     [darbylaw.api.buildingsociety :as buildsoc-api]
     [darbylaw.api.funeral :as funeral-api]
+    [darbylaw.api.bill :as bill-api]
     [darbylaw.api.bank-notification :as bank-notification-api]
     [darbylaw.api.bank-notification.mailing-controls :as mailing]
     [darbylaw.middleware.xtdb :refer [wrap-xtdb-node]]
@@ -72,6 +73,7 @@
      (bank-api/routes)
      (buildsoc-api/routes)
      (funeral-api/routes)
+     (bill-api/routes)
      (bank-notification-api/routes)
      (mailing/routes)]]])
 
@@ -104,7 +106,7 @@
     (clojure.walk/prewalk #(cond-> %
                              (map? %) (dissoc :middleware)))))
 
-(defn wrap-no-cache [handler]
+(defn wrap-no-cache
   "Add the appropriate headers to tell the browser to not *permanently* cache the results of this request.
   
   NOTE: This doesn't mean that the browser won't cache the result.
