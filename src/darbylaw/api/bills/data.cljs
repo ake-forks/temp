@@ -1,6 +1,15 @@
-(ns darbylaw.api.bills.company-list)
+(ns darbylaw.api.bills.data)
 
-(def company-list
+(def bill-types
+  (array-map
+    :gas {:label "gas"}
+    :electricity {:label "electricity"}
+    :telephone {:label "telephone"}
+    :broadband {:label "broadband"}
+    :council-tax {:label "council tax"}
+    :other {:label "other"}))
+
+(def companies
   [{:id :utility-1,
     :common-name "Utility 1",
     :org-name "Utility 1 Org",

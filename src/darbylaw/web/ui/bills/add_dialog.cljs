@@ -5,17 +5,9 @@
     [re-frame.core :as rf]
     [reagent-mui.components :as mui]
     [reagent.core :as r]
-    [darbylaw.web.ui.bills.model :as model]
     [darbylaw.web.ui.case-model :as case-model]
-    [fork.re-frame :as fork]))
-
-(defn company-select [fork-args]
-  [form-util/autocomplete-field fork-args
-   {:name :company
-    :label "Company"
-    :options @(rf/subscribe [::model/all-company-ids])
-    :getOptionLabel @(rf/subscribe [::model/company-id->label])
-    :freeSolo true}])
+    [fork.re-frame :as fork]
+    [darbylaw.web.ui.bills.add-form :as add-form]))
 
 (rf/reg-event-db ::set-dialog-open
   (fn [db [_ show?]]
@@ -67,7 +59,7 @@
    (fn [{:keys [handle-submit submitting?] :as fork-args}]
      [:form {:on-submit handle-submit}
       [mui/dialog-content
-       [company-select fork-args]]
+       [add-form/form fork-args]]
       [mui/dialog-actions
        [ui/loading-button {:type :submit
                            :loading submitting?

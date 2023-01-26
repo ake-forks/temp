@@ -1,10 +1,10 @@
 (ns darbylaw.web.ui.bills.model
   (:require [re-frame.core :as rf]
-            [darbylaw.api.bills.company-list :as company-list]))
+            [darbylaw.api.bills.data :as bills-data]))
 
 (rf/reg-sub ::companies
   (fn [_]
-    company-list/company-list))
+    bills-data/companies))
 
 (rf/reg-sub ::all-company-ids
   :<- [::companies]
@@ -18,3 +18,9 @@
       (fn [id]
         (or (get label-by-id (keyword id))
             (name id))))))
+
+(rf/reg-sub ::bill-types
+  (fn [_]
+    (for [[name {:keys [label]}] bills-data/bill-types]
+      {:name name
+       :label label})))
