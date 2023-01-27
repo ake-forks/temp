@@ -82,18 +82,22 @@
     ; errors folder, so it has to be corrected and marked as `:errored`.
     (doseq [{:keys [letter-id error filename]} errored-files]
       (try
-        (let [tx (xt-util/exec-tx xtdb-node
-                   (concat
-                     (tx-fns/assert-exists letter-id)
-                     (tx-fns/set-values letter-id {:send-state :error
-                                                   :send-error error
-                                                   :send-state-changed (xt-util/now)})))]
-          (if-not (xt/tx-committed? xtdb-node tx)
-            ; This can happen, as we share remote accounts among deployed
-            ; environments. Therefore, just a warning.
-            (log/warn "Corresponding letter not found in DB:" letter-id)
-            ; File may have been removed already by a concurrent execution:
-            (sftp-remove--ignore-not-found remote (str errors-dir "/" filename))))
+        (if-let [{:keys [case-id bank-id]} (xt/entity (xt/db xtdb-node) letter-id)]
+          (do
+            (xt-util/exec-tx-or-throw xtdb-node
+              (concat
+                (tx-fns/set-values letter-id {:send-state :error
+                                              :send-error error
+                                              :send-state-changed (xt-util/now)})
+                (case-history/put-event {:event :bank-notification.letter-send-error
+                                         :case-id case-id
+                                         :bank-id bank-id
+                                         :letter-id letter-id
+                                         :send-error error})))
+            (sftp-remove--ignore-not-found remote (str errors-dir "/" filename)))
+          ; This can happen, as we share remote accounts among deployed
+          ; environments. Therefore, just a warning.
+          (log/warn "Corresponding letter not found in DB:" letter-id))
         (catch Exception e
           (log/error e "Failed syncing errored letter file" filename))))
 
