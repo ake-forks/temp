@@ -104,7 +104,7 @@
                       :noWrap true
                       :sx {:width "100%"}}
       title]
-     (if (number? value)
+     (when (number? value)
        [mui/typography {:variant :body1
                         :sx {:font-weight :bold}}
         (str "£" (format-currency value))])]]
