@@ -1,6 +1,7 @@
 (ns darbylaw.api.util.data
   (:require [camel-snake-kebab.core :as csk]
-            [clojure.string :as str]))
+            [clojure.string :as str])
+  (:import (java.time LocalDateTime)))
 
 (defn keys-to-camel-case [m]
   (clojure.walk/postwalk
@@ -23,3 +24,7 @@
 (comment
   (strip-end "hello" "l")
   (strip-end "hello" "lo"))
+
+(defn instant->localtime [instant zone-id]
+  (-> (LocalDateTime/ofInstant instant zone-id)
+    (.toLocalTime)))
