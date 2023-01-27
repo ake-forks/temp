@@ -1,6 +1,7 @@
 (ns darbylaw.api.bill
   (:require [darbylaw.api.bill.data :as bill-data]
             [darbylaw.api.case-history :as case-history]
+            [darbylaw.api.util.http :as http]
             [darbylaw.api.util.tx-fns :as tx-fns]
             [darbylaw.api.util.xtdb :as xt-util]
             [xtdb.api :as xt]))
@@ -20,7 +21,8 @@
                                  :case-id case-id
                                  :user user
                                  :op :add
-                                 :company (:company bill-data)})))))
+                                 :company (:company bill-data)}))))
+  {:status http/status-204-no-content})
 
 (defn routes []
   ["/case/:case-id/bill" {:post {:handler add-bill

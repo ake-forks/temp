@@ -167,12 +167,19 @@
        :on-click #(rf/dispatch [::banking-model/show-add-dialog :buildsoc])}]]))
 
 (defn bills-card []
-  [:<>
-   [add-bill-dialog/dialog]
-   [asset-card {:title "household bills"}
-    [asset-add-button
-     {:title "add bill"
-      :on-click add-bill-dialog/show}]]])
+  ; Just a mock for now for showing companies.
+  (let [bills (:bills @(rf/subscribe [::case-model/current-case]))
+        companies (->> (distinct (map :company bills))
+                    (remove nil?))]
+    [:<>
+     [add-bill-dialog/dialog]
+     [asset-card {:title "household bills"}
+      (for [company companies]
+        ^{:key company}
+        [asset-item {:title company}])
+      [asset-add-button
+       {:title "add bill"
+        :on-click add-bill-dialog/show}]]]))
 
 (defn heading [current-case]
   [mui/box {:sx {:background-color theme/off-white :padding-bottom {:xs "2rem" :xl "4rem"}}}

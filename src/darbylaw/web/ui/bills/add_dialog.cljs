@@ -30,9 +30,12 @@
     (assoc ::form-submitting? submitting?)))
 
 (rf/reg-event-fx ::submit-success
-  (fn [{:keys [db]} [_ fork-params _response]]
-    {:db (set-submitting db fork-params false)}
-    (rf/dispatch [#(rf/dispatch [::set-dialog-open false])])))
+  (fn [{:keys [db]} [_ case-id fork-params _response]]
+    {:db (-> db
+           (set-submitting fork-params false)
+           (assoc ::dialog-open? false))
+     ; Should we wait until case is loaded to close the dialog?
+     :dispatch [::case-model/load-case! case-id]}))
 
 (rf/reg-event-fx ::submit-failure
   (fn [{:keys [db]} [_ fork-params error-result]]
@@ -48,7 +51,7 @@
        {:method :post
         :uri (str "/api/case/" case-id "/bill")
         :params values
-        :on-success [::submit-success fork-params]
+        :on-success [::submit-success case-id fork-params]
         :on-failure [::submit-failure fork-params]})}))
 
 (defn form []
