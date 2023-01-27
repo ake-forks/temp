@@ -9,7 +9,8 @@
     [darbylaw.web.theme :as theme]
     [darbylaw.web.ui.case-model :as case-model]
     [darbylaw.web.ui.deceased-details-form :as dd-form]
-    [darbylaw.web.ui.banking.model :as banking-model]))
+    [darbylaw.web.ui.banking.model :as banking-model]
+    [darbylaw.web.ui.keydocs.tasks :refer [keydocs-tasks]]))
 
 (defn task-item [{:keys [title body icon-path on-click href]}]
   [:<>
@@ -42,16 +43,16 @@
     (when-not (= stage :complete)
       [task-item
        {:title (str "tasks for "
-                    (banking-model/asset-label type id))
+                 (banking-model/asset-label type id))
         :body (stage->copy-text stage)
         :icon-path task-icon
         :on-click #(rf/dispatch [::banking-model/show-process-dialog type id])}])))
 
 (defn valid? [validations data]
   (->> data
-       (v/validate validations)
-       (remove #(= (:type %) :darbylaw.web.util.vlad/valid-dayjs-date))
-       empty?))
+    (v/validate validations)
+    (remove #(= (:type %) :darbylaw.web.util.vlad/valid-dayjs-date))
+    empty?))
 
 (defn case-tasks [{case-id :id :keys [deceased personal-representative]}]
   [:<>
@@ -62,13 +63,14 @@
        :icon-path task-icon
        :href (kf/path-for [:deceased-details {:case-id case-id}])}])])
 
+
 (defn tasks-tile []
   [mui/card {:style {:height "350px" :background-color theme/off-white}}
    [mui/card-content
     [mui/typography {:variant :h5 :sx {:mb 1}}
      "tasks"]
     [mui/divider]
-
+    [keydocs-tasks]
     [mui/stack {:sx {:overflow-y :auto :max-height 280}}
      [case-tasks @(rf/subscribe [::case-model/current-case])]
      (for [bank @(rf/subscribe [::banking-model/banks])]

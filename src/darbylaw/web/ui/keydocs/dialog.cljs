@@ -40,8 +40,9 @@
 (defn get-button [document-name]
   (let [case-id @(rf/subscribe [::case-model/case-id])
         key-docs @(rf/subscribe [::model/key-documents])
+        present? @(rf/subscribe [::model/document-present? (keyword document-name)])
         label (clojure.string/replace document-name "-" " ")]
-    (if (contains? key-docs (keyword document-name))
+    (if present?
       [mui/stack {:spacing 0.5}
        [view-button case-id document-name (str "view " label)]
        [mui/stack {:direction :row
@@ -59,16 +60,15 @@
         :style {:background-color theme/orange}}])))
 
 (defn content []
-  (let [key-docs @(rf/subscribe [::model/key-documents])]
-    [mui/box {:style {:height "60vh"
-                      :padding "1rem"}}
-     [mui/stack {:direction :row :spacing 2 :sx {:width 1 :height 1}}
-      [mui/stack {:spacing 2 :sx {:width 0.5}}
-       [get-button "death-certificate"]
-       [get-button "will"]
-       [get-button "grant-of-probate"]]
-      [mui/stack {:spacing 1 :sx {:width 0.5}}
-       [mui/typography {:variant :body1} "upload and view key documents related to the case"]]]]))
+  [mui/box {:style {:height "60vh"
+                    :padding "1rem"}}
+   [mui/stack {:direction :row :spacing 2 :sx {:width 1 :height 1}}
+    [mui/stack {:spacing 2 :sx {:width 0.5}}
+     [get-button "death-certificate"]
+     [get-button "will"]
+     [get-button "grant-of-probate"]]
+    [mui/stack {:spacing 1 :sx {:width 0.5}}
+     [mui/typography {:variant :body1} "upload and view key documents related to the case"]]]])
 
 
 (defn dialog []

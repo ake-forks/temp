@@ -25,6 +25,11 @@
   :<- [::case-model/current-case]
   #(:key-documents %))
 
+(rf/reg-sub ::document-present?
+  :<- [::key-documents]
+  (fn [key-docs [_ document]]
+    (contains? key-docs document)))
+
 (def file-uploading? (r/atom false))
 
 (ui/reg-fx+event ::reset-file-uploading
