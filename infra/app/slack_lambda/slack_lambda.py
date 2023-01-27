@@ -1,4 +1,5 @@
 import base64
+import os
 import boto3
 import gzip
 import json
@@ -17,6 +18,9 @@ ssm = boto3.client("ssm")
 
 
 # >> Config
+
+profile = os.environ.get("PROFILE")
+slack_channel = os.environ.get("SLACK_CHANNEL")
 
 region = "eu-west-2"
 response = ssm.get_parameter(Name="ProbateTree_SlackToken", WithDecryption=True)
@@ -90,7 +94,7 @@ error_filters = [
     re.compile(r"(?i)CRITICAL"),
 ]
 
-filters = warning_filters + error_filters
+log_filters = warning_filters + error_filters
 
 
 def handle_awslogs(event, context):
@@ -112,19 +116,19 @@ def handle_awslogs(event, context):
 
     found_match = False
 
-    for filter in filters:
+    for filter in log_filters:
         if re.search(filter, message):
             found_match = True
             break
 
     if not found_match:
-        logger.debug("Message matched no filters")
+        logger.debug("Message matched no filter")
         return
 
     # >> Send message on to slack
     link_text = "Logs " + log_event["logGroup"]
     text = message + f"\n<{url}|{link_text}>"
-    send_slack_message("darbylaw-ops", text)
+    send_slack_message(slack_channel, text)
 
 
 def handle_ecs_task_state_change(event, context):
@@ -159,7 +163,7 @@ def handle_ecs_task_state_change(event, context):
         + "\n".join(container_statuses)
     )
 
-    send_slack_message("darbylaw-ops", message)
+    send_slack_message(slack_channel, message)
 
 
 def handler(event, context):
