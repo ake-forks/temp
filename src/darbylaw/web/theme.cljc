@@ -45,4 +45,5 @@
                           :color off-white}}
                  {:props {:variant :text}}]}
     :MuiTextField {:defaultProps {:variant :filled}}
-    :MuiSelect {:defaultProps {:variant :filled}}}})
+    :MuiSelect {:defaultProps {:variant :filled}}
+    :MuiAppBar {:styleOverrides {:root {:background-color :white}}}}})

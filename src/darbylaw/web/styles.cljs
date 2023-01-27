@@ -16,21 +16,19 @@
 
 (defclass navbar []
   {:background-color :white
-   :justify-content :space-between
-   :padding-left "3rem"
-   :padding-right "3rem"}
+   :color theme/rich-black}
+   ;:padding-left "3rem"
+   ;:padding-right "3rem"}
   [:h5 {:font-weight 600}]
   [:button {:textTransform "lowercase"
             :fontWeight 600
             :font-size "large"}])
 
 (defclass footer []
-  {:justify-content :space-between
-
-   :color theme/pale-grey
-   :background-color :white
-   :padding-left "3rem"
-   :padding-right "3rem"}
+  {:color theme/pale-grey
+   :background-color :white}
+   ;:padding-left "3rem"
+   ;:padding-right "3rem"}
   [:a {:color theme/pale-grey :text-transform "lowercase"}])
 
 (defclass main-content []

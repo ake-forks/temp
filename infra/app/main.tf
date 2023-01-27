@@ -60,20 +60,16 @@ resource "aws_cloudwatch_log_group" "probatetree-logs" {
   retention_in_days = 30
 }
 
-data "aws_lambda_function" "slack_lambda" {
-  function_name = "slack_lambda"
-}
-
 resource "aws_lambda_permission" "webapp_logging" {
   action        = "lambda:InvokeFunction"
-  function_name = data.aws_lambda_function.slack_lambda.function_name
+  function_name = aws_lambda_function.slack_lambda.function_name
   principal     = "logs.${local.region}.amazonaws.com"
   source_arn    = "${aws_cloudwatch_log_group.probatetree-logs.arn}:*"
 }
 
 resource "aws_cloudwatch_log_subscription_filter" "webapp_logging" {
   depends_on      = [aws_lambda_permission.webapp_logging]
-  destination_arn = data.aws_lambda_function.slack_lambda.arn
+  destination_arn = aws_lambda_function.slack_lambda.arn
   filter_pattern  = ""
   log_group_name  = aws_cloudwatch_log_group.probatetree-logs.name
   name            = "webapp_to_slack-${terraform.workspace}"
@@ -370,13 +366,13 @@ EOF
 }
 
 resource "aws_cloudwatch_event_target" "example" {
-  arn  = data.aws_lambda_function.slack_lambda.arn
+  arn  = aws_lambda_function.slack_lambda.arn
   rule = aws_cloudwatch_event_rule.task_state_change.id
 }
 
 resource "aws_lambda_permission" "task_state_change" {
   action        = "lambda:InvokeFunction"
-  function_name = data.aws_lambda_function.slack_lambda.function_name
+  function_name = aws_lambda_function.slack_lambda.function_name
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.task_state_change.arn
 }
