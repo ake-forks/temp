@@ -120,7 +120,7 @@
         prop-overrides (dissoc config :name)]
     [mui/text-field (merge props prop-overrides)]))
 
-(defn submit-button [_fork-args _config]
+(defn submit-button
   "A wrapper for a submit button that shows an error if the form data is invalid.
   
   Config Options:
@@ -134,6 +134,7 @@
   [submit-button fork-args
    {:button {:text \"Check Form\"}
     :alert {:text \"Please fix the errors\"}}]"
+  [_fork-args _config]
   (let [open? (r/atom false)]
     (fn [{:keys [handle-submit errors submitting?]}
          {:keys [button snackbar alert]}]
