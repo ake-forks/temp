@@ -1,6 +1,7 @@
 (ns darbylaw.api.util.data
   (:require [camel-snake-kebab.core :as csk]
-            [clojure.string :as str])
+            [clojure.string :as str]
+            [clojure.walk])
   (:import (java.time LocalDateTime)))
 
 (defn keys-to-camel-case [m]
