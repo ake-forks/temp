@@ -23,6 +23,7 @@
     [darbylaw.api.bank :as bank-api]
     [darbylaw.api.buildingsociety :as buildsoc-api]
     [darbylaw.api.funeral :as funeral-api]
+    [darbylaw.api.bill :as bill-api]
     [darbylaw.api.bank-notification :as bank-notification-api]
     [darbylaw.api.bank-notification.mailing-controls :as mailing]
     [darbylaw.middleware.xtdb :refer [wrap-xtdb-node]]
@@ -64,7 +65,7 @@
    [""
     {:middleware [[create-auth-middleware authenticated?]
                   add-user-info]}
-    ["/" {:get (fn [_req] (r/redirect "/app/admin"))}]
+    ["/" {:get (fn [_req] (r/redirect "/app/landing"))}]
     ["/app" {:get (fn [_req] (r/redirect "/app/admin"))}]
     ["/app{*path}" {:get spa}]
     ["/api" {:middleware [wrap-xtdb-node]}
@@ -74,6 +75,7 @@
      (bank-api/routes)
      (buildsoc-api/routes)
      (funeral-api/routes)
+     (bill-api/routes)
      (bank-notification-api/routes)
      (mailing/routes)]]])
 
@@ -111,34 +113,35 @@
   [response]
   (if (= (:status response) 200)
     (-> response
-      (r/header "Cache-Control" "no-cache")                 ;; must-revalidate
-      (r/header "Pragma" "no-cache")
-      (r/header "Expires" "0"))
+        (r/header "Cache-Control" "no-cache") ;; must-revalidate
+        (r/header "Pragma" "no-cache")
+        (r/header "Expires" "0"))
     response))
 
-(defn wrap-no-cache [handler]
+(defn wrap-no-cache
   "Add the appropriate headers to tell the browser to not *permanently* cache the results of this request.
   
   NOTE: This doesn't mean that the browser won't cache the result.
         It just means that the browser will check to see if it should update the cache.
         i.e. It will send a GET request to the server.
              Which might respond with 304, or the new content. See wrap-not-modified."
+  [handler]
   (fn
     ([request]
      (-> request handler no-cache-response))
     ([request respond raise]
      (handler request
-       (fn [response] (respond (no-cache-response response)))
-       raise))))
+              (fn [response] (respond (no-cache-response response)))
+              raise))))
 
 (defn make-ring-handler []
   (ring/ring-handler
     (make-router)
     (ring/routes
-      (ring/redirect-trailing-slash-handler)                ; TODO: this is not working?
+      (ring/redirect-trailing-slash-handler) ; TODO: this is not working?
       (-> (ring/create-resource-handler {:path "/" :root "/public"})
-        (wrap-not-modified)
-        (wrap-no-cache))
+          (wrap-not-modified)
+          (wrap-no-cache))
       (ring/create-default-handler))))
 
 (mount/defstate ring-handler

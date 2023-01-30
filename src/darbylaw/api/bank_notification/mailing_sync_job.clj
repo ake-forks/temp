@@ -9,9 +9,10 @@
     [darbylaw.api.util.xtdb :as xt-util]
     [mount.core :as mount]
     [xtdb.api :as xt]
-    [darbylaw.xtdb-node :as xtdb-node])
+    [darbylaw.xtdb-node :as xtdb-node]
+    [darbylaw.api.util.data :refer [instant->localtime]])
   (:import (com.jcraft.jsch SftpException)
-           (java.time Duration Instant)))
+           (java.time Duration Instant LocalTime ZoneId)))
 
 (defn files->beans [fs]
   (->> fs
@@ -148,7 +149,18 @@
 
 (mount/defstate mailing-sync-job
   :start (ch/chime-at
-           (rest (ch/periodic-seq (Instant/now) (Duration/ofMinutes 5)))
+           (->> (rest (ch/periodic-seq (Instant/now) (Duration/ofMinutes 10)))
+             (remove (fn [instant]
+                       (let [t (instant->localtime instant (ZoneId/of "Europe/London"))]
+                         (and (.isBefore (LocalTime/of 16 55 00) t)
+                              (.isBefore t (LocalTime/of 18 05 00)))))))
            (fn [_time]
              (sync-job xtdb-node/xtdb-node)))
   :stop (.close mailing-sync-job))
+
+(comment
+  (def fivePM (LocalTime/of 17 00 00))
+  (def sixPM (LocalTime/of 18 00 00))
+  (def t (instant->localtime #inst"2023-01-27T17:00:01" (ZoneId/of "Europe/London")))
+  (.isBefore fivePM t)
+  (and (.isBefore fivePM t) (.isBefore t sixPM)))
