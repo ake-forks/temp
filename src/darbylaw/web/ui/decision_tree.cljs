@@ -14,9 +14,14 @@
 
 ;; >> Question Util
 
-(def mui-disabled-button-style
+(def mui-no-disabled-button-style
   {:color "rgba(0,0,0,0.26)"
    :background-color "rgba(0,0,0,0.12)"
+   :box-shadow :none})
+
+(def mui-yes-disabled-button-style
+  {:color "#fafdfa"
+   :background-color "#b8e5b1"
    :box-shadow :none})
 
 (defn question
@@ -35,17 +40,17 @@
     question]
    [mui/box {:flex-grow 1}]
    [mui/button {:variant :contained
-                :sx {:background-color :green}
+                :sx {:background-color "#1aac00"}
                 :on-click #(set-values {name true})
                 :style
                 (when (and (touched name) (true? (values name)))
-                  mui-disabled-button-style)}
+                  mui-yes-disabled-button-style)}
     "yes"]
    [mui/button {:variant :contained
                 :on-click #(set-values {name false})
                 :style
                 (when (and (touched name) (false? (values name)))
-                  mui-disabled-button-style)}
+                  mui-no-disabled-button-style)}
     "no"]])
 
 
