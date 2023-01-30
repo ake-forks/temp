@@ -35,11 +35,11 @@
   (fn [_ [_ case-id]]
     {:dispatch [::case-model/load-case! case-id
                 {:on-success [::reset-file-uploading]}]}))
-
-(ui/reg-fx+event ::upload-failure
+(rf/reg-event-fx ::upload-failure
   (fn [_ [_ response]]
-    (reset! file-uploading? false)
-    (print response)))
+    {:dispatch [::reset-file-uploading]
+     ::ui/notify-user-http-error {:message "Error uploading file"
+                                  :result response}}))
 
 (rf/reg-event-fx ::upload-file
   (fn [_ [_ case-id file document-name]]
