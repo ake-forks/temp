@@ -37,11 +37,11 @@
                :spacing 2}
     [logo]
     [mui/stack {:direction :row}
-     [menu-item {:on-click #(rf/dispatch [::ui/navigate [:landing]])}
+     [menu-item {:on-click #(rf/dispatch [::ui/navigate [:about]])}
        "about"]
-     [menu-item {:on-click #(rf/dispatch [::ui/navigate [:landing]])}
+     [menu-item {}
       "prices"]
-     [menu-item {:on-click #(rf/dispatch [::ui/navigate [:landing]])}
+     [menu-item {}
       "free guide"]]]
    [mui/box {:sx {:flexGrow 1}}]
    [mui/stack {:direction :row
