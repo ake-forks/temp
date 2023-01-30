@@ -39,16 +39,16 @@
 
 (defn get-button [document-name]
   (let [case-id @(rf/subscribe [::case-model/case-id])
-        key-docs @(rf/subscribe [::model/key-documents])
-        label (clojure.string/replace document-name "-" " ")]
-    (if (contains? key-docs (keyword document-name))
+        case-data @(rf/subscribe [::case-model/current-case])
+        label (clojure.string/replace (name document-name) "-" " ")]
+    (if (contains? case-data document-name)
       [mui/stack {:spacing 0.5}
        [view-button case-id document-name (str "view " label)]
        [mui/stack {:direction :row
                    :spacing 0.5
                    :justify-content :space-between}
         [mui/typography {:variant :body1}
-         (str (get key-docs (keyword document-name)) ".pdf")]
+         (str (get-in case-data [document-name :original-filename]))]
         [upload-button case-id document-name
          (str "replace " label)
          {:variant :text :size "small"}]]]
@@ -59,16 +59,18 @@
         :style {:background-color theme/orange}}])))
 
 (defn content []
-  (let [key-docs @(rf/subscribe [::model/key-documents])]
-    [mui/box {:style {:height "60vh"
-                      :padding "1rem"}}
-     [mui/stack {:direction :row :spacing 2 :sx {:width 1 :height 1}}
-      [mui/stack {:spacing 2 :sx {:width 0.5}}
-       [get-button "death-certificate"]
-       [get-button "will"]
-       [get-button "grant-of-probate"]]
-      [mui/stack {:spacing 1 :sx {:width 0.5}}
-       [mui/typography {:variant :body1} "upload and view key documents related to the case"]]]]))
+  [mui/box {:style {:height "60vh"
+                    :padding "1rem"}}
+   [mui/stack {:direction :row :spacing 2 :sx {:width 1 :height 1}}
+    [mui/stack {:spacing 2 :sx {:width 0.5}}
+     [get-button :death-certificate]
+     [get-button :will]
+     [get-button :grant-of-probate]]
+    [mui/stack {:spacing 1 :sx {:width 0.5}}
+     [mui/typography {:variant :body1} "Upload and view key documents related to the case."]
+     [ui/???_TO_BE_DEFINED_??? "Currently the document object in the DB records who uploaded the file, when, and the original filename.
+        All these fields can be accessed to display in the UI if we want."]
+     [ui/???_TO_BE_DEFINED_??? "When files are replaced, the old file can still be retrieved from the DB."]]]])
 
 
 (defn dialog []

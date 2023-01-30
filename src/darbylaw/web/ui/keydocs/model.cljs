@@ -46,11 +46,10 @@
     {:http-xhrio
      (ui/build-http
        {:method :post
-        :uri (str "/api/case/" case-id "/upload-document")
+        :uri (str "/api/case/" case-id "/upload-document/" (name document-name))
         :body (doto (js/FormData.)
                 (.append "file" file)
-                (.append "filename" (.-name file))
-                (.append "document" document-name))
+                (.append "filename" (.-name file)))
         :format nil
         :on-success [::upload-success case-id]
         :on-failure [::upload-failure]})}))
@@ -58,7 +57,7 @@
 (rf/reg-event-fx ::get-file
   (fn [_ [_ case-id document-name]]
     (js/window.open
-      (str "/api/case/" case-id "/get-document?doc-name=" document-name))))
+      (str "/api/case/" case-id "/get-document/" (name document-name)))))
 
 
 

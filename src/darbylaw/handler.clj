@@ -19,6 +19,7 @@
     [darbylaw.web.theme :as theme]
     [darbylaw.api.settings :as settings-api]
     [darbylaw.api.case :as case-api]
+    [darbylaw.api.documents :as documents-api]
     [darbylaw.api.bank :as bank-api]
     [darbylaw.api.buildingsociety :as buildsoc-api]
     [darbylaw.api.funeral :as funeral-api]
@@ -69,6 +70,7 @@
     ["/api" {:middleware [wrap-xtdb-node]}
      (settings-api/routes)
      (case-api/routes)
+     (documents-api/routes)
      (bank-api/routes)
      (buildsoc-api/routes)
      (funeral-api/routes)
@@ -109,9 +111,9 @@
   [response]
   (if (= (:status response) 200)
     (-> response
-        (r/header "Cache-Control" "no-cache") ;; must-revalidate
-        (r/header "Pragma" "no-cache")
-        (r/header "Expires" "0"))
+      (r/header "Cache-Control" "no-cache")                 ;; must-revalidate
+      (r/header "Pragma" "no-cache")
+      (r/header "Expires" "0"))
     response))
 
 (defn wrap-no-cache [handler]
@@ -126,17 +128,17 @@
      (-> request handler no-cache-response))
     ([request respond raise]
      (handler request
-              (fn [response] (respond (no-cache-response response)))
-              raise))))
+       (fn [response] (respond (no-cache-response response)))
+       raise))))
 
 (defn make-ring-handler []
   (ring/ring-handler
     (make-router)
     (ring/routes
-      (ring/redirect-trailing-slash-handler) ; TODO: this is not working?
+      (ring/redirect-trailing-slash-handler)                ; TODO: this is not working?
       (-> (ring/create-resource-handler {:path "/" :root "/public"})
-          (wrap-not-modified)
-          (wrap-no-cache))
+        (wrap-not-modified)
+        (wrap-no-cache))
       (ring/create-default-handler))))
 
 (mount/defstate ring-handler
