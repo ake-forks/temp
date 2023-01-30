@@ -156,6 +156,45 @@
                          :handlers {"u" cljs.core/uuid}})}
     params))
 
+(defn http-error-user-message [xhrio-failure-result]
+  (let [{:keys [status]} xhrio-failure-result]
+    ; see https://github.com/day8/re-frame-http-fx#step-3b-handling-on-failure
+    (cond
+      (= status 0) "Connection error" ; network failure
+      (= status -1) "Connection error" ; timeout
+      (< 500 status 599) "Unexpected server error"
+      (= 404 status) "Unexpected error"
+      (= 400 status) "Rejected request. Please check entered data"
+      :else "Unexpected error")))
+
+(rf/reg-event-db ::user-notification
+  (fn [db [_ args]]
+    (assoc db ::user-notification args)))
+
+(rf/reg-fx ::notify-user
+  (fn [args]
+    (rf/dispatch [::user-notification args])))
+
+(rf/reg-fx ::notify-user-http-error
+  (fn [{:keys [message result]}]
+    (rf/dispatch [::user-notification {:severity :error
+                                       :text (let [err (http-error-user-message result)]
+                                               (if (some? message)
+                                                 (str message " (" err ")")
+                                                 err))}])))
+
+(rf/reg-sub ::user-notification
+  (fn [db]
+    (::user-notification db)))
+
+(defn user-notification-snackbar []
+  (let [{:keys [severity text] :as notification} @(rf/subscribe [::user-notification])]
+    [mui/snackbar {:open (some? notification)
+                   :autoHideDuration 5000
+                   :on-close #(rf/dispatch [::user-notification nil])}
+     [mui/alert {:severity (or severity :info)}
+      (or text "")]]))
+
 ; Fix reagent-mui.styles/create-theme
 ; See https://github.com/arttuka/reagent-material-ui/issues/41
 (defn create-theme [options]

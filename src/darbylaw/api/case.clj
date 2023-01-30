@@ -6,7 +6,8 @@
             [darbylaw.api.util.http :as http]
             [darbylaw.api.case-history :as case-history]
             [darbylaw.api.util.xtdb :as xt-util]
-            [darbylaw.api.util.tx-fns :as tx-fns]))
+            [darbylaw.api.util.tx-fns :as tx-fns]
+            [darbylaw.api.bill.data :as bill-data]))
 
 (def date--schema
   [:re #"^\d{4}-\d{2}-\d{2}$"])
@@ -188,7 +189,8 @@
                                      [:buildsoc-id
                                       :accounts-unknown
                                       :accounts]
-                                     letter-props)}]))]
+                                     letter-props)}
+               {:bills bill-data/bill-props}]))]
    :where '[[case :type :probate.case]
             [case :xt/id case-id]]
    :in '[case-id]})
@@ -240,6 +242,7 @@
        :case-after (ffirst case-after)})))
 
 (comment
+  (require 'darbylaw.xtdb-node)
   (xt/q (xt/db darbylaw.xtdb-node/xtdb-node)
     '{:find [(pull event [*])]
       :where [[event :type :event]]})

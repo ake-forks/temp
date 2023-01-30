@@ -38,4 +38,5 @@
      [mui/css-baseline]
      [mui-local/localization-provider {:dateAdapter AdapterDayjs
                                        :adapterLocale "en-gb"}
+      [ui/user-notification-snackbar]
       (routes/panels @active-panel)]]))
