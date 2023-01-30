@@ -1,91 +1,456 @@
 (ns darbylaw.api.buildsoc-list)
 
-;TODO should this be moved out of api package?
-; I have moved the functions to buildsoc-model so that this ns is purely a data source
 (def buildsoc-list
-  [{:id :bath-investment-building-society,
-    :common-name "Bath Investment & Building Society"}
+  [{:id :bath-building-society,
+    :common-name "Bath Investment & Building Society",
+    :address-line-1 "15 Queens Square",
+    :address-line-2 "Bath",
+    :address-line-3 "",
+    :address-line-4 "",
+    :address-line-5 "",
+    :address-postcode "BA1 2HN",
+    :logo ""}
    {:id :beverley-building-society,
-    :common-name "Beverley Building Society"}
+    :common-name "Beverley Building Society",
+    :address-line-1 "57 Market Place",
+    :address-line-2 "Beverley",
+    :address-line-3 "East Yorkshire",
+    :address-line-4 "",
+    :address-line-5 "",
+    :address-postcode "HU17 8AA",
+    :logo ""}
    {:id :buckinghamshire-building-society,
-    :common-name "Buckinghamshire Building Society"}
+    :common-name "Buckinghamshire Building Society",
+    :address-line-1 "High Street",
+    :address-line-2 "Chalfont St Giles",
+    :address-line-3 "Buckinghamshire",
+    :address-line-4 "",
+    :address-line-5 "",
+    :address-postcode "HP8 4QB",
+    :logo ""}
    {:id :cambridge-building-society,
-    :common-name "Cambridge Building Society"}
-   {:id :capital-credit-union-ltd, :common-name "Capital Credit Union Ltd"}
+    :common-name "Cambridge Building Society",
+    :address-line-1 "PO Box 232",
+    :address-line-2 "51 Newmarket Road",
+    :address-line-3 "Cambridge",
+    :address-line-4 "",
+    :address-line-5 "",
+    :address-postcode "CB5 8FF",
+    :logo ""}
+   {:id :capital-credit-union-ltd,
+    :common-name "Capital Credit Union Ltd",
+    :address-line-1 "31 Dunedin Street",
+    :address-line-2 "",
+    :address-line-3 "Edinburgh ",
+    :address-line-4 "",
+    :address-line-5 "",
+    :address-postcode "EH7 4JG",
+    :logo ""}
    {:id :chorley-district-building-society,
-    :common-name "Chorley & District Building Society"}
+    :common-name "Chorley & District Building Society",
+    :address-line-1 "Key House",
+    :address-line-2 "Foxhole Rd",
+    :address-line-3 "Chorley",
+    :address-line-4 "Lancashire",
+    :address-line-5 "",
+    :address-postcode "PR7 1NZ",
+    :logo ""}
    {:id :coventry-building-society,
-    :common-name "Coventry Building Society"}
+    :common-name "Coventry Building Society",
+    :address-line-1 "Coventry House",
+    :address-line-2 "Harry Weston Road",
+    :address-line-3 "Binley",
+    :address-line-4 "Coventry",
+    :address-line-5 "",
+    :address-postcode "CV3 2TQ",
+    :logo "Coventry-Building-Societ-icon.svg"}
    {:id :cumberland-building-society,
-    :common-name "Cumberland Building Society"}
+    :common-name "Cumberland Building Society",
+    :address-line-1 "Cumberland House",
+    :address-line-2 "Cooper Way",
+    :address-line-3 "Parkhouse",
+    :address-line-4 "Carlisle",
+    :address-line-5 "",
+    :address-postcode "CA3 0JF",
+    :logo ""}
    {:id :darlington-building-society,
-    :common-name "Darlington Building Society"}
-   {:id :dudley-building-society, :common-name "Dudley Building Society"}
+    :common-name "Darlington Building Society",
+    :address-line-1 "Sentinel House",
+    :address-line-2 "Morton Road",
+    :address-line-3 "Darlington",
+    :address-line-4 "Co Durham",
+    :address-line-5 "",
+    :address-postcode "DL1 4PT",
+    :logo ""}
+   {:id :dudley-building-society,
+    :common-name "Dudley Building Society",
+    :address-line-1 "7 Harbour Buildings",
+    :address-line-2 "The Waterfront",
+    :address-line-3 "Brierley Hill",
+    :address-line-4 "West Midlands",
+    :address-line-5 "",
+    :address-postcode "DY5 1LN",
+    :logo ""}
    {:id :earl-shilton-building-society,
-    :common-name "Earl Shilton Building Society"}
-   {:id :ecology-building-society, :common-name "Ecology Building Society"}
-   {:id :furness-building-society, :common-name "Furness Building Society"}
-   {:id :glasgow-credit-union, :common-name "Glasgow Credit Union"}
+    :common-name "Earl Shilton Building Society",
+    :address-line-1 "22 The Hollow",
+    :address-line-2 "Earl Shilton",
+    :address-line-3 "Leicester",
+    :address-line-4 "",
+    :address-line-5 "",
+    :address-postcode "LE9 7NB",
+    :logo ""}
+   {:id :ecology-building-society,
+    :common-name "Ecology Building Society",
+    :address-line-1 "7 Belton Road",
+    :address-line-2 "Silsden",
+    :address-line-3 "Near Keighley",
+    :address-line-4 "West Yorkshire",
+    :address-line-5 "",
+    :address-postcode "BD20 0EE",
+    :logo ""}
+   {:id :furness-building-society,
+    :common-name "Furness Building Society",
+    :address-line-1 "Emlyn Hughes House",
+    :address-line-2 "Abbey Road",
+    :address-line-3 "Barrow-in-Furness",
+    :address-line-4 "Cumbria",
+    :address-line-5 "",
+    :address-postcode "LA14 5PQ",
+    :logo ""}
+   {:id :glasgow-credit-union,
+    :common-name "Glasgow Credit Union",
+    :address-line-1 "95 Morrison Street",
+    :address-line-2 "",
+    :address-line-3 "Glasgow",
+    :address-line-4 "",
+    :address-line-5 "",
+    :address-postcode "G5  8BE",
+    :logo ""}
    {:id :hanley-economic-building-society,
-    :common-name "Hanley Economic Building Society"}
+    :common-name "Hanley Economic Building Society",
+    :address-line-1 "Granville House",
+    :address-line-2 "Festival Park",
+    :address-line-3 "Hanley",
+    :address-line-4 "Stoke-on-Trent",
+    :address-line-5 "Staffordshire",
+    :address-postcode "ST1 5TB",
+    :logo ""}
    {:id :harpenden-building-society,
-    :common-name "Harpenden Building Society"}
+    :common-name "Harpenden Building Society",
+    :address-line-1 "Mardall House, 9-11 Vaughan Road",
+    :address-line-2 "Harpenden",
+    :address-line-3 "Hertfordshire",
+    :address-line-4 "",
+    :address-line-5 "",
+    :address-postcode "AL5 4HU",
+    :logo ""}
    {:id :hinckley-and-rugby-building-society,
-    :common-name "Hinckley and Rugby Building Society"}
-   {:id :leeds-building-society, :common-name "Leeds Building Society"}
-   {:id :leeds-city-credit-union, :common-name "Leeds City Credit Union"}
-   {:id :leek-building-society, :common-name "Leek Building Society"}
+    :common-name "Hinckley and Rugby Building Society",
+    :address-line-1 "Upper Bond Street",
+    :address-line-2 "Hinckley",
+    :address-line-3 "Leicestershire",
+    :address-line-4 "",
+    :address-line-5 "",
+    :address-postcode "LE10 1NZ",
+    :logo ""}
+   {:id :leeds-building-society,
+    :common-name "Leeds Building Society",
+    :address-line-1 " 26 Sovereign Street",
+    :address-line-2 "Leeds",
+    :address-line-3 "West Yorkshire",
+    :address-line-4 "",
+    :address-line-5 "",
+    :address-postcode "LS1 4BJ",
+    :logo "Leeds-Building-Society.svg"}
+   {:id :leeds-city-credit-union,
+    :common-name "Leeds City Credit Union",
+    :address-line-1 "Carlton Tower",
+    :address-line-2 "34 St Paul's Street",
+    :address-line-3 "Leeds ",
+    :address-line-4 "",
+    :address-line-5 "",
+    :address-postcode "LS1 2QB",
+    :logo ""}
+   {:id :leek-building-society,
+    :common-name "Leek Building Society",
+    :address-line-1 "50 St Edward Street",
+    :address-line-2 "Leek",
+    :address-line-3 "Staffordshire",
+    :address-line-4 "",
+    :address-line-5 "",
+    :address-postcode "ST13 5DL",
+    :logo ""}
    {:id :london-mutual-credit-union,
-    :common-name "London Mutual Credit Union"}
+    :common-name "London Mutual Credit Union",
+    :address-line-1 "4 Heaton Road",
+    :address-line-2 "Peckham",
+    :address-line-3 "London",
+    :address-line-4 "",
+    :address-line-5 "",
+    :address-postcode "SE15 3TH",
+    :logo ""}
    {:id :loughborough-building-society,
-    :common-name "Loughborough Building Society"}
+    :common-name "Loughborough Building Society",
+    :address-line-1 "6 High Street",
+    :address-line-2 "Loughborough",
+    :address-line-3 "Leicestershire",
+    :address-line-4 "",
+    :address-line-5 "",
+    :address-postcode "LE11 2QB",
+    :logo ""}
    {:id :manchester-building-society,
-    :common-name "Manchester Building Society"}
-   {:id :manchester-credit-union, :common-name "Manchester Credit Union"}
+    :common-name "Manchester Building Society",
+    :address-line-1 "125 Portland Street",
+    :address-line-2 "",
+    :address-line-3 "",
+    :address-line-4 "Manchester",
+    :address-line-5 "",
+    :address-postcode "M1 4QD",
+    :logo ""}
+   {:id :manchester-credit-union,
+    :common-name "Manchester Credit Union",
+    :address-line-1 "Ground Floor Queens Court ",
+    :address-line-2 "24 Queen Street ",
+    :address-line-3 "",
+    :address-line-4 "Manchester",
+    :address-line-5 "",
+    :address-postcode " M2 5HX",
+    :logo ""}
    {:id :mansfield-building-society,
-    :common-name "Mansfield Building Society"}
+    :common-name "Mansfield Building Society",
+    :address-line-1 "Regent House",
+    :address-line-2 "Regent Street",
+    :address-line-3 "Mansfield",
+    :address-line-4 "Nottinghamshire",
+    :address-line-5 "",
+    :address-postcode "NG18 1SS",
+    :logo ""}
    {:id :market-harborough-building-society,
-    :common-name "Market Harborough Building Society"}
-   {:id :marsden-building-society, :common-name "Marsden Building Society"}
+    :common-name "Market Harborough Building Society",
+    :address-line-1 "Welland House",
+    :address-line-2 "The Square",
+    :address-line-3 "Market Harborough",
+    :address-line-4 "Leicestershire",
+    :address-line-5 "",
+    :address-postcode "LE16 7PD",
+    :logo ""}
+   {:id :marsden-building-society,
+    :common-name "Marsden Building Society",
+    :address-line-1 "6-20 Russell Street",
+    :address-line-2 "Nelson",
+    :address-line-3 "Lancashire",
+    :address-line-4 "",
+    :address-line-5 "",
+    :address-postcode "BB9 7NJ",
+    :logo ""}
    {:id :melton-mowbray-building-society,
-    :common-name "Melton Mowbray Building Society"}
+    :common-name "Melton Mowbray Building Society",
+    :address-line-1 "Mutual House, Leicester Road",
+    :address-line-2 "Melton Mowbray",
+    :address-line-3 "Leicestershire",
+    :address-line-4 "",
+    :address-line-5 "",
+    :address-postcode "LE13 0DB",
+    :logo ""}
    {:id :monmouthshire-building-society,
-    :common-name "Monmouthshire Building Society"}
+    :common-name "Monmouthshire Building Society",
+    :address-line-1 "Monmouthshire House",
+    :address-line-2 "John Frost Square",
+    :address-line-3 "Newport",
+    :address-line-4 "South Wales",
+    :address-line-5 "",
+    :address-postcode "NP20 1PX",
+    :logo ""}
    {:id :nationwide-building-society,
-    :common-name "Nationwide Building Society"}
-   {:id :newbury-building-society, :common-name "Newbury Building Society"}
+    :common-name "Nationwide Building Society",
+    :address-line-1 "Bereavement Services",
+    :address-line-2 "Customer Service & Operatoins",
+    :address-line-3 "Swindon",
+    :address-line-4 "Wilts",
+    :address-line-5 "",
+    :address-postcode "SN38 1NW",
+    :logo "Nationwide-Bereavement-Services-icon.svg"}
+   {:id :newbury-building-society,
+    :common-name "Newbury Building Society",
+    :address-line-1 "90 Bartholomew Street",
+    :address-line-2 "Newbury",
+    :address-line-3 "Berkshire",
+    :address-line-4 "",
+    :address-line-5 "",
+    :address-postcode "RG14 5EE",
+    :logo ""}
    {:id :newcastle-building-society,
-    :common-name "Newcastle Building Society"}
+    :common-name "Newcastle Building Society",
+    :address-line-1 "1 Cobalt Park Way",
+    :address-line-2 "Wallsend",
+    :address-line-3 " ",
+    :address-line-4 "",
+    :address-line-5 "",
+    :address-postcode "NE28 9EJ",
+    :logo ""}
    {:id :nottingham-building-society,
-    :common-name "Nottingham Building Society"}
+    :common-name "Nottingham Building Society",
+    :address-line-1 "Nottingham House",
+    :address-line-2 "3 Fulforth Street",
+    :address-line-3 "Nottingham",
+    :address-line-4 "",
+    :address-line-5 "",
+    :address-postcode "NG1 3DL",
+    :logo ""}
    {:id :no-copperpot-credit-union,
-    :common-name "No1 CopperPot Credit Union"}
-   {:id :penrith-building-society, :common-name "Penrith Building Society"}
+    :common-name "No1 CopperPot Credit Union",
+    :address-line-1 "Slater House",
+    :address-line-2 "Oakfield Road",
+    :address-line-3 "Cheadle Royal Business Park",
+    :address-line-4 "Cheadle",
+    :address-line-5 "Cheshire",
+    :address-postcode "SK8 3GX",
+    :logo ""}
+   {:id :penrith-building-society,
+    :common-name "Penrith Building Society",
+    :address-line-1 "7 King Street",
+    :address-line-2 "Penrith",
+    :address-line-3 "Cumbria",
+    :address-line-4 "",
+    :address-line-5 "",
+    :address-postcode "CA11 7AR",
+    :logo ""}
    {:id :principality-building-society,
-    :common-name "Principality Building Society"}
+    :common-name "Principality Building Society",
+    :address-line-1 "Principality House",
+    :address-line-2 "The Friary",
+    :address-line-3 "Cardiff",
+    :address-line-4 "",
+    :address-line-5 "",
+    :address-postcode "CF10 3FA",
+    :logo ""}
    {:id :progressive-building-society,
-    :common-name "Progressive Building Society"}
-   {:id :saffron-building-society, :common-name "Saffron Building Society"}
+    :common-name "Progressive Building Society",
+    :address-line-1 "Progressive House",
+    :address-line-2 "33/37 Wellington Place",
+    :address-line-3 "Belfast",
+    :address-line-4 "",
+    :address-line-5 "",
+    :address-postcode "BT1 6HH",
+    :logo ""}
+   {:id :saffron-building-society,
+    :common-name "Saffron Building Society",
+    :address-line-1 "Saffron House",
+    :address-line-2 "1a Market Street",
+    :address-line-3 "Saffron Walden",
+    :address-line-4 "Essex",
+    :address-line-5 "",
+    :address-postcode "CB10 1HX",
+    :logo ""}
    {:id :scottish-building-society,
-    :common-name "Scottish Building Society"}
+    :common-name "Scottish Building Society",
+    :address-line-1 "SBS House",
+    :address-line-2 "193 Dalry Road",
+    :address-line-3 "Edinburgh",
+    :address-line-4 "",
+    :address-line-5 "",
+    :address-postcode "EH11 2EF",
+    :logo ""}
    {:id :scotwest-credit-union-limited,
-    :common-name "Scotwest Credit Union Limited"}
-   {:id :skipton-building-society, :common-name "Skipton Building Society"}
+    :common-name "Scotwest Credit Union Limited",
+    :address-line-1 "13 Elmbank Street",
+    :address-line-2 "",
+    :address-line-3 "Glasgow ",
+    :address-line-4 "",
+    :address-line-5 "",
+    :address-postcode "G2 4PB",
+    :logo ""}
+   {:id :skipton-building-society,
+    :common-name "Skipton Building Society",
+    :address-line-1 "The Bailey",
+    :address-line-2 "Skipton",
+    :address-line-3 "North Yorkshire",
+    :address-line-4 "",
+    :address-line-5 "",
+    :address-postcode "BD23 1DN",
+    :logo ""}
    {:id :stafford-railway-building-society,
-    :common-name "Stafford Railway Building Society"}
-   {:id :suffolk-building-society, :common-name "Suffolk Building Society"}
-   {:id :swansea-building-society, :common-name "Swansea Building Society"}
+    :common-name "Stafford Railway Building Society",
+    :address-line-1 "4 Market Square",
+    :address-line-2 "Stafford",
+    :address-line-3 "",
+    :address-line-4 "",
+    :address-line-5 "",
+    :address-postcode "ST16 2JH",
+    :logo ""}
+   {:id :suffolk-building-society,
+    :common-name "Suffolk Building Society",
+    :address-line-1 "Freehold House",
+    :address-line-2 "6-8 The Havens",
+    :address-line-3 "Ransomes Europark",
+    :address-line-4 "Ipswich",
+    :address-line-5 "",
+    :address-postcode "IP3 9SJ",
+    :logo ""}
+   {:id :swansea-building-society,
+    :common-name "Swansea Building Society",
+    :address-line-1 "11-12 Cradock Street",
+    :address-line-2 "Swansea",
+    :address-line-3 "West Glamorgan",
+    :address-line-4 "",
+    :address-line-5 "",
+    :address-postcode "SA1 3EW",
+    :logo ""}
    {:id :teachers-building-society,
-    :common-name "Teachers' Building Society"}
+    :common-name "Teachers' Building Society",
+    :address-line-1 "Allenview House",
+    :address-line-2 "Hanham Road",
+    :address-line-3 "Wimborne",
+    :address-line-4 "Dorset",
+    :address-line-5 "",
+    :address-postcode "BH21 1AG",
+    :logo ""}
    {:id :the-family-building-society,
-    :common-name "The Family Building Society"}
-   {:id :tipton-coseley-building-society,
-    :common-name "Tipton & Coseley Building Society"}
-   {:id :vernon-building-society, :common-name "Vernon Building Society"}
+    :common-name "The Family Building Society",
+    :address-line-1 "30 Church Street",
+    :address-line-2 "Epsom",
+    :address-line-3 "Surrey",
+    :address-line-4 "",
+    :address-line-5 "",
+    :address-postcode "KT17 4NL",
+    :logo ""}
+   {:id :tipton--coseley-building-society,
+    :common-name "Tipton & Coseley Building Society",
+    :address-line-1 "70 Owen Street",
+    :address-line-2 "Tipton",
+    :address-line-3 "West Midlands",
+    :address-line-4 "",
+    :address-line-5 "",
+    :address-postcode "DY4 8HG",
+    :logo ""}
+   {:id :vernon-building-society,
+    :common-name "Vernon Building Society",
+    :address-line-1 "19 St Petersgate",
+    :address-line-2 "Stockport",
+    :address-line-3 "Cheshire",
+    :address-line-4 "",
+    :address-line-5 "",
+    :address-postcode "SK1 1HF",
+    :logo ""}
    {:id :west-bromwich-building-society,
-    :common-name "West Bromwich Building Society"}
+    :common-name "West Bromwich Building Society",
+    :address-line-1 "2 Providence Place ",
+    :address-line-2 "West Bromwich",
+    :address-line-3 "West Midlands",
+    :address-line-4 "",
+    :address-line-5 "",
+    :address-postcode "B70 8AF",
+    :logo ""}
    {:id :yorkshire-building-society,
-    :common-name "Yorkshire Building Society"}])
+    :common-name "Yorkshire Building Society",
+    :address-line-1 "Yorkshire House",
+    :address-line-2 "Yorkshire Drive",
+    :address-line-3 "Bradford",
+    :address-line-4 "",
+    :address-line-5 "",
+    :address-postcode "BD5 8LJ",
+    :logo "Yorkshire-Building-Societ-icon.svg"}])
 
 (def buildsoc-by-id
   (into {} (map (juxt :id identity) buildsoc-list)))
