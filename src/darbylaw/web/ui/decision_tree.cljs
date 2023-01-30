@@ -8,22 +8,98 @@
             [reagent-mui.components :as mui]
             [kee-frame.core :as kf]
             [re-frame.core :as rf]
-            [reagent.core :as r]))
+            [reagent.core :as r]
+            [fork.re-frame :as fork]
+            [darbylaw.web.util.form :as form]))
 
-;; >> Content
+;; >> Question Util
 
-(defn question [question]
+(def mui-disabled-button-style
+  {:color "rgba(0,0,0,0.26)"
+   :background-color "rgba(0,0,0,0.12)"
+   :box-shadow :none})
+
+(defn question
+  "A form element that presents a question followed by two buttons: yes and no.
+  When one is clicked the the text is greyed and the other button is greyed but
+  remains clickable."
+  [{:keys [values touched set-values]}
+   {:keys [name question]}]
   [mui/stack {:direction :row
               :align-items :center
               :spacing 1}
-   [mui/typography {:variant :body1}
+   [mui/typography {:variant :body1
+                    :style
+                    (when (touched name)
+                      {:color :grey})}
     question]
    [mui/box {:flex-grow 1}]
    [mui/button {:variant :contained
-                :sx {:background-color :green}}
+                :sx {:background-color :green}
+                :on-click #(set-values {name true})
+                :style
+                (when (and (touched name) (true? (values name)))
+                  mui-disabled-button-style)}
     "yes"]
-   [mui/button {:variant :contained}
+   [mui/button {:variant :contained
+                :on-click #(set-values {name false})
+                :style
+                (when (and (touched name) (false? (values name)))
+                  mui-disabled-button-style)}
     "no"]])
+
+
+
+;; >> Layouts
+
+(defn do-i-need-probate [fork-args]
+  [mui/container {:max-width :sm
+                  :sx {:p 8}}
+   [mui/stack {:spacing 4}
+    [mui/typography {:variant :h4}
+     "do I need probate?"]
+    [mui/typography {:variant :body1}
+     "please take a minute to answer these questions about the deceased and we'll let you know if you need probate or not."]
+    [mui/stack {:spacing 1}
+     [mui/divider]
+     [question fork-args
+      {:name :own-house
+       :question "Did the deceased own a house?"}]
+     [mui/divider]
+     [question fork-args
+      {:name :savings
+       :question "Did they have more than £15,000 in savings?"}]
+     [mui/divider]]]])
+
+(defn can-i-apply-for-probate [fork-args]
+  [mui/container {:max-width :sm
+                  :sx {:p 8}}
+   [mui/stack {:spacing 4}
+    [mui/typography {:variant :h4}
+     "can I apply for probate?"]
+    [mui/typography {:variant :body1}
+     "it looks like you could need probate, just a couple more questions and we'll let you know either way."]
+    [mui/stack {:spacing 1}
+     [mui/divider]
+     [question fork-args
+      {:name :will
+       :question "Did the deceased have a will?"}]
+     [mui/divider]]]])
+
+(defn dont-need-probate []
+  [mui/container {:max-width :sm
+                  :sx {:p 8}}
+   [mui/stack {:spacing 4}
+    [mui/typography {:variant :h4}
+     "it doesn't look like you'll need probate"]
+    [mui/typography {:variant :body1}
+     "you can download our free probate guide or request a call back from on of our team to discuss it further."]
+    [mui/stack {:direction :row
+                :spacing 2}
+     [mui/button {:variant :contained}
+      "get our free guide"]
+     [mui/button {:variant :contained}
+      "request a call back"]]]])
 
 (defn might-need-probate []
   [mui/container {:max-width :sm
@@ -43,55 +119,38 @@
      [mui/button {:variant :contained}
       "request a call back"]]]])
 
-(defn dont-need-probate []
-  [mui/container {:max-width :sm
-                  :sx {:p 8}}
-   [mui/stack {:spacing 4}
-    [mui/typography {:variant :h4}
-     "it doesn't look like you'll need probate"]
-    [mui/typography {:variant :body1}
-     "you can download our free probate guide or request a call back from on of our team to discuss it further."]
-    [mui/stack {:direction :row
-                :spacing 2}
-     [mui/button {:variant :contained}
-      "get our free guide"]
-     [mui/button {:variant :contained}
-      "request a call back"]]]])
 
-(defn can-i-apply-for-probate []
-  [mui/container {:max-width :sm
-                  :sx {:p 8}}
-   [mui/stack {:spacing 4}
-    [mui/typography {:variant :h4}
-     "can I apply for probate?"]
-    [mui/typography {:variant :body1}
-     "it looks like you could need probate, just a couple more questions and we'll let you know either way."]
-    [mui/stack {:spacing 1}
-     [mui/divider]
-     [question "Did the deceased have a will?"]
-     [mui/divider]]]])
 
-(defn do-i-need-probate []
-  [mui/container {:max-width :sm
-                  :sx {:p 8}}
-   [mui/stack {:spacing 4}
-    [mui/typography {:variant :h4}
-     "do I need probate?"]
-    [mui/typography {:variant :body1}
-     "please take a minute to answer these questions about the deceased and we'll let you know if you need probate or not."]
-    [mui/stack {:spacing 1}
-     [mui/divider]
-     [question "Did the deceased own a house?"]
-     [mui/divider]
-     [question "Did they have more than £15,000 in savings?"]
-     [mui/divider]]]])
+;; >> Content
+
+(defn layout [{:keys [handle-submit values touched]
+               :as fork-args}]
+  (let [{:keys [own-house savings will]} values]
+   [:form {:on-submit handle-submit}
+    (cond
+      (or (not (touched :own-house))
+          (not (touched :savings)))
+      [do-i-need-probate fork-args]
+
+      (and (values :own-house) (values :savings)
+           (not (touched :will)))
+      [can-i-apply-for-probate fork-args]
+
+      (and (values :own-house) (values :savings) (values :will))
+      [might-need-probate fork-args]
+
+      :else
+      [dont-need-probate fork-args])]))
 
 (defn content []
-  [:<>
-   [do-i-need-probate]
-   [can-i-apply-for-probate]
-   [dont-need-probate]
-   [might-need-probate]])
+  (r/with-let [form-state (r/atom nil)] 
+   [fork/form
+    {:state form-state
+     :clean-on-unmount true
+     :keywordize-keys true
+     :prevent-default? true}
+    (fn [fork-args]
+      [layout (ui/mui-fork-args fork-args)])]))
 
 (defn panel []
   [:<>
@@ -101,4 +160,3 @@
 
 (defmethod routes/panels :decision-tree-panel []
   [panel])
-
