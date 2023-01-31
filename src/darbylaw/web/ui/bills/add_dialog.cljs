@@ -56,7 +56,7 @@
 
 (defn form []
   [form-util/form
-   {:form-state form-state
+   {:state form-state
     :on-submit (let [case-id @(rf/subscribe [::case-model/case-id])]
                  #(rf/dispatch [::submit! case-id %]))}
    (fn [{:keys [handle-submit submitting?] :as fork-args}]

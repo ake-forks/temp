@@ -210,7 +210,8 @@
   - Adapts MUI events to be compatible with fork
   - Honors :clean-on-unmount? when passing a :form-state ratom"
   [props component]
-  (r/with-let [{:keys [form-state clean-on-unmount?]
+  (r/with-let [{form-state :state
+                :keys [clean-on-unmount?]
                 :as props} (-> (merge
                                   {:clean-on-unmount? true
                                    :keywordize-keys true
@@ -229,4 +230,10 @@
        [component (ui/mui-fork-args fork-args)])]
     (finally
       (when (and (some? form-state) clean-on-unmount?)
-        (reset! form-state nil)))))
+        (reset! form-state
+                ;; Adapted from:
+                ;; https://github.com/luciodale/fork/blob/dd4da7ffbb5706cd3edbcbd4b545986ca84ea6df/src/fork/re_frame.cljs#L87
+                ;; Otherwise the form breaks after sending the new code
+                (merge (when (:keywordize-keys props)
+                         {:keywordize-keys true})
+                       {:values {} :touched #{}}))))))

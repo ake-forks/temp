@@ -20,7 +20,8 @@
 
 (defn logo []
   [mui/typography {:variant :h6 
-                   :sx {:color theme/rich-black}}
+                   :sx {:color theme/rich-black}
+                   :on-click #(rf/dispatch [::ui/navigate [:landing]])}
     "probate-tree"])
 
 (defn menu-item [props & body]
@@ -36,11 +37,11 @@
                :spacing 2}
     [logo]
     [mui/stack {:direction :row}
-     [menu-item {:on-click #(rf/dispatch [::ui/navigate [:landing]])}
+     [menu-item {:on-click #(rf/dispatch [::ui/navigate [:about]])}
        "about"]
-     [menu-item {:on-click #(rf/dispatch [::ui/navigate [:landing]])}
+     [menu-item {}
       "prices"]
-     [menu-item {:on-click #(rf/dispatch [::ui/navigate [:landing]])}
+     [menu-item {}
       "free guide"]]]
    [mui/box {:sx {:flexGrow 1}}]
    [mui/stack {:direction :row
@@ -110,7 +111,7 @@ ea rebum . Stet clita kasd gubergren, no sea takimata
 sanctus  est Lorem."]
           [mui/box {:sx {:pt 2}}
            [mui/button {:variant :contained
-                        :on-click #(rf/dispatch [::ui/navigate :create-case])}
+                        :on-click #(rf/dispatch [::ui/navigate :decision-tree])}
             "do I need probate?"]]]]]]]
      [centred-horizontally
       [mui/stack
@@ -165,8 +166,8 @@ tempor invidunt ut labore et dolore."]
         line]])]]
   [mui/box
    [mui/button {:variant :contained
-                :on-click #(rf/dispatch [::ui/navigate :create-case])}
-    "do i need probate?"]]])
+                :on-click #(rf/dispatch [::ui/navigate :decision-tree])}
+    "do I need probate?"]]])
 
 (defn price-image []
   [mui/box
