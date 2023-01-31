@@ -21,14 +21,10 @@
   (fn [db]
     (:dialog/key-docs db)))
 
-(rf/reg-sub ::key-documents
-  :<- [::case-model/current-case]
-  #(:key-documents %))
-
 (rf/reg-sub ::document-present?
-  :<- [::key-documents]
-  (fn [key-docs [_ document]]
-    (contains? key-docs document)))
+  :<- [::case-model/current-case]
+  (fn [current-case [_ document-name]]
+    (contains? current-case document-name)))
 
 (def file-uploading? (r/atom false))
 

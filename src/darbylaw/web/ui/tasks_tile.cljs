@@ -1,8 +1,6 @@
 (ns darbylaw.web.ui.tasks-tile
   (:require
     [reagent-mui.components :as mui]
-    [darbylaw.web.ui :as ui]
-    [reagent.core :as r]
     [re-frame.core :as rf]
     [kee-frame.core :as kf]
     [vlad.core :as v]
@@ -70,8 +68,9 @@
     [mui/typography {:variant :h5 :sx {:mb 1}}
      "tasks"]
     [mui/divider]
-    [keydocs-tasks]
+
     [mui/stack {:sx {:overflow-y :auto :max-height 280}}
+     [keydocs-tasks]
      [case-tasks @(rf/subscribe [::case-model/current-case])]
      (for [bank @(rf/subscribe [::banking-model/banks])]
        ^{:key (:bank-id bank)}
