@@ -29,8 +29,8 @@
       (:address-line-1 data)
       (:address-line-2 data)
       (:address-line-3 data)
-      (:address-line-4 data)
-      (:address-line-5 data)
+      (:address-town data)
+      (:address-county data)
       (:address-postcode data))))
 
 (defn generate-mailing-address [type asset-id]
