@@ -28,6 +28,10 @@
   :<- [::current-case]
   #(:fake %))
 
+(rf/reg-sub ::deceased-address
+  :<- [::current-case]
+  #(-> % :deceased :address))
+
 (rf/reg-event-fx ::load-case!
   (fn [_ [_ case-id opts]]
     {:http-xhrio

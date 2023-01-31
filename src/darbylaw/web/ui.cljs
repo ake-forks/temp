@@ -204,5 +204,12 @@
   (fn [theme]
     (.spacing theme arg)))
 
+(def theme-primary-light-color
+  (fn [theme]
+    (-> theme .-palette .-primary .-light)))
+
 (defn event-target-checked [onchange-event]
   (.. onchange-event -target -checked))
+
+(defn event-target-value [onchange-event]
+  (.. onchange-event -target -value))

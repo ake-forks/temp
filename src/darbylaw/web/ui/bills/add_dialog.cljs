@@ -44,21 +44,23 @@
                                   :result error-result}}))
 
 (rf/reg-event-fx ::submit!
-  (fn [{:keys [db]} [_ case-id {:keys [values] :as fork-params}]]
+  (fn [{:keys [db]} [_ case-id fork-params]]
     {:db (set-submitting db fork-params true)
      :http-xhrio
      (ui/build-http
        {:method :post
         :uri (str "/api/case/" case-id "/bill")
-        :params values
+        :params (add-form/values-to-submit fork-params)
         :on-success [::submit-success case-id fork-params]
         :on-failure [::submit-failure fork-params]})}))
 
 (defn form []
   [form-util/form
-   {:form-state form-state
+   {:state form-state
     :on-submit (let [case-id @(rf/subscribe [::case-model/case-id])]
-                 #(rf/dispatch [::submit! case-id %]))}
+                 #(rf/dispatch [::submit! case-id %]))
+    :validation add-form/validate
+    :initial-values add-form/initial-values}
    (fn [{:keys [handle-submit submitting?] :as fork-args}]
      [:form {:on-submit handle-submit}
       [mui/dialog-content

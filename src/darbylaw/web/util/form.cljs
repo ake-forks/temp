@@ -208,9 +208,9 @@
   - Sets some default options that we typically use
   - Wraps validation to react to errors in the validation logic
   - Adapts MUI events to be compatible with fork
-  - Honors :clean-on-unmount? when passing a :form-state ratom"
+  - Honors :clean-on-unmount? when passing a :state ratom"
   [props component]
-  (r/with-let [{:keys [form-state clean-on-unmount?]
+  (r/with-let [{:keys [state clean-on-unmount?]
                 :as props} (-> (merge
                                   {:clean-on-unmount? true
                                    :keywordize-keys true
@@ -228,5 +228,5 @@
      (fn [fork-args]
        [component (ui/mui-fork-args fork-args)])]
     (finally
-      (when (and (some? form-state) clean-on-unmount?)
-        (reset! form-state nil)))))
+      (when (and (some? state) clean-on-unmount?)
+        (reset! state nil)))))
