@@ -19,6 +19,7 @@
     [darbylaw.web.theme :as theme]
     [darbylaw.api.settings :as settings-api]
     [darbylaw.api.case :as case-api]
+    [darbylaw.api.documents :as documents-api]
     [darbylaw.api.bank :as bank-api]
     [darbylaw.api.buildingsociety :as buildsoc-api]
     [darbylaw.api.funeral :as funeral-api]
@@ -70,6 +71,7 @@
     ["/api" {:middleware [wrap-xtdb-node]}
      (settings-api/routes)
      (case-api/routes)
+     (documents-api/routes)
      (bank-api/routes)
      (buildsoc-api/routes)
      (funeral-api/routes)
