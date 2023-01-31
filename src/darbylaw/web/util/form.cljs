@@ -210,7 +210,8 @@
   - Adapts MUI events to be compatible with fork
   - Honors :clean-on-unmount? when passing a :form-state ratom"
   [props component]
-  (r/with-let [{:keys [form-state clean-on-unmount?]
+  (r/with-let [{form-state :state
+                :keys [clean-on-unmount?]
                 :as props} (-> (merge
                                   {:clean-on-unmount? true
                                    :keywordize-keys true
