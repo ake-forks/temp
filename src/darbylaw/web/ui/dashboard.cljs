@@ -20,7 +20,9 @@
     [re-frame.core :as rf]
     [reagent.format :as format]
     [darbylaw.web.theme :as theme]
-    [darbylaw.web.ui.case-commons :as case-commons]))
+    [darbylaw.web.ui.case-commons :as case-commons]
+    [reagent-mui.lab.masonry :as mui-masonry]
+    [darbylaw.web.ui.bills.add-dialog :as add-bill-dialog]))
 
 (defn bank-item [bank]
   (let [bank-data (bank-list/bank-by-id (:bank-id bank))
@@ -103,7 +105,7 @@
                       :noWrap true
                       :sx {:width "100%"}}
       title]
-     (if (number? value)
+     (when (number? value)
        [mui/typography {:variant :body1
                         :sx {:font-weight :bold}}
         (str "£" (format-currency value))])]]
@@ -165,6 +167,20 @@
       {:title "add building society"
        :on-click #(rf/dispatch [::banking-model/show-add-dialog :buildsoc])}]]))
 
+(defn bills-card []
+  ; Just a mock for now for showing companies.
+  (let [bills (:bills @(rf/subscribe [::case-model/current-case]))
+        companies (->> (distinct (map :company bills))
+                    (remove nil?))]
+    [:<>
+     [add-bill-dialog/dialog]
+     [asset-card {:title "household bills"}
+      (for [company companies]
+        ^{:key company}
+        [asset-item {:title company}])
+      [asset-add-button
+       {:title "add bill"
+        :on-click add-bill-dialog/show}]]]))
 
 (defn heading [current-case]
   [mui/box {:sx {:background-color theme/off-white :padding-bottom {:xs "2rem" :xl "4rem"}}}
@@ -191,23 +207,15 @@
      [progress-bar/progress-bar]]]])
 
 (defn content [current-case]
-
   [mui/container {:maxWidth :xl}
-
    [mui/stack {:spacing 2 :sx {:pt "1rem" :pb "2rem"}}
     [mui/typography {:variant :h5} "estate details"]
-
-
     [mui/stack {:direction :row :spacing 1 :style {:margin-top "0.5rem"}}
-     [mui/grid {:container true :spacing 1 :columns 3
-                :style {:width "70%"}}
-      [mui/grid {:item true :xs 1}
-       [bank-card current-case]]
-      [mui/grid {:item true :xs 1}
-       [funeral-card current-case]]
-      [mui/grid {:item true :xs 1}
-       [buildsoc-card]]]
-
+     [mui-masonry/masonry {:columns 3}
+      [bank-card current-case]
+      [buildsoc-card]
+      [bills-card]
+      [funeral-card current-case]]
      [mui/stack {:spacing 2 :style {:width "30%"}}
       [tasks/tasks-tile]
       [key-docs/dash-button]

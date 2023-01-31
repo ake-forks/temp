@@ -40,30 +40,29 @@
   (fn [_ [_ case-id]]
     {:dispatch [::case-model/load-case! case-id
                 {:on-success [::reset-file-uploading]}]}))
-
-(ui/reg-fx+event ::upload-failure
+(rf/reg-event-fx ::upload-failure
   (fn [_ [_ response]]
-    (reset! file-uploading? false)
-    (print response)))
+    {:dispatch [::reset-file-uploading]
+     ::ui/notify-user-http-error {:message "Error uploading."
+                                  :result response}}))
 
 (rf/reg-event-fx ::upload-file
   (fn [_ [_ case-id file document-name]]
     {:http-xhrio
      (ui/build-http
        {:method :post
-        :uri (str "/api/case/" case-id "/upload-document")
+        :uri (str "/api/case/" case-id "/document/" (name document-name))
         :body (doto (js/FormData.)
                 (.append "file" file)
-                (.append "filename" (.-name file))
-                (.append "document" document-name))
+                (.append "filename" (.-name file)))
         :format nil
         :on-success [::upload-success case-id]
         :on-failure [::upload-failure]})}))
 
-(rf/reg-event-fx ::get-file
+(rf/reg-event-fx ::open-document
   (fn [_ [_ case-id document-name]]
     (js/window.open
-      (str "/api/case/" case-id "/get-document?doc-name=" document-name))))
+      (str "/api/case/" case-id "/document/" (name document-name)))))
 
 
 

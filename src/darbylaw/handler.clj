@@ -19,9 +19,11 @@
     [darbylaw.web.theme :as theme]
     [darbylaw.api.settings :as settings-api]
     [darbylaw.api.case :as case-api]
+    [darbylaw.api.documents :as documents-api]
     [darbylaw.api.bank :as bank-api]
     [darbylaw.api.buildingsociety :as buildsoc-api]
     [darbylaw.api.funeral :as funeral-api]
+    [darbylaw.api.bill :as bill-api]
     [darbylaw.api.bank-notification :as bank-notification-api]
     [darbylaw.api.bank-notification.mailing-controls :as mailing]
     [darbylaw.middleware.xtdb :refer [wrap-xtdb-node]]
@@ -69,9 +71,11 @@
     ["/api" {:middleware [wrap-xtdb-node]}
      (settings-api/routes)
      (case-api/routes)
+     (documents-api/routes)
      (bank-api/routes)
      (buildsoc-api/routes)
      (funeral-api/routes)
+     (bill-api/routes)
      (bank-notification-api/routes)
      (mailing/routes)]]])
 
@@ -114,13 +118,14 @@
         (r/header "Expires" "0"))
     response))
 
-(defn wrap-no-cache [handler]
+(defn wrap-no-cache
   "Add the appropriate headers to tell the browser to not *permanently* cache the results of this request.
   
   NOTE: This doesn't mean that the browser won't cache the result.
         It just means that the browser will check to see if it should update the cache.
         i.e. It will send a GET request to the server.
              Which might respond with 304, or the new content. See wrap-not-modified."
+  [handler]
   (fn
     ([request]
      (-> request handler no-cache-response))

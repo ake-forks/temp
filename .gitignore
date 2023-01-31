@@ -36,3 +36,4 @@ terraform.rc
 
 # Local SFTP for post mail tests
 /.post-sftp/
+/.clj-kondo/.cache/

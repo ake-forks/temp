@@ -9,9 +9,10 @@
     [darbylaw.api.util.xtdb :as xt-util]
     [mount.core :as mount]
     [xtdb.api :as xt]
-    [darbylaw.xtdb-node :as xtdb-node])
+    [darbylaw.xtdb-node :as xtdb-node]
+    [darbylaw.api.util.data :refer [instant->localtime]])
   (:import (com.jcraft.jsch SftpException)
-           (java.time Duration Instant)))
+           (java.time Duration Instant LocalTime ZoneId)))
 
 (defn files->beans [fs]
   (->> fs
@@ -82,18 +83,22 @@
     ; errors folder, so it has to be corrected and marked as `:errored`.
     (doseq [{:keys [letter-id error filename]} errored-files]
       (try
-        (let [tx (xt-util/exec-tx xtdb-node
-                   (concat
-                     (tx-fns/assert-exists letter-id)
-                     (tx-fns/set-values letter-id {:send-state :error
-                                                   :send-error error
-                                                   :send-state-changed (xt-util/now)})))]
-          (if-not (xt/tx-committed? xtdb-node tx)
-            ; This can happen, as we share remote accounts among deployed
-            ; environments. Therefore, just a warning.
-            (log/warn "Corresponding letter not found in DB:" letter-id)
-            ; File may have been removed already by a concurrent execution:
-            (sftp-remove--ignore-not-found remote (str errors-dir "/" filename))))
+        (if-let [{:keys [case-id bank-id]} (xt/entity (xt/db xtdb-node) letter-id)]
+          (do
+            (xt-util/exec-tx-or-throw xtdb-node
+              (concat
+                (tx-fns/set-values letter-id {:send-state :error
+                                              :send-error error
+                                              :send-state-changed (xt-util/now)})
+                (case-history/put-event {:event :bank-notification.letter-send-error
+                                         :case-id case-id
+                                         :bank-id bank-id
+                                         :letter-id letter-id
+                                         :send-error error})))
+            (sftp-remove--ignore-not-found remote (str errors-dir "/" filename)))
+          ; This can happen, as we share remote accounts among deployed
+          ; environments. Therefore, just a warning.
+          (log/warn "Corresponding letter not found in DB:" letter-id))
         (catch Exception e
           (log/error e "Failed syncing errored letter file" filename))))
 
@@ -148,7 +153,18 @@
 
 (mount/defstate mailing-sync-job
   :start (ch/chime-at
-           (rest (ch/periodic-seq (Instant/now) (Duration/ofMinutes 5)))
+           (->> (rest (ch/periodic-seq (Instant/now) (Duration/ofMinutes 10)))
+             (remove (fn [instant]
+                       (let [t (instant->localtime instant (ZoneId/of "Europe/London"))]
+                         (and (.isBefore (LocalTime/of 16 55 00) t)
+                              (.isBefore t (LocalTime/of 18 05 00)))))))
            (fn [_time]
              (sync-job xtdb-node/xtdb-node)))
   :stop (.close mailing-sync-job))
+
+(comment
+  (def fivePM (LocalTime/of 17 00 00))
+  (def sixPM (LocalTime/of 18 00 00))
+  (def t (instant->localtime #inst"2023-01-27T17:00:01" (ZoneId/of "Europe/London")))
+  (.isBefore fivePM t)
+  (and (.isBefore fivePM t) (.isBefore t sixPM)))

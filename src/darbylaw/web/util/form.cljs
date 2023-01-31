@@ -1,10 +1,13 @@
 (ns darbylaw.web.util.form
   (:require-macros [reagent-mui.util :refer [react-component]])
-  (:require [reagent-mui.components :as mui]
-            [reagent-mui.x.date-picker :as mui-date]
-            [reagent.core :as r]
-            [darbylaw.web.ui :as ui]
-            [clojure.string :as str]))
+  (:require
+    [fork.re-frame :as fork]
+    [reagent-mui.components :as mui]
+    [reagent-mui.x.date-picker :as mui-date]
+    [reagent.core :as r]
+    [darbylaw.web.ui :as ui]
+    [clojure.string :as str]
+    [medley.core :as medley]))
 
 (def starts-with? (fnil str/starts-with? ""))
 
@@ -117,7 +120,7 @@
         prop-overrides (dissoc config :name)]
     [mui/text-field (merge props prop-overrides)]))
 
-(defn submit-button [_fork-args _config]
+(defn submit-button
   "A wrapper for a submit button that shows an error if the form data is invalid.
   
   Config Options:
@@ -131,6 +134,7 @@
   [submit-button fork-args
    {:button {:text \"Check Form\"}
     :alert {:text \"Please fix the errors\"}}]"
+  [_fork-args _config]
   (let [open? (r/atom false)]
     (fn [{:keys [handle-submit errors submitting?]}
          {:keys [button snackbar alert]}]
@@ -198,3 +202,38 @@
         prop-overrides (dissoc config :name :inner-config)]
     [mui-date/date-picker
      (merge date-picker-props prop-overrides)]))
+
+(defn form
+  "Like `fork.re-frame/form`, but also:
+  - Sets some default options that we typically use
+  - Wraps validation to react to errors in the validation logic
+  - Adapts MUI events to be compatible with fork
+  - Honors :clean-on-unmount? when passing a :form-state ratom"
+  [props component]
+  (r/with-let [{form-state :state
+                :keys [clean-on-unmount?]
+                :as props} (-> (merge
+                                  {:clean-on-unmount? true
+                                   :keywordize-keys true
+                                   :prevent-default? true}
+                                  props)
+                              (medley/update-existing :validation
+                                (fn [validation]
+                                  (fn [data]
+                                    (try
+                                      (validation data)
+                                      (catch :default e
+                                        (js/console.error "Error during validation: " e)
+                                        [{:type ::validation-error :error e}]))))))]
+    [fork/form props
+     (fn [fork-args]
+       [component (ui/mui-fork-args fork-args)])]
+    (finally
+      (when (and (some? form-state) clean-on-unmount?)
+        (reset! form-state
+                ;; Adapted from:
+                ;; https://github.com/luciodale/fork/blob/dd4da7ffbb5706cd3edbcbd4b545986ca84ea6df/src/fork/re_frame.cljs#L87
+                ;; Otherwise the form breaks after sending the new code
+                (merge (when (:keywordize-keys props)
+                         {:keywordize-keys true})
+                       {:values {} :touched #{}}))))))
