@@ -1,5 +1,6 @@
 (ns darbylaw.api.documents
   (:require
+    [darbylaw.api.case-history :as case-history]
     [darbylaw.api.util.tx-fns :as tx-fns]
     [darbylaw.api.util.xtdb :as xt-util]
     [darbylaw.doc-store :as doc-store]
@@ -13,6 +14,11 @@
   (-> (xt/pull (xt/db xtdb-node)
         [:reference] case-id)
     :reference))
+
+(defn document-present? [xtdb-node case-id document-name]
+  (contains?
+    (xt/pull (xt/db xtdb-node) (vec accepted-documents) case-id)
+    document-name))
 
 (defn post-document [{:keys [xtdb-node user path-params multipart-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
@@ -36,7 +42,20 @@
                     :uploaded-by (:username user)
                     :uploaded-at (xt-util/now)
                     :original-filename orig-filename}]]
-        (tx-fns/set-value case-id [document-name] filename)))
+        (tx-fns/set-value case-id [document-name] filename)
+        (if (document-present? xtdb-node case-id document-name)
+          (case-history/put-event
+            {:event :document.replaced
+             :case-id case-id
+             :user user
+             :document-name document-name
+             :document-id filename})
+          (case-history/put-event
+            {:event :document.uploaded
+             :case-id case-id
+             :user user
+             :document-name document-name
+             :document-id filename}))))
     {:status 204}))
 
 (defn get-document-id [xtdb-node case-id document-name]
