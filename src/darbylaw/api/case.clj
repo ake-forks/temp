@@ -185,13 +185,15 @@
                    {:as :funeral-account
                     :cardinality :one})
                 [:title :value :paid-by :paid
-                 :receipt-uploaded :invoice-uploaded]}
+                 {:receipt
+                  document-props}
+                 {:invoice
+                  document-props}]}
                {:funeral-expense
                 ['(:xt/id {:as :expense-id})
                  :title :value :paid :paid-by
                  :receipt-uploaded]}
-               :funeral-account
-               :funeral-expense
+
                :bank
                {:bank-accounts (into
                                  [:bank-id
