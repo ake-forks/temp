@@ -38,7 +38,7 @@
 (rf/reg-event-fx ::upload-failure
   (fn [_ [_ response]]
     {:dispatch [::reset-file-uploading]
-     ::ui/notify-user-http-error {:message "Error uploading file"
+     ::ui/notify-user-http-error {:message "Error uploading."
                                   :result response}}))
 
 (rf/reg-event-fx ::upload-file
@@ -46,7 +46,7 @@
     {:http-xhrio
      (ui/build-http
        {:method :post
-        :uri (str "/api/case/" case-id "/upload-document/" (name document-name))
+        :uri (str "/api/case/" case-id "/document/" (name document-name))
         :body (doto (js/FormData.)
                 (.append "file" file)
                 (.append "filename" (.-name file)))
@@ -54,10 +54,10 @@
         :on-success [::upload-success case-id]
         :on-failure [::upload-failure]})}))
 
-(rf/reg-event-fx ::get-file
+(rf/reg-event-fx ::open-document
   (fn [_ [_ case-id document-name]]
     (js/window.open
-      (str "/api/case/" case-id "/get-document/" (name document-name)))))
+      (str "/api/case/" case-id "/document/" (name document-name)))))
 
 
 

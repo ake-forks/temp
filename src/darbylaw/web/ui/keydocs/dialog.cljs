@@ -24,17 +24,18 @@
           :loading @model/file-uploading?
           :startIcon (r/as-element [ui/icon-upload])})
        label
-       [mui/input {:type :file
-                   :value @filename
+       [mui/input {:value @filename
                    :onChange #(let [selected-file (-> % .-target .-files first)]
                                 (rf/dispatch [::model/upload-file case-id selected-file document-name])
                                 (reset! filename "")
                                 (reset! model/file-uploading? true))
                    :hidden true
-                   :sx {:display :none}}]])))
+                   :sx {:display :none}
+                   :inputProps {:type :file
+                                :accept ".pdf"}}]])))
 
 (defn view-button [case-id document-name label]
-  [mui/button {:on-click #(rf/dispatch [::model/get-file case-id document-name])
+  [mui/button {:on-click #(rf/dispatch [::model/open-document case-id document-name])
                :variant :contained} label])
 
 (defn get-button [document-name]

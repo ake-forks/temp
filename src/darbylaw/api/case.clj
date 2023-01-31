@@ -162,6 +162,11 @@
                        :uploaded-by
                        :uploaded-at]}])
 
+(def document-props
+  ['(:xt/id {:as :filename})
+   :uploaded-by
+   :original-filename])
+
 (def get-case__query
   {:find [(list 'pull 'case
             (into common-case-eql
@@ -170,14 +175,11 @@
                 ['*]}
 
                {:death-certificate
-                ['(:xt/id {:as :filename})
-                 :uploaded-by :original-filename]}
+                document-props}
                {:will
-                ['(:xt/id {:as :filename})
-                 :uploaded-by :original-filename]}
+                document-props}
                {:grant-of-probate
-                ['(:xt/id {:as :filename})
-                 :uploaded-by :original-filename]}
+                document-props}
 
                {'(:probate.funeral-account/_case
                    {:as :funeral-account

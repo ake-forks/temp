@@ -8,6 +8,7 @@
 
 (def accepted-documents
   #{:death-certificate :will :grant-of-probate})
+
 (defn get-reference [xtdb-node case-id]
   (-> (xt/pull (xt/db xtdb-node)
         [:reference] case-id)
@@ -23,24 +24,20 @@
         document-id (random-uuid)
         filename (str reference "." (name document-name) "." document-id ".pdf")]
     (assert (accepted-documents document-name))
+    (assert (not (clojure.string/blank? reference)))
     (with-delete [tempfile tempfile]
       (doc-store/store (str case-id "/" filename) tempfile))
-    (do
-      (xt-util/exec-tx xtdb-node
-        (concat
-          [[::xt/put {:type :probate.case-doc
-                      :xt/id filename
-                      :document-name document-name
-                      :probate.case-doc/case case-id
-                      :uploaded-by (:username user)
-                      :uploaded-at (xt-util/now)
-                      :original-filename orig-filename}]]
-          (tx-fns/set-value case-id [document-name] filename))))
+    (xt-util/exec-tx-or-throw xtdb-node
+      (concat
+        [[::xt/put {:type :probate.case-doc
+                    :xt/id filename
+                    :document-name document-name
+                    :probate.case-doc/case case-id
+                    :uploaded-by (:username user)
+                    :uploaded-at (xt-util/now)
+                    :original-filename orig-filename}]]
+        (tx-fns/set-value case-id [document-name] filename)))
     {:status 204}))
-
-(comment
-  (assert (accepted-documents :grant-of-probate)))
-
 
 (defn get-document-id [xtdb-node case-id document-name]
   (-> (xt/pull (xt/db xtdb-node)
@@ -53,13 +50,13 @@
         filename (get-document-id xtdb-node case-id document-name)
         input-stream (doc-store/fetch
                        (str case-id "/" filename))]
+    (assert (accepted-documents document-name))
     {:status 200
      :headers {"Content-Type" "application/pdf"}
      :body input-stream}))
 
 (defn routes []
   ["/case/:case-id"
-   ["/upload-document/:document-name"
-    {:post {:handler post-document}}]
-   ["/get-document/:document-name"
-    {:get {:handler get-document}}]])
+   ["/document/:document-name"
+    {:post {:handler post-document}
+     :get {:handler get-document}}]])
