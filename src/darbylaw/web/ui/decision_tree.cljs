@@ -2,15 +2,14 @@
   (:require [darbylaw.web.routes :as routes]
             [darbylaw.web.styles :as styles]
             [darbylaw.web.theme :as theme]
+            [darbylaw.web.util.form :as form-util]
             [darbylaw.web.ui :as ui]
             [darbylaw.web.ui.app-layout :as c]
             [darbylaw.web.ui.landing :as landing]
             [reagent-mui.components :as mui]
             [kee-frame.core :as kf]
             [re-frame.core :as rf]
-            [reagent.core :as r]
-            [fork.re-frame :as fork]
-            [darbylaw.web.util.form :as form]))
+            [reagent.core :as r]))
 
 ;; >> Question Util
 
@@ -147,15 +146,15 @@
       :else
       [dont-need-probate fork-args])]))
 
+(defonce form-state (r/atom nil))
+
 (defn content []
-  (r/with-let [form-state (r/atom nil)] 
-   [fork/form
-    {:state form-state
-     :clean-on-unmount true
-     :keywordize-keys true
-     :prevent-default? true}
-    (fn [fork-args]
-      [layout (ui/mui-fork-args fork-args)])]))
+  [form-util/form
+   {:state form-state
+    :clean-on-unmount true
+    :keywordize-keys true
+    :prevent-default? true}
+   layout])
 
 (defn panel []
   [:<>
