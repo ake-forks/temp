@@ -192,7 +192,8 @@
                {:funeral-expense
                 ['(:xt/id {:as :expense-id})
                  :title :value :paid :paid-by
-                 :receipt-uploaded]}
+                 {:receipt
+                  document-props}]}
 
                :bank
                {:bank-accounts (into

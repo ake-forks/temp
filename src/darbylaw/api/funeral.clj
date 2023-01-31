@@ -51,12 +51,12 @@
     {:status 200
      :body {:success? true}}))
 
-(defn get-funeral-file [document-name]
+(defn get-funeral-file [expense-id document-name]
   (fn [{:keys [xtdb-node path-params]}]
     (let [case-id (parse-uuid (:case-id path-params))
           filename (-> (xt/pull (xt/db xtdb-node)
                          [document-name]
-                         {:probate.funeral-account/case case-id})
+                         expense-id)
                        (get document-name))
           s3-file (doc-store/fetch-raw
                     (expense-store/s3-key case-id filename))
@@ -75,26 +75,39 @@
        :headers {"Content-Type" (.getContentType file-metadata)}
        :body (.getObjectContent s3-file)})))
 
-
+;; TODO: Refactor to combine with upsert-funeral-account
 (defn upsert-other-expense [op {:keys [xtdb-node user parameters path-params multipart-params]}]
   (assert (contains? #{:add :update} op))
+  (log/info "Upsert other funeral expense")
   (let [case-id (parse-uuid (:case-id path-params))
+        expense-info (:query parameters)
         expense-id (case op
                      :add (random-uuid)
                      :update (parse-uuid (:expense-id path-params)))
-        query-params (:query parameters)
         {:keys [tempfile content-type]} (get multipart-params "file")
-        expense-info (cond-> query-params
-                       ;; TODO: Add by and when
-                       tempfile (assoc :receipt-uploaded true))]
+        file-tx
+        (when tempfile
+          (with-delete [tempfile tempfile]
+            (let [document-name :receipt
+                  original-filename (get multipart-params "filename")
+                  case-ref (-> (xt/pull (xt/db xtdb-node) [:reference] case-id)
+                               :reference)
+                  document-id (random-uuid)
+                  filename (str case-ref "." (name document-name) "." document-id)]
+              (doc-store/store
+                (expense-store/s3-key case-id filename)
+                tempfile
+                {:content-type content-type})
+              (concat
+                [[::xt/put {:type :probate.case-doc
+                            :xt/id filename
+                            :document-name document-name
+                            :probate.case-doc/case case-id
+                            :uploaded-by (:username user)
+                            :uploaded-at (xt-util/now)
+                            :original-filename original-filename}]]
+                (tx-fns/set-value expense-id [document-name] filename)))))]
     (log/info (str (case :add "Add" :update "Update") " other funeral expense (" expense-id ")"))
-    (when tempfile
-      (let [s3-name (str expense-id "/receipt")]
-        (with-delete [tempfile tempfile]
-          (doc-store/store
-            (expense-store/s3-key case-id s3-name)
-            tempfile
-            {:content-type content-type}))))
     (xt-util/exec-tx xtdb-node
       (concat
         (tx-fns/set-values expense-id
@@ -102,6 +115,7 @@
                                    {:xt/id expense-id
                                     :type :probate.funeral-expense
                                     :probate.funeral-expense/case case-id}))
+        file-tx
         (tx-fns/append-unique case-id [:funeral-expense] [expense-id])
         (case-history/put-event {:event (case 
                                           :add :added.other-expense
@@ -162,9 +176,17 @@
            :parameters {:query funeral-account-schema}}}]
    ["/account"
     ["/receipt"
-     {:get {:handler (get-funeral-file :receipt)}}]
+     {:get {:handler (fn [{:keys [path-params] :as req}]
+                       (let [case-id (parse-uuid (:case-id path-params))
+                             account-id {:probate.funeral-account/case case-id}
+                             handler (get-funeral-file account-id :receipt)]
+                         (handler req)))}}]
     ["/invoice"
-     {:get {:handler (get-funeral-file :invoice)}}]]
+     {:get {:handler (fn [{:keys [path-params] :as req}]
+                       (let [case-id (parse-uuid (:case-id path-params))
+                             account-id {:probate.funeral-account/case case-id}
+                             handler (get-funeral-file account-id :invoice)]
+                         (handler req)))}}]]
    ["/other"
     {:post {:handler (partial upsert-other-expense :add)
             :parameters {:query other-expense-schema}}}]
@@ -173,7 +195,6 @@
            :parameters {:query other-expense-schema}}}]
    ["/other/:expense-id/receipt"
     {:get {:handler (fn [{:keys [path-params] :as req}]
-                      (let [expense-id (:expense-id path-params)
-                            file-name (str expense-id "/receipt")
-                            handler (get-funeral-file-old file-name)]
+                      (let [expense-id (parse-uuid (:expense-id path-params))
+                            handler (get-funeral-file expense-id :receipt)]
                         (handler req)))}}]])
