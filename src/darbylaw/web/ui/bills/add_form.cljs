@@ -4,7 +4,12 @@
             [re-frame.core :as rf]
             [reagent-mui.components :as mui]
             [reagent.core :as r]
-            [darbylaw.web.ui :as ui]))
+            [darbylaw.web.ui :as ui]
+            [darbylaw.web.ui.case-model :as case-model]
+            [vlad.core :as v]
+            [darbylaw.web.util.vlad :as v+]
+            [clojure.edn :refer [read-string]]
+            [clojure.string :refer [trim]]))
 
 (defn type-of-bill-choice [{:keys [values set-handle-change submitting?] :as _fork-args}]
   (let [all-bill-types @(rf/subscribe [::model/bill-types])
@@ -62,12 +67,77 @@
   [form-util/text-field fork-args {:name :account-number
                                    :label "account number"}])
 
-(defn address-field [fork-args]
-  [form-util/text-field fork-args {:name :address
-                                   :label "supply address"
-                                   :multiline true
-                                   :minRows 3
-                                   :maxRows 3}])
+(defn address-box [selected? child]
+  [mui/paper (merge
+               {:variant :outlined
+                :sx (merge
+                      {:flex-grow 1
+                       :border-width 2
+                       :padding 1
+                       :white-space :pre}
+                      (when selected?
+                        {:border-color :primary.light}))})
+   child])
+
+(defn address-field [{:keys [values handle-change set-handle-change] :as fork-args}]
+  [mui/form-control
+   [mui/form-label "property address"]
+   [mui/radio-group {:name :address
+                     ; value is printed and read, for to distinguish keywords from strings
+                     :value (pr-str (get values :address))
+                     :onChange (fn [_evt v]
+                                 (set-handle-change
+                                   {:value (read-string v)
+                                    :path [:address]}))
+                     :sx {:gap (ui/theme-spacing 1)}}
+    (let [deceased-address @(rf/subscribe [::case-model/deceased-address])]
+      [mui/form-control-label
+       {:value (pr-str :deceased-address)
+        :control (r/as-element [mui/radio])
+        :disableTypography true
+        :label (r/as-element
+                 (let [selected? (= :deceased-address (get values :address))]
+                   [address-box selected? deceased-address]))}])
+    (for [address-text @(rf/subscribe [::model/used-billing-addresses])]
+      [mui/form-control-label
+       {:key (pr-str address-text)
+        :value (pr-str address-text)
+        :control (r/as-element [mui/radio])
+        :sx {:align-items :flex-start}
+        :disableTypography true
+        :label (r/as-element
+                 (let [selected? (= address-text (get values :address))]
+                   [address-box selected? address-text]))}])
+    [mui/form-control-label
+     {:value (pr-str :new-address)
+      :control (r/as-element [mui/radio])
+      :sx {:align-items :flex-start}
+      :disableTypography true
+      :label (r/as-element
+               (let [selected? (= :new-address (get values :address))
+                     select! #(set-handle-change
+                                {:value :new-address
+                                 :path [:address]})]
+                 [form-util/text-field fork-args
+                  (merge
+                    {:name :address-new
+                     :hiddenLabel true
+                     :placeholder "enter another address"
+                     :multiline true
+                     :minRows 3
+                     :maxRows 3
+                     :variant :outlined
+                     :fullWidth true
+                     :value (if selected?
+                              (get values :address-new)
+                              "")
+                     :onChange (fn [evt]
+                                 (select!)
+                                 (handle-change evt))
+                     :onClick #(select!)}
+                    ; Doesn't work with multiline textfield. Not important.
+                    (when-not selected?
+                      {:inputProps {:tabindex :-1}}))]))}]]])
 
 (defn amount-field [fork-args]
   [form-util/text-field fork-args
@@ -101,3 +171,23 @@
    [address-field fork-args]
    [amount-field fork-args]
    [meter-readings-field fork-args]])
+
+(defn values-to-submit [{:keys [values] :as _fork-params}]
+  (cond-> values
+    (= :new-address (:address values)) (assoc :address (trim (:address-new values)))
+    :always (dissoc :address-new)))
+
+(def validation
+  (v/join
+    (v/attr [:address] (v+/v-some?))
+    (fn [data]
+      (when (= :new-address (:address data))
+        (v/validate
+          (v/attr [:address-new] (v/present))
+          data)))))
+
+(defn validate [form-data]
+  (v/field-errors validation form-data))
+
+(def initial-values
+  {:address :deceased-address})

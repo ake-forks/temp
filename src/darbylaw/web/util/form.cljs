@@ -208,7 +208,7 @@
   - Sets some default options that we typically use
   - Wraps validation to react to errors in the validation logic
   - Adapts MUI events to be compatible with fork
-  - Honors :clean-on-unmount? when passing a :form-state ratom"
+  - Honors :clean-on-unmount? when passing a :state ratom"
   [props component]
   (r/with-let [{form-state :state
                 :keys [clean-on-unmount?]

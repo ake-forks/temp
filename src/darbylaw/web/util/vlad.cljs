@@ -129,3 +129,11 @@
 (defmethod v/english-translation ::currency-negative?
   [{:keys [name]}]
   (str name " must be negative."))
+
+
+(defn v-some?
+  ([]
+   (v-some? {}))
+  ([error-data]
+   (v/predicate (complement some?)
+     (merge {:type ::v/present} error-data))))

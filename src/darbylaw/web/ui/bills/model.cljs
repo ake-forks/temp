@@ -1,6 +1,7 @@
 (ns darbylaw.web.ui.bills.model
   (:require [re-frame.core :as rf]
-            [darbylaw.api.bill.data :as bills-data]))
+            [darbylaw.api.bill.data :as bills-data]
+            [darbylaw.web.ui.case-model :as case-model]))
 
 (rf/reg-sub ::companies
   (fn [_]
@@ -41,3 +42,14 @@
     (for [[name {:keys [label]}] bills-data/bill-types]
       {:name name
        :label label})))
+
+(rf/reg-sub ::current-bills
+  :<- [::case-model/current-case]
+  #(:bills %))
+
+(rf/reg-sub ::used-billing-addresses
+  :<- [::current-bills]
+  (fn [bills]
+    (->> bills
+      (map :address)
+      (distinct))))

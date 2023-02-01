@@ -76,7 +76,8 @@
                                [:string {:min 1}]]]
    [:amount :string]
    [:account-number {:optional true} :string]
-   [:address :string]
+   [:address [:or [:enum :deceased-address]
+                  [:string {:min 1}]]]
    [:meter-readings {:optional true} :string]])
 
 (comment

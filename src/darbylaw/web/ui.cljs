@@ -206,3 +206,6 @@
 
 (defn event-target-checked [onchange-event]
   (.. onchange-event -target -checked))
+
+(defn event-target-value [onchange-event]
+  (.. onchange-event -target -value))
