@@ -46,11 +46,13 @@
      :headers {"accept" "application/transit+json"}}))
 
 (deftest add_and_update_funeral-account
-  (let [new-case-resp (-> (setup/create-case)
+  (let [;; Create a case
+        new-case-resp (-> (setup/create-case)
                           t/run-request
                           t/assert-success)
         case-id (-> new-case-resp :body :id)
 
+        ;; Add a funeral account
         added-funeral-account {:title "funeral account"
                                :value "1.23"}
         add-resp (-> case-id
@@ -59,6 +61,7 @@
         acct (get-funeral-account case-id)
         _ (is (= added-funeral-account acct))
 
+        ;; Update the funeral account
         updated-funeral-account {:title "funeral account"
                                  :value "1.23"
                                  :paid true
@@ -69,6 +72,7 @@
         acct (get-funeral-account case-id)
         _ (is (= updated-funeral-account acct))
 
+        ;; Add some other expenses
         added-expenses [{:title "title 1"
                          :value "1.23"}
                         {:title "title 2"
@@ -88,6 +92,7 @@
                       (map #(dissoc % :expense-id))
                       (into #{}))))
 
+        ;; Add more other expenses
         more-added-expenses [{:title "title 3"
                               :value "3.45"}
                              {:title "title 4"
@@ -107,6 +112,7 @@
                                 (map #(dissoc % :expense-id))
                                 (into #{}))))
 
+        ;; Update some existing expenses
         updated-expenses (zipmap
                            expense-ids
                            [{:title "title 5"
