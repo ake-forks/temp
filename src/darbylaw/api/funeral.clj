@@ -96,19 +96,28 @@
                                  :user user})))
     {:status 200}))
 
-(defn get-funeral-file [{:keys [xtdb-node path-params expense-id document-name]}]
-  (fn [{:keys [xtdb-node path-params]}]
-    (let [case-id (parse-uuid (:case-id path-params))
-          filename (-> (xt/pull (xt/db xtdb-node)
-                         [document-name]
-                         expense-id)
-                       (get document-name))
-          s3-file (doc-store/fetch-raw
-                    (expense-store/s3-key case-id filename))
-          file-metadata (.getObjectMetadata s3-file)]
-      {:status 200
-       :headers {"Content-Type" (.getContentType file-metadata)}
-       :body (.getObjectContent s3-file)})))
+(defn get-funeral-file [xtdb-node case-id expense-id document-name]
+  (let [filename (-> (xt/pull (xt/db xtdb-node)
+                       [document-name]
+                       expense-id)
+                     (get document-name))
+        s3-file (doc-store/fetch-raw
+                  (expense-store/s3-key case-id filename))
+        file-metadata (.getObjectMetadata s3-file)]
+    {:status 200
+     :headers {"Content-Type" (.getContentType file-metadata)}
+     :body (.getObjectContent s3-file)}))
+
+(defn get-funeral-account-file [document-name {:keys [xtdb-node path-params]}]
+  (let [case-id (parse-uuid (:case-id path-params))
+        account-id {:probate.funeral-account/case case-id}]
+    (get-funeral-file xtdb-node case-id account-id document-name)))
+
+(defn get-other-expense-file [{:keys [xtdb-node path-params]}]
+  (let [case-id (parse-uuid (:case-id path-params))
+        document-name :receipt
+        expense-id (parse-uuid (:expense-id path-params))]
+    (get-funeral-file xtdb-node case-id expense-id document-name)))
 
 (def funeral-account-schema
   [:map
@@ -132,17 +141,9 @@
            :parameters {:query funeral-account-schema}}}]
    ["/account"
     ["/receipt"
-     {:get {:handler (fn [{:keys [path-params] :as req}]
-                       (let [case-id (parse-uuid (:case-id path-params))
-                             account-id {:probate.funeral-account/case case-id}
-                             handler (get-funeral-file account-id :receipt)]
-                         (handler req)))}}]
+     {:get {:handler (partial get-funeral-account-file :receipt)}}]
     ["/invoice"
-     {:get {:handler (fn [{:keys [path-params] :as req}]
-                       (let [case-id (parse-uuid (:case-id path-params))
-                             account-id {:probate.funeral-account/case case-id}
-                             handler (get-funeral-file account-id :invoice)]
-                         (handler req)))}}]]
+     {:get {:handler (partial get-funeral-account-file :invoice)}}]]
    ["/other"
     {:post {:handler (wrap-other-expense :add
                        upsert-funeral-expense)
@@ -152,7 +153,4 @@
                       upsert-funeral-expense)
            :parameters {:query other-expense-schema}}}]
    ["/other/:expense-id/receipt"
-    {:get {:handler (fn [{:keys [path-params] :as req}]
-                      (let [expense-id (parse-uuid (:expense-id path-params))
-                            handler (get-funeral-file expense-id :receipt)]
-                        (handler req)))}}]])
+    {:get {:handler get-other-expense-file}}]])
