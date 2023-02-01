@@ -171,7 +171,7 @@
     :address-town "",
     :address-county "",
     :address-postcode "LS1 2QB",
-    :logo "Leeds-Credit-Union.svg"}
+    :logo "bank.svg"}
    {:id :leek-building-society,
     :common-name "Leek Building Society",
     :address-line-1 "50 St Edward Street",
