@@ -163,6 +163,9 @@
   :stop (.close mailing-sync-job))
 
 (comment
+  (sync-job xtdb-node/xtdb-node)
+  (clj-ssh.ssh/disconnect (:real @mailing/ssh-session-atom))
+
   (def fivePM (LocalTime/of 17 00 00))
   (def sixPM (LocalTime/of 18 00 00))
   (def t (instant->localtime #inst"2023-01-27T17:00:01" (ZoneId/of "Europe/London")))
