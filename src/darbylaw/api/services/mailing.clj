@@ -56,6 +56,9 @@
         ; See https://stackoverflow.com/a/30855201/503785
         (let [new-session (create-session real|fake)]
           (swap! ssh-session-atom assoc real|fake new-session)
+          (log/info "New SSH session created for account" real|fake)
+          (when-not (ssh/connected? new-session)
+            (log/error "Newly created session is not connected! Account:" real|fake))
           new-session)
         session))))
 
