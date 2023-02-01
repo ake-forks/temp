@@ -195,7 +195,7 @@
        (map-indexed
          (fn [idx field]
            ^{:key idx}
-           [mui/stack {:spacing 1 :direction :row :style {:justify-content :center}}
+           [mui/stack {:spacing 1 :direction :row :style {:justify-content :space-between}}
             [mui/stack {:spacing 1}
              [mui/stack {:spacing 1 :direction :row}
               [mui/stack {:spacing 1 :direction :row}
