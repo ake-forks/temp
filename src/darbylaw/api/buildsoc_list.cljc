@@ -9,7 +9,7 @@
     :address-town "",
     :address-county "",
     :address-postcode "BA1 2HN",
-    :logo ""}
+    :logo "Bath-Investment-and-Building-Society-icon.svg"}
    {:id :beverley-building-society,
     :common-name "Beverley Building Society",
     :address-line-1 "57 Market Place",
@@ -18,7 +18,7 @@
     :address-town "",
     :address-county "",
     :address-postcode "HU17 8AA",
-    :logo ""}
+    :logo "Beverley-Building-Society.svg"}
    {:id :buckinghamshire-building-society,
     :common-name "Buckinghamshire Building Society",
     :address-line-1 "High Street",
@@ -27,7 +27,7 @@
     :address-town "",
     :address-county "",
     :address-postcode "HP8 4QB",
-    :logo ""}
+    :logo "Buckinghamshire-Building-Society-icon.svg"}
    {:id :cambridge-building-society,
     :common-name "Cambridge Building Society",
     :address-line-1 "PO Box 232",
@@ -36,7 +36,7 @@
     :address-town "",
     :address-county "",
     :address-postcode "CB5 8FF",
-    :logo ""}
+    :logo "Cambridge-Building-Societ-icon.svg"}
    {:id :capital-credit-union-ltd,
     :common-name "Capital Credit Union Ltd",
     :address-line-1 "31 Dunedin Street",
@@ -45,7 +45,7 @@
     :address-town "",
     :address-county "",
     :address-postcode "EH7 4JG",
-    :logo ""}
+    :logo "Capital-Credit-Union-icon.svg"}
    {:id :chorley-district-building-society,
     :common-name "Chorley & District Building Society",
     :address-line-1 "Key House",
@@ -54,7 +54,7 @@
     :address-town "Lancashire",
     :address-county "",
     :address-postcode "PR7 1NZ",
-    :logo ""}
+    :logo "Chorley-Building-Societ-icon.svg"}
    {:id :coventry-building-society,
     :common-name "Coventry Building Society",
     :address-line-1 "Coventry House",
@@ -72,7 +72,7 @@
     :address-town "Carlisle",
     :address-county "",
     :address-postcode "CA3 0JF",
-    :logo ""}
+    :logo "bank.svg"}
    {:id :darlington-building-society,
     :common-name "Darlington Building Society",
     :address-line-1 "Sentinel House",
@@ -81,7 +81,7 @@
     :address-town "Co Durham",
     :address-county "",
     :address-postcode "DL1 4PT",
-    :logo ""}
+    :logo "Darlington-Building-Society-icon.svg"}
    {:id :dudley-building-society,
     :common-name "Dudley Building Society",
     :address-line-1 "7 Harbour Buildings",
@@ -90,7 +90,7 @@
     :address-town "West Midlands",
     :address-county "",
     :address-postcode "DY5 1LN",
-    :logo ""}
+    :logo "Dudley-Building-Society.svg"}
    {:id :earl-shilton-building-society,
     :common-name "Earl Shilton Building Society",
     :address-line-1 "22 The Hollow",
@@ -99,7 +99,7 @@
     :address-town "",
     :address-county "",
     :address-postcode "LE9 7NB",
-    :logo ""}
+    :logo "bank.svg"}
    {:id :ecology-building-society,
     :common-name "Ecology Building Society",
     :address-line-1 "7 Belton Road",
@@ -108,7 +108,7 @@
     :address-town "West Yorkshire",
     :address-county "",
     :address-postcode "BD20 0EE",
-    :logo ""}
+    :logo "Ecology-Building-Society-icon.svg"}
    {:id :furness-building-society,
     :common-name "Furness Building Society",
     :address-line-1 "Emlyn Hughes House",
@@ -117,7 +117,7 @@
     :address-town "Cumbria",
     :address-county "",
     :address-postcode "LA14 5PQ",
-    :logo ""}
+    :logo "Furness-Building-Society.svg"}
    {:id :glasgow-credit-union,
     :common-name "Glasgow Credit Union",
     :address-line-1 "95 Morrison Street",
@@ -126,7 +126,7 @@
     :address-town "",
     :address-county "",
     :address-postcode "G5  8BE",
-    :logo ""}
+    :logo "Glasgow-Credit-Union-icon.svg"}
    {:id :hanley-economic-building-society,
     :common-name "Hanley Economic Building Society",
     :address-line-1 "Granville House",
@@ -135,7 +135,7 @@
     :address-town "Stoke-on-Trent",
     :address-county "Staffordshire",
     :address-postcode "ST1 5TB",
-    :logo ""}
+    :logo "Hanley-Economic-Building-Society-icon.svg"}
    {:id :harpenden-building-society,
     :common-name "Harpenden Building Society",
     :address-line-1 "Mardall House, 9-11 Vaughan Road",
@@ -144,7 +144,7 @@
     :address-town "",
     :address-county "",
     :address-postcode "AL5 4HU",
-    :logo ""}
+    :logo "bank.svg"}
    {:id :hinckley-and-rugby-building-society,
     :common-name "Hinckley and Rugby Building Society",
     :address-line-1 "Upper Bond Street",
@@ -153,7 +153,7 @@
     :address-town "",
     :address-county "",
     :address-postcode "LE10 1NZ",
-    :logo ""}
+    :logo "Hinckley-and-Rugby-Building-Society.svg"}
    {:id :leeds-building-society,
     :common-name "Leeds Building Society",
     :address-line-1 " 26 Sovereign Street",
@@ -171,7 +171,7 @@
     :address-town "",
     :address-county "",
     :address-postcode "LS1 2QB",
-    :logo ""}
+    :logo "Leeds-Credit-Union.svg"}
    {:id :leek-building-society,
     :common-name "Leek Building Society",
     :address-line-1 "50 St Edward Street",
@@ -180,7 +180,7 @@
     :address-town "",
     :address-county "",
     :address-postcode "ST13 5DL",
-    :logo ""}
+    :logo "Leek-Building-Societ-icon.svg"}
    {:id :london-mutual-credit-union,
     :common-name "London Mutual Credit Union",
     :address-line-1 "4 Heaton Road",
@@ -189,7 +189,7 @@
     :address-town "",
     :address-county "",
     :address-postcode "SE15 3TH",
-    :logo ""}
+    :logo "London-Mutual-Credit-Union-icon.svg"}
    {:id :loughborough-building-society,
     :common-name "Loughborough Building Society",
     :address-line-1 "6 High Street",
@@ -198,7 +198,7 @@
     :address-town "",
     :address-county "",
     :address-postcode "LE11 2QB",
-    :logo ""}
+    :logo "Loughborough-Building-Society.svg"}
    {:id :manchester-building-society,
     :common-name "Manchester Building Society",
     :address-line-1 "125 Portland Street",
@@ -207,7 +207,7 @@
     :address-town "Manchester",
     :address-county "",
     :address-postcode "M1 4QD",
-    :logo ""}
+    :logo "Manchester-Building-Society.svg"}
    {:id :manchester-credit-union,
     :common-name "Manchester Credit Union",
     :address-line-1 "Ground Floor Queens Court ",
@@ -216,7 +216,7 @@
     :address-town "Manchester",
     :address-county "",
     :address-postcode " M2 5HX",
-    :logo ""}
+    :logo "Manchester-Credit-Union-icon.svg"}
    {:id :mansfield-building-society,
     :common-name "Mansfield Building Society",
     :address-line-1 "Regent House",
@@ -225,7 +225,7 @@
     :address-town "Nottinghamshire",
     :address-county "",
     :address-postcode "NG18 1SS",
-    :logo ""}
+    :logo "Mansfield-Building-Society-icon.svg"}
    {:id :market-harborough-building-society,
     :common-name "Market Harborough Building Society",
     :address-line-1 "Welland House",
@@ -234,7 +234,7 @@
     :address-town "Leicestershire",
     :address-county "",
     :address-postcode "LE16 7PD",
-    :logo ""}
+    :logo "Market-Harborough-Building-Society.svg"}
    {:id :marsden-building-society,
     :common-name "Marsden Building Society",
     :address-line-1 "6-20 Russell Street",
@@ -243,7 +243,7 @@
     :address-town "",
     :address-county "",
     :address-postcode "BB9 7NJ",
-    :logo ""}
+    :logo "Marsden-Building-Societ-icon.svg"}
    {:id :melton-mowbray-building-society,
     :common-name "Melton Mowbray Building Society",
     :address-line-1 "Mutual House, Leicester Road",
@@ -252,7 +252,7 @@
     :address-town "",
     :address-county "",
     :address-postcode "LE13 0DB",
-    :logo ""}
+    :logo "Melton-Building-Society-icon.svg"}
    {:id :monmouthshire-building-society,
     :common-name "Monmouthshire Building Society",
     :address-line-1 "Monmouthshire House",
@@ -261,7 +261,7 @@
     :address-town "South Wales",
     :address-county "",
     :address-postcode "NP20 1PX",
-    :logo ""}
+    :logo "Monmouthshire-Building-Society-icon.svg"}
    {:id :nationwide-building-society,
     :common-name "Nationwide Building Society",
     :address-line-1 "Bereavement Services",
@@ -279,7 +279,7 @@
     :address-town "",
     :address-county "",
     :address-postcode "RG14 5EE",
-    :logo ""}
+    :logo "Newbury-Building-Society-icon.svg"}
    {:id :newcastle-building-society,
     :common-name "Newcastle Building Society",
     :address-line-1 "1 Cobalt Park Way",
@@ -288,7 +288,7 @@
     :address-town "",
     :address-county "",
     :address-postcode "NE28 9EJ",
-    :logo ""}
+    :logo "Newcastle-Building-Society.svg"}
    {:id :nottingham-building-society,
     :common-name "Nottingham Building Society",
     :address-line-1 "Nottingham House",
@@ -297,8 +297,8 @@
     :address-town "",
     :address-county "",
     :address-postcode "NG1 3DL",
-    :logo ""}
-   {:id :no-copperpot-credit-union,
+    :logo "Nottingham-Building-Society-icon.svg"}
+   {:id :no1-copperpot-credit-union,
     :common-name "No1 CopperPot Credit Union",
     :address-line-1 "Slater House",
     :address-line-2 "Oakfield Road",
@@ -306,7 +306,7 @@
     :address-town "Cheadle",
     :address-county "Cheshire",
     :address-postcode "SK8 3GX",
-    :logo ""}
+    :logo "No1-CooperPot-Credit-Unio-icon.svg"}
    {:id :penrith-building-society,
     :common-name "Penrith Building Society",
     :address-line-1 "7 King Street",
@@ -315,7 +315,7 @@
     :address-town "",
     :address-county "",
     :address-postcode "CA11 7AR",
-    :logo ""}
+    :logo "Penrith-Building-Society-icon.svg"}
    {:id :principality-building-society,
     :common-name "Principality Building Society",
     :address-line-1 "Principality House",
@@ -324,7 +324,7 @@
     :address-town "",
     :address-county "",
     :address-postcode "CF10 3FA",
-    :logo ""}
+    :logo "Principality-Building-Society-icon.svg"}
    {:id :progressive-building-society,
     :common-name "Progressive Building Society",
     :address-line-1 "Progressive House",
@@ -333,7 +333,7 @@
     :address-town "",
     :address-county "",
     :address-postcode "BT1 6HH",
-    :logo ""}
+    :logo "Progressive-Building-Society-icon.svg"}
    {:id :saffron-building-society,
     :common-name "Saffron Building Society",
     :address-line-1 "Saffron House",
@@ -342,7 +342,7 @@
     :address-town "Essex",
     :address-county "",
     :address-postcode "CB10 1HX",
-    :logo ""}
+    :logo "Saffron-Building-Society-icon.svg"}
    {:id :scottish-building-society,
     :common-name "Scottish Building Society",
     :address-line-1 "SBS House",
@@ -351,7 +351,7 @@
     :address-town "",
     :address-county "",
     :address-postcode "EH11 2EF",
-    :logo ""}
+    :logo "Scottish-Building-Society-icon.svg"}
    {:id :scotwest-credit-union-limited,
     :common-name "Scotwest Credit Union Limited",
     :address-line-1 "13 Elmbank Street",
@@ -360,7 +360,7 @@
     :address-town "",
     :address-county "",
     :address-postcode "G2 4PB",
-    :logo ""}
+    :logo "Scotwest-Building-Society.svg"}
    {:id :skipton-building-society,
     :common-name "Skipton Building Society",
     :address-line-1 "The Bailey",
@@ -369,7 +369,7 @@
     :address-town "",
     :address-county "",
     :address-postcode "BD23 1DN",
-    :logo ""}
+    :logo "Scotwest-Building-Society.svg"}
    {:id :stafford-railway-building-society,
     :common-name "Stafford Railway Building Society",
     :address-line-1 "4 Market Square",
@@ -378,7 +378,7 @@
     :address-town "",
     :address-county "",
     :address-postcode "ST16 2JH",
-    :logo ""}
+    :logo "Stafford-Railway-Building-Society.svg"}
    {:id :suffolk-building-society,
     :common-name "Suffolk Building Society",
     :address-line-1 "Freehold House",
@@ -387,7 +387,7 @@
     :address-town "Ipswich",
     :address-county "",
     :address-postcode "IP3 9SJ",
-    :logo ""}
+    :logo "Suffolk-Building-Society.svg"}
    {:id :swansea-building-society,
     :common-name "Swansea Building Society",
     :address-line-1 "11-12 Cradock Street",
@@ -396,7 +396,7 @@
     :address-town "",
     :address-county "",
     :address-postcode "SA1 3EW",
-    :logo ""}
+    :logo "Swansea-Building-Society.svg"}
    {:id :teachers-building-society,
     :common-name "Teachers' Building Society",
     :address-line-1 "Allenview House",
@@ -405,7 +405,7 @@
     :address-town "Dorset",
     :address-county "",
     :address-postcode "BH21 1AG",
-    :logo ""}
+    :logo "Teachers-Building-Society-icon.svg"}
    {:id :the-family-building-society,
     :common-name "The Family Building Society",
     :address-line-1 "30 Church Street",
@@ -414,8 +414,8 @@
     :address-town "",
     :address-county "",
     :address-postcode "KT17 4NL",
-    :logo ""}
-   {:id :tipton--coseley-building-society,
+    :logo "The-Family-Building-Society.svg"}
+   {:id :tipton-coseley-building-society,
     :common-name "Tipton & Coseley Building Society",
     :address-line-1 "70 Owen Street",
     :address-line-2 "Tipton",
@@ -423,7 +423,7 @@
     :address-town "",
     :address-county "",
     :address-postcode "DY4 8HG",
-    :logo ""}
+    :logo "Tipton-_-Coseley-Building-Society-icon.svg"}
    {:id :vernon-building-society,
     :common-name "Vernon Building Society",
     :address-line-1 "19 St Petersgate",
@@ -432,7 +432,7 @@
     :address-town "",
     :address-county "",
     :address-postcode "SK1 1HF",
-    :logo ""}
+    :logo "Vernon-Building-Societ-icon.svg"}
    {:id :west-bromwich-building-society,
     :common-name "West Bromwich Building Society",
     :address-line-1 "2 Providence Place ",
@@ -441,7 +441,7 @@
     :address-town "",
     :address-county "",
     :address-postcode "B70 8AF",
-    :logo ""}
+    :logo "West-Bromwich-Building-Society-icon.svg"}
    {:id :yorkshire-building-society,
     :common-name "Yorkshire Building Society",
     :address-line-1 "Yorkshire House",
