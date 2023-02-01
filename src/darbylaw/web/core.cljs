@@ -15,6 +15,7 @@
   (kf/start!
     {:routes [["/app/about" :about]
               ["/app/landing" :landing]
+              ["/app/onboarding" :decision-tree]
               ["/app/admin" :admin]
               ["/app/create-case" :create-case]
               ["/app/case/:case-id/create-deceased-details" :create-deceased-details]

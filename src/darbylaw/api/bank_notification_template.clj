@@ -11,22 +11,34 @@
     [clojure.java.io :as io])
   (:import (java.time LocalDate)))
 
-(defn generate-address-vector [data]
-  (vector
-    (:address-street-no data)
-    (:address-house-name data)
-    (:address-line-1 data)
-    (:address-line-2 data)
-    (:address-line-3 data)
-    (:address-town data)
-    (:address-postcode data)
-    (:address-county data)
-    (:address-country data)))
+(defn generate-address-vector [type data]
+  (case type
+    :bank
+    (vector
+      (:address-street-no data)
+      (:address-house-name data)
+      (:address-line-1 data)
+      (:address-line-2 data)
+      (:address-line-3 data)
+      (:address-town data)
+      (:address-county data)
+      (:address-postcode data)
+      (:address-country data))
+    :buildsoc
+    (vector
+      (:address-line-1 data)
+      (:address-line-2 data)
+      (:address-line-3 data)
+      (:address-town data)
+      (:address-county data)
+      (:address-postcode data))))
 
 (defn generate-mailing-address [type asset-id]
-  (let [asset-data (if (= type :bank) (banks/get-bank-info asset-id))
-        address-vector (generate-address-vector asset-data)]
-    {:org-name (:org-name asset-data)
+  (let [asset-data (case type :bank (banks/get-bank-info asset-id)
+                              :buildsoc (buildsocs/get-buildsoc-info asset-id))
+        address-vector (generate-address-vector type asset-data)]
+    {:org-name (case type :bank (:org-name asset-data)
+                          :buildsoc (:common-name asset-data))
      :org-address (string/join "\n"
                     (remove string/blank? address-vector))}))
 
