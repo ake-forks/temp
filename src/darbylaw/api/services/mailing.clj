@@ -49,8 +49,8 @@
 (defn obtain-ssh-session [real|fake]
   (locking connection-lock
     (let [session (@ssh-session-atom real|fake)]
-      (if (or (nil? session)
-              (not (ssh/connected? session)))
+      (if (and (some? session) (ssh/connected? session))
+        session
         (do
           ; Making sure the previous session disposes of resources
           ; See https://stackoverflow.com/a/72943084
@@ -64,8 +64,7 @@
             (log/info "New SSH session created for account" real|fake)
             (when-not (ssh/connected? new-session)
               (log/error "Newly created session is not connected! Account:" real|fake))
-            new-session))
-        session))))
+            new-session))))))
 
 ;; Public functions
 
