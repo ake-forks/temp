@@ -174,38 +174,39 @@
                                            :cardinality :one})
                 ['*]}
 
-               {:death-certificate
-                document-props}
-               {:will
-                document-props}
-               {:grant-of-probate
-                document-props}
+               {:death-certificate document-props}
+               {:will document-props}
+               {:grant-of-probate document-props}
 
-               {'(:probate.funeral-account/_case
-                   {:as :funeral-account
-                    :cardinality :one})
-                [:title :value :paid-by :paid
-                 {:receipt
-                  document-props}
-                 {:invoice
-                  document-props}]}
+               {'(:probate.funeral-account/_case {:as :funeral-account
+                                                  :cardinality :one})
+                [:title
+                 :value
+                 :paid-by
+                 :paid
+                 {:receipt document-props}
+                 {:invoice document-props}]}
+
                {:funeral-expense
                 ['(:xt/id {:as :expense-id})
-                 :title :value :paid :paid-by
-                 {:receipt
-                  document-props}]}
+                 :title
+                 :value
+                 :paid
+                 :paid-by
+                 {:receipt document-props}]}
 
-               :bank
                {:bank-accounts (into
                                  [:bank-id
                                   :accounts-unknown
                                   :accounts]
                                  letter-props)}
+
                {:buildsoc-accounts (into
                                      [:buildsoc-id
                                       :accounts-unknown
                                       :accounts]
                                      letter-props)}
+
                {:bills bill-data/bill-props}]))]
    :where '[[case :type :probate.case]
             [case :xt/id case-id]]
