@@ -76,7 +76,7 @@
                        :padding 1
                        :white-space :pre}
                       (when selected?
-                        {:border-color ui/theme-primary-light-color}))})
+                        {:border-color :primary.light}))})
    child])
 
 (defn address-field [{:keys [values handle-change set-handle-change] :as fork-args}]
