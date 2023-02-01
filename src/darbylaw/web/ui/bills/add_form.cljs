@@ -81,7 +81,7 @@
 
 (defn address-field [{:keys [values handle-change set-handle-change] :as fork-args}]
   [mui/form-control
-   [mui/form-label "supply address"]
+   [mui/form-label "property address"]
    [mui/radio-group {:name :address
                      ; value is printed and read, for to distinguish keywords from strings
                      :value (pr-str (get values :address))
