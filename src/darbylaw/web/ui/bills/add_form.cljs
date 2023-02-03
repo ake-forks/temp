@@ -76,10 +76,10 @@
                        {:name :issuer
                         :sx {:flex-grow 1}
                         :label issuer-type-label
-                        :onInputChange (fn [_evt new-value]
-                                         (select!)
-                                         (set-handle-change {:value new-value
-                                                             :path [:issuer]}))}
+                        :onChange (fn [_evt new-value]
+                                    (select!)
+                                    (set-handle-change {:value new-value
+                                                        :path [:issuer]}))}
                        (case issuer-type
                          :company {:options (-> @(rf/subscribe [::model/all-company-ids])
                                               (conj ""))
