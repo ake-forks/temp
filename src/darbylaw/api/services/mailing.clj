@@ -32,6 +32,7 @@
              :username username
              :password password
              :port port})
+      (.setServerAliveInterval 20000) ; prevent unnoticed disconnections
       (ssh/connect))))
 
 ; Prevents creation of multiple sessions by concurrent client threads.
