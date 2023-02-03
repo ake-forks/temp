@@ -88,3 +88,15 @@
 (def bill-props
   (->> (rest bill-schema)
     (mapv first)))
+
+(def company-by-id
+  (into {} (map (juxt :id identity) companies)))
+
+(defn get-company-info [company-id]
+  (get company-by-id company-id))
+
+(def council-by-id
+  (into {} (map (juxt :id identity) councils)))
+
+(defn get-council-info [council-id]
+  (get council-by-id council-id))
