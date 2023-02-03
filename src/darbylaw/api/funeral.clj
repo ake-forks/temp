@@ -119,14 +119,7 @@
         expense-id (parse-uuid (:expense-id path-params))]
     (get-funeral-file xtdb-node case-id expense-id document-name)))
 
-(def funeral-account-schema
-  [:map
-   [:title :string]
-   [:value :string]
-   [:paid {:optional true} :boolean]
-   [:paid-by {:optional true} :string]])
-
-(def other-expense-schema
+(def expense-schema
   [:map
    [:title :string]
    [:value :string]
@@ -138,7 +131,7 @@
    ["/account"
     {:put {:handler (wrap-funeral-account
                       upsert-funeral-expense)
-           :parameters {:query funeral-account-schema}}}]
+           :parameters {:query expense-schema}}}]
    ["/account"
     ["/receipt"
      {:get {:handler (partial get-funeral-account-file :receipt)}}]
@@ -147,10 +140,10 @@
    ["/other"
     {:post {:handler (wrap-other-expense :add
                        upsert-funeral-expense)
-            :parameters {:query other-expense-schema}}}]
+            :parameters {:query expense-schema}}}]
    ["/other/:expense-id"
     {:put {:handler (wrap-other-expense :update
                       upsert-funeral-expense)
-           :parameters {:query other-expense-schema}}}]
+           :parameters {:query expense-schema}}}]
    ["/other/:expense-id/receipt"
     {:get {:handler get-other-expense-file}}]])
