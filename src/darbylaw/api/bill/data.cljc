@@ -1,4 +1,5 @@
-(ns darbylaw.api.bill.data)
+(ns darbylaw.api.bill.data
+  (:require [darbylaw.api.util.malli :as malli+]))
 
 (def bill-types
   (array-map
@@ -66,25 +67,34 @@
     :logo nil}])
 
 (def bill-schema
-  [:map
-   [:bill-type [:set (into [:enum] (keys bill-types))]]
-   [:company {:optional true} [:or
-                               (into [:enum] (map :id companies))
-                               [:string {:min 1}]]]
-   [:council {:optional true} [:or
-                               (into [:enum] (map :id companies))
-                               [:string {:min 1}]]]
-   [:amount :string]
-   [:account-number {:optional true} :string]
-   [:address [:or [:enum :deceased-address]
-                  [:string {:min 1}]]]
-   [:meter-readings {:optional true} :string]])
+  [:and
+   [:map
+    [:bill-type [:set (into [:enum] (keys bill-types))]]
+
+    [:issuer {:optional true} (into [:enum] (map :id companies))]
+    [:custom-issuer-name {:optional true} [:string {:min 1}]]
+    [:custom-issuer-address {:optional true} [:string {:min 1}]]
+    [:amount [:re #"-?\d*\.?\d{0,2}"]]
+    [:account-number {:optional true} :string]
+    [:address [:or [:enum :deceased-address]
+               [:string {:min 1}]]]
+    [:meter-readings {:optional true} :string]]
+   (malli+/exclusive-keys [:issuer :custom-issuer-name])
+   (malli+/when-then :custom-issuer-name :custom-issuer-address)])
 
 (comment
   (require '[malli.core :as malli])
-  (malli/explain bill-schema {:company :mine
-                              :bill-type #{:ok}}))
+  (malli.core/explain bill-schema {:bill-type #{:other}
+                                   ;:issuer :utility-1
+                                   :amount "10"
+                                   :custom-issuer-name "hola"
+                                   :custom-issuer-address "addr"
+                                   :address "hey"}))
 
 (def bill-props
-  (->> (rest bill-schema)
-    (mapv first)))
+  (do
+    (assert (= :map (-> bill-schema second first)))
+    (->> bill-schema
+      second ; skip :and
+      rest ; skip :map
+      (mapv first))))

@@ -7,7 +7,7 @@
             [darbylaw.web.ui :as ui]
             [darbylaw.web.ui.case-model :as case-model]
             [vlad.core :as v]
-            [darbylaw.web.util.vlad :as v+]
+            [darbylaw.web.util.vlad :refer [v-some? v-when]]
             [clojure.edn :refer [read-string]]
             [clojure.string :refer [trim]]))
 
@@ -44,24 +44,85 @@
                        label)}]])])]
      [mui/form-helper-text "helper text"]]))
 
-(defn company-select [fork-args]
-  [form-util/autocomplete-field fork-args
-   {:name :company
-    :label "company"
-    :options @(rf/subscribe [::model/all-company-ids])
-    :getOptionLabel @(rf/subscribe [::model/company-id->label])
-    :freeSolo true}])
+(defn issuer-fields [{:keys [values handle-change set-handle-change] :as fork-args}]
+  (let [issuer-type (let [bill-type (get values :bill-type)]
+                      (cond
+                        (contains? bill-type :council-tax) :council
+                        (seq bill-type) :company
+                        :else :unselected))
+        issuer-type-label (case issuer-type
+                            :company "company"
+                            :council "council"
+                            :unselected "company")]
+    [:<>
+     [mui/form-label
+      issuer-type-label]
+     [mui/form-control
+      [mui/radio-group {:name :issuer-known
+                        :value (get values :issuer-known)
+                        :onChange handle-change
+                        :sx {:gap (ui/theme-spacing 1)}}
+       [mui/form-control-label
+        {:value "known"
+         :control (r/as-element
+                    [mui/radio {:disabled (= issuer-type :unselected)}])
+         :disableTypography true
+         :label (r/as-element
+                  (let [select! #(set-handle-change
+                                   {:value "known"
+                                    :path [:issuer-known]})]
+                    [form-util/autocomplete-field fork-args
+                     (merge
+                       {:name :issuer
+                        :sx {:flex-grow 1}
+                        :label issuer-type-label
+                        :onInputChange (fn [_evt new-value]
+                                         (select!)
+                                         (set-handle-change {:value new-value
+                                                             :path [:issuer]}))}
+                       (case issuer-type
+                         :company {:options (-> @(rf/subscribe [::model/all-company-ids])
+                                              (conj ""))
+                                   :getOptionLabel @(rf/subscribe [::model/company-id->label])}
+                         :council {:options (-> @(rf/subscribe [::model/all-council-ids])
+                                              (conj ""))
+                                   :getOptionLabel @(rf/subscribe [::model/council-id->label])}
+                         :unselected {:disabled true
+                                      :options [""]}))]))}]
 
-(defn council-select [fork-args]
-  [form-util/autocomplete-field fork-args
-   {:name :council
-    :label "council"
-    :options @(rf/subscribe [::model/all-council-ids])
-    :getOptionLabel @(rf/subscribe [::model/council-id->label])
-    :freeSolo true}])
-
-(defn disabled-select-placeholder []
-  [mui/text-field {:disabled true}])
+       [mui/form-control-label
+        {:value "custom"
+         :control (r/as-element
+                    [mui/radio {:disabled (= issuer-type :unselected)}])
+         :sx {:align-items :flex-start}
+         :disableTypography true
+         :label (r/as-element
+                  (let [disabled? (or (= issuer-type :unselected)
+                                    (not= "custom" (get values :issuer-known)))
+                        select! #(set-handle-change
+                                   {:value "custom"
+                                    :path [:issuer-known]})]
+                    [mui/stack {:sx {:flex-grow 1}}
+                     [mui/typography (merge
+                                       {:sx {:p 1}}
+                                       (when disabled?
+                                         {:color :text.disabled}))
+                      (str issuer-type-label " is not in the list, please enter")]
+                     [mui/stack {:spacing 1}
+                      [form-util/text-field fork-args
+                       (merge
+                         {:name :custom-issuer-name
+                          :label (str issuer-type-label " name")
+                          :disabled disabled?}
+                         (when disabled?
+                           {:onClick select!}))]
+                      [form-util/text-field fork-args
+                       {:name :custom-issuer-address
+                        :label (str issuer-type-label " address")
+                        :disabled disabled?
+                        :multiline true
+                        :minRows 3
+                        :maxRows 3}]]]))}]]]]))
 
 (defn account-number-field [fork-args]
   [form-util/text-field fork-args {:name :account-number
@@ -81,7 +142,8 @@
 
 (defn address-field [{:keys [values handle-change set-handle-change] :as fork-args}]
   [mui/form-control
-   [mui/form-label "property address"]
+   [mui/form-label {:sx {:mt 1 :mb 2}}
+    "property address"]
    [mui/radio-group {:name :address
                      ; value is printed and read, for to distinguish keywords from strings
                      :value (pr-str (get values :address))
@@ -154,40 +216,53 @@
   [form-util/text-field fork-args {:name :meter-readings
                                    :label "meter readings"}])
 
-(defn form [{:keys [values] :as fork-args}]
+(defn form [fork-args]
   [mui/stack {:spacing 2}
    [type-of-bill-choice fork-args]
-   (let [bill-type (get values :bill-type)]
-     (cond
-       (contains? bill-type :council-tax)
-       [council-select fork-args]
-
-       (seq bill-type)
-       [company-select fork-args]
-
-       :else
-       [disabled-select-placeholder]))
-   [account-number-field fork-args]
+   [mui/divider]
+   [issuer-fields fork-args]
+   [mui/divider]
    [address-field fork-args]
+   [mui/divider]
+   [mui/form-label "bill details"]
+   [account-number-field fork-args]
    [amount-field fork-args]
    [meter-readings-field fork-args]])
 
 (defn values-to-submit [{:keys [values] :as _fork-params}]
   (cond-> values
-    (= :new-address (:address values)) (assoc :address (trim (:address-new values)))
-    :always (dissoc :address-new)))
+    (= :new-address (:address values))
+    (assoc :address (trim (:address-new values)))
+
+    :always
+    (dissoc :address-new)
+
+    (= "known" (:issuer-known values))
+    (-> (update :issuer keyword)
+        (dissoc :custom-issuer-name
+                :custom-issuer-address))
+
+    (= "custom" (:issuer-known values))
+    (dissoc :issuer)
+
+    :always
+    (dissoc :issuer-known)))
 
 (def validation
   (v/join
-    (v/attr [:address] (v+/v-some?))
-    (fn [data]
-      (when (= :new-address (:address data))
-        (v/validate
-          (v/attr [:address-new] (v/present))
-          data)))))
+    (v/attr [:address] (v-some?))
+    (v-when #(= :new-address (:address %))
+      (v/attr [:address-new] (v/present)))
+    (v-when #(= "custom" (:issuer-known %))
+      (v/join
+        (v/attr [:custom-issuer-name] (v/present))
+        (v/attr [:custom-issuer-address] (v/present))))
+    (v-when #(= "known" (:issuer-known %))
+      (v/attr [:issuer] (v/present)))))
 
 (defn validate [form-data]
   (v/field-errors validation form-data))
 
 (def initial-values
-  {:address :deceased-address})
+  {:address :deceased-address
+   :issuer-known "known"})

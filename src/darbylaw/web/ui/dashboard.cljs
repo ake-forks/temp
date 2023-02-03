@@ -170,14 +170,17 @@
 (defn bills-card []
   ; Just a mock for now for showing companies.
   (let [bills (:bills @(rf/subscribe [::case-model/current-case]))
-        companies (->> (distinct (map :company bills))
-                    (remove nil?))]
+        issuers (->> bills
+                  (map #(or (:issuer %)
+                            (:custom-issuer-name %)))
+                  (distinct)
+                  (remove nil?))]
     [:<>
      [add-bill-dialog/dialog]
      [asset-card {:title "household bills"}
-      (for [company companies]
-        ^{:key company}
-        [asset-item {:title company}])
+      (for [issuer issuers]
+        ^{:key issuer}
+        [asset-item {:title issuer}])
       [asset-add-button
        {:title "add bill"
         :on-click add-bill-dialog/show}]]]))

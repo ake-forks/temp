@@ -12,7 +12,7 @@
   (fn [companies]
     (map :id companies)))
 
-(defn label-fn [coll]
+(defn id->label-fn [coll]
   (let [label-by-id (into {} (map (juxt :id :common-name) coll))]
     (fn [id]
       (or (get label-by-id (keyword id))
@@ -21,7 +21,7 @@
 (rf/reg-sub ::company-id->label
   :<- [::companies]
   (fn [companies]
-    (label-fn companies)))
+    (id->label-fn companies)))
 
 (rf/reg-sub ::councils
   (fn [_]
@@ -35,7 +35,7 @@
 (rf/reg-sub ::council-id->label
   :<- [::councils]
   (fn [councils]
-    (label-fn councils)))
+    (id->label-fn councils)))
 
 (rf/reg-sub ::bill-types
   (fn [_]
@@ -52,4 +52,5 @@
   (fn [bills]
     (->> bills
       (map :address)
+      (filter string?)
       (distinct))))
