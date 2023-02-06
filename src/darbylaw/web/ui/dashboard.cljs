@@ -99,7 +99,8 @@
                 :justify-content :space-between}
      (if (string? icon)
        [mui/box {:component :img
-                 :src icon}]
+                 :src icon
+                 :sx {:width 25 :mr 1}}]
        icon)
      [mui/typography {:variant :body1
                       :noWrap true
@@ -161,7 +162,8 @@
                                          0
                                          (js/parseFloat %)))
                                  (reduce +))
-                        :on-click #(rf/dispatch [::banking-model/show-process-dialog :buildsoc id])}]))
+                        :on-click #(rf/dispatch [::banking-model/show-process-dialog :buildsoc id])
+                        :icon (str "/images/buildsoc-logos/" (banking-model/get-logo :buildsoc id))}]))
        (:buildsoc-accounts current-case))
      [asset-add-button
       {:title "add building society"

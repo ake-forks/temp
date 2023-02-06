@@ -32,6 +32,7 @@
              :username username
              :password password
              :port port})
+      (.setServerAliveInterval 20000) ; prevent unnoticed disconnections
       (ssh/connect))))
 
 ; Prevents creation of multiple sessions by concurrent client threads.
@@ -49,15 +50,22 @@
 (defn obtain-ssh-session [real|fake]
   (locking connection-lock
     (let [session (@ssh-session-atom real|fake)]
-      (if (or (nil? session)
-              (not (ssh/connected? session)))
-        ; Sometimes it is not enough to reconnect an existing
-        ; session object; creating a new session object is needed.
-        ; See https://stackoverflow.com/a/30855201/503785
-        (let [new-session (create-session real|fake)]
-          (swap! ssh-session-atom assoc real|fake new-session)
-          new-session)
-        session))))
+      (if (and (some? session) (ssh/connected? session))
+        session
+        (do
+          ; Making sure the previous session disposes of resources
+          ; See https://stackoverflow.com/a/72943084
+          (when (some? session)
+            (ssh/disconnect session))
+          ; Sometimes it is not enough to reconnect an existing
+          ; session object; creating a new session object is needed.
+          ; See https://stackoverflow.com/a/30855201
+          (let [new-session (create-session real|fake)]
+            (swap! ssh-session-atom assoc real|fake new-session)
+            (log/info "New SSH session created for account" real|fake)
+            (when-not (ssh/connected? new-session)
+              (log/error "Newly created session is not connected! Account:" real|fake))
+            new-session))))))
 
 ;; Public functions
 

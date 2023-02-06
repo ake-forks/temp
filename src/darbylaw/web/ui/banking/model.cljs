@@ -29,6 +29,8 @@
 (defn asset-label [type banking-id]
   (get-in (institution-list-by-id type) [banking-id :common-name]))
 
+(defn get-logo [type banking-id]
+  (get-in (institution-list-by-id type) [banking-id :logo]))
 
 
 (rf/reg-sub ::building-societies
