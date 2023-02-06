@@ -1,5 +1,6 @@
 (ns darbylaw.api.funeral
   (:require [clojure.tools.logging :as log]
+            [clojure.set :as set]
             [reitit.coercion.malli]
             [darbylaw.doc-store :as doc-store]
             [darbylaw.api.funeral.expense-store :as expense-store]
@@ -17,14 +18,12 @@
           account-id {:probate.funeral-account/case case-id}
           account-info (merge (:query parameters)
                               account-id)
-          document-name (if (:paid account-info) :receipt :invoice)
 
           request' (assoc request
                           :xt-type :probate.funeral-account
                           :event :updated.funeral-account
                           :expense-id account-id
-                          :expense-info account-info
-                          :document-name document-name)
+                          :expense-info account-info)
           response (handler request')]
       (assoc-in response [:body :success] true))))
 
@@ -39,7 +38,6 @@
           _ (log/info (str (case :add "Add" :update "Update") " other funeral expense (" expense-id ")"))
           expense-info (merge (:query parameters)
                               {:probate.funeral-expense/case case-id})
-          document-name :receipt
           event (case op
                   :add :added.other-expense
                   :update :updated.other-expense)
@@ -49,22 +47,19 @@
                           :append-path [:funeral-expense]
                           :event event
                           :expense-id expense-id
-                          :expense-info expense-info
-                          :document-name document-name)
+                          :expense-info expense-info)
           response (handler request')]
       (assoc-in response [:body :id] expense-id))))
 
-(defn upsert-funeral-expense [{:keys [xtdb-node user multipart-params
+(defn upsert-funeral-expense [{:keys [xtdb-node user parameters file-uploads
                                       xt-type event
-                                      expense-id expense-info append-path
-                                      document-name]}]
+                                      expense-id expense-info append-path]}]
   (let [case-id (get-in parameters [:path :case-id])
-        {:keys [tempfile content-type]} (get multipart-params "file")
         file-tx
-        (when tempfile
+        (for [[document-name {original-filename :filename :keys [tempfile content-type]}]
+              file-uploads]
           (with-delete [tempfile tempfile]
-            (let [original-filename (get multipart-params "filename")
-                  case-ref (-> (xt/pull (xt/db xtdb-node) [:reference] case-id)
+            (let [case-ref (-> (xt/pull (xt/db xtdb-node) [:reference] case-id)
                                :reference)
                   document-id (random-uuid)
                   filename (str case-ref "." (name document-name) "." document-id)]
@@ -80,7 +75,10 @@
                             :uploaded-by (:username user)
                             :uploaded-at (xt-util/now)
                             :original-filename original-filename}]]
-                (tx-fns/set-value expense-id [document-name] filename)))))]
+                (tx-fns/set-value expense-id [document-name] filename)))))
+        file-tx (->> file-tx
+                     doall ; To ensure that file uploads happen before the xtdb transaction
+                     (apply concat))]
     (xt-util/exec-tx xtdb-node
       (concat
         (tx-fns/set-values expense-id
@@ -125,12 +123,39 @@
    [:paid {:optional true} :boolean]
    [:paid-by {:optional true} :string]])
 
+(defn wrap-uploaded-files
+  "Looks for files in `:multipart-params` and puts into `:file-uploads`
+  Also transforms keys to be keywords."
+  [handler]
+  (fn [{:keys [multipart-params] :as request}]
+    (let [files (->> multipart-params
+                     ;; Keep only files
+                     (filter (fn [[_ v]] (:tempfile v)))
+                     (map (fn [[k v]] [(keyword k) v]))
+                     (into {}))]
+      (handler (assoc request :file-uploads files)))))
+
+(defn wrap-allowed-files
+  "Given a set of allowed keys, checks that only those keys are present in
+  `:file-uploads`."
+  [allowed-keys handler]
+  (fn [{:keys [file-uploads] :as request}]
+    (let [uploaded-keys (->> file-uploads keys (into #{}))
+          disallowed-keys (set/difference uploaded-keys allowed-keys)]
+      (if (empty? disallowed-keys)
+        (handler request)
+        (do (log/warn (str "Disallowed keys found: " disallowed-keys))
+          {:status 400
+           :body {:errors {:file-uploads (str "Only the following files are allowed: " allowed-keys)}}})))))
+
 (defn routes []
   ["/case/:case-id/funeral"
    ["/account"
-    {:put {:handler (wrap-funeral-account
-                      upsert-funeral-expense)
-           :parameters {:query expense-schema
+    {:put {:handler upsert-funeral-expense
+           :middleware [wrap-uploaded-files
+                        (partial wrap-allowed-files #{:receipt :invoice})
+                        wrap-funeral-account]
+           :parameters {:query (->> expense-schema)
                         :path [:map [:case-id :uuid]]}}}]
    ["/account"
     ["/receipt"
@@ -140,13 +165,17 @@
      {:get {:handler (partial get-funeral-account-file :invoice)
             :parameters {:path [:map [:case-id :uuid]]}}}]]
    ["/other"
-    {:post {:handler (wrap-other-expense :add
-                       upsert-funeral-expense)
+    {:post {:handler upsert-funeral-expense
+            :middleware [wrap-uploaded-files
+                         (partial wrap-allowed-files #{:receipt})
+                         (partial wrap-other-expense :add)]
             :parameters {:query expense-schema
                          :path [:map [:case-id :uuid]]}}}]
    ["/other/:expense-id"
-    {:put {:handler (wrap-other-expense :update
-                      upsert-funeral-expense)
+    {:put {:handler upsert-funeral-expense
+           :middleware [wrap-uploaded-files
+                        (partial wrap-allowed-files #{:receipt})
+                        (partial wrap-other-expense :update)]
            :parameters {:query expense-schema
                         :path [:map [:case-id :uuid]
                                     [:expense-id :uuid]]}}}]
