@@ -20,7 +20,6 @@
           document-name (if (:paid account-info) :receipt :invoice)
 
           request' (assoc request
-                          :case-id case-id
                           :xt-type :probate.funeral-account
                           :event :updated.funeral-account
                           :expense-id account-id
@@ -46,7 +45,6 @@
                   :update :updated.other-expense)
           
           request' (assoc request
-                          :case-id case-id
                           :xt-type :probate.funeral-expense
                           :append-path [:funeral-expense]
                           :event event
@@ -58,10 +56,10 @@
 
 (defn upsert-funeral-expense [{:keys [xtdb-node user multipart-params
                                       xt-type event
-                                      case-id
                                       expense-id expense-info append-path
                                       document-name]}]
-  (let [{:keys [tempfile content-type]} (get multipart-params "file")
+  (let [case-id (get-in parameters [:path :case-id])
+        {:keys [tempfile content-type]} (get multipart-params "file")
         file-tx
         (when tempfile
           (with-delete [tempfile tempfile]
