@@ -23,9 +23,8 @@
                           :xt-type :probate.funeral-account
                           :event :updated.funeral-account
                           :expense-id account-id
-                          :expense-info account-info)
-          response (handler request')]
-      (assoc-in response [:body :success] true))))
+                          :expense-info account-info)]
+      (handler request'))))
 
 (defn wrap-other-expense [op handler]
   (assert (contains? #{:add :update} op))
@@ -47,9 +46,8 @@
                           :append-path [:funeral-expense]
                           :event event
                           :expense-id expense-id
-                          :expense-info expense-info)
-          response (handler request')]
-      (assoc-in response [:body :id] expense-id))))
+                          :expense-info expense-info)]
+      (handler request'))))
 
 (defn upsert-funeral-expense [{:keys [xtdb-node user parameters file-uploads
                                       xt-type event
@@ -91,7 +89,8 @@
         (case-history/put-event {:event event
                                  :case-id case-id
                                  :user user})))
-    {:status 200}))
+    {:status 200
+     :body {:id expense-id}}))
 
 (defn get-funeral-file [xtdb-node case-id expense-id document-name]
   (let [filename (-> (xt/pull (xt/db xtdb-node)
