@@ -48,7 +48,7 @@
           request' (assoc request
                           :case-id case-id
                           :xt-type :probate.funeral-expense
-                          :other-tx (tx-fns/append-unique case-id [:funeral-expense] [expense-id])
+                          :append-path [:funeral-expense]
                           :event event
                           :expense-id expense-id
                           :expense-info expense-info
@@ -57,9 +57,9 @@
       (assoc-in response [:body :id] expense-id))))
 
 (defn upsert-funeral-expense [{:keys [xtdb-node user multipart-params
-                                      xt-type event other-tx
+                                      xt-type event
                                       case-id
-                                      expense-id expense-info
+                                      expense-id expense-info append-path
                                       document-name]}]
   (let [{:keys [tempfile content-type]} (get multipart-params "file")
         file-tx
@@ -90,7 +90,8 @@
                                   {:xt/id expense-id
                                    :type xt-type}))
         file-tx
-        other-tx
+        (when append-path
+          (tx-fns/append-unique case-id append-path [expense-id]))
         (case-history/put-event {:event event
                                  :case-id case-id
                                  :user user})))
