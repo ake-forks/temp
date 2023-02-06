@@ -37,14 +37,13 @@
           _ (log/info (str (case :add "Add" :update "Update") " other funeral expense (" expense-id ")"))
           expense-info (merge (:query parameters)
                               {:probate.funeral-expense/case case-id})
-          event (case op
-                  :add :added.other-expense
-                  :update :updated.other-expense)
           
           request' (assoc request
                           :xt-type :probate.funeral-expense
                           :append-path [:funeral-expense]
-                          :event event
+                          :event (case op
+                                   :add :added.other-expense
+                                   :update :updated.other-expense)
                           :expense-id expense-id
                           :expense-info expense-info)]
       (handler request'))))
