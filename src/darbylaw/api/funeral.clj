@@ -10,7 +10,10 @@
             [darbylaw.api.case-history :as case-history]
             [darbylaw.api.util.files :refer [with-delete]]))
 
-(defn wrap-funeral-account [handler]
+(defn wrap-funeral-account
+  "Extracts information needed to add/update the funeral account.
+  See `upsert-funeral-expense`."
+  [handler]
   (fn [{:keys [parameters]
         :as request}]
     (log/info "Upsert funeral account")
@@ -26,7 +29,10 @@
                           :expense-info account-info)]
       (handler request'))))
 
-(defn wrap-other-expense [op handler]
+(defn wrap-other-expense
+  "Extracts information needed to add/update a funeral expense.
+  See `upsert-funeral-expense`."
+  [op handler]
   (assert (contains? #{:add :update} op))
   (fn [{:keys [parameters]
         :as request}]
@@ -48,9 +54,21 @@
                           :expense-info expense-info)]
       (handler request'))))
 
-(defn upsert-funeral-expense [{:keys [xtdb-node user parameters file-uploads
-                                      xt-type event
-                                      expense-id expense-info append-path]}]
+(defn upsert-funeral-expense
+  "Insert or update a funeral expense.
+  
+  Arguments:
+  xt-type      - The xt/type of the expense.
+  event        - The event to add to the case history.
+  expense-id   - The xt/id of the expense.
+  expense-info - The expense info to insert/update.
+  append-path  - (optional) The path to append the expense id to.
+                 If not specified, the expense id will not be appended to any path.
+                 This is useful for funeral accounts which are singletons.
+  file-uploads - See wrap-uploaded-files."
+  [{:keys [xtdb-node user parameters file-uploads
+           xt-type event
+           expense-id expense-info append-path]}]
   (let [case-id (get-in parameters [:path :case-id])
         file-tx
         (for [[document-name {original-filename :filename :keys [tempfile content-type]}]
