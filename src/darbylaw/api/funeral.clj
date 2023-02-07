@@ -89,6 +89,7 @@
                             :xt/id filename
                             :document-name document-name
                             :probate.case-doc/case case-id
+                            :probate.case-doc/expense-id expense-id
                             :uploaded-by (:username user)
                             :uploaded-at (xt-util/now)
                             :original-filename original-filename}]]
