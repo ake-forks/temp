@@ -9,7 +9,8 @@
             [vlad.core :as v]
             [darbylaw.web.util.vlad :as v+ :refer [v-some? v-when]]
             [clojure.edn :refer [read-string]]
-            [darbylaw.api.util.data :as data-util]))
+            [darbylaw.api.util.data :as data-util]
+            [darbylaw.web.ui.bills.common :as common]))
 
 (defn type-of-bill-choice [{:keys [values set-handle-change submitting?] :as _fork-args}]
   (let [all-bill-types @(rf/subscribe [::model/bill-types])
@@ -128,18 +129,6 @@
   [form-util/text-field fork-args {:name :account-number
                                    :label "account number"}])
 
-(defn address-box [selected? child]
-  [mui/paper (merge
-               {:variant :outlined
-                :sx (merge
-                      {:flex-grow 1
-                       :border-width 2
-                       :padding 1
-                       :white-space :pre}
-                      (when selected?
-                        {:border-color :primary.light}))})
-   child])
-
 (defn property-field [{:keys [values handle-change set-handle-change] :as fork-args}]
   (let [error (form-util/get-error :property fork-args)]
     [mui/form-control {:error (boolean error)}
@@ -163,7 +152,7 @@
           :disableTypography true
           :label (r/as-element
                    (let [selected? (= property-id (get values :property))]
-                     [address-box selected? address]))}])
+                     [common/address-box selected? address]))}])
       (let [deceased-address @(rf/subscribe [::case-model/deceased-address])
             properties @(rf/subscribe [::model/current-properties])
             used-addresses (map :address properties)]
@@ -176,7 +165,7 @@
             :disableTypography true
             :label (r/as-element
                      (let [selected? (= deceased-address (get values :property))]
-                       [address-box selected? deceased-address]))}]))
+                       [common/address-box selected? deceased-address]))}]))
       [mui/form-control-label
        {:value (pr-str :new-property)
         :control (r/as-element [mui/radio])

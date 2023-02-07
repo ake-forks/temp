@@ -1,6 +1,7 @@
 (ns darbylaw.web.ui.bills.bills-dialog
   (:require
     [darbylaw.web.ui :as ui]
+    [darbylaw.web.ui.bills.common :as common]
     [darbylaw.web.util.form :as form-util]
     [re-frame.core :as rf]
     [reagent-mui.components :as mui]
@@ -11,10 +12,10 @@
     [darbylaw.web.ui.bills.model :as model]))
 
 (rf/reg-event-db ::set-dialog-open
-  (fn [db [_ issuer-id]]
-    (if (some? issuer-id)
+  (fn [db [_ dialog-context]]
+    (if (some? dialog-context)
       (merge db {::dialog-open? true
-                 ::issuer-id issuer-id})
+                 ::dialog-context dialog-context})
       (assoc db ::dialog-open? false))))
 
 (rf/reg-sub ::form-submitting?
@@ -26,9 +27,9 @@
     (or (::dialog-open? db)
         (::form-submitting? db))))
 
-(rf/reg-sub ::issuer-id
+(rf/reg-sub ::dialog-context
   (fn [db]
-    (::issuer-id db)))
+    (::dialog-context db)))
 
 (def form-state (r/atom nil))
 
@@ -85,11 +86,22 @@
 
 (rf/reg-sub ::issuer-label
   :<- [::model/company-id->label]
-  :<- [::issuer-id]
-  (fn [[company-id->label issuer-id]]
+  :<- [::dialog-context]
+  (fn [[company-id->label {:keys [issuer-id]}]]
     (if (keyword? issuer-id)
       (company-id->label issuer-id)
       issuer-id)))
+
+(rf/reg-sub ::dialog-property
+  :<- [::dialog-context]
+  :<- [::model/current-properties-by-id]
+  (fn [[context properties-by-id]]
+    (get properties-by-id (:property-id context))))
+
+(rf/reg-sub ::property-address
+ :<- [::dialog-property]
+  (fn [property]
+    (:address property)))
 
 (defn dialog []
   [mui/dialog {:open (boolean @(rf/subscribe [::dialog-open?]))}
@@ -98,7 +110,13 @@
     [mui/icon-button {:onClick #(rf/dispatch [::set-dialog-open nil])
                       :disabled @(rf/subscribe [::form-submitting?])}
      [ui/icon-close]]]
-   [form]])
+   [mui/dialog-content
+    [mui/typography
+     "For property at"]
+    [common/address-box false
+     (let [address @(rf/subscribe [::property-address])]
+       address)]]])
 
-(defn show [issuer-id]
-  (rf/dispatch [::set-dialog-open issuer-id]))
+(defn show {:arglists '({:keys [issuer-id property-id]})}
+  [dialog-context]
+  (rf/dispatch [::set-dialog-open dialog-context]))
