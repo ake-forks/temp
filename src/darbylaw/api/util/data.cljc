@@ -29,3 +29,17 @@
   (->> (str/split-lines s)
     (remove str/blank?)
     (first)))
+
+(defn sanitize-empty-space
+  "- trims lines
+   - removes blank lines
+   - converts multiple contiguous spaces to a single space."
+  [s]
+  (->> (str/split-lines s)
+    (map #(-> %
+            (str/trim)
+            (str/replace #"\s+" " ")))
+    (remove str/blank?)))
+
+(comment
+  (sanitize-empty-space "\n\n line1\n line2 with\t tab\n"))

@@ -9,7 +9,7 @@
             [vlad.core :as v]
             [darbylaw.web.util.vlad :refer [v-some? v-when]]
             [clojure.edn :refer [read-string]]
-            [clojure.string :refer [trim]]))
+            [darbylaw.api.util.data :as data-util]))
 
 (defn type-of-bill-choice [{:keys [values set-handle-change submitting?] :as _fork-args}]
   (let [all-bill-types @(rf/subscribe [::model/bill-types])
@@ -167,7 +167,9 @@
       (let [deceased-address @(rf/subscribe [::case-model/deceased-address])
             properties @(rf/subscribe [::model/current-properties])
             used-addresses (map :address properties)]
-        (when-not (contains? (set used-addresses) deceased-address)
+        (when (->> used-addresses
+                (not-any? #(= (data-util/sanitize-empty-space %)
+                              (data-util/sanitize-empty-space deceased-address))))
           [mui/form-control-label
            {:value (pr-str deceased-address)
             :control (r/as-element [mui/radio])
@@ -239,10 +241,13 @@
 (defn values-to-submit [{:keys [values] :as _fork-params}]
   (cond-> values
     (= :new-property (:property values))
-    (assoc :property (trim (:address-new values)))
+    (assoc :property (:address-new values))
 
     :always
     (dissoc :address-new)
+
+    (string? (:property values))
+    (update :property data-util/sanitize-empty-space)
 
     (= "known" (:issuer-known values))
     (-> (update :issuer keyword)
