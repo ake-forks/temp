@@ -140,66 +140,73 @@
                         {:border-color :primary.light}))})
    child])
 
-(defn address-field [{:keys [values handle-change set-handle-change] :as fork-args}]
-  [mui/form-control
-   [mui/form-label {:sx {:mt 1 :mb 2}}
-    "property address"]
-   [mui/radio-group {:name :address
-                     ; value is printed and read, for to distinguish keywords from strings
-                     :value (pr-str (get values :address))
-                     :onChange (fn [_evt v]
-                                 (set-handle-change
-                                   {:value (read-string v)
-                                    :path [:address]}))
-                     :sx {:gap (ui/theme-spacing 1)}}
-    (let [deceased-address @(rf/subscribe [::case-model/deceased-address])]
+(defn property-field [{:keys [values handle-change set-handle-change] :as fork-args}]
+  (let [error (form-util/get-error :property fork-args)]
+    [mui/form-control {:error (boolean error)}
+     [mui/form-label {:sx {:mt 1 :mb 2}}
+      "property address"]
+     [mui/radio-group {:name :property
+                       ; `pr-str` and `read` used for distinguishing keywords from strings
+                       :value (pr-str (get values :property))
+                       :onChange (fn [_evt v]
+                                   (set-handle-change
+                                     {:value (read-string v)
+                                      :path [:property]}))
+                       :sx {:gap (ui/theme-spacing 1)}}
+      (for [{property-id :id
+             address :address} @(rf/subscribe [::model/current-properties])]
+        [mui/form-control-label
+         {:key (pr-str property-id)
+          :value (pr-str property-id)
+          :control (r/as-element [mui/radio])
+          :sx {:align-items :flex-start}
+          :disableTypography true
+          :label (r/as-element
+                   (let [selected? (= property-id (get values :property))]
+                     [address-box selected? address]))}])
+      (let [deceased-address @(rf/subscribe [::case-model/deceased-address])
+            properties @(rf/subscribe [::model/current-properties])
+            used-addresses (map :address properties)]
+        (when-not (contains? (set used-addresses) deceased-address)
+          [mui/form-control-label
+           {:value (pr-str deceased-address)
+            :control (r/as-element [mui/radio])
+            :disableTypography true
+            :label (r/as-element
+                     (let [selected? (= deceased-address (get values :property))]
+                       [address-box selected? deceased-address]))}]))
       [mui/form-control-label
-       {:value (pr-str :deceased-address)
-        :control (r/as-element [mui/radio])
-        :disableTypography true
-        :label (r/as-element
-                 (let [selected? (= :deceased-address (get values :address))]
-                   [address-box selected? deceased-address]))}])
-    (for [address-text @(rf/subscribe [::model/used-billing-addresses])]
-      [mui/form-control-label
-       {:key (pr-str address-text)
-        :value (pr-str address-text)
+       {:value (pr-str :new-property)
         :control (r/as-element [mui/radio])
         :sx {:align-items :flex-start}
         :disableTypography true
         :label (r/as-element
-                 (let [selected? (= address-text (get values :address))]
-                   [address-box selected? address-text]))}])
-    [mui/form-control-label
-     {:value (pr-str :new-address)
-      :control (r/as-element [mui/radio])
-      :sx {:align-items :flex-start}
-      :disableTypography true
-      :label (r/as-element
-               (let [selected? (= :new-address (get values :address))
-                     select! #(set-handle-change
-                                {:value :new-address
-                                 :path [:address]})]
-                 [form-util/text-field fork-args
-                  (merge
-                    {:name :address-new
-                     :hiddenLabel true
-                     :placeholder "enter another address"
-                     :multiline true
-                     :minRows 3
-                     :maxRows 3
-                     :variant :outlined
-                     :fullWidth true
-                     :value (if selected?
-                              (get values :address-new)
-                              "")
-                     :onChange (fn [evt]
-                                 (select!)
-                                 (handle-change evt))
-                     :onClick #(select!)}
-                    ; Doesn't work with multiline textfield. Not important.
-                    (when-not selected?
-                      {:inputProps {:tabindex :-1}}))]))}]]])
+                 (let [selected? (= :new-property (get values :property))
+                       select! #(set-handle-change
+                                  {:value :new-property
+                                   :path [:property]})]
+                   [form-util/text-field fork-args
+                    (merge
+                      {:name :address-new
+                       :hiddenLabel true
+                       :placeholder "enter another address"
+                       :multiline true
+                       :minRows 3
+                       :maxRows 5
+                       :variant :outlined
+                       :fullWidth true
+                       :value (if selected?
+                                (get values :address-new)
+                                "")
+                       :onChange (fn [evt]
+                                   (select!)
+                                   (handle-change evt))
+                       :onClick #(select!)}
+                      ; Doesn't work with multiline textfield. Not important.
+                      (when-not selected?
+                        {:inputProps {:tabindex :-1}}))]))}]]
+     (when error
+       [mui/form-helper-text (first error)])]))
 
 (defn amount-field [fork-args]
   [form-util/text-field fork-args
@@ -222,7 +229,7 @@
    [mui/divider]
    [issuer-fields fork-args]
    [mui/divider]
-   [address-field fork-args]
+   [property-field fork-args]
    [mui/divider]
    [mui/form-label "bill details"]
    [account-number-field fork-args]
@@ -231,8 +238,8 @@
 
 (defn values-to-submit [{:keys [values] :as _fork-params}]
   (cond-> values
-    (= :new-address (:address values))
-    (assoc :address (trim (:address-new values)))
+    (= :new-property (:property values))
+    (assoc :property (trim (:address-new values)))
 
     :always
     (dissoc :address-new)
@@ -250,8 +257,8 @@
 
 (def validation
   (v/join
-    (v/attr [:address] (v-some?))
-    (v-when #(= :new-address (:address %))
+    (v/attr [:property] (v-some?))
+    (v-when #(= :new-property (:property %))
       (v/attr [:address-new] (v/present)))
     (v-when #(= "custom" (:issuer-known %))
       (v/join
@@ -264,5 +271,4 @@
   (v/field-errors validation form-data))
 
 (def initial-values
-  {:address :deceased-address
-   :issuer-known "known"})
+  {:issuer-known "known"})

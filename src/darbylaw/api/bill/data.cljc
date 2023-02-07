@@ -66,38 +66,29 @@
     :address-country "",
     :logo nil}])
 
-(def bill-schema
+(defn make-bill-schema [op]
   [:and
    [:map
     [:bill-type [:set (into [:enum] (keys bill-types))]]
-
-    [:issuer {:optional true} (into [:enum] (map :id companies))]
+    [:issuer {:optional true} (into [:enum] (map :id (concat companies
+                                                        councils)))]
     [:custom-issuer-name {:optional true} [:string {:min 1}]]
     [:custom-issuer-address {:optional true} [:string {:min 1}]]
     [:amount [:re #"-?\d*\.?\d{0,2}"]]
     [:account-number {:optional true} :string]
-    [:address [:or [:enum :deceased-address]
-               [:string {:min 1}]]]
+    (if (= op :create)
+      [:property [:or :uuid :string]]
+      [:property :uuid])
     [:meter-readings {:optional true} :string]]
    (malli+/exclusive-keys [:issuer :custom-issuer-name])
    (malli+/when-then :custom-issuer-name :custom-issuer-address)])
 
-(comment
-  (require '[malli.core :as malli])
-  (malli.core/explain bill-schema {:bill-type #{:other}
-                                   ;:issuer :utility-1
-                                   :amount "10"
-                                   :custom-issuer-name "hola"
-                                   :custom-issuer-address "addr"
-                                   :address "hey"}))
-
-(def bill-props
-  (do
-    (assert (= :map (-> bill-schema second first)))
-    (->> bill-schema
-      second ; skip :and
-      rest ; skip :map
-      (mapv first))))
+(defn extract-bill-props [bill-schema]
+  (assert (= :map (-> bill-schema second first)))
+  (->> bill-schema
+    second ; skip :and
+    rest ; skip :map
+    (mapv first)))
 
 (def company-by-id
   (into {} (map (juxt :id identity) companies)))

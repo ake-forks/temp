@@ -54,3 +54,8 @@
       (map :address)
       (filter string?)
       (distinct))))
+
+(rf/reg-sub ::current-properties
+  :<- [::case-model/current-case]
+  (fn [case-data]
+    (:properties case-data)))
