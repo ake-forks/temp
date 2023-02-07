@@ -7,7 +7,7 @@
             [darbylaw.web.ui :as ui]
             [darbylaw.web.ui.case-model :as case-model]
             [vlad.core :as v]
-            [darbylaw.web.util.vlad :refer [v-some? v-when]]
+            [darbylaw.web.util.vlad :as v+ :refer [v-some? v-when]]
             [clojure.edn :refer [read-string]]
             [darbylaw.api.util.data :as data-util]))
 
@@ -270,7 +270,10 @@
         (v/attr [:custom-issuer-name] (v/present))
         (v/attr [:custom-issuer-address] (v/present))))
     (v-when #(= "known" (:issuer-known %))
-      (v/attr [:issuer] (v/present)))))
+      (v/attr [:issuer] (v/present)))
+    (v/attr [:amount] (v/chain
+                        (v/present)
+                        (v+/currency?)))))
 
 (defn validate [form-data]
   (v/field-errors validation form-data))
