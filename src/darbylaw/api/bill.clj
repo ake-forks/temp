@@ -61,7 +61,7 @@
                       :probate.bill/case case-id})]]
         (tx-fns/append case-id [:bills] [bill-id])
         (case-history/put-event {:event :bills-updated
-                                 :case case-id
+                                 :case-id case-id
                                  :user user
                                  :op :add
                                  :event/bill bill-id}))))
