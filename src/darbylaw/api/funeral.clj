@@ -3,7 +3,6 @@
             [clojure.set :as set]
             [reitit.coercion.malli]
             [darbylaw.doc-store :as doc-store]
-            [darbylaw.api.funeral.expense-store :as expense-store]
             [xtdb.api :as xt]
             [darbylaw.api.util.xtdb :as xt-util]
             [darbylaw.api.util.tx-fns :as tx-fns]
@@ -54,6 +53,9 @@
                           :expense-info expense-info)]
       (handler request'))))
 
+(defn s3-key [case-id file-name]
+  (str case-id "/" file-name))
+
 (defn upsert-funeral-expense
   "Insert or update a funeral expense.
   
@@ -79,7 +81,7 @@
                   document-id (random-uuid)
                   filename (str case-ref "." (name document-name) "." document-id)]
               (doc-store/store
-                (expense-store/s3-key case-id filename)
+                (s3-key case-id filename)
                 tempfile
                 {:content-type content-type})
               (concat
@@ -115,7 +117,7 @@
                        expense-id)
                      (get document-name))
         s3-file (doc-store/fetch-raw
-                  (expense-store/s3-key case-id filename))
+                  (s3-key case-id filename))
         file-metadata (.getObjectMetadata s3-file)]
     {:status 200
      :headers {"Content-Type" (.getContentType file-metadata)}
