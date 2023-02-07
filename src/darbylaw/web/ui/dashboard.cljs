@@ -190,7 +190,7 @@
      [bills-dialog/dialog]
      [asset-card {:title "household bills"}
       (for [property-id used-property-ids]
-        [:<>
+        [:<> {:key property-id}
          [mui/typography {:sx {:font-weight 600
                                :pt 1}}
           (if-let [address (get-in properties-by-id [property-id :address])]
