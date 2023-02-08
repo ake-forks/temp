@@ -29,3 +29,6 @@
 (defn instant->localtime [instant zone-id]
   (-> (LocalDateTime/ofInstant instant zone-id)
     (.toLocalTime)))
+
+(defn file-extension [s]
+  (re-find #"\.[a-zA-Z0-9]+$" s))

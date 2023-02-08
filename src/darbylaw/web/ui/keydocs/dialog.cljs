@@ -32,7 +32,7 @@
                    :hidden true
                    :sx {:display :none}
                    :inputProps {:type :file
-                                :accept ".pdf"}}]])))
+                                :accept ".pdf, .png, .jpeg, .jpg, .gif"}}]])))
 
 (defn view-button [case-id document-name label]
   [mui/button {:on-click #(rf/dispatch [::model/open-document case-id document-name])
