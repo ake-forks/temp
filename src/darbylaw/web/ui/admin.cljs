@@ -7,7 +7,9 @@
             [reagent-mui.components :as mui]
             [reagent-mui.x.data-grid :refer [data-grid]]
             [darbylaw.web.ui.mailing :as mailing]
-            [darbylaw.web.ui.case-commons :as case-commons]))
+            [darbylaw.web.ui.case-commons :as case-commons]
+            ["@mui/x-data-grid" :as MuiDataGrid]))
+
 
 (rf/reg-event-db ::load-success
   (fn [db [_ response]]
@@ -135,7 +137,12 @@
                  :is-row-selectable (constantly false)
                  :components {:NoRowsOverlay 
                               #(r/as-element [mui/stack {:height "100%" :align-items :center :justify-content :center}
-                                              [no-cases-found]])}
+                                              [no-cases-found]])
+                              ;; NOTE: We need to supply the raw React component here and not a wrapped version from Reagent
+                              ;;       If we don't we get dropped inputs and other weird behaviour
+                              ;;       We're not sure why 🤷
+                              :Toolbar MuiDataGrid/GridToolbar}
+                 :components-props {:toolbar {:showQuickFilter true}}
                  :sx {"& .MuiDataGrid-row" {:cursor :pointer}}}]]))
 
 
