@@ -79,7 +79,7 @@
        :href (funeral-file-url case-id expense-id)
        :disabled (and (not (nil? expense-id))
                       (let [expense @(rf/subscribe [::funeral-model/expense expense-id])]
-                        (not (:receipt-uploaded expense))))}]]))
+                        (not (contains? expense :receipt))))}]]))
 
 (defn paid-by-field [fork-args]
   [form/text-field fork-args
