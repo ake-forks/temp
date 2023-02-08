@@ -14,17 +14,14 @@
 
 (rf/reg-event-fx ::submit!
   (fn [{:keys [db]} [_ case-id {:keys [path values] :as fork-params}]]
-    (let [[query-values files] (util/split-map values [:receipt :invoice])
-          file (get files (if (:paid values)
-                            :receipt
-                            :invoice))]
+    (let [[query-values files] (util/split-map values [:receipt :invoice])]
       {:db (fork/set-submitting db path true)
        :http-xhrio
        (ui/build-http
          {:method :put
           :uri (str "/api/case/" case-id "/funeral/account")
           :url-params query-values
-          :body (when file (util/->FormData {:file file}))
+          :body (util/->FormData files)
           ;; TODO:
           :on-success [::submit-success case-id fork-params]
           :on-failure [::submit-failure case-id fork-params]})})))
