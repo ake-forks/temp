@@ -43,3 +43,6 @@
 
 (comment
   (sanitize-empty-space "\n\n line1\n line2 with\t tab\n"))
+
+(defn file-extension [s]
+  (re-find #"\.[a-zA-Z0-9]+$" s))

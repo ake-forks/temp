@@ -32,7 +32,7 @@
                    :hidden true
                    :sx {:display :none}
                    :inputProps {:type :file
-                                :accept ".pdf"}}]])))
+                                :accept ".pdf, .png, .jpeg, .jpg, .gif"}}]])))
 
 (defn view-button [case-id document-name label]
   [mui/button {:on-click #(rf/dispatch [::model/open-document case-id document-name])
@@ -76,7 +76,7 @@
 
 (defn dialog []
   (let [open @(rf/subscribe [::model/dialog])]
-    [mui/dialog {:open open :full-width true :max-width :lg}
+    [mui/dialog {:open (or open false) :full-width true :max-width :lg}
      [mui/dialog-title
       [mui/stack {:direction :row :justify-content :space-between}
        [mui/typography {:variant :h4} "key documents"]
