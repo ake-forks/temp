@@ -70,7 +70,7 @@
     (keep (fn [[k {:keys [label]}]]
             (when (contains? concepts k)
               label)))
-    (str/join "&")))
+    (str/join " & ")))
 
 (defn bill-row [bill]
   [mui/card {:elevation 2}
