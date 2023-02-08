@@ -77,7 +77,7 @@
      [util/download-button
       {:full-width true
        :href (funeral-file-url case-id "receipt")
-       :disabled (not (:receipt-uploaded account))}]]))
+       :disabled (not (contains? account :receipt))}]]))
 
 (defn invoice-field [fork-args]
   (let [case-id @(rf/subscribe [::case-model/case-id])
@@ -91,7 +91,7 @@
      [util/download-button
       {:full-width true
        :href (funeral-file-url case-id "invoice")
-       :disabled (not (:invoice-uploaded account))}]]))
+       :disabled (not (contains? account :invoice))}]]))
 
 (defn paid-by-field [fork-args]
   [form/text-field fork-args
