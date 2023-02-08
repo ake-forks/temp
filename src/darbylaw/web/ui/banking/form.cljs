@@ -128,7 +128,7 @@
                 {:control (r/as-element
                             [mui/checkbox
                              {:name :joint-check
-                              :checked (get field :joint-check)
+                              :checked (or (get field :joint-check) false)
                               :label "estimated value"
                               :on-change #(handle-change % idx)}])
                  :label "Joint Account?"}]]]
@@ -136,7 +136,7 @@
              [mui/stack {:spacing 1 :direction :row}
               (if (true? (get field :joint-check))
                 [mui/text-field {:name :joint-info
-                                 :value (get field :joint-info)
+                                 :value (or (get field :joint-info) "")
                                  :label "name of other account holder"
                                  :full-width true
                                  :on-change #(handle-change % idx)}]
@@ -145,7 +145,7 @@
               (if (= stage :valuation)
                 [:<>
                  [mui/text-field {:name :confirmed-value
-                                  :value (get field :confirmed-value)
+                                  :value (or (get field :confirmed-value) "")
                                   :label "confirmed value"
                                   :on-change #(handle-change % idx)
                                   :on-blur #(handle-blur % idx)
@@ -200,7 +200,7 @@
              [mui/stack {:spacing 1 :direction :row}
               [mui/stack {:spacing 1 :direction :row}
                [mui/text-field {:name :roll-number
-                                :value (get field :roll-number)
+                                :value (or (get field :roll-number) "")
                                 :label "roll number"
                                 :on-change #(handle-change % idx)
                                 :on-blur #(handle-blur % idx)
@@ -212,7 +212,7 @@
                                                "required")}]
 
                [mui/text-field {:name :estimated-value
-                                :value (get field :estimated-value)
+                                :value (or (get field :estimated-value) "")
                                 :label "estimated value"
                                 :on-change #(handle-change % idx)
                                 :on-blur #(handle-blur % idx)
@@ -249,7 +249,7 @@
              [mui/stack {:spacing 1 :direction :row}
               (if (true? (get field :joint-check))
                 [mui/text-field {:name :joint-info
-                                 :value (get field :joint-info)
+                                 :value (or (get field :joint-info) "")
                                  :label "name of other account holder"
                                  :full-width true
                                  :on-change #(handle-change % idx)}]
@@ -258,7 +258,7 @@
               (if (= stage :valuation)
                 [:<>
                  [mui/text-field {:name :confirmed-value
-                                  :value (get field :confirmed-value)
+                                  :value (or (get field :confirmed-value) "")
                                   :label "confirmed value"
                                   :on-change #(handle-change % idx)
                                   :on-blur #(handle-blur % idx)
@@ -304,8 +304,8 @@
    [mui/form-control-label {
                             :control (r/as-element
                                        [mui/checkbox {:name :accounts-unknown
-                                                      :value (:accounts-unknown values)
-                                                      :checked (:accounts-unknown values)
+                                                      :value (or (:accounts-unknown values) false)
+                                                      :checked (or (:accounts-unknown values) false)
                                                       :label "accounts not known"
                                                       :onChange handle-change}])
                             :label "account details not known"}]])

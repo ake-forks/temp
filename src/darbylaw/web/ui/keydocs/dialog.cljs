@@ -76,7 +76,7 @@
 
 (defn dialog []
   (let [open @(rf/subscribe [::model/dialog])]
-    [mui/dialog {:open open :full-width true :max-width :lg}
+    [mui/dialog {:open (or open false) :full-width true :max-width :lg}
      [mui/dialog-title
       [mui/stack {:direction :row :justify-content :space-between}
        [mui/typography {:variant :h4} "key documents"]
