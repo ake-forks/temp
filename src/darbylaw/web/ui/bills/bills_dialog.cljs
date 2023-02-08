@@ -89,7 +89,7 @@
   (fn [[company-id->label issuer-id]]
     (if (keyword? issuer-id)
       (company-id->label issuer-id)
-      (:custom-issuer-name issuer-id))))
+      issuer-id)))
 
 (defn dialog []
   [mui/dialog {:open (boolean @(rf/subscribe [::dialog-open?]))}
