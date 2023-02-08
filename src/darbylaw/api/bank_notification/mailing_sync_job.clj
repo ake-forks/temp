@@ -10,7 +10,7 @@
     [mount.core :as mount]
     [xtdb.api :as xt]
     [darbylaw.xtdb-node :as xtdb-node]
-    [darbylaw.api.util.data :refer [instant->localtime]])
+    [darbylaw.api.util.dates :refer [instant->localtime]])
   (:import (com.jcraft.jsch SftpException)
            (java.time Duration Instant LocalTime ZoneId)))
 

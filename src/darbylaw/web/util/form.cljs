@@ -80,12 +80,15 @@
    (merge
      (let [v (or (get values name) "")]
        (if (:freeSolo config)
-         {:inputValue v}
-         {:value v}))
+         {:inputValue v
+          :onInputChange (fn [_evt new-value]
+                           (set-handle-change {:value new-value
+                                               :path [name]}))}
+         {:value v
+          :onChange (fn [_evt new-value]
+                      (set-handle-change {:value new-value
+                                          :path [name]}))}))
      {:options options
-      :onInputChange (fn [_evt new-value]
-                       (set-handle-change {:value new-value
-                                           :path [name]}))
       :renderInput (react-component [props]
                      [mui/text-field
                       (merge props

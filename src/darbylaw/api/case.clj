@@ -207,7 +207,13 @@
                                       :accounts]
                                      letter-props)}
 
-               {:bills bill-data/bill-props}]))]
+               {:bills (bill-data/extract-bill-props
+                         (bill-data/make-bill-schema :query))}
+
+               {'(:probate.property/_case {:as :properties})
+                ['(:xt/id {:as :id})
+                 :address]}]))]
+
    :where '[[case :type :probate.case]
             [case :xt/id case-id]]
    :in '[case-id]})

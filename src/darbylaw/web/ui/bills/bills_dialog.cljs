@@ -1,4 +1,4 @@
-(ns darbylaw.web.ui.bills.add-dialog
+(ns darbylaw.web.ui.bills.bills-dialog
   (:require
     [darbylaw.web.ui :as ui]
     [darbylaw.web.util.form :as form-util]
@@ -7,11 +7,15 @@
     [reagent.core :as r]
     [darbylaw.web.ui.case-model :as case-model]
     [fork.re-frame :as fork]
-    [darbylaw.web.ui.bills.add-form :as add-form]))
+    [darbylaw.web.ui.bills.add-form :as add-form]
+    [darbylaw.web.ui.bills.model :as model]))
 
 (rf/reg-event-db ::set-dialog-open
-  (fn [db [_ show?]]
-    (assoc db ::dialog-open? show?)))
+  (fn [db [_ issuer-id]]
+    (if (some? issuer-id)
+      (merge db {::dialog-open? true
+                 ::issuer-id issuer-id})
+      (assoc db ::dialog-open? false))))
 
 (rf/reg-sub ::form-submitting?
   (fn [db]
@@ -21,6 +25,10 @@
   (fn [db]
     (or (::dialog-open? db)
         (::form-submitting? db))))
+
+(rf/reg-sub ::issuer-id
+  (fn [db]
+    (::issuer-id db)))
 
 (def form-state (r/atom nil))
 
@@ -55,35 +63,42 @@
         :on-failure [::submit-failure fork-params]})}))
 
 (defn form []
-  [form-util/form
-   {:state form-state
-    :on-submit (let [case-id @(rf/subscribe [::case-model/case-id])]
-                 #(rf/dispatch [::submit! case-id %]))
-    :validation add-form/validate
-    :initial-values add-form/initial-values}
-   (fn [{:keys [handle-submit submitting?] :as fork-args}]
-     [:<>
-      [mui/dialog-content
+  #_[form-util/form
+     {:state form-state
+      :on-submit (let [case-id @(rf/subscribe [::case-model/case-id])]
+                   #(rf/dispatch [::submit! case-id %]))
+      :validation add-form/validate
+      :initial-values add-form/initial-values}
+     (fn [{:keys [handle-submit submitting?] :as fork-args}]
        [:form {:on-submit handle-submit}
-        [add-form/form fork-args]]]
-      [mui/dialog-actions
-       [ui/loading-button {:onClick handle-submit
-                           :loading submitting?
-                           :variant :contained}
-        "Add"]
-       [mui/button {:onClick #(rf/dispatch [::set-dialog-open false])
-                    :disabled @(rf/subscribe [::form-submitting?])
-                    :variant :outlined}
-        "Cancel"]]])])
+        [mui/dialog-content
+         [add-form/form fork-args]]
+        [mui/dialog-actions
+         [ui/loading-button {:type :submit
+                             :loading submitting?
+                             :variant :contained}
+          "Add"]
+         [mui/button {:onClick #(rf/dispatch [::set-dialog-open nil])
+                      :disabled @(rf/subscribe [::form-submitting?])
+                      :variant :outlined}
+          "Cancel"]]])])
+
+(rf/reg-sub ::issuer-label
+  :<- [::model/company-id->label]
+  :<- [::issuer-id]
+  (fn [[company-id->label issuer-id]]
+    (if (keyword? issuer-id)
+      (company-id->label issuer-id)
+      issuer-id)))
 
 (defn dialog []
   [mui/dialog {:open (boolean @(rf/subscribe [::dialog-open?]))}
    [mui/dialog-title
-    "add household bill"
-    [mui/icon-button {:onClick #(rf/dispatch [::set-dialog-open false])
+    (str "household bills for " @(rf/subscribe [::issuer-label]))
+    [mui/icon-button {:onClick #(rf/dispatch [::set-dialog-open nil])
                       :disabled @(rf/subscribe [::form-submitting?])}
      [ui/icon-close]]]
    [form]])
 
-(defn show []
-  (rf/dispatch [::set-dialog-open true]))
+(defn show [issuer-id]
+  (rf/dispatch [::set-dialog-open issuer-id]))
