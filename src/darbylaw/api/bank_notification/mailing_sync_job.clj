@@ -156,8 +156,8 @@
            (->> (rest (ch/periodic-seq (Instant/now) (Duration/ofMinutes 10)))
              (remove (fn [instant]
                        (let [t (instant->localtime instant (ZoneId/of "Europe/London"))]
-                         (and (.isBefore (LocalTime/of 16 55 00) t)
-                              (.isBefore t (LocalTime/of 18 05 00)))))))
+                         (and (.isBefore (LocalTime/of 09 25 00) t)
+                              (.isBefore t (LocalTime/of 11 35 00)))))))
            (fn [_time]
              (sync-job xtdb-node/xtdb-node)))
   :stop (.close mailing-sync-job))

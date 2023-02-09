@@ -82,7 +82,7 @@
 (mount/defstate mailing-upload-job
   :start (ch/chime-at
            (ch/periodic-seq
-             (-> (LocalTime/of 17 00 00)
+             (-> (LocalTime/of 10 30 00)
                ^ZonedDateTime (.adjustInto (ZonedDateTime/now (ZoneId/of "Europe/London")))
                .toInstant)
              (Period/ofDays 1))
