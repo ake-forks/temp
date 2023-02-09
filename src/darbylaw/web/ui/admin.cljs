@@ -1,5 +1,6 @@
 (ns darbylaw.web.ui.admin
   (:require [darbylaw.web.routes :as routes]
+            [clojure.string :as str]
             [reagent.core :as r]
             [re-frame.core :as rf]
             [kee-frame.core :as kf]
@@ -107,13 +108,218 @@
 
 ;; >> DataGrid
 
-(def columns
-  [{:field :rowId :hide true}
-   {:field :id :headerName "ID"}
+(defn ->full-name
+  [{:keys [forename surname]}]
+  (str surname ", " forename))
+
+(defn pr->address
+  [pr]
+  (->> [(:flat pr)
+        (:building pr)
+        (:street-number pr)
+        (:street1 pr)
+        (:street2 pr)
+        (:town pr)
+        (:postcode pr)]
+       (remove str/blank?)
+       (str/join "\n")))
+
+;; TODO: Split by group?
+(def raw-columns
+  [{:field :id :hide true}
    {:field :reference :headerName "Reference"}
-   {:field :surname :headerName "Surname"}
-   {:field :forename :headerName "Forename"}
-   {:field :postcode :headerName "Post Code"}])
+   {:field :fake
+    :valueGetter #(-> % :row :fake (or false))
+    :headerName "Fake?"}
+
+   {:field :pr-name
+    :headerName "Name"
+    :valueGetter #(-> % :row :personal-representative ->full-name)
+    :group "Personal Representative"}
+   {:field :pr-address
+    :headerName "Address"
+    :valueGetter #(-> % :row :personal-representative pr->address)
+    :width 200
+    :group "Personal Representative"}
+   {:field :pr-email
+    :headerName "Email"
+    :hide true
+    :valueGetter #(-> % :row :personal-representative :email)
+    :width 200
+    :group "Personal Representative"}
+   {:field :pr-phone
+    :headerName "Phone Number"
+    :hide true
+    :valueGetter #(-> % :row :personal-representative :phone)
+    :group "Personal Representative"}
+
+   {:field :dd-name
+    :headerName "Name"
+    :valueGetter #(-> % :row :deceased ->full-name)
+    :group "The Deceased"}
+   {:field :dd-address
+    :headerName "Address"
+    :valueGetter #(-> % :row :deceased :address)
+    :width 200
+    :group "The Deceased"}
+   {:field :dd-dod
+    :headerName "Date of Death"
+    :valueGetter #(-> % :row :deceased :date-of-death)
+    :group "The Deceased"}
+   {:field :dd-dob
+    :headerName "Date of Birth"
+    :hide true
+    :valueGetter #(-> % :row :deceased :date-of-birth)
+    :group "The Deceased"}
+   {:field :dd-sex
+    :headerName "Sex"
+    :hide true
+    :valueGetter #(-> % :row :deceased :sex)
+    :group "The Deceased"}
+   {:field :dd-entry-number
+    :headerName "Entry Number"
+    :hide true
+    :valueGetter #(-> % :row :deceased :entry-number)
+    :group "The Deceased"}
+   {:field :dd-informant
+    :headerName "Informant"
+    :hide true
+    :valueGetter #(-> % :row :deceased :name-of-informant)
+    :group "The Deceased"}
+   {:field :dd-registration-district
+    :headerName "Registration District"
+    :hide true
+    :valueGetter #(-> % :row :deceased :registration-district)
+    :group "The Deceased"}
+   {:field :dd-occupation
+    :headerName "Occupation"
+    :hide true
+    :valueGetter #(-> % :row :deceased :occupation)
+    :group "The Deceased"}
+   {:field :dd-relationship
+    :headerName "Relationship"
+    :valueGetter #(-> % :row :deceased :relationship)
+    :group "The Deceased"}
+   {:field :dd-certificate-number
+    :headerName "Certificate Number"
+    :hide true
+    :valueGetter #(-> % :row :deceased :certificate-number)
+    :group "The Deceased"}
+   {:field :dd-cause-of-death
+    :headerName "Cause of Death"
+    :hide true
+    :valueGetter #(-> % :row :deceased :cause-of-death)
+    :group "The Deceased"}
+   {:field :dd-certifying-doctor
+    :headerName "Certifying Doctor"
+    :hide true
+    :valueGetter #(-> % :row :deceased :name-of-doctor-certifying)
+    :group "The Deceased"}
+   {:field :dd-registrar
+    :headerName "Registrar"
+    :hide true
+    :valueGetter #(-> % :row :deceased :name-of-registrar)
+    :group "The Deceased"}
+   {:field :dd-maiden-name
+    :headerName "Maiden Name"
+    :hide true
+    :valueGetter #(-> % :row :deceased :maiden-name)
+    :group "The Deceased"}
+   {:field :dd-place-of-death
+    :headerName "Place of Death"
+    :hide true
+    :valueGetter #(-> % :row :deceased :place-of-death)
+    :group "The Deceased"}
+   {:field :dd-place-of-birth
+    :headerName "Place of Birth"
+    :hide true
+    :valueGetter #(-> % :row :deceased :place-of-birth)
+    :group "The Deceased"}
+
+   {:field :ba-names
+    :headerName "Name(s)"
+    :hide true
+    :valueGetter #(->> % :row :bank-accounts (map :bank-id) (str/join ", ")) 
+    :width 200
+    :group "Bank Accounts"}
+   {:field :ba-account-numbers
+    :headerName "Account Number(s)"
+    :hide true
+    :valueGetter #(->> % :row :bank-accounts (mapcat :accounts) (map :account-number) (str/join ", ")) 
+    :width 200
+    :group "Bank Accounts"}
+   {:field :ba-sort-codes
+    :headerName "Sort Code(s)"
+    :hide true
+    :valueGetter #(->> % :row :bank-accounts (mapcat :accounts) (map :sort-code) (str/join ", ")) 
+    :width 200
+    :group "Bank Accounts"}
+
+   {:field :bsa-names
+    :headerName "Name(s)"
+    :hide true
+    :valueGetter #(->> % :row :buildsoc-accounts (map :buildsoc-id) (str/join ", ")) 
+    :width 200
+    :group "Building Society Accounts"}
+   {:field :bsa-roll-numbers
+    :headerName "Roll Number(s)"
+    :hide true
+    :valueGetter #(->> % :row :buildsoc-accounts (mapcat :accounts) (map :roll-number) (str/join ", ")) 
+    :width 200
+    :group "Building Society Accounts"}
+
+   {:field :fa-name
+    :headerName "Name"
+    :hide true
+    :valueGetter #(-> % :row :funeral-account :title)
+    :group "Funeral Account"}
+
+   {:field :fe-names
+    :headerName "Name(s)"
+    :hide true
+    :valueGetter #(->> % :row :funeral-expense (map :title) (str/join ", ")) 
+    :width 200
+    :group "Funeral Expenses"}
+
+   {:field :bill-types
+    :headerName "Type(s)"
+    :hide true
+    :valueGetter #(->> % :row :bills (mapcat :bill-type) (remove nil?) (str/join ", ")) 
+    :width 200
+    :group "Bills"}
+   {:field :bill-account-numbers
+    :headerName "Account Number(s)"
+    :hide true
+    :valueGetter #(->> % :row :bills (map :account-number) (remove nil?) (str/join ", ")) 
+    :width 200
+    :group "Bills"}])
+
+(defn wrap-method [method]
+  "Wrap a method so that it receives a clj map instead of a js object"
+  (fn [params]
+    (method (js->clj params :keywordize-keys true))))
+
+(defn adapt-column
+  "Adapt the column so that functions are a bit nicer for clojure"
+  [column]
+  (->> column
+       (map (fn [[k v]]
+              [k
+               (if (fn? v) (wrap-method v) v)]))
+       (into {})))
+
+(def columns
+  (->> raw-columns
+       (map adapt-column)))
+
+(def column-groups
+  (->> columns
+       (filter :group)
+       (group-by :group)
+       (map (fn [[group children]]
+              {:groupId group
+               :children (->> children
+                              (map #(select-keys % [:field])))}))))
 
 (rf/reg-sub ::rows
   :<- [::cases]
@@ -127,8 +333,10 @@
      [data-grid {:loading (nil? rows)
                  :rows rows
                  :columns columns
+                 :experimental-features {:columnGrouping true}
+                 :column-grouping-model column-groups
                  :density :standard
-                 :on-row-click #(rf/dispatch [::ui/navigate [:dashboard {:case-id (-> % .-row .-rowId str)}]])
+                 :on-row-click #(rf/dispatch [::ui/navigate [:dashboard {:case-id (-> % .-row .-id str)}]])
                  :is-row-selectable (constantly false)
                  :components {:NoRowsOverlay 
                               #(r/as-element [mui/stack {:height "100%" :align-items :center :justify-content :center}
