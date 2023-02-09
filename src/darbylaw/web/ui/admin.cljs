@@ -127,6 +127,14 @@
 ;; TODO: Split by group?
 (def raw-columns
   [{:field :id :hide true}
+   {:field :click
+    :headerName ""
+    :width 0 ; Fit to button width
+    :hideable false
+    :renderCell #(let [id (-> % :row :id)]
+                   (r/as-element
+                     [mui/icon-button {:href (kf/path-for [:dashboard {:case-id id}])}
+                      [ui/icon-link]]))}
    {:field :reference :headerName "Reference"}
    {:field :fake
     :valueGetter #(-> % :row :fake (or false))
@@ -336,7 +344,6 @@
                  :experimental-features {:columnGrouping true}
                  :column-grouping-model column-groups
                  :density :standard
-                 :on-row-click #(rf/dispatch [::ui/navigate [:dashboard {:case-id (-> % .-row .-id str)}]])
                  :is-row-selectable (constantly false)
                  :components {:NoRowsOverlay 
                               #(r/as-element [mui/stack {:height "100%" :align-items :center :justify-content :center}
