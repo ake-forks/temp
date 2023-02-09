@@ -86,22 +86,23 @@
    [mui/link {:href (kf/path-for [:create-case])} "create"]
    " a new one?"])
 
-(defn card-list [cases]
-  [mui/container {:max-width :sm}
-   [mui/stack {:spacing 2}
-    (cond
-      (empty? cases)
-      [no-cases-found]
+(defn card-list []
+  (let [cases @(rf/subscribe [::cases])]
+    [mui/container {:max-width :sm}
+     [mui/stack {:spacing 2}
+      (cond
+        (empty? cases)
+        [no-cases-found]
 
-      (nil? cases)
-      (for [id (range 3)]
-        ^{:key id}
-        [case-item {:loading? true}])
+        (nil? cases)
+        (for [id (range 3)]
+          ^{:key id}
+          [case-item {:loading? true}])
 
-      :default
-      (for [case cases]
-        ^{:key (:id case)}
-        [case-item case]))]])
+        :default
+        (for [case cases]
+          ^{:key (:id case)}
+          [case-item case]))]]))
 
 
 ;; >> DataGrid
@@ -114,22 +115,16 @@
    {:field :forename :headerName "Forename"}
    {:field :postcode :headerName "Post Code"}])
 
-(defn to-rows
-  [cases]
-  (map (fn [{:keys [id reference] {:keys [surname forename postcode]} :personal-representative}]
-         {:rowId id
-          :id (str "#" id) ;; NOTE: The id must be a string for react
-          :reference reference
-          :surname surname
-          :forename forename
-          :postcode postcode})
-       cases))
+(rf/reg-sub ::rows
+  :<- [::cases]
+  (fn [cases]
+    (->> cases (map #(update % :id str)))))
 
 (defn data-grid-list
-  [cases]
-  (let [rows (to-rows cases)]
+  []
+  (let [rows @(rf/subscribe [::rows])]
     [mui/box {:height 400}
-     [data-grid {:loading (nil? cases)
+     [data-grid {:loading (nil? rows)
                  :rows rows
                  :columns columns
                  :density :standard
@@ -149,8 +144,7 @@
 ;; >> Panel
 
 (defn admin-panel []
-  (let [cases @(rf/subscribe [::cases])
-        case-view @(rf/subscribe [::case-view])]
+  (let [case-view @(rf/subscribe [::case-view])]
     [mui/container
 
      [mui/stack {:direction :row
@@ -177,8 +171,8 @@
        [mui/tab {:label "Mailing" :value :mail}]]]
      [mui/box {:margin-top 1}
       (case (or case-view :card)
-        :card [card-list cases]
-        :data-grid [data-grid-list cases]
+        :card [card-list]
+        :data-grid [data-grid-list]
         :mail [mailing/panel])]]))
 
 (defn panel []
