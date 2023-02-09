@@ -205,7 +205,8 @@
            [asset-item {:title (if (keyword? issuer)
                                  (company-id->label issuer)
                                  issuer)
-                        :on-click #(bills-dialog/show issuer)
+                        :on-click #(bills-dialog/show {:issuer-id issuer
+                                                       :property-id property-id})
                         :indent 1
                         :no-divider true}])
          [mui/divider]])

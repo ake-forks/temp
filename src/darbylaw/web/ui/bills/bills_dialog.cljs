@@ -1,20 +1,20 @@
 (ns darbylaw.web.ui.bills.bills-dialog
   (:require
+    [clojure.string :as str]
     [darbylaw.web.ui :as ui]
-    [darbylaw.web.util.form :as form-util]
+    [darbylaw.web.ui.bills.common :as common]
     [re-frame.core :as rf]
     [reagent-mui.components :as mui]
     [reagent.core :as r]
-    [darbylaw.web.ui.case-model :as case-model]
     [fork.re-frame :as fork]
-    [darbylaw.web.ui.bills.add-form :as add-form]
-    [darbylaw.web.ui.bills.model :as model]))
+    [darbylaw.web.ui.bills.model :as model]
+    [darbylaw.api.bill.data :as bill-data]))
 
 (rf/reg-event-db ::set-dialog-open
-  (fn [db [_ issuer-id]]
-    (if (some? issuer-id)
+  (fn [db [_ dialog-context]]
+    (if (some? dialog-context)
       (merge db {::dialog-open? true
-                 ::issuer-id issuer-id})
+                 ::dialog-context dialog-context})
       (assoc db ::dialog-open? false))))
 
 (rf/reg-sub ::form-submitting?
@@ -26,9 +26,9 @@
     (or (::dialog-open? db)
         (::form-submitting? db))))
 
-(rf/reg-sub ::issuer-id
+(rf/reg-sub ::dialog-context
   (fn [db]
-    (::issuer-id db)))
+    (::dialog-context db)))
 
 (def form-state (r/atom nil))
 
@@ -37,59 +37,59 @@
     (fork/set-submitting (:path fork-params) submitting?)
     (assoc ::form-submitting? submitting?)))
 
-(rf/reg-event-fx ::submit-success
-  (fn [{:keys [db]} [_ case-id fork-params _response]]
-    {:db (-> db
-           (set-submitting fork-params false)
-           (assoc ::dialog-open? false))
-     ; Should we wait until case is loaded to close the dialog?
-     :dispatch [::case-model/load-case! case-id]}))
-
-(rf/reg-event-fx ::submit-failure
-  (fn [{:keys [db]} [_ fork-params error-result]]
-    {:db (set-submitting db fork-params false)
-     ::ui/notify-user-http-error {:message "Error on adding household bill"
-                                  :result error-result}}))
-
-(rf/reg-event-fx ::submit!
-  (fn [{:keys [db]} [_ case-id fork-params]]
-    {:db (set-submitting db fork-params true)
-     :http-xhrio
-     (ui/build-http
-       {:method :post
-        :uri (str "/api/case/" case-id "/bill")
-        :params (add-form/values-to-submit fork-params)
-        :on-success [::submit-success case-id fork-params]
-        :on-failure [::submit-failure fork-params]})}))
-
-(defn form []
-  #_[form-util/form
-     {:state form-state
-      :on-submit (let [case-id @(rf/subscribe [::case-model/case-id])]
-                   #(rf/dispatch [::submit! case-id %]))
-      :validation add-form/validate
-      :initial-values add-form/initial-values}
-     (fn [{:keys [handle-submit submitting?] :as fork-args}]
-       [:form {:on-submit handle-submit}
-        [mui/dialog-content
-         [add-form/form fork-args]]
-        [mui/dialog-actions
-         [ui/loading-button {:type :submit
-                             :loading submitting?
-                             :variant :contained}
-          "Add"]
-         [mui/button {:onClick #(rf/dispatch [::set-dialog-open nil])
-                      :disabled @(rf/subscribe [::form-submitting?])
-                      :variant :outlined}
-          "Cancel"]]])])
-
 (rf/reg-sub ::issuer-label
   :<- [::model/company-id->label]
-  :<- [::issuer-id]
-  (fn [[company-id->label issuer-id]]
+  :<- [::dialog-context]
+  (fn [[company-id->label {:keys [issuer-id]}]]
     (if (keyword? issuer-id)
       (company-id->label issuer-id)
       issuer-id)))
+
+(rf/reg-sub ::dialog-property
+  :<- [::dialog-context]
+  :<- [::model/current-properties-by-id]
+  (fn [[context properties-by-id]]
+    (get properties-by-id (:property-id context))))
+
+(rf/reg-sub ::property-address
+ :<- [::dialog-property]
+  (fn [property]
+    (:address property)))
+
+(rf/reg-sub ::dialog-bills
+  :<- [::model/current-bills]
+  :<- [::dialog-context]
+  (fn [[all-bills {:keys [issuer-id property-id]}]]
+    (->> all-bills
+      (filter (fn [bill]
+                (and (= issuer-id (:issuer bill))
+                     (= property-id (:property bill))))))))
+
+(defn concepts-str [concepts]
+  (->> bill-data/bill-types
+    (keep (fn [[k {:keys [label]}]]
+            (when (contains? concepts k)
+              label)))
+    (str/join " & ")))
+
+(defn bill-row [bill]
+  [mui/card {:elevation 2}
+   [mui/card-content
+    [mui/stack {:direction :row
+                :spacing 2
+                :sx {:align-items :center}}
+     [mui/stack {:sx {:flex-grow 1}}
+      [mui/typography {:variant :subtitle} [:b (concepts-str (:bill-type bill))]]
+      (when-let [account-number (:account-number bill)]
+        [mui/typography {:variant :subtitle2} "account: " account-number])]
+     ;[mui/divider {:orientation :vertical :flexItem true}]
+     [mui/typography {:variant :h6} (str "£" (:amount bill))]
+     ;[mui/divider {:orientation :vertical :flexItem true}]
+     [mui/box
+      [mui/icon-button
+       [ui/icon-edit]]
+      [mui/icon-button
+       [ui/icon-delete]]]]]])
 
 (defn dialog []
   [mui/dialog {:open (boolean @(rf/subscribe [::dialog-open?]))}
@@ -98,7 +98,27 @@
     [mui/icon-button {:onClick #(rf/dispatch [::set-dialog-open nil])
                       :disabled @(rf/subscribe [::form-submitting?])}
      [ui/icon-close]]]
-   [form]])
+   [mui/dialog-content
+    [mui/stack {:spacing 2}
+     [mui/stack
+      [mui/typography
+       "For property at address"]
+      [mui/stack
+       [common/address-box false
+        (let [address @(rf/subscribe [::property-address])]
+          address)]]]
+     [mui/stack
+      [mui/typography {:sx {:font-weight 600}}
+       "Bills"]
+      [mui/stack {:spacing 2}
+       (for [bill @(rf/subscribe [::dialog-bills])]
+         ^{:key (:id bill)}
+         [bill-row bill])]]]]
+   [mui/dialog-actions
+    [mui/button {:variant :outlined
+                 :onClick #(rf/dispatch [::set-dialog-open nil])}
+     "Close"]]])
 
-(defn show [issuer-id]
-  (rf/dispatch [::set-dialog-open issuer-id]))
+(defn show {:arglists '({:keys [issuer-id property-id]})}
+  [dialog-context]
+  (rf/dispatch [::set-dialog-open dialog-context]))

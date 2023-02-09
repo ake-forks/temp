@@ -1,7 +1,8 @@
 (ns darbylaw.web.ui.bills.model
   (:require [re-frame.core :as rf]
             [darbylaw.api.bill.data :as bills-data]
-            [darbylaw.web.ui.case-model :as case-model]))
+            [darbylaw.web.ui.case-model :as case-model]
+            [medley.core :as medley]))
 
 (rf/reg-sub ::companies
   (fn [_]
@@ -59,3 +60,8 @@
   :<- [::case-model/current-case]
   (fn [case-data]
     (:properties case-data)))
+
+(rf/reg-sub ::current-properties-by-id
+  :<- [::current-properties]
+  (fn [properties]
+    (medley/index-by :id properties)))

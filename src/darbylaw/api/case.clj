@@ -207,8 +207,10 @@
                                       :accounts]
                                      letter-props)}
 
-               {:bills (bill-data/extract-bill-props
-                         (bill-data/make-bill-schema :query))}
+               {:bills (into
+                         ['(:xt/id {:as :id})]
+                         (bill-data/extract-bill-props
+                           (bill-data/make-bill-schema :query)))}
 
                {'(:probate.property/_case {:as :properties})
                 ['(:xt/id {:as :id})
