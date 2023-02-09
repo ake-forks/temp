@@ -318,7 +318,14 @@
 
 (def columns
   (->> raw-columns
+       (map #(dissoc % :hide))
        (map adapt-column)))
+
+(def column-visibility
+  (->> raw-columns
+       (map (fn [c] (update c :hide #(or % false))))
+       (map (juxt :field (complement :hide)))
+       (into {})))
 
 (def column-groups
   (->> columns
@@ -341,6 +348,7 @@
      [data-grid {:loading (nil? rows)
                  :rows rows
                  :columns columns
+                 :initial-state {:columns {:columnVisibilityModel column-visibility}}
                  :experimental-features {:columnGrouping true}
                  :column-grouping-model column-groups
                  :density :standard
