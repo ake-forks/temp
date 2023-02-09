@@ -344,7 +344,7 @@
 (defn data-grid-list
   []
   (let [rows @(rf/subscribe [::rows])]
-    [mui/box {:height 400}
+    [mui/box {:height "75vh"}
      [data-grid {:loading (nil? rows)
                  :rows rows
                  :columns columns
