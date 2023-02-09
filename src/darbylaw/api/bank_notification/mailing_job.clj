@@ -1,6 +1,7 @@
 (ns darbylaw.api.bank-notification.mailing-job
   (:require
     [xtdb.api :as xt]
+    [darbylaw.config :as config]
     [darbylaw.api.util.xtdb :as xt-util]
     [clojure.tools.logging :as log]
     [darbylaw.api.bank-notification.letter-store :as letter-store]
@@ -13,6 +14,7 @@
     [darbylaw.api.util.tx-fns :as tx-fns]
     [chime.core :as ch])
   (:import (java.time LocalTime Period ZoneId ZonedDateTime)
+           java.time.temporal.ChronoUnit
            (clojure.lang ExceptionInfo)))
 
 (defn disabled? [xtdb-node]
@@ -79,10 +81,13 @@
         (finally
           (log/info "Finished uploading letters to external mailing system."))))))
 
+(mount/defstate mailing-upload-time
+  :start (-> config/config :mailing-service :upload-time LocalTime/parse))
+
 (mount/defstate mailing-upload-job
   :start (ch/chime-at
            (ch/periodic-seq
-             (-> (LocalTime/of 10 30 00)
+             (-> mailing-upload-time
                ^ZonedDateTime (.adjustInto (ZonedDateTime/now (ZoneId/of "Europe/London")))
                .toInstant)
              (Period/ofDays 1))
