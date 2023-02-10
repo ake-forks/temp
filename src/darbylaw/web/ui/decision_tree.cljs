@@ -29,28 +29,30 @@
   remains clickable."
   [{:keys [values touched set-values]}
    {:keys [name question]}]
-  [mui/stack {:direction :row
-              :align-items :center
-              :spacing 1}
-   [mui/typography {:variant :body1
-                    :style
-                    (when (touched name)
-                      {:color :grey})}
-    question]
-   [mui/box {:flex-grow 1}]
-   [mui/button {:variant :contained
-                :sx {:background-color "#1aac00"}
-                :on-click #(set-values {name true})
-                :style
-                (when (and (touched name) (true? (values name)))
-                  mui-yes-disabled-button-style)}
-    "yes"]
-   [mui/button {:variant :contained
-                :on-click #(set-values {name false})
-                :style
-                (when (and (touched name) (false? (values name)))
-                  mui-no-disabled-button-style)}
-    "no"]])
+  [mui/stack {:spacing 1}
+   [mui/stack {:direction :row
+               :align-items :center
+               :spacing 1}
+    [mui/typography {:variant :body1
+                     :style
+                     (when (touched name)
+                       {:color :grey})}
+     question]
+    [mui/box {:flex-grow 1}]
+    [mui/button {:variant :contained
+                 :sx {:background-color "#1aac00"}
+                 :on-click #(set-values {name true})
+                 :style
+                 (when (and (touched name) (true? (values name)))
+                   mui-yes-disabled-button-style)}
+     "yes"]
+    [mui/button {:variant :contained
+                 :on-click #(set-values {name false})
+                 :style
+                 (when (and (touched name) (false? (values name)))
+                   mui-no-disabled-button-style)}
+     "no"]]
+   [mui/divider]])
 
 
 
@@ -69,11 +71,9 @@
      [question fork-args
       {:name :own-house
        :question "Did the deceased own a house?"}]
-     [mui/divider]
      [question fork-args
       {:name :savings
-       :question "Did they have more than £15,000 in savings?"}]
-     [mui/divider]]]])
+       :question "Did they have more than £15,000 in savings?"}]]]])
 
 (defn can-i-apply-for-probate [fork-args]
   [mui/container {:max-width :sm
@@ -87,8 +87,7 @@
      [mui/divider]
      [question fork-args
       {:name :will
-       :question "Did the deceased have a will?"}]
-     [mui/divider]]]])
+       :question "Did the deceased have a will?"}]]]])
 
 (defn dont-need-probate []
   [mui/container {:max-width :sm
