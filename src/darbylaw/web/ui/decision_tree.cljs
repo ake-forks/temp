@@ -58,7 +58,7 @@
 
 ;; >> Layouts
 
-(defn do-i-need-probate [fork-args]
+(defn question-list [{:keys [values touched] :as fork-args}]
   [mui/container {:max-width :sm
                   :sx {:p 8}}
    [mui/stack {:spacing 4}
@@ -71,23 +71,23 @@
      [question fork-args
       {:name :own-house
        :question "Did the deceased own a house?"}]
+     ;; NOTE: This question doesn't make sense if the deceased didn't own a
+     ;;       house so let's hide it
+     ;; NOTE: For `mui/collapse` "in" means the content is shown on the page
+     [mui/collapse {:in (or (not (touched :own-house))
+                            (true? (values :own-house)))}
+      [question fork-args
+       {:name :sole-owner
+        :question "Was it in their sole name?"}]]
      [question fork-args
       {:name :savings
-       :question "Did they have more than £15,000 in savings?"}]]]])
-
-(defn can-i-apply-for-probate [fork-args]
-  [mui/container {:max-width :sm
-                  :sx {:p 8}}
-   [mui/stack {:spacing 4}
-    [mui/typography {:variant :h4}
-     "can I apply for probate?"]
-    [mui/typography {:variant :body1}
-     "it looks like you could need probate, just a couple more questions and we'll let you know either way."]
-    [mui/stack {:spacing 1}
-     [mui/divider]
+       :question "Did they have more than £15,000 in savings?"}]
      [question fork-args
-      {:name :will
-       :question "Did the deceased have a will?"}]]]])
+      {:name :all-join-accounts
+       :question "Are all their bank accounts in joint names?"}]
+     [question fork-args
+      {:name :stocks-shares
+       :question "Did they have any Stocks & Shares accounts?"}]]]])
 
 (defn dont-need-probate []
   [mui/container {:max-width :sm
@@ -128,22 +128,22 @@
 
 (defn layout [{:keys [handle-submit values touched]
                :as fork-args}]
-  (let [{:keys [own-house savings will]} values]
-   [:form {:on-submit handle-submit}
-    (cond
-      (or (not (touched :own-house))
-          (not (touched :savings)))
-      [do-i-need-probate fork-args]
+  [:form {:on-submit handle-submit}
+   (cond
+     (or (and (true? (values :own-house))
+              (true? (values :sole-owner)))
+         (true? (values :savings))
+         (false? (values :all-join-accounts))
+         (true? (values :stocks-shares)))
+     [might-need-probate fork-args]
 
-      (and (values :own-house) (values :savings)
-           (not (touched :will)))
-      [can-i-apply-for-probate fork-args]
+     (and (false? (values :savings))
+          (true? (values :all-join-accounts))
+          (false? (values :stocks-shares)))
+     [dont-need-probate fork-args]
 
-      (and (values :own-house) (values :savings) (values :will))
-      [might-need-probate fork-args]
-
-      :else
-      [dont-need-probate fork-args])]))
+     :else
+     [question-list fork-args])])
 
 (defonce form-state (r/atom nil))
 
