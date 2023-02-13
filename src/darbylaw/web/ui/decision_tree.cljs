@@ -92,38 +92,56 @@
       {:name :stocks-shares
        :question "Did they have any Stocks & Shares accounts?"}]]]])
 
+(ui/reg-fx+event :scroll/to
+  (fn [opts]
+    (js/window.scrollTo (clj->js opts))))
+
+(defn auto-scroll [& body]
+  "When first rendered, scroll to the top of this component."
+  (r/create-class
+    {:component-did-mount
+     (fn [this]
+       (let [el (reagent.dom/dom-node this)]
+         (rf/dispatch [:scroll/to {:top (.-offsetTop el)
+                                   :behavior :smooth}])))
+     :reagent-render
+     (fn [_]
+       (into [:<>] body))}))
+
 (defn dont-need-probate []
-  [mui/container {:max-width :sm
-                  :sx {:p 8}}
-   [mui/stack {:spacing 4}
-    [mui/typography {:variant :h4}
-     "it doesn't look like you'll need probate"]
-    [mui/typography {:variant :body1}
-     "you can download our free probate guide or request a call back from on of our team to discuss it further."]
-    [mui/stack {:direction :row
-                :spacing 2}
-     [mui/button {:variant :contained}
-      "get our free guide"]
-     [mui/button {:variant :contained}
-      "request a call back"]]]])
+  [auto-scroll
+   [mui/container {:max-width :sm
+                   :sx {:p 8 :height "80vh"}}
+    [mui/stack {:spacing 4}
+     [mui/typography {:variant :h4}
+      "it doesn't look like you'll need probate"]
+     [mui/typography {:variant :body1}
+      "you can download our free probate guide or request a call back from on of our team to discuss it further."]
+     [mui/stack {:direction :row
+                 :spacing 2}
+      [mui/button {:variant :contained}
+       "get our free guide"]
+      [mui/button {:variant :contained}
+       "request a call back"]]]]])
 
 (defn might-need-probate []
-  [mui/container {:max-width :sm
-                  :sx {:p 8}}
-   [mui/stack {:spacing 4}
-    [mui/typography {:variant :h4}
-     "you might need probate"]
-    [mui/typography {:variant :body1}
-     "you can apply for probate, download our free probate guide or request a call back from on of our team to discuss it"]
-    [mui/stack {:direction :row
-                :spacing 2}
-     [mui/button {:variant :contained
-                  :on-click #(rf/dispatch [::ui/navigate [:create-case]])}
-      "apply for probate"]
-     [mui/button {:variant :contained}
-      "get our free guide"]
-     [mui/button {:variant :contained}
-      "request a call back"]]]])
+  [auto-scroll
+   [mui/container {:max-width :sm
+                   :sx {:p 8 :height "80vh"}}
+    [mui/stack {:spacing 4}
+     [mui/typography {:variant :h4}
+      "you might need probate"]
+     [mui/typography {:variant :body1}
+      "you can apply for probate, download our free probate guide or request a call back from on of our team to discuss it"]
+     [mui/stack {:direction :row
+                 :spacing 2}
+      [mui/button {:variant :contained
+                   :on-click #(rf/dispatch [::ui/navigate [:create-case]])}
+       "apply for probate"]
+      [mui/button {:variant :contained}
+       "get our free guide"]
+      [mui/button {:variant :contained}
+       "request a call back"]]]]])
 
 
 
