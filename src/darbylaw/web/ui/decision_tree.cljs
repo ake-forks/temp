@@ -132,6 +132,7 @@
 (defn layout [{:keys [handle-submit values touched]
                :as fork-args}]
   [:form {:on-submit handle-submit}
+   [question-list fork-args]
    (cond
      (or (true? (values :know-already))
          (and (true? (values :own-house))
@@ -144,10 +145,7 @@
      (and (false? (values :savings))
           (true? (values :all-join-accounts))
           (false? (values :stocks-shares)))
-     [dont-need-probate fork-args]
-
-     :else
-     [question-list fork-args])])
+     [dont-need-probate fork-args])])
 
 (defonce form-state (r/atom nil))
 
