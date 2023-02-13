@@ -69,6 +69,9 @@
     [mui/stack {:spacing 1}
      [mui/divider]
      [question fork-args
+      {:name :know-already
+       :question "Do you already know if you need probate?"}]
+     [question fork-args
       {:name :own-house
        :question "Did the deceased own a house?"}]
      ;; NOTE: This question doesn't make sense if the deceased didn't own a
@@ -130,8 +133,9 @@
                :as fork-args}]
   [:form {:on-submit handle-submit}
    (cond
-     (or (and (true? (values :own-house))
-              (true? (values :sole-owner)))
+     (or (true? (values :know-already))
+         (and (true? (values :own-house))
+             (true? (values :sole-owner)))
          (true? (values :savings))
          (false? (values :all-join-accounts))
          (true? (values :stocks-shares)))
