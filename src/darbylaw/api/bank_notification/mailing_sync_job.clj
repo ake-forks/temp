@@ -160,7 +160,7 @@
                        (let [t (instant->localtime instant (ZoneId/of "Europe/London"))
                              exclusion-start
                              (.minus upload-job/mailing-upload-time
-                                     65 ChronoUnit/MINUTES)
+                                     5 ChronoUnit/MINUTES)
                              exclusion-end
                              (.plus upload-job/mailing-upload-time
                                     65 ChronoUnit/MINUTES)]
