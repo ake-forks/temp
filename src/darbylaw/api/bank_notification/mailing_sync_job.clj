@@ -5,6 +5,7 @@
     [clojure.tools.logging :as log]
     [darbylaw.api.case-history :as case-history]
     [darbylaw.api.services.mailing :as mailing]
+    [darbylaw.api.bank-notification.mailing-job :as upload-job]
     [darbylaw.api.util.tx-fns :as tx-fns]
     [darbylaw.api.util.xtdb :as xt-util]
     [mount.core :as mount]
@@ -12,7 +13,8 @@
     [darbylaw.xtdb-node :as xtdb-node]
     [darbylaw.api.util.dates :refer [instant->localtime]])
   (:import (com.jcraft.jsch SftpException)
-           (java.time Duration Instant LocalTime ZoneId)))
+           (java.time Duration Instant LocalTime ZoneId)
+           java.time.temporal.ChronoUnit))
 
 (defn files->beans [fs]
   (->> fs
@@ -155,9 +157,15 @@
   :start (ch/chime-at
            (->> (rest (ch/periodic-seq (Instant/now) (Duration/ofMinutes 10)))
              (remove (fn [instant]
-                       (let [t (instant->localtime instant (ZoneId/of "Europe/London"))]
-                         (and (.isBefore (LocalTime/of 16 55 00) t)
-                              (.isBefore t (LocalTime/of 18 05 00)))))))
+                       (let [t (instant->localtime instant (ZoneId/of "Europe/London"))
+                             exclusion-start
+                             (.minus upload-job/mailing-upload-time
+                                     5 ChronoUnit/MINUTES)
+                             exclusion-end
+                             (.plus upload-job/mailing-upload-time
+                                    65 ChronoUnit/MINUTES)]
+                         (and (.isAfter t exclusion-start)
+                              (.isBefore t exclusion-end))))))
            (fn [_time]
              (sync-job xtdb-node/xtdb-node)))
   :stop (.close mailing-sync-job))
