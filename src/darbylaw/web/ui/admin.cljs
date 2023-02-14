@@ -170,78 +170,20 @@
     :valueGetter #(-> % :row :deceased :address)
     :width 200
     :group "The Deceased"}
-   {:field :dd-dod
-    :headerName "Date of Death"
-    :valueGetter #(-> % :row :deceased :date-of-death)
-    :group "The Deceased"}
-   {:field :dd-dob
-    :headerName "Date of Birth"
-    :hide true
-    :valueGetter #(-> % :row :deceased :date-of-birth)
-    :group "The Deceased"}
-   {:field :dd-sex
-    :headerName "Sex"
-    :hide true
-    :valueGetter #(-> % :row :deceased :sex)
-    :group "The Deceased"}
    {:field :dd-entry-number
     :headerName "Entry Number"
     :hide true
     :valueGetter #(-> % :row :deceased :entry-number)
-    :group "The Deceased"}
-   {:field :dd-informant
-    :headerName "Informant"
-    :hide true
-    :valueGetter #(-> % :row :deceased :name-of-informant)
-    :group "The Deceased"}
-   {:field :dd-registration-district
-    :headerName "Registration District"
-    :hide true
-    :valueGetter #(-> % :row :deceased :registration-district)
-    :group "The Deceased"}
-   {:field :dd-occupation
-    :headerName "Occupation"
-    :hide true
-    :valueGetter #(-> % :row :deceased :occupation)
-    :group "The Deceased"}
-   {:field :dd-relationship
-    :headerName "Relationship"
-    :valueGetter #(-> % :row :deceased :relationship)
     :group "The Deceased"}
    {:field :dd-certificate-number
     :headerName "Certificate Number"
     :hide true
     :valueGetter #(-> % :row :deceased :certificate-number)
     :group "The Deceased"}
-   {:field :dd-cause-of-death
-    :headerName "Cause of Death"
-    :hide true
-    :valueGetter #(-> % :row :deceased :cause-of-death)
-    :group "The Deceased"}
-   {:field :dd-certifying-doctor
-    :headerName "Certifying Doctor"
-    :hide true
-    :valueGetter #(-> % :row :deceased :name-of-doctor-certifying)
-    :group "The Deceased"}
-   {:field :dd-registrar
-    :headerName "Registrar"
-    :hide true
-    :valueGetter #(-> % :row :deceased :name-of-registrar)
-    :group "The Deceased"}
    {:field :dd-maiden-name
     :headerName "Maiden Name"
     :hide true
     :valueGetter #(-> % :row :deceased :maiden-name)
-    :group "The Deceased"}
-   {:field :dd-place-of-death
-    :headerName "Place of Death"
-    :hide true
-    :valueGetter #(-> % :row :deceased :place-of-death)
-    :group "The Deceased"}
-   {:field :dd-place-of-birth
-    :headerName "Place of Birth"
-    :hide true
-    :valueGetter #(-> % :row :deceased :place-of-birth)
     :group "The Deceased"}
 
    {:field :ba-names
@@ -275,19 +217,6 @@
     :valueGetter #(->> % :row :buildsoc-accounts (mapcat :accounts) (map :roll-number) (str/join ", ")) 
     :width 200
     :group "Building Society Accounts"}
-
-   {:field :fa-name
-    :headerName "Name"
-    :hide true
-    :valueGetter #(-> % :row :funeral-account :title)
-    :group "Funeral Account"}
-
-   {:field :fe-names
-    :headerName "Name(s)"
-    :hide true
-    :valueGetter #(->> % :row :funeral-expense (map :title) (str/join ", ")) 
-    :width 200
-    :group "Funeral Expenses"}
 
    {:field :bill-types
     :headerName "Type(s)"
