@@ -226,7 +226,7 @@
         :required true
         :full-width true
         :multiline true
-        :rows 2}
+        :rows 5}
        "address.png"
        fork-args)
      (r/as-element section-divider)
@@ -320,9 +320,10 @@
     (finally
       (reset! form-state nil))))
 
-(defn dev-auto-fill []
+(defn dev-auto-fill
   "Fill out the form programmatically.
   For development purposes only."
+  []
   (let [test-data {:forename "forename",
                    :sex "female",
                    :certificate-number "certificate-number"
@@ -345,8 +346,3 @@
     (swap! form-state assoc
       :values test-data
       :touched (set (keys test-data)))))
-
-(comment
-  (do
-    (def test-data)
-    (darbylaw.web.core/mount-root)))

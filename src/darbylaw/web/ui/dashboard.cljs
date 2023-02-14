@@ -22,7 +22,11 @@
     [darbylaw.web.theme :as theme]
     [darbylaw.web.ui.case-commons :as case-commons]
     [reagent-mui.lab.masonry :as mui-masonry]
-    [darbylaw.web.ui.bills.add-dialog :as add-bill-dialog]))
+    [darbylaw.web.ui.bills.add-dialog :as add-bill-dialog]
+    [darbylaw.web.ui.bills.bills-dialog :as bills-dialog]
+    [darbylaw.web.ui.bills.model :as bill-model]
+    [medley.core :as medley]
+    [darbylaw.api.util.data :as data-util]))
 
 (defn bank-item [bank]
   (let [bank-data (bank-list/bank-by-id (:bank-id bank))
@@ -90,13 +94,16 @@
   [value]
   (format/format "%.2f" value))
 
-(defn asset-item [{:keys [title value on-click icon]}]
+(defn asset-item [{:keys [title value on-click icon indent no-divider]}]
   [mui/box
    [mui/card-action-area {:on-click on-click
                           :sx {:padding-top 1 :padding-bottom 1}}
-    [mui/stack {:direction :row
-                :spacing 2
-                :justify-content :space-between}
+    [mui/stack (merge
+                 {:direction :row
+                  :spacing 2
+                  :justify-content :space-between}
+                 (when indent
+                   {:sx {:pl (* indent 2)}}))
      (if (string? icon)
        [mui/box {:component :img
                  :src icon
@@ -110,7 +117,8 @@
        [mui/typography {:variant :body1
                         :sx {:font-weight :bold}}
         (str "£" (format-currency value))])]]
-   [mui/divider]])
+   (when-not no-divider
+     [mui/divider])])
 
 (defn funeral-card []
   (let [dialog-info @(rf/subscribe [::funeral-model/dialog-info])
@@ -170,16 +178,38 @@
        :on-click #(rf/dispatch [::banking-model/show-add-dialog :buildsoc])}]]))
 
 (defn bills-card []
-  ; Just a mock for now for showing companies.
-  (let [bills (:bills @(rf/subscribe [::case-model/current-case]))
-        companies (->> (distinct (map :company bills))
-                    (remove nil?))]
+  (let [current-case @(rf/subscribe [::case-model/current-case])
+        bills-by-property-id (group-by :property (:bills current-case))
+        used-property-ids (->> (:bills current-case)
+                            (keep :property)
+                            (distinct))
+        properties-by-id (medley/index-by :id (:properties current-case))
+        company-id->label @(rf/subscribe [::bill-model/company-id->label])]
     [:<>
      [add-bill-dialog/dialog]
+     [bills-dialog/dialog]
      [asset-card {:title "household bills"}
-      (for [company companies]
-        ^{:key company}
-        [asset-item {:title company}])
+      (for [property-id used-property-ids]
+        [:<> {:key property-id}
+         [mui/typography {:sx {:font-weight 600
+                               :pt 1}}
+          (if-let [address (get-in properties-by-id [property-id :address])]
+            (data-util/first-line address)
+            "[unknown address]")]
+         (for [issuer (->> (get bills-by-property-id property-id)
+                        (map #(or (:issuer %)
+                                  (:custom-issuer-name %)))
+                        (distinct)
+                        (remove nil?))]
+           ^{:key issuer}
+           [asset-item {:title (if (keyword? issuer)
+                                 (company-id->label issuer)
+                                 issuer)
+                        :on-click #(bills-dialog/show {:issuer-id issuer
+                                                       :property-id property-id})
+                        :indent 1
+                        :no-divider true}])
+         [mui/divider]])
       [asset-add-button
        {:title "add bill"
         :on-click add-bill-dialog/show}]]]))

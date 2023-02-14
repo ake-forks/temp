@@ -1,8 +1,7 @@
 (ns darbylaw.api.util.data
   (:require [camel-snake-kebab.core :as csk]
             [clojure.string :as str]
-            [clojure.walk])
-  (:import (java.time LocalDateTime)))
+            [clojure.walk]))
 
 (defn keys-to-camel-case [m]
   (clojure.walk/postwalk
@@ -26,6 +25,24 @@
   (strip-end "hello" "l")
   (strip-end "hello" "lo"))
 
-(defn instant->localtime [instant zone-id]
-  (-> (LocalDateTime/ofInstant instant zone-id)
-    (.toLocalTime)))
+(defn first-line [s]
+  (->> (str/split-lines s)
+    (remove str/blank?)
+    (first)))
+
+(defn sanitize-empty-space
+  "- trims lines
+   - removes blank lines
+   - converts multiple contiguous spaces to a single space."
+  [s]
+  (->> (str/split-lines s)
+    (map #(-> %
+            (str/trim)
+            (str/replace #"\s+" " ")))
+    (remove str/blank?)))
+
+(comment
+  (sanitize-empty-space "\n\n line1\n line2 with\t tab\n"))
+
+(defn file-extension [s]
+  (re-find #"\.[a-zA-Z0-9]+$" s))

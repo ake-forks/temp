@@ -62,11 +62,12 @@
     :validation add-form/validate
     :initial-values add-form/initial-values}
    (fn [{:keys [handle-submit submitting?] :as fork-args}]
-     [:form {:on-submit handle-submit}
+     [:<>
       [mui/dialog-content
-       [add-form/form fork-args]]
+       [:form {:on-submit handle-submit}
+        [add-form/form fork-args]]]
       [mui/dialog-actions
-       [ui/loading-button {:type :submit
+       [ui/loading-button {:onClick handle-submit
                            :loading submitting?
                            :variant :contained}
         "Add"]

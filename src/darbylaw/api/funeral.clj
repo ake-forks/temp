@@ -1,155 +1,204 @@
 (ns darbylaw.api.funeral
   (:require [clojure.tools.logging :as log]
+            [clojure.set :as set]
             [reitit.coercion.malli]
             [darbylaw.doc-store :as doc-store]
-            [darbylaw.api.funeral.expense-store :as expense-store]
             [xtdb.api :as xt]
             [darbylaw.api.util.xtdb :as xt-util]
             [darbylaw.api.util.tx-fns :as tx-fns]
             [darbylaw.api.case-history :as case-history]
             [darbylaw.api.util.files :refer [with-delete]]))
 
-(defn upsert-funeral-account [{:keys [xtdb-node user parameters path-params multipart-params]}]
-  (log/info "Upsert funeral account")
-  (let [case-id (parse-uuid (:case-id path-params))
-        query-params (:query parameters)
-        {:keys [tempfile content-type]} (get multipart-params "file")
-        account-info (cond-> query-params
-                       tempfile (assoc (if (:paid query-params)
-                                         :receipt-uploaded
-                                         :invoice-uploaded)
-                                       ;; TODO: Add by and when
-                                       true))
-        account-id {:probate.funeral-account/case case-id}]
-    (when tempfile
-      (let [s3-name (if (:paid account-info) "receipt" "invoice")]
-        (with-delete [tempfile tempfile]
-          (doc-store/store
-            (expense-store/s3-key case-id s3-name)
-            tempfile
-            {:content-type content-type}))))
-    (xt-util/exec-tx xtdb-node
-      (concat
-        (tx-fns/set-values account-id
-                           (merge account-info
-                                  account-id
-                                  {:xt/id account-id
-                                   :type :probate.funeral-account}))
-        (case-history/put-event {:event :updated.funeral-account
-                                 :case-id case-id
-                                 :user user})))
-    {:status 200
-     :body {:success? true}}))
+(defn wrap-funeral-account
+  "Extracts information needed to add/update the funeral account.
+  See `upsert-funeral-expense`."
+  [handler]
+  (fn [{:keys [parameters]
+        :as request}]
+    (log/info "Upsert funeral account")
+    (let [case-id (get-in parameters [:path :case-id])
+          account-id {:probate.funeral-account/case case-id}
+          account-info (merge (:query parameters)
+                              account-id)
 
-(defn get-funeral-file [file-name]
-  (fn [{:keys [path-params]}]
-    (let [case-id (parse-uuid (:case-id path-params))
-          s3-file (doc-store/fetch-raw
-                    (expense-store/s3-key case-id file-name))
-          file-metadata (.getObjectMetadata s3-file)]
-      {:status 200
-       :headers {"Content-Type" (.getContentType file-metadata)}
-       :body (.getObjectContent s3-file)})))
+          request' (assoc request
+                          :xt-type :probate.funeral-account
+                          :event :updated.funeral-account
+                          :expense-id account-id
+                          :expense-info account-info)]
+      (handler request'))))
 
-
-(defn upsert-other-expense [op {:keys [xtdb-node user parameters path-params multipart-params]}]
+(defn wrap-other-expense
+  "Extracts information needed to add/update a funeral expense.
+  See `upsert-funeral-expense`."
+  [op handler]
   (assert (contains? #{:add :update} op))
-  (let [case-id (parse-uuid (:case-id path-params))
-        expense-id (case op
-                     :add (random-uuid)
-                     :update (parse-uuid (:expense-id path-params)))
-        query-params (:query parameters)
-        {:keys [tempfile content-type]} (get multipart-params "file")
-        expense-info (cond-> query-params
-                       ;; TODO: Add by and when
-                       tempfile (assoc :receipt-uploaded true))]
-    (log/info (str (case :add "Add" :update "Update") " other funeral expense (" expense-id ")"))
-    (when tempfile
-      (let [s3-name (str expense-id "/receipt")]
-        (with-delete [tempfile tempfile]
-          (doc-store/store
-            (expense-store/s3-key case-id s3-name)
-            tempfile
-            {:content-type content-type}))))
+  (fn [{:keys [parameters]
+        :as request}]
+    (let [case-id (get-in parameters [:path :case-id])
+          expense-id (case op
+                       :add (random-uuid)
+                       :update (get-in parameters [:path :expense-id]))
+          _ (log/info (str (case :add "Add" :update "Update") " other funeral expense (" expense-id ")"))
+          expense-info (merge (:query parameters)
+                              {:probate.funeral-expense/case case-id})
+          
+          request' (assoc request
+                          :xt-type :probate.funeral-expense
+                          :append-path [:funeral-expense]
+                          :event (case op
+                                   :add :added.other-expense
+                                   :update :updated.other-expense)
+                          :expense-id expense-id
+                          :expense-info expense-info)]
+      (handler request'))))
+
+(defn s3-key [case-id file-name]
+  (str case-id "/" file-name))
+
+(defn upsert-funeral-expense
+  "Insert or update a funeral expense.
+  
+  Arguments:
+  xt-type      - The xt/type of the expense.
+  event        - The event to add to the case history.
+  expense-id   - The xt/id of the expense.
+  expense-info - The expense info to insert/update.
+  append-path  - (optional) The path to append the expense id to.
+                 If not specified, the expense id will not be appended to any path.
+                 This is useful for funeral accounts which are singletons.
+  file-uploads - See wrap-uploaded-files."
+  [{:keys [xtdb-node user parameters file-uploads
+           xt-type event
+           expense-id expense-info append-path]}]
+  (let [case-id (get-in parameters [:path :case-id])
+        file-tx
+        (for [[document-name {original-filename :filename :keys [tempfile content-type]}]
+              file-uploads]
+          (with-delete [tempfile tempfile]
+            (let [case-ref (-> (xt/pull (xt/db xtdb-node) [:reference] case-id)
+                               :reference)
+                  document-id (random-uuid)
+                  filename (str case-ref "." (name document-name) "." document-id)]
+              (doc-store/store
+                (s3-key case-id filename)
+                tempfile
+                {:content-type content-type})
+              (concat
+                [[::xt/put {:type :probate.case-doc
+                            :xt/id filename
+                            :document-name document-name
+                            :probate.case-doc/case case-id
+                            :probate.case-doc/expense-id expense-id
+                            :uploaded-by (:username user)
+                            :uploaded-at (xt-util/now)
+                            :original-filename original-filename}]]
+                (tx-fns/set-value expense-id [document-name] filename)))))
+        file-tx (->> file-tx
+                     doall ; To ensure that file uploads happen before the xtdb transaction
+                     (apply concat))]
     (xt-util/exec-tx xtdb-node
       (concat
         (tx-fns/set-values expense-id
-                            (merge expense-info
-                                   {:xt/id expense-id
-                                    :type :probate.funeral-expense
-                                    :probate.funeral-expense/case case-id}))
-        (tx-fns/append-unique case-id [:funeral-expense] [expense-id])
-        (case-history/put-event {:event (case 
-                                          :add :added.other-expense
-                                          :update :updated.other-expense)
+                           (merge expense-info
+                                  {:xt/id expense-id
+                                   :type xt-type}))
+        file-tx
+        (when append-path
+          (tx-fns/append-unique case-id append-path [expense-id]))
+        (case-history/put-event {:event event
                                  :case-id case-id
                                  :user user})))
     {:status 200
      :body {:id expense-id}}))
 
-(comment
-  (let [xtdb-node darbylaw.xtdb-node/xtdb-node
-        case-id-str "34a6ff1a-c680-4b51-97f7-f14cebc1fc74"
-        case-id (parse-uuid case-id-str)]
-    (add-other-expense
-      {:xtdb-node xtdb-node
-       :user {:username "test"}
-       :path-params {:case-id (str case-id)}
-       :parameters
-       {:query {:title "Test 1"
-                :value "2345"
-                :paid true
-                :paid-by "Jim"}}})
-    (upsert-funeral-account
-      {:xtdb-node xtdb-node
-       :user {:username "test"}
-       :path-params {:case-id (str case-id)}
-       :parameters
-       {:query {:title "My Test Account"
-                :value "2345"
-                :paid true
-                :paid-by "Jim"}}})
-    #_(xt-util/exec-tx xtdb-node
-        (concat
-          (tx-fns/set-value case-id
-            [:funeral-account] nil)))
-    (xt/q (xt/db xtdb-node)
-      {:find ['(pull case [*])]
-       :where [['case :xt/id case-id]]})))
+(defn get-funeral-file [xtdb-node case-id expense-id document-name]
+  (let [filename (-> (xt/pull (xt/db xtdb-node)
+                       [document-name]
+                       expense-id)
+                     (get document-name))
+        s3-file (doc-store/fetch-raw
+                  (s3-key case-id filename))
+        file-metadata (.getObjectMetadata s3-file)]
+    {:status 200
+     :headers {"Content-Type" (.getContentType file-metadata)}
+     :body (.getObjectContent s3-file)}))
 
-(def funeral-account-schema
+(defn get-funeral-account-file [document-name {:keys [xtdb-node parameters]}]
+  (let [case-id (get-in parameters [:path :case-id])
+        account-id {:probate.funeral-account/case case-id}]
+    (get-funeral-file xtdb-node case-id account-id document-name)))
+
+(defn get-other-expense-file [{:keys [xtdb-node parameters]}]
+  (let [case-id (get-in parameters [:path :case-id])
+        document-name :receipt
+        expense-id (get-in parameters [:path :expense-id])]
+    (get-funeral-file xtdb-node case-id expense-id document-name)))
+
+(def expense-schema
   [:map
    [:title :string]
    [:value :string]
    [:paid {:optional true} :boolean]
    [:paid-by {:optional true} :string]])
 
-(def other-expense-schema
-  [:map
-   [:title :string]
-   [:value :string]
-   [:paid {:optional true} :boolean]
-   [:paid-by {:optional true} :string]])
+(defn wrap-uploaded-files
+  "Looks for files in `:multipart-params` and puts into `:file-uploads`
+  Also transforms keys to be keywords."
+  [handler]
+  (fn [{:keys [multipart-params] :as request}]
+    (let [files (->> multipart-params
+                     ;; Keep only files
+                     (filter (fn [[_ v]] (:tempfile v)))
+                     (map (fn [[k v]] [(keyword k) v]))
+                     (into {}))]
+      (handler (assoc request :file-uploads files)))))
+
+(defn wrap-allowed-files
+  "Given a set of allowed keys, checks that only those keys are present in
+  `:file-uploads`."
+  [allowed-keys handler]
+  (fn [{:keys [file-uploads] :as request}]
+    (let [uploaded-keys (->> file-uploads keys (into #{}))
+          disallowed-keys (set/difference uploaded-keys allowed-keys)]
+      (if (empty? disallowed-keys)
+        (handler request)
+        (do (log/warn (str "Disallowed keys found: " disallowed-keys))
+          {:status 400
+           :body {:errors {:file-uploads (str "Only the following files are allowed: " allowed-keys)}}})))))
 
 (defn routes []
   ["/case/:case-id/funeral"
    ["/account"
-    {:put {:handler upsert-funeral-account
-           :parameters {:query funeral-account-schema}}}]
+    {:put {:handler upsert-funeral-expense
+           :middleware [wrap-uploaded-files
+                        (partial wrap-allowed-files #{:receipt :invoice})
+                        wrap-funeral-account]
+           :parameters {:query (->> expense-schema)
+                        :path [:map [:case-id :uuid]]}}}]
    ["/account"
     ["/receipt"
-     {:get {:handler (get-funeral-file "receipt")}}]
+     {:get {:handler (partial get-funeral-account-file :receipt)
+            :parameters {:path [:map [:case-id :uuid]]}}}]
     ["/invoice"
-     {:get {:handler (get-funeral-file "invoice")}}]]
+     {:get {:handler (partial get-funeral-account-file :invoice)
+            :parameters {:path [:map [:case-id :uuid]]}}}]]
    ["/other"
-    {:post {:handler (partial upsert-other-expense :add)
-            :parameters {:query other-expense-schema}}}]
+    {:post {:handler upsert-funeral-expense
+            :middleware [wrap-uploaded-files
+                         (partial wrap-allowed-files #{:receipt})
+                         (partial wrap-other-expense :add)]
+            :parameters {:query expense-schema
+                         :path [:map [:case-id :uuid]]}}}]
    ["/other/:expense-id"
-    {:put {:handler (partial upsert-other-expense :update)
-           :parameters {:query other-expense-schema}}}]
+    {:put {:handler upsert-funeral-expense
+           :middleware [wrap-uploaded-files
+                        (partial wrap-allowed-files #{:receipt})
+                        (partial wrap-other-expense :update)]
+           :parameters {:query expense-schema
+                        :path [:map [:case-id :uuid]
+                                    [:expense-id :uuid]]}}}]
    ["/other/:expense-id/receipt"
-    {:get {:handler (fn [{:keys [path-params] :as req}]
-                      (let [expense-id (:expense-id path-params)
-                            file-name (str expense-id "/receipt")
-                            handler (get-funeral-file file-name)]
-                        (handler req)))}}]])
+    {:get {:handler get-other-expense-file
+           :parameters {:path [:map [:case-id :uuid]
+                                    [:expense-id :uuid]]}}}]])

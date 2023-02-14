@@ -1,4 +1,5 @@
-(ns darbylaw.api.bill.data)
+(ns darbylaw.api.bill.data
+  (:require [darbylaw.api.util.malli :as malli+]))
 
 (def bill-types
   (array-map
@@ -65,28 +66,28 @@
     :address-country "",
     :logo nil}])
 
-(def bill-schema
-  [:map
-   [:bill-type [:set (into [:enum] (keys bill-types))]]
-   [:company {:optional true} [:or
-                               (into [:enum] (map :id companies))
-                               [:string {:min 1}]]]
-   [:council {:optional true} [:or
-                               (into [:enum] (map :id companies))
-                               [:string {:min 1}]]]
-   [:amount :string]
-   [:account-number {:optional true} :string]
-   [:address [:or [:enum :deceased-address]
-                  [:string {:min 1}]]]
-   [:meter-readings {:optional true} :string]])
+(defn make-bill-schema [op]
+  [:and
+   [:map
+    [:bill-type [:set (into [:enum] (keys bill-types))]]
+    [:issuer {:optional true} (into [:enum] (map :id (concat companies
+                                                        councils)))]
+    [:custom-issuer-name {:optional true} [:string {:min 1}]]
+    [:custom-issuer-address {:optional true} [:string {:min 1}]]
+    [:amount [:re #"-?\d*\.?\d{0,2}"]]
+    [:account-number {:optional true} :string]
+    (if (= op :create)
+      [:property [:or :uuid :string]]
+      [:property :uuid])
+    [:meter-readings {:optional true} :string]]
+   (malli+/exclusive-keys [:issuer :custom-issuer-name])
+   (malli+/when-then :custom-issuer-name :custom-issuer-address)])
 
-(comment
-  (require '[malli.core :as malli])
-  (malli/explain bill-schema {:company :mine
-                              :bill-type #{:ok}}))
-
-(def bill-props
-  (->> (rest bill-schema)
+(defn extract-bill-props [bill-schema]
+  (assert (= :map (-> bill-schema second first)))
+  (->> bill-schema
+    second ; skip :and
+    rest ; skip :map
     (mapv first)))
 
 (def company-by-id

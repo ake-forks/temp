@@ -137,3 +137,13 @@
   ([error-data]
    (v/predicate (complement some?)
      (merge {:type ::v/present} error-data))))
+
+(defn v-when
+  ([pred validation]
+   (v-when pred validation {}))
+  ([pred validation error-data]
+   (fn v-when* [data]
+     (concat
+       (when (pred data)
+         (v/validate validation data))
+       error-data))))

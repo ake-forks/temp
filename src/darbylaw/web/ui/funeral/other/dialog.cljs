@@ -14,15 +14,14 @@
 
 (rf/reg-event-fx ::add-expense
   (fn [{:keys [db]} [_ case-id {:keys [path values] :as fork-params}]]
-    (let [query-values (dissoc values :receipt)
-          file (:receipt values)]
+    (let [[query-values files] (util/split-map values [:receipt])]
       {:db (fork/set-submitting db path true)
        :http-xhrio
        (ui/build-http
          {:method :post
           :uri (str "/api/case/" case-id "/funeral/other")
           :url-params query-values
-          :body (when file (util/->FormData {:file file}))
+          :body (util/->FormData files)
           ;; TODO:
           :on-success [::submit-success case-id fork-params]
           :on-failure [::submit-failure case-id fork-params]})})))
@@ -44,15 +43,14 @@
 (rf/reg-event-fx ::edit-expense
   (fn [{:keys [db]} [_ case-id expense-id
                      {:keys [path values] :as fork-params}]]
-    (let [query-values (dissoc values :receipt)
-          file (:receipt values)]
+    (let [[query-values files] (util/split-map values [:receipt])]
       {:db (fork/set-submitting db path true)
        :http-xhrio
        (ui/build-http
          {:method :put
           :uri (str "/api/case/" case-id "/funeral/other/" expense-id)
           :url-params query-values
-          :body (when file (util/->FormData {:file file}))
+          :body (util/->FormData files) 
           ;; TODO:
           :on-success [::submit-success case-id fork-params]
           :on-failure [::submit-failure case-id fork-params]})})))

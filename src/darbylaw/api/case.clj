@@ -163,36 +163,47 @@
                                :cardinality :one})
     ['*]}
 
-   {:death-certificate
-    document-props}
-   {:will
-    document-props}
-   {:grant-of-probate
-    document-props}
+   {:death-certificate document-props}
+   {:will document-props}
+   {:grant-of-probate document-props}
 
-   {'(:probate.funeral-account/_case
-       {:as :funeral-account
-        :cardinality :one})
-    [:title :value :paid-by :paid
-     :receipt-uploaded :invoice-uploaded]}
+   {'(:probate.funeral-account/_case {:as :funeral-account
+                                      :cardinality :one})
+    [:title
+     :value
+     :paid-by
+     :paid
+     {:receipt document-props}
+     {:invoice document-props}]}
+
    {:funeral-expense
     ['(:xt/id {:as :expense-id})
-     :title :value :paid :paid-by
-     :receipt-uploaded]}
-   :funeral-account
-   :funeral-expense
-   :bank
+     :title
+     :value
+     :paid
+     :paid-by
+     {:receipt document-props}]}
+
    {:bank-accounts (into
                      [:bank-id
                       :accounts-unknown
                       :accounts]
                      letter-props)}
+
    {:buildsoc-accounts (into
                          [:buildsoc-id
                           :accounts-unknown
                           :accounts]
                          letter-props)}
-   {:bills bill-data/bill-props}])
+
+   {:bills (into
+             ['(:xt/id {:as :id})]
+             (bill-data/extract-bill-props
+               (bill-data/make-bill-schema :query)))}
+
+   {'(:probate.property/_case {:as :properties})
+    ['(:xt/id {:as :id})
+     :address]}])
 
 (defn get-cases [{:keys [xtdb-node]}]
   (ring/response

@@ -12,7 +12,7 @@
 (defn dialog []
   (let [open @(rf/subscribe [::model/dialog-open])
         banking-type @(rf/subscribe [::model/current-banking-type])
-        default-props {:open open
+        default-props {:open (or open false)
                        :maxWidth false
                        :scroll :paper}]
     (when banking-type

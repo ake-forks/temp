@@ -27,10 +27,12 @@
 
 (defn banks []
   (for [bank @(rf/subscribe [::model/banks])]
-    ^{:key (:bank-id bank)}
-    (r/as-element [task :bank bank])))
+    (r/as-element
+      ^{:key (:bank-id bank)}
+      [task :bank bank])))
 
 (defn buildsocs []
   (for [buildsoc @(rf/subscribe [::model/building-societies])]
-    ^{:key (:buildsoc-id buildsoc)}
-    (r/as-element [task :buildsoc buildsoc])))
+    (r/as-element
+      ^{:key (:buildsoc-id buildsoc)}
+      [task :buildsoc buildsoc])))

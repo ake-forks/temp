@@ -3,12 +3,16 @@
     [darbylaw.api.case-history :as case-history]
     [darbylaw.api.util.tx-fns :as tx-fns]
     [darbylaw.api.util.xtdb :as xt-util]
+    [darbylaw.api.util.data :as data-util]
     [darbylaw.doc-store :as doc-store]
     [xtdb.api :as xt]
     [darbylaw.api.util.files :refer [with-delete]]))
 
 (def accepted-documents
   #{:death-certificate :will :grant-of-probate})
+
+(def accepted-filetypes
+  #{".pdf" ".png" ".jpeg" ".jpg" ".gif"})
 
 (defn get-reference [xtdb-node case-id]
   (-> (xt/pull (xt/db xtdb-node)
@@ -24,12 +28,13 @@
   (let [case-id (parse-uuid (:case-id path-params))
         reference (get-reference xtdb-node case-id)
         {:keys [tempfile content-type]} (get multipart-params "file")
-        _ (assert (= content-type "application/pdf"))
         orig-filename (get multipart-params "filename")
+        extension (data-util/file-extension orig-filename)
         document-name (keyword (:document-name path-params))
         document-id (random-uuid)
-        filename (str reference "." (name document-name) "." document-id ".pdf")]
+        filename (str reference "." (name document-name) "." document-id extension)]
     (assert (accepted-documents document-name))
+    (assert (accepted-filetypes extension))
     (assert (not (clojure.string/blank? reference)))
     (with-delete [tempfile tempfile]
       (doc-store/store (str case-id "/" filename) tempfile))
@@ -66,7 +71,6 @@
                        (str case-id "/" filename))]
     (assert (accepted-documents document-name))
     {:status 200
-     :headers {"Content-Type" "application/pdf"}
      :body input-stream}))
 
 (defn routes []
