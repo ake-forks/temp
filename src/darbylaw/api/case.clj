@@ -178,6 +178,9 @@
                {:will document-props}
                {:grant-of-probate document-props}
 
+               {'(:notification-process/_case {:as :notification-process})
+                ['*]}
+
                {'(:probate.funeral-account/_case {:as :funeral-account
                                                   :cardinality :one})
                 [:title

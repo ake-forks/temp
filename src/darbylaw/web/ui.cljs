@@ -209,3 +209,10 @@
 
 (defn event-target-value [onchange-event]
   (.. onchange-event -target -value))
+
+(defn event-currentTarget [event]
+  (.-currentTarget event))
+
+(defn make-collapse-contents-full-width [props]
+  (update props :sx
+    assoc "& .MuiCollapse-wrapperInner" {:flex-grow 1}))
