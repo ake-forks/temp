@@ -22,7 +22,8 @@
                        #{:staging :production} #env DOC_STORE_BUCKET}}
 
  :mailing-service
- {:ssh #profile {:default #edn #env POST_SERVICE_MAP
+ {:upload-time "10:30"
+  :ssh #profile {:default #edn #env POST_SERVICE_MAP
                  :test {:fake {:host "localhost"
                                :port 2222
                                :username "none"
