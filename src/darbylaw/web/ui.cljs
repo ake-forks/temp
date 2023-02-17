@@ -2,6 +2,7 @@
   (:require
     [reagent-mui.icons.account-balance]
     [reagent-mui.icons.add]
+    [reagent-mui.icons.directions-run]
     [reagent-mui.icons.arrow-back-sharp]
     [reagent-mui.icons.help-outline]
     [reagent-mui.icons.cloud-sync]
@@ -44,6 +45,7 @@
     [reagent-mui.util]
     [lambdaisland.uri :refer [query-string->map]]))
 
+(def icon-directions-run reagent-mui.icons.directions-run/directions-run)
 (def icon-add reagent-mui.icons.add/add)
 (def icon-arrow-back-sharp reagent-mui.icons.arrow-back-sharp/arrow-back-sharp)
 (def icon-help-outline reagent-mui.icons.help-outline/help-outline)

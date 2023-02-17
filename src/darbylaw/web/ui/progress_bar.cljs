@@ -2,7 +2,10 @@
   (:require
     [reagent-mui.components :as mui]
     [reagent.core :as r]
-    [re-frame.core :as rf]))
+    [re-frame.core :as rf]
+    [darbylaw.web.ui :as ui]
+    [darbylaw.web.ui.identity.dialog :as identity-dialog]
+    [darbylaw.web.ui.identity.model :as identity-model]))
 
 (rf/reg-sub ::current-case
   (fn [db]
@@ -48,8 +51,9 @@
   [{:label "Case Created"
     :status-fn (constantly :completed)} 
    {:label "Identity Check"
-    :tooltip "We are waiting on SmmartSearch to complete your ID check."
-    :status-fn (constantly :waiting-on-us)} 
+    :tooltip "We are waiting on SmartSearch to complete your ID check."
+    :status-fn (fn [& _]
+                 (identity-dialog/check-icon))}
    {:label "Complete Assets"
     :tooltip "Add bank and utitity assets via the dashboard."
     :status-fn (fn [current-case]
@@ -79,7 +83,9 @@
           (let [status (status-fn current-case)
                 elem
                 [mui/step {:completed (= status :completed)}
-                 [mui/step-label {:icon (get-icon status)}
+                 [mui/step-label {:icon (if (keyword? status)
+                                          (get-icon status)
+                                          status)}
                   [mui/typography {:variant :body2
                                    :style {:textTransform :uppercase}}
                    label]]]]
