@@ -43,6 +43,7 @@
     [accountant.core :as accountant]
     ["@mui/material/styles" :as mui-styles]
     [reagent-mui.util]
+    ["@mui/material/TextField" :as MuiTextField]
     [lambdaisland.uri :refer [query-string->map]]))
 
 (def icon-add reagent-mui.icons.add/add)
@@ -205,6 +206,9 @@
 (defn theme-spacing [arg]
   (fn [theme]
     (.spacing theme arg)))
+
+(def original-mui-text-field
+  (reagent-mui.util/adapt-react-class (.-default MuiTextField) "mui-text-field"))
 
 (defn event-target-checked [onchange-event]
   (.. onchange-event -target -checked))
