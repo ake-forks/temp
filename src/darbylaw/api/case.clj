@@ -214,7 +214,12 @@
 
                {'(:probate.property/_case {:as :properties})
                 ['(:xt/id {:as :id})
-                 :address]}]))]
+                 :address]}
+
+               {'(:probate.identity-check/_case {:as :checks})
+                [:ssid
+                 :result
+                 :type]}]))]
 
    :where '[[case :type :probate.case]
             [case :xt/id case-id]]

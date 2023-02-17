@@ -38,4 +38,6 @@
   :local-sftp-server {:enabled? #profile {:default false
                                           :test true
                                           :dev true}
-                      :port 2222}}}
+                      :port 2222}}
+ :smart-search
+ {:public-key #env SMART_SEARCH_PUBLIC_KEY}}
