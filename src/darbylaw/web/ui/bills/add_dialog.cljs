@@ -49,28 +49,30 @@
      [mui/dialog-content {:style {:height "50vh"
                                   :width "50vw"
                                   :padding "1rem"}}
-      [mui/stack {:spacing 2 :sx {:height 1 :width 1}}]] [mui/stack {:direction :row :spacing 2}
-                                                          [mui/box
-                                                           [mui/typography {:variant :h6} "supply address"]
-                                                           [common/address-box false
-                                                            (case (:property values)
-                                                              :deceased @(rf/subscribe [::case-model/deceased-address])
-                                                              :new-property (:address-new values)
-                                                              (:property values))]]
-                                                          [mui/box
-                                                           [mui/typography {:variant :h6} "supplier"]
-                                                           [mui/typography {:variant :h5} (:common-name supplier-data)]]
-                                                          [mui/divider]
-                                                          [mui/typography {:variant :body1}
-                                                           (str "The account number will be found on all correspondence from "
-                                                             (:common-name supplier-data)
-                                                             ". If you have a recent meter reading, entering that information below can speed up the next steps.")]
-                                                          [mui/stack {:direction :row :spacing 2}
-                                                           [form/type-of-bill-choice fork-args]
-                                                           [mui/divider {:orientation :vertical}]
-                                                           [mui/stack {:spacing 1}
-                                                            [form/account-number-field fork-args]
-                                                            [form/meter-readings-field fork-args]]]]
+      [mui/stack {:spacing 2 :sx {:height 1 :width 1}}
+       [mui/stack {:direction :row :spacing 2}
+        [mui/box
+         [mui/typography {:variant :h6} "supply address"]
+         [common/address-box false
+          (case (:property values)
+            :deceased @(rf/subscribe [::case-model/deceased-address])
+            :new-property (:address-new values)
+            (:property values))]]
+        [mui/box
+         [mui/typography {:variant :h6} "supplier"]
+         [mui/typography {:variant :h5} (:common-name supplier-data)]]
+        [mui/divider]]
+       [mui/typography {:variant :body1}
+        (str "The account number will be found on all correspondence from "
+          (:common-name supplier-data)
+          ". If you have a recent meter reading, entering that information below can speed up the next steps.")]
+       [mui/stack {:direction :row :spacing 2}
+        [form/type-of-bill-choice fork-args]
+        [mui/divider {:orientation :vertical}]
+        [mui/stack {:spacing 1}
+         [form/account-number-field fork-args]
+         [form/meter-readings-field fork-args]]]]]
+
      [mui/dialog-actions
       [mui/button {:onClick #(do (rf/dispatch [::model/clear-temp-data]) (rf/dispatch [::model/show-bills-dialog nil]))
                    :disabled @(rf/subscribe [::model/form-submitting?])
