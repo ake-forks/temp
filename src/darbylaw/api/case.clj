@@ -204,6 +204,11 @@
              (bill-data/extract-bill-props
                (bill-data/make-bill-schema :query)))}
 
+   {:council-tax (into
+                   ['(:xt/id {:as :id})]
+                   (bill-data/extract-council-tax-props
+                     (bill-data/make-council-tax-schema :query)))}
+
    {'(:probate.property/_case {:as :properties})
     ['(:xt/id {:as :id})
      :address]}])

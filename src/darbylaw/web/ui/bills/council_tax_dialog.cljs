@@ -9,9 +9,34 @@
     [darbylaw.web.ui.bills.model :as model]
     [reagent.core :as r]))
 
-(rf/reg-event-fx ::submit!
+(rf/reg-event-fx ::print!
   (fn [{:keys [_]} [_ fork-params]]
     (print (:values fork-params))))
+
+(rf/reg-event-fx ::submit-success
+  (fn [{:keys [db]} [_ case-id fork-params _response]]
+    {:db (-> db
+           (model/set-submitting fork-params false))
+     ; Should we wait until case is loaded to close the dialog?
+     :fx [[:dispatch [::model/show-bills-dialog nil]]
+          [:dispatch [::case-model/load-case! case-id]]]}))
+
+(rf/reg-event-fx ::submit-failure
+  (fn [{:keys [db]} [_ fork-params error-result]]
+    {:db (model/set-submitting db fork-params false)
+     ::ui/notify-user-http-error {:message "Error on adding household bill"
+                                  :result error-result}}))
+
+(rf/reg-event-fx ::submit!
+  (fn [{:keys [db]} [_ case-id fork-params]]
+    {:db (model/set-submitting db fork-params true)
+     :http-xhrio
+     (ui/build-http
+       {:method :post
+        :uri (str "/api/case/" case-id "/council-tax")
+        :params (model/values-to-submit fork-params)
+        :on-success [::submit-success case-id fork-params]
+        :on-failure [::submit-failure fork-params]})}))
 
 (def form-state (r/atom nil))
 
@@ -56,7 +81,8 @@
 
 
 (defn panel []
-  (let [dialog @(rf/subscribe [::model/bills-dialog])]
+  (let [dialog @(rf/subscribe [::model/bills-dialog])
+        case-id @(rf/subscribe [::case-model/case-id])]
     [mui/dialog {:open (= :council-tax (:service dialog))
                  :maxWidth false
                  :scroll :paper}
@@ -67,7 +93,7 @@
         [ui/icon-close]]]]
      [form-util/form
       {:state form-state
-       :on-submit #(rf/dispatch [::submit! %])}
+       :on-submit #(rf/dispatch [::submit! case-id %])}
       (fn [fork-args]
         [layout fork-args])]]))
 

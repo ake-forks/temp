@@ -206,11 +206,14 @@
 (defn bills-card []
   (let [current-case @(rf/subscribe [::case-model/current-case])
         bills-by-property-id (group-by :property (:bills current-case))
-        used-property-ids (->> (:bills current-case)
+        council-tax-by-property-id (group-by :property (:council-tax current-case))
+        used-property-ids (->> (:council-tax current-case)
+                            (concat (:bills current-case))
                             (keep :property)
                             (distinct))
         properties-by-id (medley/index-by :id (:properties current-case))
-        company-id->label @(rf/subscribe [::bills-model/company-id->label])]
+        company-id->label @(rf/subscribe [::bills-model/company-id->label])
+        council-id->label @(rf/subscribe [::bills-model/council-id->label])]
     [:<>
      [add-bill-dialog/panel]
      [bills-dialog/dialog]
@@ -223,21 +226,30 @@
           (if-let [address (get-in properties-by-id [property-id :address])]
             (data-util/first-line address)
             "[unknown address]")]
-         (for [issuer (->> (get bills-by-property-id property-id)
-                        (map #(or (:issuer %)
-                                (:custom-issuer-name %)))
-                        (distinct)
-                        (remove nil?))]
-           ^{:key issuer}
-           [asset-item {:title (if (keyword? issuer)
-                                 (company-id->label issuer)
-                                 issuer)
+         (for [company (->> (get bills-by-property-id property-id)
+                         (map #(or (:utility-company %)
+                                 (:new-utility-company %)))
+                         (distinct)
+                         (remove nil?))]
+           ^{:key company}
+           [asset-item {:title (if (keyword? company)
+                                 (company-id->label company)
+                                 company)
                         :on-click #(bills-dialog/show {:asset-type :utility-bill
-                                                       :utility-company issuer
+                                                       :utility-company company
                                                        :property property-id})
                         :indent 1
                         :no-divider true}])
+         (for [council (->> (get council-tax-by-property-id property-id)
+                         (map #(:council %)))]
+           ^{:key council}
+           [asset-item {:title (if (keyword? council)
+                                 (council-id->label council)
+                                 council)
+                        :indent 1
+                        :no-divider true}])
          [mui/divider]])
+
       [menu-asset-add-button bills-model/bills-dashboard-menu {"add utility" #(rf/dispatch [::bills-model/show-bills-dialog :utility :add])
                                                                "add council tax" #(rf/dispatch [::bills-model/show-bills-dialog :council-tax :add])}]]]))
 

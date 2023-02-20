@@ -19,7 +19,7 @@
     {:db (-> db
            (model/set-submitting fork-params false))
      ; Should we wait until case is loaded to close the dialog?
-     :fx [[:dispatch [::model/show-bills-dialog nil]]
+     :fx [[:dispatch [::model/close-clear-dialog]]
           [:dispatch [::case-model/load-case! case-id]]]}))
 
 (rf/reg-event-fx ::submit-failure
@@ -28,23 +28,24 @@
      ::ui/notify-user-http-error {:message "Error on adding household bill"
                                   :result error-result}}))
 
-(rf/reg-event-fx ::submit-old!
+(rf/reg-event-fx ::submit!
   (fn [{:keys [db]} [_ case-id fork-params]]
     {:db (model/set-submitting db fork-params true)
      :http-xhrio
      (ui/build-http
        {:method :post
-        :uri (str "/api/case/" case-id "/bill")
+        :uri (str "/api/case/" case-id "/utility")
         :params (model/values-to-submit fork-params)
         :on-success [::submit-success case-id fork-params]
         :on-failure [::submit-failure fork-params]})}))
 
-(rf/reg-event-fx ::submit!
+(rf/reg-event-fx ::print!
   (fn [{:keys [_]} [_ fork-params]]
     (print (model/values-to-submit fork-params))))
 
 (defn second-layout [{:keys [values handle-submit submitting?] :as fork-args}]
   (let [supplier-data (bill-data/get-company-info (keyword (:supplier values)))]
+
     [:form {:on-submit handle-submit}
      [mui/dialog-content {:style {:height "50vh"
                                   :width "50vw"
@@ -52,12 +53,12 @@
       [mui/stack {:spacing 2 :sx {:height 1 :width 1}}
        [mui/stack {:direction :row :spacing 2}
         [mui/box
-         [mui/typography {:variant :h6} "supply address"]
+         [mui/typography {:variant :h6} (str "supply address")]
          [common/address-box false
           (case (:property values)
             :deceased @(rf/subscribe [::case-model/deceased-address])
             :new-property (:address-new values)
-            (:property values))]]
+            (model/address-by-property-id (:property values)))]]
         [mui/box
          [mui/typography {:variant :h6} "supplier"]
          [mui/typography {:variant :h5} (:common-name supplier-data)]]
@@ -115,10 +116,11 @@
      [mui/typography {:variant :h4} "add utility"]
      [mui/icon-button {:onClick #(rf/dispatch [::model/close-clear-dialog])}
       [ui/icon-close]]]]
-   (let [temp-data (rf/subscribe [::model/get-temp-data])]
+   (let [temp-data (rf/subscribe [::model/get-temp-data])
+         case-id @(rf/subscribe [::case-model/case-id])]
      [form-util/form
       {:state form-state
-       :on-submit #(rf/dispatch [::submit! %])
+       :on-submit #(rf/dispatch [::submit! case-id %])
        :initial-values (when temp-data @temp-data)}
       (fn [fork-args]
         (if (some? @temp-data)

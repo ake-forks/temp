@@ -70,6 +70,10 @@
   (fn [properties]
     (medley/index-by :id properties)))
 
+(defn address-by-property-id [id]
+  (let [properties @(rf/subscribe [::current-properties-by-id])]
+    (:address (get properties id))))
+
 (def bills-dashboard-menu (r/atom nil))
 (rf/reg-sub ::bills-dialog
   (fn [db]
@@ -77,11 +81,17 @@
 
 (defn values-to-submit [{:keys [values] :as _fork-params}]
   (cond-> values
-    (:supplier-new values)
-    (dissoc :supplier)
+    (:council values)
+    (assoc :council (keyword (:council values)))
+
+    (:utility-company values)
+    (assoc :utility-company (keyword (:utility-company values)))
 
     (= :new-property (:property values))
     (assoc :property (:address-new values))
+
+    (= :deceased (:property values))
+    (assoc :property @(rf/subscribe [::case-model/deceased-address]))
 
     :always
     (dissoc :address-new)
