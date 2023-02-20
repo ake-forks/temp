@@ -207,6 +207,7 @@
 
    {'(:probate.identity-check/_case {:as :checks})
     [:ssid
+     :status
      :result
      :type]}])
 

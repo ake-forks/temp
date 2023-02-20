@@ -34,6 +34,11 @@
                                          {:status 200
                                           :body (json/write-str
                                                   {:data {:attributes {:ssid "1234" :result "pass"}}})})
+                                       (str/ends-with? url "/doccheck")
+                                       (future
+                                         {:status 200
+                                          :body (json/write-str
+                                                  {:data {:attributes {:ssid "1234" :status "waiting"}}})})
                                        :else
                                        (throw (Exception. "Unexpected URL"))))]
                        (t/run-request {:request-method :post
@@ -50,9 +55,12 @@
       (is (not (nil? checks)))
       ; TODO: Change once we have more checks?
       ;(is (= 3 (count checks)))
-      (is (>= 1 (count checks)))
-      (is (every? #(and (= "pass" (:result %))
-                        (= "1234" (:ssid %)))
+      (is (>= (count checks) 2))
+      (is (every? #(case (:type %)
+                     :uk-aml (and (= "pass" (:result %))
+                                  (= "1234" (:ssid %)))
+                     :smart-doc (and (= "waiting" (:status %))
+                                     (= "1234" (:ssid %))))
                   checks)))
 
     ; Update personal rep
@@ -82,6 +90,11 @@
                              {:status 200
                               :body (json/write-str
                                       {:data {:attributes {:ssid "1234" :result "pass"}}})})
+                           (str/ends-with? url "/doccheck")
+                           (future
+                             {:status 200
+                              :body (json/write-str
+                                      {:data {:attributes {:ssid "1234" :status "waiting"}}})})
                            :else
                            (throw (Exception. "Unexpected URL"))))]
            (t/run-request {:request-method :post

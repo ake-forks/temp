@@ -103,7 +103,14 @@
         (throw (ex-info "Failed to parse response"
                         {:status status :body body}))))))
 
-(defn smartdoc-check [data]
+(defn smart-doc-check [data]
+  (when-not (m/validate ss-data/smart-doc--schema data)
+    (-> ss-data/smart-doc--schema
+        (m/explain data)
+        (malli.error/humanize)
+        (log/error))
+    (throw (ex-info "Invalid data" {:data data})))
+  (log/info "Sending SmartDoc request")
   (let [{:keys [status body]}
         @(http/post (str base-url "/doccheck")
                     {:body (json/write-str data) 
@@ -113,6 +120,7 @@
         _ (when-not (= 200 status)
             (throw (ex-info "Request failed"
                             {:status status :body body})))]
+    (log/info "Received SmartDoc response")
     (try
       (json/read-str body :key-fn keyword)
       (catch Exception e
@@ -151,7 +159,7 @@
 
   (supported-documents)
 
-  (smartdoc-check expired-token
+  (smartdoc-check
     {:client_ref "oliver_test"
      :sanction_region "gbr"
      :name {:title "Mr"
@@ -161,7 +169,7 @@
      :gender "male"
      :date_of_birth "1950-05-26"
      :address {:building "25"
-               :street_1 "High Street"
+               :street-1 "High Street"
                :town "WESTBURY"
                :region "WILTSHIRE"
                :postcode "BA13 3BN"
