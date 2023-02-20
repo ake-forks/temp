@@ -10,7 +10,7 @@
   (fn [db [_ notification]]
     (-> db
       (model/set-current-notification notification)
-      (assoc-in [::context :dialog-open?] true))))
+      (assoc ::context {:dialog-open? true}))))
 
 (rf/reg-event-db ::close
   (fn [db _]
