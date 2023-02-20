@@ -25,6 +25,7 @@
     [darbylaw.api.funeral :as funeral-api]
     [darbylaw.api.bill :as bill-api]
     [darbylaw.api.notification :as notification-api]
+    [darbylaw.api.notification-letter :as notification-letter-api]
     [darbylaw.api.bank-notification :as bank-notification-api]
     [darbylaw.api.bank-notification.mailing-controls :as mailing]
     [darbylaw.middleware.xtdb :refer [wrap-xtdb-node]]
@@ -78,6 +79,7 @@
      (funeral-api/routes)
      (bill-api/routes)
      (notification-api/routes)
+     (notification-letter-api/routes)
      (bank-notification-api/routes)
      (mailing/routes)]]])
 

@@ -35,16 +35,28 @@
                   :user user}))))
     {:status http/status-204-no-content}))
 
-(defn routes []
-  [["/case/:case-id"
-    ["/start-notification-process"
-     {:post {:handler start-notification-process
-             :parameters {:path [:map [:case-id :uuid]]}}}]]])
-
 (comment
+  (require '[darbylaw.xtdb-node])
   (xt/submit-tx darbylaw.xtdb-node/xtdb-node
     [[::xt/delete #uuid"7743bd5c-c98d-49ef-9639-925757a68aea"]])
 
   (xt/q (xt/db darbylaw.xtdb-node/xtdb-node)
     '{:find [(pull notif [*])]
       :where [[notif :notification-process/case]]}))
+
+(defn get-conversation [{:keys [xtdb-node path-params]}]
+  (let [case-id (parse-uuid (:case-id path-params))
+        resp (->> (xt/q (xt/db xtdb-node)
+                    {:find '[(pull letter [*])]
+                     :where '[[letter :type :probate.notification-letter]]})
+               (map first))]
+    {:status http/status-200-ok
+     :body resp}))
+
+(defn routes []
+  [["/case/:case-id"
+    ["/start-notification-process"
+     {:post {:handler start-notification-process
+             :parameters {:path [:map [:case-id :uuid]]}}}]
+    ["/conversation"
+     {:post {:handler get-conversation}}]]])

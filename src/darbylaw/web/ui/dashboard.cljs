@@ -23,10 +23,10 @@
     [darbylaw.web.ui.case-commons :as case-commons]
     [reagent-mui.lab.masonry :as mui-masonry]
     [darbylaw.web.ui.bills.add-dialog :as add-bill-dialog]
-    [darbylaw.web.ui.bills.bills-dialog :as bills-dialog]
     [darbylaw.web.ui.bills.model :as bill-model]
     [medley.core :as medley]
-    [darbylaw.api.util.data :as data-util]))
+    [darbylaw.api.util.data :as data-util]
+    [darbylaw.web.ui.notification.dialog :as notification-dialog]))
 
 (defn bank-item [bank]
   (let [bank-data (bank-list/bank-by-id (:bank-id bank))
@@ -187,7 +187,7 @@
         company-id->label @(rf/subscribe [::bill-model/company-id->label])]
     [:<>
      [add-bill-dialog/dialog]
-     [bills-dialog/dialog]
+     [notification-dialog/dialog]
      [asset-card {:title "household bills"}
       (for [property-id used-property-ids]
         [:<> {:key property-id}
@@ -205,9 +205,11 @@
            [asset-item {:title (if (keyword? issuer)
                                  (company-id->label issuer)
                                  issuer)
-                        :on-click #(bills-dialog/show {:asset-type :utility-bill
-                                                       :utility-company issuer
-                                                       :property property-id})
+                        :on-click #(rf/dispatch [::notification-dialog/open
+                                                 {:notification-type :utility
+                                                  :case-id (:id current-case)
+                                                  :utility-company issuer
+                                                  :property property-id}])
                         :indent 1
                         :no-divider true}])
          [mui/divider]])

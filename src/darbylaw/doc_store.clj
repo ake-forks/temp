@@ -36,10 +36,12 @@
 
 (comment
   ; Dummy implemenatation for dev tests
-  (defn store [key f]
+  (defn store [_key f]
     (println "stored " f)
     (Thread/sleep 1000)))
 
+(defn store-case-file [case-id ^String key ^File f]
+  (store (str case-id "/" key) f))
 
 (defn fetch-raw [key]
   (try
@@ -51,6 +53,9 @@
 
 (defn fetch [key]
   (-> key fetch-raw .getObjectContent))
+
+(defn fetch-case-file [case-id key]
+  (fetch (str case-id "/" key)))
 
 (defn fetch-to-file [key ^File file]
   (try
