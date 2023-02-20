@@ -43,15 +43,16 @@
    case-id bill-id])
 
 (defn letter-template-data [xtdb-node bill-type case-id bill-id]
-  (let [[case-data bank-data] 
-        (xt-util/fetch-one
-          (apply xt/q (xt/db xtdb-node)
-                 (bill-letter-template-query case-id bill-type bill-id)))]
-    (data-util/keys-to-camel-case
-      (-> case-data
-          (assoc :date (str (LocalDate/now)))
-          (assoc bill-type (merge bank-data
-                                  (generate-mailing-address bill-type bill-id)))))))
+  {:reference "12341234"}
+  #_(let [[case-data bank-data]
+          (xt-util/fetch-one
+            (apply xt/q (xt/db xtdb-node)
+                   (bill-letter-template-query case-id bill-type bill-id)))]
+      (data-util/keys-to-camel-case
+        (-> case-data
+            (assoc :date (str (LocalDate/now)))
+            (assoc bill-type (merge bank-data
+                                    (generate-mailing-address bill-type bill-id)))))))
 
 (mount/defstate templates
   :start {:utility (stencil/prepare (io/resource "darbylaw/templates/utility-notification.docx"))

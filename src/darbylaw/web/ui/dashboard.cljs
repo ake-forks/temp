@@ -26,8 +26,10 @@
     [darbylaw.web.ui.bills.bills-dialog :as bills-dialog]
     [darbylaw.web.ui.bills.council-tax-dialog :as council-tax]
     [darbylaw.web.ui.bills.model :as bills-model]
+    [darbylaw.web.ui.bills.model :as bill-model]
     [medley.core :as medley]
-    [darbylaw.api.util.data :as data-util]))
+    [darbylaw.api.util.data :as data-util]
+    [darbylaw.web.ui.notification.dialog :as notification-dialog]))
 
 (defn bank-item [bank]
   (let [bank-data (bank-list/bank-by-id (:bank-id bank))
@@ -202,7 +204,6 @@
       {:title "add building society"
        :on-click #(rf/dispatch [::banking-model/show-add-dialog :buildsoc])}]]))
 
-
 (defn bills-card []
   (let [current-case @(rf/subscribe [::case-model/current-case])
         bills-by-property-id (group-by :property (:bills current-case))
@@ -218,6 +219,7 @@
      [add-bill-dialog/panel]
      [bills-dialog/dialog]
      [council-tax/panel]
+     [notification-dialog/dialog]
      [asset-card {:title "household bills"}
       (for [property-id used-property-ids]
         [:<> {:key property-id}
