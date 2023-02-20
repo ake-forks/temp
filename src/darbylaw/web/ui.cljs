@@ -18,6 +18,7 @@
     [reagent-mui.icons.mail]
     [reagent-mui.icons.mail-outlined]
     [reagent-mui.icons.open-in-new]
+    [reagent-mui.icons.link]
     [reagent-mui.icons.outbox]
     [reagent-mui.icons.priority-high]
     [reagent-mui.icons.add-circle]
@@ -43,6 +44,7 @@
     [accountant.core :as accountant]
     ["@mui/material/styles" :as mui-styles]
     [reagent-mui.util]
+    ["@mui/material/TextField" :as MuiTextField]
     [lambdaisland.uri :refer [query-string->map]]))
 
 (def icon-directions-run reagent-mui.icons.directions-run/directions-run)
@@ -62,6 +64,7 @@
 (def icon-mail reagent-mui.icons.mail/mail)
 (def icon-mail-outlined reagent-mui.icons.mail-outlined/mail-outlined)
 (def icon-open-in-new reagent-mui.icons.open-in-new/open-in-new)
+(def icon-link reagent-mui.icons.link/link)
 (def icon-outbox reagent-mui.icons.outbox/outbox)
 (def icon-priority-high reagent-mui.icons.priority-high/priority-high)
 (def icon-add-circle reagent-mui.icons.add-circle/add-circle)
@@ -205,6 +208,9 @@
 (defn theme-spacing [arg]
   (fn [theme]
     (.spacing theme arg)))
+
+(def original-mui-text-field
+  (reagent-mui.util/adapt-react-class (.-default MuiTextField) "mui-text-field"))
 
 (defn event-target-checked [onchange-event]
   (.. onchange-event -target -checked))

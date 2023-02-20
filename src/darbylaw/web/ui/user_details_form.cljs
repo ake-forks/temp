@@ -11,10 +11,10 @@
             [darbylaw.web.util.form :as form]
             [darbylaw.web.util.phone :as phone]
             [darbylaw.web.util.vlad :as v-utils]
-            [applied-science.js-interop :as j]
             [darbylaw.web.ui.case-model :as case-model]
             [darbylaw.web.util.dayjs :as dayjs]
-            [clojure.string :as str]))
+            [clojure.string :as str])
+  (:require-macros [reagent-mui.util :refer [react-component]]))
 
 (defn adapt-initial-values [initial-values]
   (-> initial-values
@@ -101,17 +101,17 @@
                                    :path [:date-of-birth]})
     :disabled submitting?
     :renderInput
-    (fn [params]
-      (r/as-element
-        [mui/text-field
-         (merge (js->clj params)
-           {:name :date-of-birth
-            :label (let [date-pattern (j/get-in params [:inputProps :placeholder])]
-                     (str "Date of Birth (" date-pattern ")"))
-            :required true
-            :autoComplete :off
-            :error (boolean (form/get-error :date-of-birth fork-args))
-            :onBlur handle-blur})]))
+    (react-component [props]
+      ; see https://github.com/arttuka/reagent-material-ui/issues/39
+      [ui/original-mui-text-field
+       (merge props
+              {:name :date-of-birth
+               :label (let [date-pattern (get-in props [:input-props :placeholder])]
+                        (str "Date of Birth (" date-pattern ")"))
+               :required true
+               :autoComplete :off
+               :error (boolean (form/get-error :date-of-birth fork-args))
+               :onBlur handle-blur})])
     :openTo :year
     :views [:year :month :day]}])
 

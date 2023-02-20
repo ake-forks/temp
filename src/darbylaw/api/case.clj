@@ -137,20 +137,10 @@
     {:status 200
      :body pr-info}))
 
-(def common-case-eql
-  ['(:xt/id {:as :id})
-   :reference
-   :fake
-   {'(:probate.case/personal-representative {:as :personal-representative})
-    personal-representative--props}])
-
-(defn get-cases [{:keys [xtdb-node]}]
-  (ring/response
-    (->> (xt/q (xt/db xtdb-node)
-           {:find [(list 'pull 'case common-case-eql)]
-            :where '[[case :type :probate.case]]})
-      (map (fn [[case]]
-             case)))))
+(def document-props
+  ['(:xt/id {:as :filename})
+   :uploaded-by
+   :original-filename])
 
 (def letter-props
   [{:notification-letter ['(:xt/id {:as :id})
@@ -162,65 +152,74 @@
                        :uploaded-by
                        :uploaded-at]}])
 
-(def document-props
-  ['(:xt/id {:as :filename})
-   :uploaded-by
-   :original-filename])
+(def common-case-eql
+  ['(:xt/id {:as :id})
+   :reference
+   :fake
+   {'(:probate.case/personal-representative {:as :personal-representative})
+    personal-representative--props}
+
+   {'(:probate.deceased/_case {:as :deceased
+                               :cardinality :one})
+    ['*]}
+
+   {:death-certificate document-props}
+   {:will document-props}
+   {:grant-of-probate document-props}
+
+   {'(:probate.funeral-account/_case {:as :funeral-account
+                                      :cardinality :one})
+    [:title
+     :value
+     :paid-by
+     :paid
+     {:receipt document-props}
+     {:invoice document-props}]}
+
+   {:funeral-expense
+    ['(:xt/id {:as :expense-id})
+     :title
+     :value
+     :paid
+     :paid-by
+     {:receipt document-props}]}
+
+   {:bank-accounts (into
+                     [:bank-id
+                      :accounts-unknown
+                      :accounts]
+                     letter-props)}
+
+   {:buildsoc-accounts (into
+                         [:buildsoc-id
+                          :accounts-unknown
+                          :accounts]
+                         letter-props)}
+
+   {:bills (into
+             ['(:xt/id {:as :id})]
+             (bill-data/extract-bill-props
+               (bill-data/make-bill-schema :query)))}
+
+   {'(:probate.property/_case {:as :properties})
+    ['(:xt/id {:as :id})
+     :address]}
+
+   {'(:probate.identity-check/_case {:as :checks})
+    [:ssid
+     :result
+     :type]}])
+
+(defn get-cases [{:keys [xtdb-node]}]
+  (ring/response
+    (->> (xt/q (xt/db xtdb-node)
+           {:find [(list 'pull 'case common-case-eql)]
+            :where '[[case :type :probate.case]]})
+      (map (fn [[case]]
+             case)))))
 
 (def get-case__query
-  {:find [(list 'pull 'case
-            (into common-case-eql
-              [{'(:probate.deceased/_case {:as :deceased
-                                           :cardinality :one})
-                ['*]}
-
-               {:death-certificate document-props}
-               {:will document-props}
-               {:grant-of-probate document-props}
-
-               {'(:probate.funeral-account/_case {:as :funeral-account
-                                                  :cardinality :one})
-                [:title
-                 :value
-                 :paid-by
-                 :paid
-                 {:receipt document-props}
-                 {:invoice document-props}]}
-
-               {:funeral-expense
-                ['(:xt/id {:as :expense-id})
-                 :title
-                 :value
-                 :paid
-                 :paid-by
-                 {:receipt document-props}]}
-
-               {:bank-accounts (into
-                                 [:bank-id
-                                  :accounts-unknown
-                                  :accounts]
-                                 letter-props)}
-
-               {:buildsoc-accounts (into
-                                     [:buildsoc-id
-                                      :accounts-unknown
-                                      :accounts]
-                                     letter-props)}
-
-               {:bills (into
-                         ['(:xt/id {:as :id})]
-                         (bill-data/extract-bill-props
-                           (bill-data/make-bill-schema :query)))}
-
-               {'(:probate.property/_case {:as :properties})
-                ['(:xt/id {:as :id})
-                 :address]}
-
-               {'(:probate.identity-check/_case {:as :checks})
-                [:ssid
-                 :result
-                 :type]}]))]
-
+  {:find [(list 'pull 'case common-case-eql)]
    :where '[[case :type :probate.case]
             [case :xt/id case-id]]
    :in '[case-id]})
