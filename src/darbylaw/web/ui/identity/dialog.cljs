@@ -61,21 +61,35 @@
          [:<>
           [mui/typography {:variant :h5}
            "Checks:"]
-          (for [{:keys [type result ssid]} checks]
-            ^{:key ssid}
-            [mui/card {:variant :outlined}
-             [mui/card-content
-              [mui/stack {:spacing 1 :direction :row}
-               [check-icon]
-               [mui/typography {:variant :h6}
-                 (case type
-                   :uk-aml "UK AML")]
-               [:a {:href (str "https://sandbox.smartsearchsecure.com/aml/results/" ssid)
-                    :target :_blank}
-                [mui/typography {:variant :body1}
+          [mui/table
+           [mui/table-head
+            [mui/table-row
+             [mui/table-cell]
+             [mui/table-cell "Check"]
+             [mui/table-cell "SSID"]
+             [mui/table-cell "Status"]
+             [mui/table-cell "Result"]]]
+           [mui/table-body
+            (for [{:keys [type status result ssid]} checks]
+              ^{:key ssid}
+              [mui/table-row
+               [mui/table-cell
+                [check-icon]]
+               [mui/table-cell
+                [mui/typography {:variant :h6}
+                 (str type)]]
+               [mui/table-cell
+                [:a {:href (str "https://sandbox.smartsearchsecure.com/aml/results/" ssid)
+                     :target :_blank}
                  ssid]]
-               [mui/typography {:variant :body1}
-                result]]]])]))]))
+               [mui/table-cell
+                (if status
+                  status
+                  "?")]
+               [mui/table-cell
+                (if result
+                  result
+                  "?")]])]]]))]))
 
 (defn dialog []
   [mui/dialog {:open (boolean @(rf/subscribe [::dialog-open?]))}
