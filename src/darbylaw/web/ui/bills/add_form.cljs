@@ -50,24 +50,24 @@
   [:<>
    [mui/stack {:direction :row :spacing 1}
     [form-util/autocomplete-field fork-args
-     {:name :supplier
+     {:name :utility-company
       :full-width true
       :label "supplier"
-      :value (if (:supplier-unknown values) "" (:supplier values))
-      :disabled (:supplier-unknown values)
+      :value (if (:utility-company-unknown values) "" (:utility-company values))
+      :disabled (:utility-company-unknown values)
       :options (-> @(rf/subscribe [::model/all-company-ids])
                  (conj ""))
       :getOptionLabel @(rf/subscribe [::model/company-id->label])
-      :inner-config {:required (not (:supplier-unknown values))
-                     :disabled (:supplier-unknown values)}}]
+      :inner-config {:required (not (:utility-company-unknown values))
+                     :disabled (:utility-company-unknown values)}}]
     [mui/form-group
      [mui/form-control-label
       {:label "supplier not listed"
        :control
-       (r/as-element [mui/switch {:name :supplier-unknown :on-change handle-change}])}]]]
-   (if (:supplier-unknown values)
+       (r/as-element [mui/switch {:name :utility-company-unknown :on-change handle-change}])}]]]
+   (if (:utility-company-unknown values)
      [form-util/text-field fork-args
-      {:name :supplier-new
+      {:name :new-utility-company
        :hiddenLabel true
        :placeholder "enter supplier's company name"
        :multiline true
@@ -76,8 +76,6 @@
        :variant :outlined
        :fullWidth true
        :required true}])])
-
-
 
 (comment (defn issuer [{:keys [values handle-change set-handle-change] :as fork-args}]
            [:<>

@@ -78,23 +78,18 @@
   [:and
    [:map
     [:bill-type [:set (into [:enum] (keys bill-types))]]
-    [:issuer {:optional true} (into [:enum] (map :id (concat companies
-                                                       councils)))]
-    [:custom-issuer-name {:optional true} [:string {:min 1}]]
-    [:custom-issuer-address {:optional true} [:string {:min 1}]]
-    [:amount [:re #"-?\d*\.?\d{0,2}"]]
+    [:utility-company {:optional true} (into [:enum] (map :id companies))]
+    [:new-utility-company {:optional true} [:string {:min 1}]]
     [:account-number {:optional true} :string]
     (if (= op :create)
       [:property [:or :uuid :string]]
       [:property :uuid])
     [:meter-readings {:optional true} :string]]
-   (malli+/exclusive-keys [:issuer :custom-issuer-name])
-   (malli+/when-then :custom-issuer-name :custom-issuer-address)])
+   (malli+/exclusive-keys [:utility-company :new-utility-company])])
 
 (defn make-council-tax-schema [op]
   [:and
    [:map
-    [:bill-type [:set (into [:enum] (keys bill-types))]]
     [:council (into [:enum] (map :id councils))]
     [:account-number {:optional true} :string]
     (if (= op :create)

@@ -22,8 +22,7 @@
 
 (defn property-select [{:keys [values set-handle-change] :as _fork-args}]
   (let [deceased-address @(rf/subscribe [::case-model/deceased-address])
-        properties @(rf/subscribe [::model/current-properties])
-        addresses (map :address properties)]
+        properties @(rf/subscribe [::model/current-properties])]
     [mui/form-control {:full-width true
                        :variant :filled
                        :required true}
@@ -44,11 +43,11 @@
                       :sx {:white-space :pre}}
        deceased-address]
       [mui/divider]
-      (map (fn [address]
-             [:<>
-              [mui/menu-item {:value address} address]
-              [mui/divider]])
-        addresses)
+      (map (fn [property]
+             ^{:key (:id property)}
+             [mui/menu-item {:value (pr-str (:id property))}
+              [mui/typography (str (:address property))]])
+        properties)
       [mui/menu-item {:value (pr-str :new-property)} "add new address"]]]))
 
 (defn new-property-input [{:keys [values] :as fork-args}]

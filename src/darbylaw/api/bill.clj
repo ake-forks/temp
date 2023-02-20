@@ -6,11 +6,22 @@
             [darbylaw.api.util.xtdb :as xt-util]
             [xtdb.api :as xt]))
 
-(def creation-schema
+;TODO could be simplified with parameterisation
+(defn get-creation-schema [entity-type]
+  (case entity-type
+    :bill (bill-data/make-bill-schema :create)
+    :council-tax (bill-data/make-council-tax-schema :create)))
+(def bill-creation-schema
   (bill-data/make-bill-schema :create))
 
 (def creation-props
-  (bill-data/extract-bill-props creation-schema))
+  (bill-data/extract-bill-props bill-creation-schema))
+
+(def council-tax-creation-schema
+  (bill-data/make-council-tax-schema :create))
+
+(def council-tax-creation-props
+  (bill-data/extract-council-tax-props council-tax-creation-schema))
 
 (comment
   (require '[malli.core :as malli])
@@ -67,9 +78,34 @@
                                  :event/bill bill-id}))))
   {:status http/status-204-no-content})
 
+(defn add-council-tax [{:keys [xtdb-node user path-params body-params] :as args}]
+  (let [case-id (parse-uuid (:case-id path-params))
+        council-tax-id (random-uuid)
+        [property-id property-tx] (handle-property args)
+        council-tax-data (-> body-params
+                           (select-keys council-tax-creation-props)
+                           (assoc :property property-id))]
+    (xt-util/exec-tx-or-throw xtdb-node
+      (concat
+        property-tx
+        [[::xt/put (merge council-tax-data
+                     {:xt/id council-tax-id
+                      :type :probate.council-tax
+                      :probate.bill/case case-id})]]
+        (tx-fns/append case-id [:council-tax] [council-tax-id])
+        (case-history/put-event {:event :council-tax-updated
+                                 :case-id case-id
+                                 :user user
+                                 :op :add
+                                 :event/bill council-tax-id}))))
+  {:status http/status-204-no-content})
+
 (defn routes []
-  ["/case/:case-id/bill" {:post {:handler add-bill
-                                 :parameters {:body creation-schema}}}])
+  ["/case/:case-id/"
+   ["utility" {:post {:handler add-bill
+                      :parameters {:body (get-creation-schema :bill)}}}]
+   ["council-tax" {:post {:handler add-council-tax
+                          :parameters {:body (get-creation-schema :council-tax)}}}]])
 
 (comment
   (require 'darbylaw.xtdb-node)
