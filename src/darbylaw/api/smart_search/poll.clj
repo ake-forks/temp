@@ -31,7 +31,7 @@
              :keys [ssid]}
             (map first checks)]
       (try
-        (let [response (ss-api/smart-doc-status ssid)
+        (let [response (ss-api/get-doccheck ssid)
               {:keys [status result]} (get-in response [:data :attributes])]
           (xt-util/exec-tx-or-throw xtdb-node
             (concat

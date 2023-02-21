@@ -114,4 +114,4 @@
                                      "/identity")}))
          (is false "Should not reach here")
          (catch Exception e
-           (is (= "Invalid data" (ex-message e)))))))
+           (is (= "Invalid body" (ex-message e)))))))

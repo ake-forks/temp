@@ -20,7 +20,7 @@
     {:case-ref case-ref
      :pr-info pr-info}))
 
-(defn ->uk-aml-data [{:keys [case-ref pr-info]}]
+(defn ->aml-data [{:keys [case-ref pr-info]}]
   {:client_ref case-ref
    :risk_level "high"
    :name {:title (:title pr-info)
@@ -36,7 +36,7 @@
                 :postcode (:postcode pr-info)}]})
 
 ;; TODO: Maybe pull out hard coded values into separate `base` def and merge?
-(defn ->smart-doc-data [{:keys [case-ref pr-info]}]
+(defn ->doccheck-data [{:keys [case-ref pr-info]}]
   {:client_ref case-ref
    :sanction_region "gbr"
    :name {:title (:title pr-info)
@@ -57,7 +57,7 @@
    :scan_type "basic_selfie"
    :mobile_number (:phone pr-info)})
 
-(defn ->fraud-check-data [{:keys [case-ref pr-info]}]
+(defn ->fraudcheck-data [{:keys [case-ref pr-info]}]
   {:client_ref case-ref
    :sanction_region "gbr"
    :name {:title (:title pr-info)
@@ -86,14 +86,14 @@
     ;; If a check is made we want to save the result even if other checks fail
     (xt-util/exec-tx xtdb-node
       (let [aml-response
-            (ss-api/uk-aml-check
-              (->uk-aml-data check-data))
+            (ss-api/aml
+              (->aml-data check-data))
             smart-doc-response
-            (ss-api/smart-doc-check
-              (->smart-doc-data check-data))
+            (ss-api/doccheck
+              (->doccheck-data check-data))
             fraud-check-response
-            (ss-api/fraud-check "aml" (get-in aml-response [:data :attributes :ssid])
-              (->fraud-check-data check-data))]
+            (ss-api/fraudcheck "aml" (get-in aml-response [:body :data :attributes :ssid])
+              (->fraudcheck-data check-data))]
         (apply concat
           (for [{:keys [type response]}
                 [{:type :uk-aml
@@ -102,7 +102,7 @@
                   :response smart-doc-response}
                  {:type :fraud-check
                   :response fraud-check-response}]]
-            (let [{:keys [result status ssid]} (get-in response [:data :attributes])]
+            (let [{:keys [result status ssid]} (get-in response [:body :data :attributes])]
               (update-check type case-id
                 (cond-> {}
                   :always (assoc :ssid ssid)
