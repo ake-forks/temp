@@ -1,16 +1,17 @@
 (ns darbylaw.web.ui.notification.dialog
   (:require [darbylaw.web.ui :as ui :refer [<<]]
-            [darbylaw.web.ui.case-model :as case-model]
             [re-frame.core :as rf]
             [reagent-mui.components :as mui]
             [reagent.core :as r]
-            [darbylaw.web.ui.notification.model :as model]))
+            [darbylaw.web.ui.notification.model :as model]
+            [darbylaw.web.ui.notification.conversation :as conversation]))
 
-(rf/reg-event-db ::open
-  (fn [db [_ notification]]
-    (-> db
-      (model/set-current-notification notification)
-      (assoc ::context {:dialog-open? true}))))
+(rf/reg-event-fx ::open
+  (fn [{:keys [db]} [_ notification]]
+    {:db (-> db
+           (model/set-current-notification notification)
+           (assoc ::context {:dialog-open? true}))
+     :dispatch [::model/load-conversation notification]}))
 
 (rf/reg-event-db ::close
   (fn [db _]
@@ -23,11 +24,6 @@
   #(:dialog-open? %))
 
 (defn asset-data [] [:i "[asset data goes here]"])
-
-(defn letter-viewer [] "letter-viewer")
-(defn conversation [] "conversation")
-
-(defn left-panel [] "left-panel")
 
 (rf/reg-event-db ::set-data-completed
   (fn [db [_ completed?]]
@@ -44,10 +40,10 @@
       :utility (str "household bills for " (<< ::model/utility-company-label)))
     [mui/icon-button {:onClick #(rf/dispatch [::close])}
      [ui/icon-close]]]
-   [mui/dialog-content
+   [mui/dialog-content {:sx {:width 540}}
+    [asset-data]
     (when-not (<< ::model/notification-ongoing?)
       [mui/stack
-       [asset-data]
        [mui/typography {:sx {:font-weight 600}}
         "Finished?"]
        [mui/typography
@@ -64,11 +60,11 @@
            [mui/checkbox {:checked (<< ::data-completed?)
                           :onChange #(rf/dispatch [::set-data-completed (ui/event-target-checked %)])}])}]])]
    [mui/dialog-actions
-    [mui/fade {:in (<< ::data-completed?)}
+    [mui/fade {:in (and (not (<< ::model/notification-ongoing?))
+                        (<< ::data-completed?))}
      [mui/button {:variant :contained
-                  :onClick (let [case-id (<< ::case-model/case-id)
-                                 context (<< ::model/notification)]
-                             #(rf/dispatch [::model/start-notification-process case-id context]))
+                  :onClick (let [notification (<< ::model/notification)]
+                             #(rf/dispatch [::model/start-notification notification]))
                   :sx {:visibility (if (<< ::data-completed?) :visible :hidden)}}
       "Notify company"]]
     [mui/button {:variant :outlined
@@ -79,13 +75,14 @@
   [mui/stack {:spacing 1
               :direction :row
               :sx {:height "95vh"}}
-   [mui/collapse (-> {:in (<< ::model/notification-ongoing?)
-                      :orientation :horizontal
-                      :spacing 1
-                      :sx {:flex-grow 1}}
-                   (ui/make-collapse-contents-full-width))
-    [left-panel]]
-   [mui/stack {:sx {:width 620}}
+   #_[mui/collapse (-> {:in (<< ::model/notification-ongoing?)
+                        :orientation :horizontal
+                        :spacing 1
+                        :sx {:flex-grow 1}}
+                     (ui/make-collapse-contents-full-width))]
+   (when (<< ::model/notification-ongoing?)
+     [conversation/panel])
+   [mui/stack
     [right-panel]]])
 
 (defn dialog []

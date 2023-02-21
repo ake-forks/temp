@@ -47,7 +47,7 @@
         (concat
           [[::xt/put (merge {:type :probate.notification-letter
                              :xt/id letter-id
-                             :case-id case-id
+                             :probate.notification-letter/case case-id
                              :author :generated
                              :by (:username user)
                              :notification-type notification-type
@@ -72,7 +72,7 @@
     (xt/submit-tx darbylaw.xtdb-node/xtdb-node
       [[::xt/delete (:xt/id #spy/d letter)]])))
 
-(defn get-notification-letter [doc-type {:keys [xtdb-node path-params]}]
+(defn get-notification-letter [doc-type {:keys [path-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
         letter-id (:letter-id path-params)]
     (if-not letter-id
