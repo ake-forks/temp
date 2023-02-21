@@ -1,13 +1,16 @@
 (ns darbylaw.web.ui.notification.model
   (:require [darbylaw.web.ui :as ui]
+            [medley.core :as medley]
             [re-frame.core :as rf]
             [darbylaw.web.ui.case-model :as case-model]
             [darbylaw.web.ui.bills.model :as bills-model]))
 
 (defn set-current-notification [db notification]
-  (assoc db
-    :notification notification
-    :conversation :loading))
+  (-> db
+    (assoc :notification notification
+           :conversation-loading :loading)
+    (dissoc :open-letter
+            :conversation)))
 
 (rf/reg-sub ::notification
   #(:notification %))
@@ -61,7 +64,9 @@
 
 (rf/reg-event-fx ::load-conversation-success
   (fn [{:keys [db]} [_ data]]
-    {:db (assoc db :conversation data)}))
+    {:db (-> db
+           (assoc :conversation data)
+           (dissoc :conversation-loading))}))
 
 (rf/reg-event-fx ::load-conversation-failure
   (fn [_ [_ error-result]]
@@ -69,8 +74,9 @@
                                   :result error-result}}))
 
 (rf/reg-event-fx ::load-conversation
-  (fn [_ [_ notification]]
-    {:http-xhrio
+  (fn [{:keys [db]} [_ notification]]
+    {:db (assoc db :conversation-loading :loading)
+     :http-xhrio
      (ui/build-http
        {:method :post
         :uri (str "/api/case/" (:case-id notification) "/conversation")
@@ -79,9 +85,10 @@
         :on-failure [::load-conversation-failure]})}))
 
 (rf/reg-sub ::conversation
-  (fn [{:keys [conversation]}]
-    (cond-> conversation
-      (seqable? conversation) (not-empty))))
+  #(not-empty (:conversation %)))
+
+(rf/reg-sub ::conversation-loading
+  #(:conversation-loading %))
 
 (rf/reg-event-fx ::generate-notification-letter-success
   (fn [_ [_ notification]]
@@ -106,3 +113,24 @@
         :on-success [::generate-notification-letter-success notification]
         :on-failure [::generate-notification-letter-failure]})}))
 
+(rf/reg-event-db ::open-letter
+  (fn [db [_ letter-id]]
+    (assoc db :open-letter letter-id)))
+
+(rf/reg-event-db ::close-letter
+  (fn [db _]
+    (dissoc db :open-letter)))
+
+(rf/reg-sub ::open-letter-id
+  #(:open-letter %))
+
+(rf/reg-sub ::letter-by-id
+  :<- [::conversation]
+  (fn [conversation]
+    (medley/index-by :xt/id conversation)))
+
+(rf/reg-sub ::open-letter
+  :<- [::letter-by-id]
+  :<- [::open-letter-id]
+  (fn [[letter-by-id id]]
+    (get letter-by-id id)))

@@ -81,12 +81,13 @@
                         :sx {:flex-grow 1}}
                      (ui/make-collapse-contents-full-width))]
    (when (<< ::model/notification-ongoing?)
-     [conversation/panel])
+     [mui/box {:sx {:flex-grow 1}}
+      [conversation/panel]])
    [mui/stack
     [right-panel]]])
 
 (defn dialog []
   [mui/dialog {:open (boolean (<< ::dialog-open?))
                :maxWidth (if (<< ::model/notification-ongoing?) :xl :sm)
-               :fullWidth true}
+               :fullWidth (<< ::model/notification-ongoing?)}
    [dialog-content]])
