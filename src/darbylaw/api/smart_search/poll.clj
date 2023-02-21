@@ -27,6 +27,7 @@
 (defn sync!
   [xtdb-node]
   (let [checks (xt/q (xt/db xtdb-node) checks-to-sync)]
+    (log/info "Syncing" (count checks) "checks")
     (doseq [{check-id :xt/id
              :keys [ssid]}
             (map first checks)]

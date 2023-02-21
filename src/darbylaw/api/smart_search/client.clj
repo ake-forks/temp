@@ -29,7 +29,7 @@
   (fn [request]
     (let [{:keys [status] :as response} (handler request)]
       (when-not (= 200 status)
-        (throw (ex-info "Request failed" {:status status})))
+        (throw (ex-info "Request failed" {:response response})))
       response)))
 
 (defn wrap-validate-schema [handler]

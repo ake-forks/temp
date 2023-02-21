@@ -8,8 +8,38 @@
     [clojure.string :as str]
     [clojure.data.json :as json]))
 
+(defn wrap-redefs [handler]
+  (fn [f]
+    (with-redefs [org.httpkit.client/request
+                  (fn [{:keys [url]} & _]
+                    (cond
+                      (str/ends-with? url "/auth/token")
+                      (future
+                        {:status 200
+                         :body (json/write-str
+                                 {:data {:attributes {:access_token "something"}}})})
+                      (str/ends-with? url "/aml")
+                      (future
+                        {:status 200
+                         :body (json/write-str
+                                 {:data {:attributes {:ssid "1234" :result "pass"}}})})
+                      (str/ends-with? url "/doccheck")
+                      (future
+                        {:status 200
+                         :body (json/write-str
+                                 {:data {:attributes {:ssid "1234" :status "waiting"}}})})
+                      (str/ends-with? url "/fraudcheck")
+                      (future
+                        {:status 200
+                         :body (json/write-str
+                                 {:data {:attributes {:ssid "1234" :status "processed" :result "low_risk"}}})})
+                      :else
+                      (throw (Exception. "Unexpected URL"))))]
+      (handler f))))
+
 (use-fixtures :once
-  (t/use-mount-states t/ring-handler-states))
+  (wrap-redefs
+    (t/use-mount-states t/ring-handler-states)))
 
 (deftest create_case_validates_against_identity_checks
   ; Create case
@@ -21,35 +51,10 @@
     (is (<= 200 (:status post-resp) 299))
 
     ; Perform identity check
-    (let [check-resp (with-redefs [org.httpkit.client/request
-                                   (fn [{:keys [url]} & _]
-                                     (cond
-                                       (str/ends-with? url "/auth/token")
-                                       (future
-                                         {:status 200
-                                          :body (json/write-str
-                                                  {:data {:attributes {:access_token "something"}}})})
-                                       (str/ends-with? url "/aml")
-                                       (future
-                                         {:status 200
-                                          :body (json/write-str
-                                                  {:data {:attributes {:ssid "1234" :result "pass"}}})})
-                                       (str/ends-with? url "/doccheck")
-                                       (future
-                                         {:status 200
-                                          :body (json/write-str
-                                                  {:data {:attributes {:ssid "1234" :status "waiting"}}})})
-                                       (str/ends-with? url "/fraudcheck")
-                                       (future
-                                         {:status 200
-                                          :body (json/write-str
-                                                  {:data {:attributes {:ssid "1234" :status "processed" :result "low_risk"}}})})
-                                       :else
-                                       (throw (Exception. "Unexpected URL"))))]
-                       (t/run-request {:request-method :post
-                                       :uri (str "/api/case/"
-                                                 case-id
-                                                 "/identity")}))]
+    (let [check-resp (t/run-request {:request-method :post
+                                     :uri (str "/api/case/"
+                                               case-id
+                                               "/identity")})]
       (is (= 200 (:status check-resp))))
 
     ; Get case and check it has the identity check
@@ -83,35 +88,10 @@
     ; Perform identity check
     ; TODO: Improve this
     ;       This throwing an error isn't ideal, really it should return a 500
-    (try (with-redefs [org.httpkit.client/request
-                       (fn [{:keys [url]} & _]
-                         (cond
-                           (str/ends-with? url "/auth/token")
-                           (future
-                             {:status 200
-                              :body (json/write-str
-                                      {:data {:attributes {:access_token "something"}}})})
-                           (str/ends-with? url "/aml")
-                           (future
-                             {:status 200
-                              :body (json/write-str
-                                      {:data {:attributes {:ssid "1234" :result "pass"}}})})
-                           (str/ends-with? url "/doccheck")
-                           (future
-                             {:status 200
-                              :body (json/write-str
-                                      {:data {:attributes {:ssid "1234" :status "waiting"}}})})
-                           (str/ends-with? url "/fraudcheck")
-                           (future
-                             {:status 200
-                              :body (json/write-str
-                                      {:data {:attributes {:ssid "1234" :status "processed" :result "low_risk"}}})})
-                           :else
-                           (throw (Exception. "Unexpected URL"))))]
-           (t/run-request {:request-method :post
-                           :uri (str "/api/case/"
-                                     case-id
-                                     "/identity")}))
+    (try (t/run-request {:request-method :post
+                         :uri (str "/api/case/"
+                                   case-id
+                                   "/identity")})
          (is false "Should not reach here")
          (catch Exception e
            (is (= "Invalid body" (ex-message e)))))))
