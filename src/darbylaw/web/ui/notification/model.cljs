@@ -12,8 +12,11 @@
     (dissoc :open-letter
             :conversation)))
 
+(defn get-notification [db]
+  (:notification db))
+
 (rf/reg-sub ::notification
-  #(:notification %))
+  get-notification)
 
 (rf/reg-sub ::notification-process
   :<- [::case-model/current-case]
@@ -134,3 +137,31 @@
   :<- [::open-letter-id]
   (fn [[letter-by-id id]]
     (get letter-by-id id)))
+
+(rf/reg-sub ::letter-in-preparation?
+  :<- [::open-letter]
+  (fn [letter]
+    (not (:send-action letter))))
+
+(rf/reg-event-fx ::send-letter-success
+  (fn [{:keys [db]} _]
+    {:dispatch [::load-conversation (get-notification db)]}))
+
+(rf/reg-event-fx ::send-letter-failure
+  (fn [{:keys [db]} [_ error-result]]
+    {:dispatch [::load-conversation (get-notification db)]
+     ::ui/notify-user-http-error {:result error-result}}))
+
+(rf/reg-event-fx ::send-letter
+  (fn [{:keys [db]} [_ {:keys [case-id letter-id fake]}]]
+    {:db (update db :conversation
+           #(cond-> %
+              (seqable? %) (into [{:xt/id (random-uuid)
+                                   :type ::creating}])))
+     :http-xhrio
+     (ui/build-http
+       {:method :post
+        :uri (str "/api/case/" case-id "/notification-letter/" letter-id "/send")
+        :params {:send-action (if fake :fake-send :send)}
+        :on-success [::send-letter-success]
+        :on-failure [::send-letter-failure]})}))

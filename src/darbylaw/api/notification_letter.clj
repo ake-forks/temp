@@ -1,6 +1,7 @@
 (ns darbylaw.api.notification-letter
   (:require
     [clojure.string :as str]
+    [darbylaw.api.util.tx-fns :as tx-fns]
     [xtdb.api :as xt]
     [darbylaw.doc-store :as doc-store]
     [darbylaw.api.pdf :as pdf]
@@ -87,9 +88,32 @@
                                     :pdf http/pdf-mime-type)}
          :body input-stream}))))
 
+(defn send-notification-letter [{:keys [xtdb-node path-params user body-params]}]
+  (let [case-id (parse-uuid (:case-id path-params))
+        letter-id (:letter-id path-params)
+        send-action (:send-action body-params)]
+    (assert (#{:send :fake-send} send-action))
+    (let [tx (xt-util/exec-tx xtdb-node
+               (concat
+                 (tx-fns/assert-equals letter-id [:probate.notification-letter/case] case-id)
+                 (tx-fns/assert-nil letter-id [:send-action])
+                 (tx-fns/set-value letter-id [:send-action] send-action)
+                 (tx-fns/set-value letter-id [:sent-by] (:username user))
+                 (tx-fns/set-value letter-id [:sent-at] (xt-util/now))
+                 (case-history/put-event
+                   {:event :notification-letter.sent
+                    :case-id case-id
+                    :user user
+                    :letter-id letter-id})))]
+      (if (xt/tx-committed? xtdb-node tx)
+        {:status http/status-204-no-content}
+        {:status http/status-404-not-found}))))
+
 (defn routes []
   [["/case/:case-id"
     ["/generate-notification-letter"
      {:post {:handler generate-notification-letter}}]
     ["/notification-letter/:letter-id/pdf"
-     {:get {:handler (partial get-notification-letter :pdf)}}]]])
+     {:get {:handler (partial get-notification-letter :pdf)}}]
+    ["/notification-letter/:letter-id/send"
+     {:post {:handler send-notification-letter}}]]])

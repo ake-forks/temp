@@ -5,7 +5,8 @@
             [reagent.core :as r]
             [darbylaw.web.util.date :as date-util]
             [darbylaw.web.ui.app-settings :as app-settings]
-            [darbylaw.api.bank-list :as banks]))
+            [darbylaw.api.bank-list :as banks]
+            [darbylaw.web.ui.mailing.letter-commons :as letter-commons]))
 
 (rf/reg-event-db ::load-success
   (fn [db [_ response]]
@@ -161,9 +162,8 @@
         :else
         (for [{case-data :case
                :keys [bank-id bank-type
-                      review-by review-timestamp send-action
-                      upload-state
-                      send-state send-error send-state-changed]} post-tasks]
+                      review-by review-timestamp send-state-changed]
+               :as letter} post-tasks]
           ^{:key (pr-str [(:id case-data) bank-id])}
           [mui/card
            [mui/card-content
@@ -186,30 +186,7 @@
              [mui/box
               [mui/typography {:font-weight :bold
                                :text-align :right}
-               (cond
-                 (some? send-state)
-                 (str
-                   (case send-state
-                     :error "send error"
-                     (name send-state))
-                   (when (= send-state :error)
-                     (str " (" send-error ")"))
-                   (when (= send-action :fake-send)
-                     " [fake]"))
-
-                 (some? upload-state)
-                 (str (name upload-state)
-                   (when (= send-action :fake-send)
-                     " [fake]"))
-
-                 (some? send-action)
-                 (case send-action
-                   :send "ready to send"
-                   :fake-send "ready to send [fake]"
-                   :do-not-send "not to be sent")
-
-                 :else
-                 "pending approval")]
+               (letter-commons/letter-state-caption letter)]
               (when (or (some? review-by)
                         (some? review-timestamp))
                 [mui/typography {:variant :body2
@@ -222,4 +199,3 @@
                                  :text-align :right}
                  "send status changed at " (date-util/show-local-numeric send-state-changed)])]]]]))]
      [dialog]]))
-

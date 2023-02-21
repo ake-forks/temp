@@ -5,7 +5,8 @@
             [re-frame.core :as rf]
             [darbylaw.web.ui :as ui :refer [<<]]
             [darbylaw.web.ui.notification.model :as model]
-            [darbylaw.web.ui.notification.letter :as letter]))
+            [darbylaw.web.ui.notification.letter :as letter]
+            [darbylaw.web.ui.mailing.letter-commons :as letter-commons]))
 
 (def anchor (r/atom nil))
 
@@ -34,18 +35,20 @@
    (for [letter (<< ::model/conversation)]
      [:<> {:key (:xt/id letter)}
       (case (:type letter)
-        ::model/creating [mui/list-item {:sx {:background-color :background.paper}}
-                          [mui/list-item-icon
-                           [mui/skeleton {:variant :circular
-                                          :width "1.5em"
-                                          :height "1.5em"}]]
-                          [mui/list-item-text
-                           {:primary (r/as-element [mui/skeleton {:width 180}])
-                            :secondary (r/as-element [mui/skeleton {:width 120}])}]
-                          [mui/list-item-text
-                           {:secondary (r/as-element [mui/skeleton {:width 80}])
-                            :sx {:flex-grow 0}}]]
+        ::model/creating
+        [mui/list-item {:sx {:background-color :background.paper}}
+         [mui/list-item-icon
+          [mui/skeleton {:variant :circular
+                         :width "1.5em"
+                         :height "1.5em"}]]
+         [mui/list-item-text
+          {:primary (r/as-element [mui/skeleton {:width 180}])
+           :secondary (r/as-element [mui/skeleton {:width 120}])}]
+         [mui/list-item-text
+          {:secondary (r/as-element [mui/skeleton {:width 80}])
+           :sx {:flex-grow 0}}]]
 
+        :probate.notification-letter
         [mui/list-item {:sx {:background-color :background.paper
                              :cursor :pointer}
                         :onClick #(rf/dispatch [::model/open-letter (:xt/id letter)])}
@@ -53,7 +56,7 @@
           [ui/icon-description-outlined]]
          [mui/list-item-text
           {:primary "notification letter"
-           :secondary "in preparation"}]
+           :secondary (letter-commons/letter-state-caption letter)}]
          [mui/list-item-text
           {:secondary (date-util/show-date-local-numeric (:modified-at letter))
            :sx {:flex-grow 0}}]])
