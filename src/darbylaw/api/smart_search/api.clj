@@ -128,6 +128,24 @@
         (throw (ex-info "Failed to parse response"
                         {:status status :body body}))))))
 
+(defn smart-doc-status [ssid]
+  (log/info "Sending SmartDoc Status request")
+  (let [{:keys [status body]}
+        @(http/get (str base-url "/doccheck/" ssid)
+                   {:headers (merge base-headers
+                                    {"Authorization"
+                                     (str "Bearer " (get-token))})})
+        _ (when-not (= 200 status)
+            (throw (ex-info "Request failed"
+                            {:status status :body body})))]
+    (log/info "Received SmartDoc Status response")
+    (try
+      (json/read-str body :key-fn keyword)
+      (catch Exception e
+        (spit "err.html" body)
+        (throw (ex-info "Failed to parse response"
+                        {:status status :body body}))))))
+
 (defn uk-aml-check [data]
   (when-not (m/validate ss-data/uk-aml--schema data)
     (-> ss-data/uk-aml--schema

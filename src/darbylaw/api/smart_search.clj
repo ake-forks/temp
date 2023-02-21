@@ -51,7 +51,9 @@
              :country "gbr"}
    :issuing_country "gbr"
    :document_type "driving_licence"
-   :scan_type "enhanced_selfie"
+   ;:scan_type "enhanced_selfie"
+   ; For testing purposes use basic_selfie
+   :scan_type "basic_selfie"
    :mobile_number (:phone pr-info)})
 
 (defn update-check [type case-id data]
