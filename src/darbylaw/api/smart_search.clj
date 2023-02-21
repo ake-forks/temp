@@ -2,7 +2,8 @@
   (:require [xtdb.api :as xt]
             [darbylaw.api.util.xtdb :as xt-util]
             [darbylaw.api.util.tx-fns :as tx-fns]
-            [darbylaw.api.smart-search.api :as ss-api]))
+            [darbylaw.api.smart-search.api :as ss-api]
+            [clojure.string :as str]))
 
 
 ;; >> Handlers
@@ -56,6 +57,19 @@
    :scan_type "basic_selfie"
    :mobile_number (:phone pr-info)})
 
+(defn ->fraud-check-data [{:keys [case-ref pr-info]}]
+  {:client_ref case-ref
+   :sanction_region "gbr"
+   :name {:title (:title pr-info)
+          :first (:forename pr-info)
+          :last (:surname pr-info)}
+   :date_of_birth (:date-of-birth pr-info)
+   :contacts {:mobile (:phone pr-info)}
+   :address {:line_1 (str/join " " [(:street-number pr-info) (:street1 pr-info)])
+             :city (:town pr-info)
+             :postcode (:postcode pr-info)
+             :country "gbr"}})
+
 (defn update-check [type case-id data]
   (let [check-id {:probate.identity-check/case case-id
                   :type type}
@@ -68,20 +82,32 @@
 (defn check [{:keys [xtdb-node parameters]}]
   (let [case-id (get-in parameters [:path :case-id])
         check-data (get-check-data xtdb-node case-id)]
+    ;; TODO: Split up into three separate calls that can each fail
+    ;; If a check is made we want to save the result even if other checks fail
     (xt-util/exec-tx xtdb-node
-      (apply concat
-        (for [{:keys [type data-fn check-fn]}
-              ;; TODO: Use a multi-method or something?
-              [{:type :uk-aml    :data-fn ->uk-aml-data    :check-fn ss-api/uk-aml-check}
-               {:type :smart-doc :data-fn ->smart-doc-data :check-fn ss-api/smart-doc-check}]]
-          (let [data (data-fn check-data)
-                response (check-fn data)
-                {:keys [ssid status result]} (get-in response [:data :attributes])]
-            (update-check type case-id
-              (cond-> {}
-                :always (assoc :ssid ssid)
-                result (assoc :result result)
-                status (assoc :status status)))))))
+      (let [aml-response
+            (ss-api/uk-aml-check
+              (->uk-aml-data check-data))
+            smart-doc-response
+            (ss-api/smart-doc-check
+              (->smart-doc-data check-data))
+            fraud-check-response
+            (ss-api/fraud-check "aml" (get-in aml-response [:data :attributes :ssid])
+              (->fraud-check-data check-data))]
+        (apply concat
+          (for [{:keys [type response]}
+                [{:type :uk-aml
+                  :response aml-response}
+                 {:type :smart-doc
+                  :response smart-doc-response}
+                 {:type :fraud-check
+                  :response fraud-check-response}]]
+            (let [{:keys [result status ssid]} (get-in response [:data :attributes])]
+              (update-check type case-id
+                (cond-> {}
+                  :always (assoc :ssid ssid)
+                  result (assoc :result result)
+                  status (assoc :status status))))))))
     {:status 200
      :body {}}))
 

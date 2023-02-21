@@ -171,6 +171,34 @@
         (throw (ex-info "Failed to parse response"
                         {:status status :body body}))))))
 
+(defn fraud-check [type ssid data]
+  (when-not (#{"aml" "doccheck"} type)
+    (log/error "Invalid fraud check type")
+    (throw (ex-info "Invalid fraud check type" {:type type})))
+  (when-not (m/validate ss-data/fraud-check--schema data)
+    (-> ss-data/fraud-check--schema
+        (m/explain data)
+        (malli.error/humanize)
+        (log/error))
+    (throw (ex-info "Invalid data" {:data data})))
+  (log/info "Sending fraud check request")
+  (let [{:keys [status body]}
+        @(http/post (str base-url "/" type "/" ssid "/fraudcheck")
+                    {:body (json/write-str data) 
+                     :headers (merge base-headers
+                                     {"Authorization"
+                                      (str "Bearer " (get-token))})})
+        _ (when-not (= 200 status)
+            (throw (ex-info "Request failed"
+                            {:status status :body body})))]
+    (log/info "Received fraud check response")
+    (try
+      (json/read-str body :key-fn keyword)
+      (catch Exception e
+        (spit "err.html" body)
+        (throw (ex-info "Failed to parse response"
+                        {:status status :body body}))))))
+
 (comment
   ;; Get auth token
   (get-auth)
@@ -228,6 +256,21 @@
                   :postcode "BA13 3BN"
                   :country "GBR"
                   :duration 3}]})
+
+  (fraud-check "doccheck" "2912165"
+    {:client_ref "oliver_test"
+     :sanction_region "gbr"
+     :name {:title "Mr"
+            :first "John"
+            :middle "I"
+            :last "Smith"}
+     :date_of_birth "1950-05-26"
+     :contacts {:mobile "+447700900090"
+                :email ""}
+     :address {:line_1 (str "25" " " "High Street")
+               :city "WESTBURY"
+               :postcode "BA13 3BN"
+               :country "GBR"}})
 
   ;; Test out async requests
   (http/get
