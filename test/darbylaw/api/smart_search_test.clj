@@ -39,6 +39,11 @@
                                          {:status 200
                                           :body (json/write-str
                                                   {:data {:attributes {:ssid "1234" :status "waiting"}}})})
+                                       (str/ends-with? url "/fraudcheck")
+                                       (future
+                                         {:status 200
+                                          :body (json/write-str
+                                                  {:data {:attributes {:ssid "1234" :status "processed" :result "low_risk"}}})})
                                        :else
                                        (throw (Exception. "Unexpected URL"))))]
                        (t/run-request {:request-method :post
@@ -53,14 +58,15 @@
           {:keys [checks]} case-data]
       (is (contains? case-data :id))
       (is (not (nil? checks)))
-      ; TODO: Change once we have more checks?
-      ;(is (= 3 (count checks)))
-      (is (>= (count checks) 2))
+      (is (= 3 (count checks)))
       (is (every? #(case (:type %)
                      :uk-aml (and (= "pass" (:result %))
                                   (= "1234" (:ssid %)))
                      :smart-doc (and (= "waiting" (:status %))
-                                     (= "1234" (:ssid %))))
+                                     (= "1234" (:ssid %)))
+                     :fraud-check (and (= "processed" (:status %))
+                                       (= "low_risk" (:result %))
+                                       (= "1234" (:ssid %))))
                   checks)))
 
     ; Update personal rep
@@ -95,6 +101,11 @@
                              {:status 200
                               :body (json/write-str
                                       {:data {:attributes {:ssid "1234" :status "waiting"}}})})
+                           (str/ends-with? url "/fraudcheck")
+                           (future
+                             {:status 200
+                              :body (json/write-str
+                                      {:data {:attributes {:ssid "1234" :status "processed" :result "low_risk"}}})})
                            :else
                            (throw (Exception. "Unexpected URL"))))]
            (t/run-request {:request-method :post
