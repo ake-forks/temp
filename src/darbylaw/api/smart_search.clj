@@ -1,13 +1,17 @@
 (ns darbylaw.api.smart-search
   (:require [xtdb.api :as xt]
+            [clojure.tools.logging :as log]
             [darbylaw.api.util.xtdb :as xt-util]
             [darbylaw.api.util.tx-fns :as tx-fns]
-            [darbylaw.api.smart-search.api :as ss-api]))
+            [darbylaw.api.smart-search.api :as ss-api]
+            [darbylaw.api.case-history :as case-history]
+            [clojure.string :as str]))
 
 
 ;; >> Handlers
 
-(defn get-uk-aml-data [xtdb-node case-id]
+;; TODO: There's probably another function somewhere I can use
+(defn get-check-data [xtdb-node case-id]
   (let [{:keys [case-ref pr-info]}
         (xt/pull (xt/db xtdb-node)
           '[(:reference {:as :case-ref})
@@ -15,36 +19,127 @@
               {:as :pr-info})
              [*]}]
           case-id)]
-    {:client_ref case-ref
-     :risk_level "high"
-     :name {:title (:title pr-info)
-            :first (:forename pr-info)
-            :last (:surname pr-info)}
-     :date_of_birth (:date-of-birth pr-info)
-     :contacts {:mobile (:phone pr-info)}
-     :addresses [{:building (:street-number pr-info)
-                  :street_1 (:street1 pr-info)
-                  :town (:town pr-info)
-                  :postcode (:postcode pr-info)}]}))
+    {:case-ref case-ref
+     :pr-info pr-info}))
 
-(defn update-check [xtdb-node type case-id data]
+(defn ->aml-data [{:keys [case-ref pr-info]}]
+  {:client_ref case-ref
+   :risk_level "high"
+   :name {:title (:title pr-info)
+          :first (:forename pr-info)
+          :last (:surname pr-info)}
+   :date_of_birth (:date-of-birth pr-info)
+   :contacts {:mobile (:phone pr-info)}
+   ;; TODO: Match up requirements on PR info to schemas
+   ;; TODO: Fix this so that it actually makes sense
+   :addresses [{:building (:street-number pr-info)
+                :street_1 (:street1 pr-info)
+                :town (:town pr-info)
+                :postcode (:postcode pr-info)}]})
+
+;; TODO: Maybe pull out hard coded values into separate `base` def and merge?
+(defn ->doccheck-data [{:keys [case-ref pr-info]}]
+  {:client_ref case-ref
+   :sanction_region "gbr"
+   :name {:title (:title pr-info)
+          :first (:forename pr-info)
+          :last (:surname pr-info)}
+   :gender "male" ;; TODO: Add to PR info
+   :date_of_birth (:date-of-birth pr-info)
+   ;; TODO: Same as above
+   :address {:building (:street-number pr-info)
+             :street_1 (:street1 pr-info)
+             :town (:town pr-info)
+             :postcode (:postcode pr-info)
+             :country "gbr"}
+   :issuing_country "gbr"
+   :document_type ["driving_licence" "passport"]
+   ;:scan_type "enhanced_selfie"
+   ; For testing purposes use basic_selfie
+   :scan_type "basic_selfie"
+   :mobile_number (:phone pr-info)})
+
+(defn ->fraudcheck-data [{:keys [case-ref pr-info]}]
+  {:client_ref case-ref
+   :sanction_region "gbr"
+   :name {:title (:title pr-info)
+          :first (:forename pr-info)
+          :last (:surname pr-info)}
+   :date_of_birth (:date-of-birth pr-info)
+   :contacts {:mobile (:phone pr-info)}
+   :address {:line_1 (str/join " " [(:street-number pr-info) (:street1 pr-info)])
+             :city (:town pr-info)
+             :postcode (:postcode pr-info)
+             :country "gbr"}})
+
+(defn check-tx [type case-id data]
   (let [check-id {:probate.identity-check/case case-id
                   :type type}
         check-data (merge data
                           check-id
                           {:xt/id check-id})]
-    (xt-util/exec-tx xtdb-node
-      ;; TODO: Add to case history
-      (tx-fns/set-values check-id check-data))))
+    (tx-fns/set-values check-id check-data)))
 
-(defn check [{:keys [xtdb-node parameters]}]
+(defn response->check-data [response]
+  (-> response
+      (get-in [:body :data :attributes])
+      (select-keys [:result :status :ssid])))
+
+(defn check [{:keys [xtdb-node user parameters]}]
   (let [case-id (get-in parameters [:path :case-id])
-        data (get-uk-aml-data xtdb-node case-id)
-        response (ss-api/uk-aml-check data)
-        ssid (get-in response [:data :attributes :ssid])
-        result (get-in response [:data :attributes :result])]
-    (update-check xtdb-node :uk-aml case-id {:ssid ssid :result result})
-    {:status 200
+        check-data (get-check-data xtdb-node case-id)
+
+        ;; We perform each of the checks in their own try catches as they can independently fail
+        ;; But even if they do fail we still want to save their results in one transaction so that the history will be updated correctly
+        aml-data
+        (try
+          (-> check-data
+              ->aml-data
+              ss-api/aml
+              response->check-data)
+          (catch Exception e
+            (log/error e "Failed UK AML API Call")
+            nil))
+        fraudcheck-data
+        (try
+          (when-let [aml-ssid (:ssid aml-data)]
+            (-> check-data
+                ->fraudcheck-data
+                (->> (ss-api/fraudcheck "aml" aml-ssid))
+                response->check-data))
+          (catch Exception e
+            (log/error e "Failed Fraudcheck API Call")
+            nil))
+        smartdoc-data
+        (try
+          (-> check-data
+              ->doccheck-data
+              ss-api/doccheck
+              response->check-data)
+          (catch Exception e
+            (log/error e "Failed SmartDoc API Call")
+            nil))
+
+        failed? (or (nil? aml-data)
+                    (nil? fraudcheck-data)
+                    (nil? smartdoc-data))]
+    (xt-util/exec-tx xtdb-node
+      (concat
+        (->> [[:uk-aml aml-data]
+              [:fraud-check fraudcheck-data]
+              [:smart-doc smartdoc-data]]
+             ;; Remove failed checks
+             (filter (comp (complement nil?) second))
+             ;; Convert to transactions
+             (map (fn [[type data]] (check-tx type case-id data)))
+             (apply concat))
+        (case-history/put-event
+          {:event :identity.checks-added
+           :case-id case-id
+           :user user})))
+    {:status (if failed?
+               500
+               200)
      :body {}}))
 
 (comment

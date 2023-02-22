@@ -1,157 +1,59 @@
 (ns darbylaw.api.smart-search.api
   (:require [org.httpkit.client :as http]
-            [mount.core :as mount]
             [clojure.data.json :as json]
             [clj-commons.digest :as digest]
             [clojure.tools.logging :as log]
-            [darbylaw.config :refer [config]]
-            [darbylaw.api.util.xtdb :as xt-util]
-            [darbylaw.api.util.tx-fns :as tx-fns]
             [darbylaw.api.smart-search.data :as ss-data]
-            [malli.core :as m]
-            [malli.error :as me])
-  (:import [java.time.format DateTimeFormatter]
-           [java.time LocalDateTime]))
+            [darbylaw.api.smart-search.client :refer [apply-middleware base-client]]
+            [darbylaw.api.smart-search.auth :refer [wrap-auth]]))
 
 
-;; >> Config
+;; >> Authenticated client
 
-;; TODO: Add all these to config?
-(def company-name "Darby & Darby")
-
-(mount/defstate public-key
-  :start (-> config :smart-search :public-key))
-
-;; TODO: Change to service user
-(def user-email "osm@juxt.pro")
-
-(def base-url "https://sandbox-api.smartsearchsecure.com")
-
-(def base-headers {"Content-Type" "application/json"
-                   "Accept-Version" 2})
-
-
-
-;; >> Auth
-
-(defn today
-  []
-  (.format (LocalDateTime/now)
-           (DateTimeFormatter/ofPattern "yyyy-MM-dd")))
-
-(defn ->company-token
-  [public-key]
-  (digest/md5 (str public-key (today))))
-
-(defn get-auth []
-  (let [{:keys [status body]}
-        @(http/post
-           (str base-url "/auth/token")
-           {:headers base-headers
-            :body (json/write-str
-                    {:company_name company-name
-                     :company_token (->company-token public-key)
-                     :user_email user-email})})]
-    (when-not (= status 200)
-      (throw (ex-info "Failed to get auth token" {:status status :body body})))
-    (-> body
-        (json/read-str :key-fn keyword)
-        (get-in [:data :attributes :access_token]))))
-
-(def auth-token (atom {:token nil :expires-at nil}))
-
-(defn refresh-token []
-  (log/info "Refreshing token")
-  (let [new-token (get-auth)
-        ;; We hardcode this time because the returned `expires_in` is wrong afaik
-        new-expires-at (.plusMinutes (LocalDateTime/now) 15)]
-    (swap! auth-token assoc :token new-token :expires-at new-expires-at)
-    new-token))
-
-;; NOTE: I'm aware of a race condition here, suggestions welcome!
-;; - Say that the token has expired
-;; - Say two processes get here at once
-;; - They'll both call refresh-token and each make a call to get a new token
-(defn get-token []
-  (let [{:keys [token expires-at]} @auth-token]
-    ;; NOTE: .isAfter checks if `expires-at` is after the input time
-    (if (and token expires-at (.isAfter expires-at (LocalDateTime/now)))
-      token
-      (refresh-token))))
+(def client
+  "An authenticated client"
+  (apply-middleware
+    base-client
+    [wrap-auth]))
 
 
 
 ;; >> API Calls
 
-(defn supported-documents []
-  (let [{:keys [status body] :as resp}
-        @(http/get (str base-url "/lookup/doccheck/supported-documents")
-                   {:body (json/write-str
-                            {:country "gbr"})
-                    :headers (merge base-headers
-                                    {"Authorization"
-                                     (str "Bearer " (get-token))})})
-        _ (when-not (= 200 status)
-            (println status)
-            (spit "err.html" body)
-            (throw (ex-info "Request failed"
-                            {:status status :body body})))]
-    (try
-      (json/read-str body :key-fn keyword)
-      (catch Exception e
-        (spit "err.html" body)
-        (throw (ex-info "Failed to parse response"
-                        {:status status :body body}))))))
+(defn lookup-doccheck-supported-documents []
+  (client {:method :get
+           :path "/lookup/doccheck/supported-documents"
+           :body {:country "gbr"}}))
 
-(defn smartdoc-check [data]
-  (let [{:keys [status body]}
-        @(http/post (str base-url "/doccheck")
-                    {:body (json/write-str data) 
-                     :headers (merge base-headers
-                                     {"Authorization"
-                                      (str "Bearer " (get-token))})})
-        _ (when-not (= 200 status)
-            (throw (ex-info "Request failed"
-                            {:status status :body body})))]
-    (try
-      (json/read-str body :key-fn keyword)
-      (catch Exception e
-        (spit "err.html" body)
-        (throw (ex-info "Failed to parse response"
-                        {:status status :body body}))))))
+(defn doccheck [data]
+  (client {:method :post
+           :path "/doccheck"
+           :body data
+           :schema {:body ss-data/smart-doc--schema}}))
 
-(defn uk-aml-check [data]
-  (when-not (m/validate ss-data/uk-aml--schema data)
-    (-> ss-data/uk-aml--schema
-        (m/explain data)
-        (malli.error/humanize)
-        (log/error))
-    (throw (ex-info "Invalid data" {:data data})))
-  (log/info "Sending AML request")
-  (let [{:keys [status body]}
-        @(http/post (str base-url "/aml")
-                    {:body (json/write-str data) 
-                     :headers (merge base-headers
-                                     {"Authorization"
-                                      (str "Bearer " (get-token))})})
-        _ (when-not (= 200 status)
-            (throw (ex-info "Request failed"
-                            {:status status :body body})))]
-    (log/info "Received AML response")
-    (try
-      (json/read-str body :key-fn keyword)
-      (catch Exception e
-        (spit "err.html" body)
-        (throw (ex-info "Failed to parse response"
-                        {:status status :body body}))))))
+(defn get-doccheck [ssid]
+  (client {:method :get
+           :path (str "/doccheck/" ssid)}))
+
+(defn aml [data]
+  (client {:method :post
+           :path "/aml"
+           :body data
+           :schema {:body ss-data/uk-aml--schema}}))
+
+(defn fraudcheck [type ssid data]
+  (when-not (#{"aml" "doccheck"} type)
+    (log/error "Invalid fraud check type")
+    (throw (ex-info "Invalid fraud check type" {:type type})))
+  (client {:method :post
+           :path (str "/" type "/" ssid "/fraudcheck")
+           :body data
+           :schema {:body ss-data/fraud-check--schema}}))
 
 (comment
-  ;; Get auth token
-  (get-auth)
+  (lookup-doccheck-supported-documents)
 
-  (supported-documents)
-
-  (smartdoc-check expired-token
+  (doccheck
     {:client_ref "oliver_test"
      :sanction_region "gbr"
      :name {:title "Mr"
@@ -161,7 +63,7 @@
      :gender "male"
      :date_of_birth "1950-05-26"
      :address {:building "25"
-               :street_1 "High Street"
+               :street-1 "High Street"
                :town "WESTBURY"
                :region "WILTSHIRE"
                :postcode "BA13 3BN"
@@ -170,18 +72,9 @@
      :document_type "driving_licence"
      :scan_type "basic_selfie"
      :mobile_number "+447700900090"})
+  (get-doccheck "2912616")
 
-
-  (let [data {:client_ref "something"
-              :risk_level "high"
-              :name {:title "Mr" :first "John" :last "Smith"}
-              :addresses [{:flat "1" :building "2" :street_1 "3" :street_2 "4"
-                           :town "5" :region "6" :postcode "7" :duration 8}
-                          {:flat "9" :building "10" :street_1 "11" :street_2 "12"
-                           :town "13" :region "14" :postcode "15" :duration 16}]}]
-    (uk-aml-check data))
-
-  (uk-aml-check
+  (aml
     {:client_ref "oliver_test"
      ;:cra "experian"
      :risk_level "high"
@@ -202,6 +95,21 @@
                   :postcode "BA13 3BN"
                   :country "GBR"
                   :duration 3}]})
+
+  (fraudcheck "doccheck" "2912616"
+    {:client_ref "oliver_test"
+     :sanction_region "gbr"
+     :name {:title "Mr"
+            :first "John"
+            :middle "I"
+            :last "Smith"}
+     :date_of_birth "1950-05-26"
+     :contacts {:mobile "+447700900090"
+                :email ""}
+     :address {:line_1 (str "25" " " "High Street")
+               :city "WESTBURY"
+               :postcode "BA13 3BN"
+               :country "GBR"}})
 
   ;; Test out async requests
   (http/get
