@@ -1,5 +1,6 @@
 (ns darbylaw.api.smart-search
   (:require [xtdb.api :as xt]
+            [clojure.tools.logging :as log]
             [darbylaw.api.util.xtdb :as xt-util]
             [darbylaw.api.util.tx-fns :as tx-fns]
             [darbylaw.api.smart-search.api :as ss-api]
@@ -79,37 +80,66 @@
                           {:xt/id check-id})]
     (tx-fns/set-values check-id check-data)))
 
+(defn response->check-data [response]
+  (-> response
+      (get-in [:body :data :attributes])
+      (select-keys [:result :status :ssid])))
+
 (defn check [{:keys [xtdb-node user parameters]}]
   (let [case-id (get-in parameters [:path :case-id])
-        check-data (get-check-data xtdb-node case-id)]
-    ;; TODO: Split up into three separate calls that can each fail
-    ;; If a check is made we want to save the result even if other checks fail
+        check-data (get-check-data xtdb-node case-id)
+
+        ;; We perform each of the checks in their own try catches as they can independently fail
+        ;; But even if they do fail we still want to save their results in one transaction so that the history will be updated correctly
+        aml-data
+        (try
+          (-> check-data
+              ->aml-data
+              ss-api/aml
+              response->check-data)
+          (catch Exception e
+            (log/error e "Failed UK AML API Call")
+            nil))
+        fraudcheck-data
+        (try
+          (when-let [aml-ssid (:ssid aml-data)]
+            (-> check-data
+                ->fraudcheck-data
+                (->> (ss-api/fraudcheck "aml" aml-ssid))
+                response->check-data))
+          (catch Exception e
+            (log/error e "Failed Fraudcheck API Call")
+            nil))
+        smartdoc-data
+        (try
+          (-> check-data
+              ->doccheck-data
+              ss-api/doccheck
+              response->check-data)
+          (catch Exception e
+            (log/error e "Failed SmartDoc API Call")
+            nil))
+
+        failed? (or (nil? aml-data)
+                    (nil? fraudcheck-data)
+                    (nil? smartdoc-data))]
     (xt-util/exec-tx xtdb-node
-      (let [aml-response
-            (ss-api/aml
-              (->aml-data check-data))
-            smart-doc-response
-            (ss-api/doccheck
-              (->doccheck-data check-data))
-            fraud-check-response
-            (ss-api/fraudcheck "aml" (get-in aml-response [:body :data :attributes :ssid])
-              (->fraudcheck-data check-data))]
-        (concat
-          (apply concat
-            (for [{:keys [type response]}
-                  [{:type :uk-aml :response aml-response}
-                   {:type :smart-doc :response smart-doc-response}
-                   {:type :fraud-check :response fraud-check-response}]]
-              (let [{:keys [result status ssid]} (get-in response [:body :data :attributes])]
-                (check-tx type case-id
-                  (cond-> {}
-                    :always (assoc :ssid ssid)
-                    result (assoc :result result)
-                    status (assoc :status status))))))
-          (case-history/put-event {:event :identity.checks-added
-                                   :case-id case-id
-                                   :user user}))))
-    {:status 200
+      (concat
+        (->> [[:uk-aml aml-data]
+              [:fraud-check fraudcheck-data]
+              [:smart-doc smartdoc-data]]
+             ;; Remove failed checks
+             (filter (comp (complement nil?) second))
+             ;; Convert to transactions
+             (map (fn [[type data]] (check-tx type case-id data)))
+             (apply concat))
+        (case-history/put-event
+          {:event :identity.checks-added
+           :case-id case-id
+           :user user})))
+    {:status (if failed?
+               500
+               200)
      :body {}}))
 
 (comment
