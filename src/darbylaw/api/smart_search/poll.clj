@@ -55,7 +55,7 @@
 
 (mount/defstate smart-search-sync-job
   :start (ch/chime-at
-           (rest (ch/periodic-seq (Instant/now) (Duration/ofMinutes 1)))
+           (rest (ch/periodic-seq (Instant/now) (Duration/ofMinutes 10)))
            (fn [_time]
              (sync-job xtdb-node/xtdb-node)))
   :stop (.close smart-search-sync-job))

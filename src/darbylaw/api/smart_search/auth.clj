@@ -8,7 +8,7 @@
            [java.time LocalDateTime]))
 
 
-;; >>Config
+;; >> Config
 
 ;; TODO: Add all these to config?
 (def company-name "Darby & Darby")
