@@ -192,3 +192,28 @@
         :timeout 16000
         :on-success [::replace-letter-success on-completed]
         :on-failure [::replace-letter-failure on-completed]})}))
+
+(rf/reg-fx ::delete-letter-completed
+  (fn [{:keys [on-completed]}]
+    (on-completed)))
+
+(rf/reg-event-fx ::delete-letter-success
+  (fn [{:keys [db]} [_ on-completed]]
+    (let [current-notification (:notification db)]
+      {:db (set-current-notification db current-notification)
+       :dispatch [::load-conversation current-notification]
+       ::delete-letter-completed {:on-completed on-completed}})))
+
+(rf/reg-event-fx ::delete-letter-failure
+  (fn [_ [_ on-completed error-result]]
+    {::delete-letter-completed {:on-completed on-completed}
+     ::ui/notify-user-http-error {:result error-result}}))
+
+(rf/reg-event-fx ::delete-letter
+  (fn [_ [_ {:keys [case-id letter-id on-completed]}]]
+    {:http-xhrio
+     (ui/build-http
+       {:method :delete
+        :uri (str "/api/case/" case-id "/notification-letter/" letter-id)
+        :on-success [::delete-letter-success on-completed]
+        :on-failure [::delete-letter-failure on-completed]})}))

@@ -9,6 +9,30 @@
             [darbylaw.web.ui.notification.model :as model]
             [darbylaw.web.ui.components.upload-button :refer [upload-button]]))
 
+(defonce delete-confirmation-open? (r/atom false))
+
+(defn delete-confirmation-dialog []
+  [mui/dialog {:open (boolean @delete-confirmation-open?)
+               :maxWidth :sm}
+   [mui/dialog-title "confirm delete"]
+   [mui/dialog-content
+    "Do you want to delete the letter?"]
+   [mui/dialog-actions
+    [mui/button {:variant :contained
+                 :onClick #(reset! delete-confirmation-open? false)}
+     "No, cancel"]
+    [mui/button {:variant :outlined
+                 :color :error
+                 :onClick (let [case-id (<< ::case-model/case-id)
+                                letter-id (<< ::model/open-letter-id)]
+                            (fn []
+                              (rf/dispatch [::model/delete-letter
+                                            {:case-id case-id
+                                             :letter-id letter-id
+                                             :on-completed
+                                             #(reset! delete-confirmation-open? false)}])))}
+     "Yes, delete"]]])
+
 (defonce confirmation-dialog-open? (r/atom false))
 (defonce contents-approved? (r/atom false))
 (defonce override-fake-send? (r/atom false))
@@ -67,10 +91,10 @@
                                                            (not @override-fake-send?))}])))}
      "Send"]]])
 
-(def edit-anchor (r/atom nil))
-(def upload-filename (r/atom nil))
-(def file-uploading? (r/atom false))
-(def pdf-viewer-refresh (r/atom 0))
+(defonce edit-anchor (r/atom nil))
+(defonce upload-filename (r/atom nil))
+(defonce file-uploading? (r/atom false))
+(defonce pdf-viewer-refresh (r/atom 0))
 (defn refresh-pdf-viewer! []
   (swap! pdf-viewer-refresh inc))
 
@@ -87,40 +111,48 @@
                   :transformOrigin {:vertical :top
                                     :horizontal :right}
                   :PaperProps {:sx {:border-radius 0}}}
-     [mui/container {:maxWidth :sm
+     [mui/container {:maxWidth :xs
                      :sx {:my 2}}
-      [mui/typography {:variant :body1
-                       :sx {:mt 2}}
-       "You can modify the letter using Word."]
-      [mui/typography {:variant :body2}
-       "(Be careful in keeping the first page layout intact, "
-       "as the address must match the envelope's window)."]
-      [mui/stack {:direction :row
-                  :spacing 1
-                  :sx {:mt 1}}
-       [mui/button {:href (str "/api/case/" case-id "/notification-letter/" letter-id "/docx")
-                    :download (str case-reference " - " letter-id " - notification.docx")
-                    :variant :outlined
-                    :full-width true
-                    :startIcon (r/as-element [ui/icon-download])}
-        "download current letter"]
-       [upload-button
-        {:button-props {:variant :outlined
-                        :full-width true
-                        :startIcon (r/as-element [ui/icon-upload])}
-         :input-props {:accept http/docx-mime-type}
-         :filename-atom upload-filename
-         :uploading?-atom file-uploading?
-         :on-file-selected (fn [file]
-                             (rf/dispatch [::model/replace-letter
-                                           {:case-id case-id
-                                            :letter-id letter-id
-                                            :file file
-                                            :on-completed
-                                            #(do (reset! file-uploading? false)
-                                                 (refresh-pdf-viewer!)
-                                                 (close!))}]))}
-        "upload replacement"]]]]))
+      [mui/stack {:spacing 2}
+       [mui/stack
+        [mui/typography
+         "You can modify the letter using Word."]
+        [mui/typography {:variant :body2}
+         "(Be careful in keeping the first page layout intact, "
+         "as the address must match the envelope's window)."]]
+       [mui/stack {:spacing 1
+                   :align-items :flex-start}
+        [mui/button {:href (str "/api/case/" case-id "/notification-letter/" letter-id "/docx")
+                     :download (str case-reference " - " letter-id " - notification.docx")
+                     :variant :outlined
+                     :startIcon (r/as-element [ui/icon-download])}
+         "download current letter"]
+        [upload-button
+         {:button-props {:variant :outlined
+                         :startIcon (r/as-element [ui/icon-upload])}
+          :input-props {:accept http/docx-mime-type}
+          :filename-atom upload-filename
+          :uploading?-atom file-uploading?
+          :on-file-selected (fn [file]
+                              (rf/dispatch [::model/replace-letter
+                                            {:case-id case-id
+                                             :letter-id letter-id
+                                             :file file
+                                             :on-completed
+                                             #(do (reset! file-uploading? false)
+                                                  (refresh-pdf-viewer!)
+                                                  (close!))}]))}
+         "upload replacement"]]
+       [mui/divider]
+       [mui/typography
+        "You can also dismiss this letter:"]
+       [mui/button {:variant :outlined
+                    :startIcon (r/as-element [ui/icon-delete])
+                    :onClick (fn []
+                               (reset! delete-confirmation-open? true)
+                               (close!))
+                    :sx {:align-self :flex-start}}
+        "delete letter"]]]]))
 
 (defn pdf-viewer [props]
   (r/with-let [loading? (r/atom true)]
@@ -167,6 +199,7 @@
                       :onClick #(reset! edit-anchor (ui/event-currentTarget %))}
           "edit"]
          [edit-popover]
+         [delete-confirmation-dialog]
          [mui/button {:variant :contained
                       :endIcon (r/as-element [ui/icon-send])
                       :onClick #(open-confirmation-dialog!)}
