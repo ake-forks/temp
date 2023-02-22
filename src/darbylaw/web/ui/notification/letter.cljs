@@ -102,13 +102,6 @@
 
          :else
          "This letter was automatically generated from case data.")]
-      [ui/loading-button {:onClick #(do (close!)
-                                        (rf/dispatch [::TODO] #_[::regenerate asset-type case-id asset-id letter-id]))
-                          :loading false ;@regenerating?
-                          :startIcon (r/as-element [ui/icon-refresh])
-                          :variant :outlined
-                          :sx {:mt 1}}
-       "Regenerate letter from current case data"]
       [mui/typography {:variant :body1
                        :sx {:mt 2}}
        "You can modify the letter using Word."]
