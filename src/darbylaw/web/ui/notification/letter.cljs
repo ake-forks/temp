@@ -78,6 +78,8 @@
   (let [case-id (<< ::case-model/case-id)
         case-reference (<< ::case-model/current-case-reference)
         letter-id (<< ::model/open-letter-id)
+        letter (<< ::model/open-letter)
+        author (:author letter)
         close! #(reset! edit-anchor nil)]
     [mui/popover {:open (some? @edit-anchor)
                   :anchorEl @edit-anchor
@@ -92,11 +94,11 @@
       [mui/typography {:variant :body1
                        :font-weight :bold}
        (cond
-         ;(= author :unknown-user)
-         ;"This notification letter was modified by a user."
-         ;
-         ;(string? author)
-         ;(str "This notification letter was modified by '" author "'.")
+         (= author :unknown-user)
+         "This notification letter was modified by a user."
+
+         (string? author)
+         (str "This notification letter was modified by '" author "'.")
 
          :else
          "This letter was automatically generated from case data.")]
