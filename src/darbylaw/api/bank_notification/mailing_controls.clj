@@ -12,8 +12,12 @@
                 '{:find [(pull letter [*
                                        ({:case-id [(:xt/id {:as :id})
                                                    :reference]}
-                                        {:as :case})])]
-                  :where [[letter :type :probate.bank-notification-letter]]})
+                                        {:as :case})
+                                       ({:probate.notification-letter/case
+                                         [(:xt/id {:as :id})
+                                          :reference]})])]
+                  :where [(or [letter :type :probate.bank-notification-letter]
+                              [letter :type :probate.notification-letter])]})
            (map first))})
 
 (def running? (atom false))

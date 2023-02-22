@@ -27,7 +27,8 @@
                       :fake :fake-send)]
     (->> (xt/q (xt/db xtdb-node)
            '{:find [(pull letter [*])]
-             :where [[letter :type :probate.bank-notification-letter]
+             :where [(or [letter :type :probate.bank-notification-letter]
+                         [letter :type :probate.notification-letter])
                      [letter :send-action send-action]
                      (not [letter :upload-state])]
              :in [send-action]}
@@ -42,8 +43,11 @@
              (doc-store/available?)
              (mailing/available? real|fake))
     (doseq [letter-data letters]
-      (let [{:keys [case-id bank-id]
+      (let [{:keys [case-id  bank-id]
+             new-case-id :probate.notification-letter/case
+             letter-type :type
              letter-id :xt/id} letter-data
+            case-id (or case-id new-case-id)
             tx (xt-util/exec-tx xtdb-node
                  (concat
                    [[::xt/match (:xt/id letter-data) letter-data]]
@@ -53,9 +57,15 @@
           (try
             (with-delete [temp-file (files-util/create-temp-file letter-id ".pdf")]
               (try
-                (doc-store/fetch-to-file
-                  (letter-store/s3-key case-id bank-id letter-id ".pdf")
-                  temp-file)
+                (case letter-type
+                  :probate.bank-notification-letter
+                  (doc-store/fetch-to-file
+                    (letter-store/s3-key case-id bank-id letter-id ".pdf")
+                    temp-file)
+                  :probate.notification-letter
+                  (doc-store/fetch-case-file-to-file
+                    case-id (str letter-id ".pdf")
+                    temp-file))
                 (let [remote-filename (str letter-id ".pdf")]
                   (mailing/post-letter real|fake (.getCanonicalPath temp-file) remote-filename)
                   (log/debug "Uploaded file for mailing: " remote-filename))
@@ -70,6 +80,18 @@
               (log/warn exc "Error while uploading letter; will retry later.")
               (xt-util/exec-tx xtdb-node
                 (tx-fns/set-value letter-id [:upload-state] :retry-upload)))))))))
+
+(comment
+  (def not-found
+    (->> (xt/q (xt/db xtdb-node/xtdb-node)
+           '{:find [(pull letter [*])]
+             :where [[letter :type :probate.notification-letter]
+                     [letter :upload-state :not-found]]})
+      (map first)))
+
+  (doseq [l not-found]
+    (xt/submit-tx xtdb-node/xtdb-node
+      [[::xt/put (dissoc l :upload-state)]])))
 
 (defn upload-mail-job [xtdb-node]
   (if (disabled? xtdb-node)

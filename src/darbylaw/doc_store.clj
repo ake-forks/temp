@@ -65,6 +65,9 @@
         (throw (ex-info "Not found" {:error ::not-found} exc))
         (throw exc)))))
 
+(defn fetch-case-file-to-file [case-id key file]
+  (fetch-to-file (str case-id "/" key) file))
+
 (defn available? []
   (try
     (.listObjects s3 (ListObjectsRequest. bucket-name nil nil nil (int 1)))
