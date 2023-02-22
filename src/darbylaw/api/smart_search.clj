@@ -3,6 +3,7 @@
             [darbylaw.api.util.xtdb :as xt-util]
             [darbylaw.api.util.tx-fns :as tx-fns]
             [darbylaw.api.smart-search.api :as ss-api]
+            [darbylaw.api.case-history :as case-history]
             [clojure.string :as str]))
 
 
@@ -70,16 +71,15 @@
              :postcode (:postcode pr-info)
              :country "gbr"}})
 
-(defn update-check [type case-id data]
+(defn check-tx [type case-id data]
   (let [check-id {:probate.identity-check/case case-id
                   :type type}
         check-data (merge data
                           check-id
                           {:xt/id check-id})]
-    ;; TODO: Add to case history
     (tx-fns/set-values check-id check-data)))
 
-(defn check [{:keys [xtdb-node parameters]}]
+(defn check [{:keys [xtdb-node user parameters]}]
   (let [case-id (get-in parameters [:path :case-id])
         check-data (get-check-data xtdb-node case-id)]
     ;; TODO: Split up into three separate calls that can each fail
@@ -94,20 +94,21 @@
             fraud-check-response
             (ss-api/fraudcheck "aml" (get-in aml-response [:body :data :attributes :ssid])
               (->fraudcheck-data check-data))]
-        (apply concat
-          (for [{:keys [type response]}
-                [{:type :uk-aml
-                  :response aml-response}
-                 {:type :smart-doc
-                  :response smart-doc-response}
-                 {:type :fraud-check
-                  :response fraud-check-response}]]
-            (let [{:keys [result status ssid]} (get-in response [:body :data :attributes])]
-              (update-check type case-id
-                (cond-> {}
-                  :always (assoc :ssid ssid)
-                  result (assoc :result result)
-                  status (assoc :status status))))))))
+        (concat
+          (apply concat
+            (for [{:keys [type response]}
+                  [{:type :uk-aml :response aml-response}
+                   {:type :smart-doc :response smart-doc-response}
+                   {:type :fraud-check :response fraud-check-response}]]
+              (let [{:keys [result status ssid]} (get-in response [:body :data :attributes])]
+                (check-tx type case-id
+                  (cond-> {}
+                    :always (assoc :ssid ssid)
+                    result (assoc :result result)
+                    status (assoc :status status))))))
+          (case-history/put-event {:event :identity.checks-added
+                                   :case-id case-id
+                                   :user user}))))
     {:status 200
      :body {}}))
 
