@@ -165,3 +165,30 @@
         :params {:send-action (if fake :fake-send :send)}
         :on-success [::send-letter-success]
         :on-failure [::send-letter-failure]})}))
+
+(rf/reg-fx ::replace-letter-success
+  (fn [{:keys [on-completed]}]
+    (on-completed)))
+
+(rf/reg-event-fx ::replace-letter-success
+  (fn [_ [_ on-completed]]
+    {::replace-letter-success {:on-completed on-completed}}))
+
+(rf/reg-event-fx ::replace-letter-failure
+  (fn [_ [_ on-completed error-result]]
+    {::replace-letter-success {:on-completed on-completed}
+     ::ui/notify-user-http-error {:result error-result}}))
+
+(rf/reg-event-fx ::replace-letter
+  (fn [_ [_ {:keys [case-id letter-id file on-completed]}]]
+    {:http-xhrio
+     (ui/build-http
+       {:method :post
+        :uri (str "/api/case/" case-id "/notification-letter/" letter-id "/docx")
+        :body (doto (js/FormData.)
+                (.append "file" file)
+                (.append "filename" (.-name file)))
+        :format nil
+        :timeout 16000
+        :on-success [::replace-letter-success on-completed]
+        :on-failure [::replace-letter-failure on-completed]})}))

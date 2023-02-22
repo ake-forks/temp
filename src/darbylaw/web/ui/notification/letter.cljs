@@ -1,11 +1,13 @@
 (ns darbylaw.web.ui.notification.letter
-  (:require [darbylaw.web.ui :as ui :refer [<<]]
+  (:require [darbylaw.api.util.http :as http]
+            [darbylaw.web.ui :as ui :refer [<<]]
             [darbylaw.web.util.date :as date-util]
             [re-frame.core :as rf]
             [reagent-mui.components :as mui]
             [reagent.core :as r]
             [darbylaw.web.ui.case-model :as case-model]
-            [darbylaw.web.ui.notification.model :as model]))
+            [darbylaw.web.ui.notification.model :as model]
+            [darbylaw.web.ui.components.upload-button :refer [upload-button]]))
 
 (defonce confirmation-dialog-open? (r/atom false))
 (defonce contents-approved? (r/atom false))
@@ -66,9 +68,17 @@
      "Send"]]])
 
 (def edit-anchor (r/atom nil))
+(def upload-filename (r/atom nil))
+(def file-uploading? (r/atom false))
+(def pdf-viewer-refresh (r/atom 0))
+(defn refresh-pdf-viewer! []
+  (swap! pdf-viewer-refresh inc))
 
 (defn edit-popover []
-  (let [close! #(reset! edit-anchor nil)]
+  (let [case-id (<< ::case-model/case-id)
+        case-reference (<< ::case-model/current-case-reference)
+        letter-id (<< ::model/open-letter-id)
+        close! #(reset! edit-anchor nil)]
     [mui/popover {:open (some? @edit-anchor)
                   :anchorEl @edit-anchor
                   :onClose close!
@@ -106,16 +116,28 @@
       [mui/stack {:direction :row
                   :spacing 1
                   :sx {:mt 1}}
-       [mui/button {;:href (str "/api/case/" case-id "/" (name asset-type) "/" (name asset-id) "/notification-docx")
-                    ;:download (str case-reference " - " (name asset-id) " - notification.docx")
+       [mui/button {:href (str "/api/case/" case-id "/notification-letter/" letter-id "/docx")
+                    :download (str case-reference " - " letter-id " - notification.docx")
                     :variant :outlined
                     :full-width true
                     :startIcon (r/as-element [ui/icon-download])}
         "download current letter"]
-       [mui/button ;shared/upload-button asset-type case-id asset-id
-        {:variant :outlined
-         :full-width true
-         :startIcon (r/as-element [ui/icon-upload])}
+       [upload-button
+        {:button-props {:variant :outlined
+                        :full-width true
+                        :startIcon (r/as-element [ui/icon-upload])}
+         :input-props {:accept http/docx-mime-type}
+         :filename-atom upload-filename
+         :uploading?-atom file-uploading?
+         :on-file-selected (fn [file]
+                             (rf/dispatch [::model/replace-letter
+                                           {:case-id case-id
+                                            :letter-id letter-id
+                                            :file file
+                                            :on-completed
+                                            #(do (reset! file-uploading? false)
+                                                 (refresh-pdf-viewer!)
+                                                 (close!))}]))}
         "upload replacement"]]]]))
 
 (defn pdf-viewer [props]
@@ -164,5 +186,6 @@
                       :onClick #(open-confirmation-dialog!)}
           "send"]
          [send-confirmation-dialog]])]
+     ^{:key @pdf-viewer-refresh}
      [pdf-viewer {:style {:flex-grow 1}
                   :src (str "/api/case/" case-id "/notification-letter/" letter-id "/pdf")}]]))

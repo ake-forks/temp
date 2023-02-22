@@ -109,11 +109,35 @@
         {:status http/status-204-no-content}
         {:status http/status-404-not-found}))))
 
+(defn post-notification-letter [{:keys [xtdb-node user path-params multipart-params]}]
+  (let [case-id (parse-uuid (:case-id path-params))
+        letter-id (:letter-id path-params)
+        {:keys [tempfile content-type]} (get multipart-params "file")]
+    (if-not letter-id
+      {:status http/status-404-not-found}
+      (let [username (:username user)]
+        (assert (= content-type http/docx-mime-type))
+        (with-delete [tempfile tempfile]
+          (convert-to-pdf-and-store case-id letter-id tempfile))
+        (xt-util/exec-tx xtdb-node
+          (concat
+            (tx-fns/set-value letter-id [:author] username)
+            (tx-fns/set-value letter-id [:by] username)
+            (case-history/put-event
+              {:event :notification-letter.replaced
+               :case-id case-id
+               :user user
+               :letter-id letter-id})))
+        {:status http/status-204-no-content}))))
+
 (defn routes []
   [["/case/:case-id"
     ["/generate-notification-letter"
      {:post {:handler generate-notification-letter}}]
     ["/notification-letter/:letter-id/pdf"
      {:get {:handler (partial get-notification-letter :pdf)}}]
+    ["/notification-letter/:letter-id/docx"
+     {:get {:handler (partial get-notification-letter :docx)}
+      :post {:handler post-notification-letter}}]
     ["/notification-letter/:letter-id/send"
      {:post {:handler send-notification-letter}}]]])
