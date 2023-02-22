@@ -78,8 +78,6 @@
   (let [case-id (<< ::case-model/case-id)
         case-reference (<< ::case-model/current-case-reference)
         letter-id (<< ::model/open-letter-id)
-        letter (<< ::model/open-letter)
-        author (:author letter)
         close! #(reset! edit-anchor nil)]
     [mui/popover {:open (some? @edit-anchor)
                   :anchorEl @edit-anchor
@@ -91,17 +89,6 @@
                   :PaperProps {:sx {:border-radius 0}}}
      [mui/container {:maxWidth :sm
                      :sx {:my 2}}
-      [mui/typography {:variant :body1
-                       :font-weight :bold}
-       (cond
-         (= author :unknown-user)
-         "This notification letter was modified by a user."
-
-         (string? author)
-         (str "This notification letter was modified by '" author "'.")
-
-         :else
-         "This letter was automatically generated from case data.")]
       [mui/typography {:variant :body1
                        :sx {:mt 2}}
        "You can modify the letter using Word."]
@@ -163,7 +150,11 @@
        [mui/list-item-icon [ui/icon-description-outlined {:color :unset}]]
        [mui/list-item-text
         {:primary "notification letter"
-         :secondary (str "generated from case data"
+         :secondary (str (let [author (:author letter-data)]
+                           (cond
+                             (= author :unknown-user) "modified by a user"
+                             (string? author) (str "modified by '" author "'")
+                             :else "generated from case data"))
                          " (" (date-util/show-date-local-numeric (:modified-at letter-data)) ")")
          :sx {:flex-grow 0}}]]
       (when (<< ::model/letter-in-preparation?)
