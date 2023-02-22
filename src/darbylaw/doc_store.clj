@@ -68,6 +68,9 @@
 (defn fetch-case-file-to-file [case-id key file]
   (fetch-to-file (str case-id "/" key) file))
 
+(defn delete-case-file [case-id key]
+  (.deleteObject s3 bucket-name (str case-id "/" key)))
+
 (defn available? []
   (try
     (.listObjects s3 (ListObjectsRequest. bucket-name nil nil nil (int 1)))

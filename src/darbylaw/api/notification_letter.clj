@@ -1,6 +1,7 @@
 (ns darbylaw.api.notification-letter
   (:require
     [clojure.string :as str]
+    [clojure.tools.logging :as log]
     [darbylaw.api.util.tx-fns :as tx-fns]
     [xtdb.api :as xt]
     [darbylaw.doc-store :as doc-store]
@@ -144,6 +145,14 @@
                :case-id case-id
                :user user
                :letter-id letter-id})))
+        (try
+          (doc-store/delete-case-file case-id (str letter-id ".docx"))
+          (catch Exception e
+            (log/warn e "Could not delete docx for letter " letter-id)))
+        (try
+          (doc-store/delete-case-file case-id (str letter-id ".pdf"))
+          (catch Exception e
+            (log/warn e "Could not delete pdf for letter " letter-id)))
         {:status http/status-204-no-content}))))
 
 (defn routes []
