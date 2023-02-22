@@ -39,6 +39,11 @@
       [:postcode [:string {:max 12}]]
       [:duration {:optional true} [:int {:min 0}]]]]]])
 
+(def document-types--schema
+  [:enum
+   "driving_licence" "health_services_card" "id_card"
+   "passport" "residence_permit" "visa"])
+
 (def smart-doc--schema
   [:and
    [:map
@@ -63,9 +68,9 @@
       [:country [:string {:min 3 :max 3}]]]]
     [:issuing_country [:string {:min 3 :max 3}]]
     [:document_type
-     [:enum
-      "driving_licence" "health_services_card" "id_card"
-      "passport" "residence_permit" "visa"]]
+     [:or
+      document-types--schema
+      [:vector {:min 1} document-types--schema]]]
     [:scan_type
      [:enum
       "basic" "basic_selfie" "enhanced" "enhanced_selfie"]]
