@@ -14,7 +14,9 @@
   '{:find [(pull check [*])]
     :where [[check :type :smart-doc]
             [check :status status]
-            [(not= status "processed")]]})
+            [(not= status "processed")]
+            [(not= status "failed")]
+            [(not= status "invalid")]]})
 
 (comment
   (xt/q (xt/db xtdb-node/xtdb-node)
@@ -28,20 +30,17 @@
   [xtdb-node]
   (let [checks (xt/q (xt/db xtdb-node) checks-to-sync)]
     (log/info "Syncing" (count checks) "checks")
-    (doseq [{check-id :xt/id
-             :keys [ssid]}
+    (doseq [{check-id :xt/id :keys [ssid]}
             (map first checks)]
       (try
         (let [response (ss-api/get-doccheck ssid)
-              {:keys [status result]} (get-in response [:data :attributes])]
+              updated-data (-> response
+                               (get-in [:body :data :attributes])
+                               (select-keys [:status :result]))]
           (xt-util/exec-tx-or-throw xtdb-node
             (concat
               ;; TODO: Add to case history
-              (tx-fns/set-values check-id
-                (cond-> {}
-                  ;; TODO: Is this the best way of modelling this?
-                  status (assoc :status status)
-                  result (assoc :result result))))))
+              (tx-fns/set-values check-id updated-data))))
         (catch Exception e
           (log/error e "Failed syncing check ssid:" ssid))))))
 
