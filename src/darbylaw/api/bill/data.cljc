@@ -97,15 +97,15 @@
 (defn extract-bill-props [bill-schema]
   (assert (= :map (-> bill-schema second first)))
   (->> bill-schema
-    second                                                  ; skip :and
-    rest                                                    ; skip :map
+    second ; skip :and
+    rest ; skip :map
     (mapv first)))
 
 (defn extract-council-tax-props [council-tax-schema]
   (assert (= :map (-> council-tax-schema second first)))
   (->> council-tax-schema
-    second                                                  ; skip :and
-    rest                                                    ; skip :map
+    second ; skip :and
+    rest ; skip :map
     (mapv first)))
 
 (def company-by-id
