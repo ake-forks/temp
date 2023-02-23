@@ -22,7 +22,7 @@
      (ui/build-http
        {:method :post
         :timeout 10000
-        :uri (str "/api/case/" case-id "/identity")
+        :uri (str "/api/case/" case-id "/check-identity")
         :on-success [::submit-success case-id]
         :on-failure [::submit-failure]})}))
 

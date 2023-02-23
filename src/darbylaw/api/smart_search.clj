@@ -157,6 +157,6 @@
 ;; >> Routes
 
 (defn routes []
-  ["/case/:case-id/identity"
+  ["/case/:case-id/check-identity"
    {:post {:handler check
            :parameters {:path [:map [:case-id :uuid]]}}}])

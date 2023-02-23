@@ -50,7 +50,7 @@
                         (t/run-request {:request-method :post
                                         :uri (str "/api/case/"
                                                   case-id
-                                                  "/identity")}))]
+                                                  "/check-identity")}))]
         (is (= 200 (:status check-resp))))
 
       ;; Get case and check it has the identity check
@@ -87,5 +87,5 @@
                 (t/run-request {:request-method :post
                                 :uri (str "/api/case/"
                                           case-id
-                                          "/identity")}))]
+                                          "/check-identity")}))]
           (is (= 500 (:status check-resp))))))))
