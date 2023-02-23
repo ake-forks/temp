@@ -29,7 +29,7 @@
   (client {:method :post
            :path "/doccheck"
            :body data
-           :schema {:body ss-data/smart-doc--schema}}))
+           :schema {:body ss-data/smartdoc--schema}}))
 
 (defn get-doccheck [ssid]
   (client {:method :get
@@ -48,7 +48,7 @@
   (client {:method :post
            :path (str "/" type "/" ssid "/fraudcheck")
            :body data
-           :schema {:body ss-data/fraud-check--schema}}))
+           :schema {:body ss-data/fraudcheck--schema}}))
 
 (comment
   (lookup-doccheck-supported-documents)

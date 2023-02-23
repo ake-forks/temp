@@ -1,6 +1,27 @@
 (ns darbylaw.api.smart-search.data
   (:require [darbylaw.api.util.malli :as malli+]))
 
+(defn uk-aml->result
+  [{:keys [result]}]
+  (keyword result))
+
+(defn fraudcheck->result
+  [{:keys [result]}]
+  (if (= result "low_risk")
+    :pass
+    :fail))
+
+(defn smartdoc->status
+  [{:keys [status]}]
+  (if (contains? #{"processed" "failed" "invalid"} status)
+    :processed
+    :processing))
+
+(defn smartdoc->result
+  [{:keys [result] :as data}]
+  (if (= :processed (smartdoc->status data))
+    (keyword result)
+    :processing))
 
 (def uk-aml--schema
   [:map
@@ -44,7 +65,7 @@
    "driving_licence" "health_services_card" "id_card"
    "passport" "residence_permit" "visa"])
 
-(def smart-doc--schema
+(def smartdoc--schema
   [:and
    [:map
     [:client_ref {:optional true} [:string {:max 30}]]
@@ -89,7 +110,7 @@
       [:scan_type [:enum "basic_selfie" "enhanced_selfie"]]]
      [:mobile_number])])
 
-(def fraud-check--schema
+(def fraudcheck--schema
   [:map
    [:client_ref {:optional true} [:string {:max 30}]]
    [:sanction_region [:enum "gbr" "usa"]]

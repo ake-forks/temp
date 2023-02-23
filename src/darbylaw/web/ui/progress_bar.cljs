@@ -53,7 +53,8 @@
    {:label "Identity Check"
     :tooltip "We are waiting on SmartSearch to complete your ID check."
     :status-fn (fn [& _]
-                 (identity-dialog/check-icon))}
+                 (r/as-element
+                   [identity-dialog/check-icon]))}
    {:label "Complete Assets"
     :tooltip "Add bank and utitity assets via the dashboard."
     :status-fn (fn [current-case]

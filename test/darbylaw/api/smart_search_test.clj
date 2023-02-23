@@ -59,20 +59,21 @@
 
       ;; Get case and check it has the identity check
       (let [{case-data :body} (t/run-request {:request-method :get
-                                              :uri (str "/api/case/" case-id)})
-            {:keys [checks]} case-data]
+                                              :uri (str "/api/case/" case-id)})]
         (is (contains? case-data :id))
-        (is (not (nil? checks)))
-        (is (= 3 (count checks)))
-        (is (every? #(case (:type %)
-                       :uk-aml (and (= "pass" (:result %))
-                                    (= "1234" (:ssid %)))
-                       :smart-doc (and (= "waiting" (:status %))
-                                       (= "1234" (:ssid %)))
-                       :fraud-check (and (= "processed" (:status %))
-                                         (= "low_risk" (:result %))
-                                         (= "1234" (:ssid %))))
-                    checks)))
+        (is (contains? case-data :uk-aml))
+        (is (contains? case-data :fraudcheck))
+        (is (contains? case-data :smartdoc))
+        (let [uk-aml (:uk-aml case-data)]
+          (and (= "pass" (:result uk-aml))
+               (= "1234" (:ssid uk-aml))))
+        (let [fraudcheck (:fraudcheck case-data)]
+          (and (= "processed" (:status fraudcheck))
+               (= "low_risk" (:result fraudcheck))
+               (= "1234" (:ssid fraudcheck))))
+        (let [smartdoc (:smartdoc case-data)]
+          (and (= "waiting" (:status smartdoc))
+               (= "1234" (:ssid smartdoc)))))
 
       (testing "Fails to match schema"
         (let [;; Update personal rep

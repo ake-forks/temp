@@ -78,7 +78,9 @@
         check-data (merge data
                           check-id
                           {:xt/id check-id})]
-    (tx-fns/set-values check-id check-data)))
+    (concat
+      (tx-fns/set-values check-id check-data)
+      (tx-fns/set-value case-id [type] check-id))))
 
 (defn response->check-data [response]
   (-> response
@@ -126,8 +128,8 @@
     (xt-util/exec-tx xtdb-node
       (concat
         (->> [[:uk-aml aml-data]
-              [:fraud-check fraudcheck-data]
-              [:smart-doc smartdoc-data]]
+              [:fraudcheck fraudcheck-data]
+              [:smartdoc smartdoc-data]]
              ;; Remove failed checks
              (filter (comp (complement nil?) second))
              ;; Convert to transactions

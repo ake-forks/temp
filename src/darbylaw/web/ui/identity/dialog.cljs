@@ -32,64 +32,67 @@
   (fn [db]
     (::dialog-open? db)))
 
-(defn check-icon []
-  (let [final-result @(rf/subscribe [::model/current-final-result])]
-    (r/as-element
-      [:a {:style {:line-height 0
-                   :cursor :pointer}
-           :on-click #(rf/dispatch [::set-dialog-open {}])}
-       (case final-result
-         :fail [ui/icon-error-outline {:style {:color "red"}}]
-         :refer [ui/icon-error-outline {:style {:color "orange"}}]
-         :pass [ui/icon-check {:style {:color "green"}}]
-         :unknown [ui/icon-directions-run {:style {:color "grey"}}])])))
+(defn check-icon
+  ([]
+   [check-icon @(rf/subscribe [::model/current-final-result])])
+  ([result]
+   (r/as-element
+     [:a {:style {:line-height 0
+                  :cursor :pointer}
+          :on-click #(rf/dispatch [::set-dialog-open {}])}
+      (case result
+        :fail [ui/icon-error-outline {:style {:color "red"}}]
+        :refer [ui/icon-error-outline {:style {:color "orange"}}]
+        :pass [ui/icon-check {:style {:color "green"}}]
+        :unknown [ui/icon-directions-run {:style {:color "grey"}}]
+        :processing [ui/icon-directions-run {:style {:color "grey"}}])])))
 
+(defn check-row [title ssid result link]
+  [mui/table-row
+   [mui/table-cell
+    [check-icon result]]
+   [mui/table-cell
+    title]
+   [mui/table-cell
+    [mui/link {:href link :target :_blank} ssid]]])
+
+(def base-url "https://sandbox.smartsearchsecure.com")
 (defn content []
-  (let [final-result @(rf/subscribe [::model/current-final-result])]
-    [mui/stack {:spacing 1}
-     (if (= :unknown final-result)
+  [mui/stack {:spacing 1}
+   [mui/table
+    [mui/table-head
+     [mui/table-row
+      [mui/table-cell] ; Status
+      [mui/table-cell "Check"]
+      [mui/table-cell "SSID"]]]
+    [mui/table-body
+     (if-not @(rf/subscribe [::model/has-checks?])
        (let [case-id @(rf/subscribe [::case-model/case-id])]
-         [:<>
-          [mui/typography
-           "No checks have been run for this user."]
-          [mui/typography
-           "Press the button below to run the checks."]
-          [mui/button {:on-click #(rf/dispatch [::identity-check case-id])
-                       :variant "contained"}
-           "Run"]])
-       (let [checks @(rf/subscribe [::model/current-checks])]
-         [:<>
-          [mui/typography {:variant :h5}
-           "Checks:"]
-          [mui/table
-           [mui/table-head
-            [mui/table-row
-             [mui/table-cell]
-             [mui/table-cell "Check"]
-             [mui/table-cell "SSID"]
-             [mui/table-cell "Status"]
-             [mui/table-cell "Result"]]]
-           [mui/table-body
-            (for [{:keys [type status result ssid]} checks]
-              ^{:key ssid}
-              [mui/table-row
-               [mui/table-cell
-                [check-icon]]
-               [mui/table-cell
-                [mui/typography {:variant :h6}
-                 (str type)]]
-               [mui/table-cell
-                [:a {:href (str "https://sandbox.smartsearchsecure.com/aml/results/" ssid)
-                     :target :_blank}
-                 ssid]]
-               [mui/table-cell
-                (if status
-                  status
-                  "?")]
-               [mui/table-cell
-                (if result
-                  result
-                  "?")]])]]]))]))
+         [mui/table-row
+          [mui/table-cell {:col-span 5}
+           [mui/alert {:severity :info}
+            [mui/alert-title "No checks run"]
+            "Click " 
+            [mui/link {:on-click #(rf/dispatch [::identity-check case-id])
+                       :style {:cursor :pointer}}
+             "here"]
+            " to run the checks."]]])
+       [:<>
+        (let [uk-aml @(rf/subscribe [::model/uk-aml])]
+          [check-row "UK AML"
+           (:ssid uk-aml)
+           (:final-result uk-aml)
+           (str base-url "/aml/results/" (:ssid uk-aml))])
+        (let [fraudcheck @(rf/subscribe [::model/fraudcheck])]
+          [check-row "Fraud Check"
+           (:ssid fraudcheck)
+           (:final-result fraudcheck)
+           (str base-url "/aml/results/" (:ssid fraudcheck))])
+        (let [smartdoc @(rf/subscribe [::model/smartdoc])]
+          [check-row "SmartDoc Check"
+           (:ssid smartdoc)
+           (:final-result smartdoc)
+           (str base-url "/doccheck/results/" (:ssid smartdoc))])])]]])
 
 (defn dialog []
   [mui/dialog {:open (boolean @(rf/subscribe [::dialog-open?]))}
