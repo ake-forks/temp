@@ -73,7 +73,7 @@
              :postcode (:postcode pr-info)
              :country "gbr"}})
 
-(defn check-tx [type case-id data]
+(defn check-tx [case-id type data]
   (let [check-id {:probate.identity-check/case case-id
                   :type type}
         check-data (merge data
@@ -132,9 +132,9 @@
               [:fraudcheck fraudcheck-data]
               [:smartdoc smartdoc-data]]
              ;; Remove failed checks
-             (filter (comp (complement nil?) second))
+             (filter second)
              ;; Convert to transactions
-             (map (fn [[type data]] (check-tx type case-id data)))
+             (map #(apply check-tx case-id %))
              (apply concat))
         (case-history/put-event
           {:event :identity.checks-added
@@ -150,7 +150,7 @@
 
   (xt/pull (xt/db darbylaw.xtdb-node/xtdb-node)
            '[*]
-           (parse-uuid "f0c7c353-1258-4d0e-964c-95e1debf755b")))
+           (parse-uuid "4daf0cdb-aa6b-4236-b640-7748f05d7514")))
 
 
 
