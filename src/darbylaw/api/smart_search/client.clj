@@ -88,5 +88,4 @@
     [wrap-base-url
      wrap-base-headers
      wrap-response-body
-     wrap-request-body
-     wrap-ensure-success]))
+     wrap-request-body]))

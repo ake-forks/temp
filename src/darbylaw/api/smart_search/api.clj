@@ -4,7 +4,7 @@
             [clj-commons.digest :as digest]
             [clojure.tools.logging :as log]
             [darbylaw.api.smart-search.data :as ss-data]
-            [darbylaw.api.smart-search.client :refer [apply-middleware base-client]]
+            [darbylaw.api.smart-search.client :refer [apply-middleware wrap-ensure-success base-client]]
             [darbylaw.api.smart-search.auth :refer [wrap-auth]]))
 
 
@@ -14,7 +14,8 @@
   "An authenticated client"
   (apply-middleware
     base-client
-    [wrap-auth]))
+    [wrap-auth
+     wrap-ensure-success]))
 
 
 

@@ -3,6 +3,7 @@
             [mount.core :as mount]
             [clojure.tools.logging :as log]
             [darbylaw.config :refer [config]]
+            [darbylaw.api.util.http :as http]
             [darbylaw.api.smart-search.client :refer [base-client]])
   (:import [java.time.format DateTimeFormatter]
            [java.time LocalDateTime]))
@@ -41,36 +42,27 @@
                              :user_email user-email}})]
     (get-in body [:data :attributes :access_token])))
 
-(def current-token (atom {:token nil :expires-at nil}))
-
-(defn refresh-token []
-  (log/info "Refreshing token")
-  (let [new-token (auth-token)
-        ;; We hardcode this time because the returned `expires_in` is wrong afaik
-        new-expires-at (.plusMinutes (LocalDateTime/now) 15)]
-    (swap! current-token assoc :token new-token :expires-at new-expires-at)
-    new-token))
-
-;; NOTE: I'm aware of a race condition here, suggestions welcome!
-;; - Say that the token has expired
-;; - Say two processes get here at once
-;; - They'll both call refresh-token and each make a call to get a new token
-(defn get-token []
-  (let [{:keys [token expires-at]} @current-token]
-    ;; NOTE: .isAfter checks if `expires-at` is after the input time
-    (if (and token expires-at (.isAfter expires-at (LocalDateTime/now)))
-      token
-      (refresh-token))))
-
 
 
 ;; >> Middleware
 ;; All this needs to be in a separate namespace to avoid a circular dependency
 
+(def token (atom nil))
+(defn add-token [request]
+  (update request :headers merge {"Authorization" (str "Bearer " @token)}))
+
+;; There's technically a race condition here if two requests are being processed at the same time
+;; This shouldn't be an issue though because we'll just update the token in place
 (defn wrap-auth [handler]
   "Add an Authorization header to the request
   Possibly making a request to refresh the token"
   (fn [request]
-    (-> request
-        (update :headers merge {"Authorization" (str "Bearer " (get-token))})
-        handler)))
+    (let [{:keys [status] :as response}
+          (-> request add-token handler)]
+      (if (= status http/status-401-unauthorized)
+        (do
+          (log/info "Refreshing token")
+          (reset! token (auth-token))
+          ;; We always return here, even if the response is a 401 to prevent loops
+          (-> request add-token handler))
+        response))))
