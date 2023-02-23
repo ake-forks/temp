@@ -6,11 +6,6 @@
             [darbylaw.api.util.xtdb :as xt-util]
             [xtdb.api :as xt]))
 
-;TODO could be simplified with parameterisation
-(defn get-creation-schema [entity-type]
-  (case entity-type
-    :bill (bill-data/make-bill-schema :create)
-    :council-tax (bill-data/make-council-tax-schema :create)))
 (def bill-creation-schema
   (bill-data/make-bill-schema :create))
 
@@ -26,12 +21,12 @@
 
 (comment
   (require '[malli.core :as malli])
-  (malli.core/explain creation-schema {:bill-type #{:other}
-                                       ;:issuer :utility-1
-                                       :amount "10"
-                                       :custom-issuer-name "hola"
-                                       :custom-issuer-address "addr"
-                                       :address "hey"}))
+  (malli.core/explain bill-creation-schema {:bill-type #{:other}
+                                            ;:issuer :utility-1
+                                            :amount "10"
+                                            :custom-issuer-name "hola"
+                                            :custom-issuer-address "addr"
+                                            :address "hey"}))
 
 (defn handle-property [{:keys [user path-params body-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
@@ -146,12 +141,12 @@
 (defn routes []
   ["/case/:case-id/"
    ["utility" {:post {:handler add-bill
-                      :parameters {:body (get-creation-schema :bill)}}}]
+                      :parameters {:body bill-creation-schema}}}]
    ["delete-utility/:bill-id" {:post {:handler delete-bill}}]
    ["update-utility/:bill-id" {:post {:handler update-bill}}]
 
    ["council-tax" {:post {:handler add-council-tax
-                          :parameters {:body (get-creation-schema :council-tax)}}}]
+                          :parameters {:body council-tax-creation-schema}}}]
    ["delete-council-tax/:council-tax-id" {:post {:handler delete-bill}}]
    ["update-council-tax/:council-tax-id" {:post {:handler update-bill}}]])
 
