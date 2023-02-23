@@ -73,15 +73,15 @@
              :postcode (:postcode pr-info)
              :country "gbr"}})
 
-(defn check-tx [case-id type data]
+(defn check-tx [case-id check-type data]
   (let [check-id {:probate.identity-check/case case-id
-                  :type type}
+                  :check-type check-type}
         check-data (merge data
                           check-id
                           {:xt/id check-id})]
     (concat
       (tx-fns/set-values check-id check-data)
-      (tx-fns/set-value case-id [type] check-id))))
+      (tx-fns/set-value case-id [check-type] check-id))))
 
 (defn response->check-data [response]
   (-> response

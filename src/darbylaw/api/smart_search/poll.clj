@@ -12,7 +12,7 @@
 
 (def checks-to-sync
   '{:find [(pull check [*])]
-    :where [[check :type :smartdoc]
+    :where [[check :check-type :smartdoc]
             [check :status status]
             [(not= status "processed")]
             [(not= status "failed")]
@@ -23,7 +23,7 @@
     checks-to-sync
     #_
     '{:find [(pull check [*])]
-      :where [[check :type :smartdoc]
+      :where [[check :check-type :smartdoc]
               [check :status status]]}))
 
 (defn sync!

@@ -39,12 +39,12 @@
            :path "/aml"
            :body data}))
 
-(defn fraudcheck [type ssid data]
-  (when-not (#{"aml" "doccheck"} type)
-    (log/error "Invalid fraud check type")
-    (throw (ex-info "Invalid fraud check type" {:type type})))
+(defn fraudcheck [check-type ssid data]
+  (when-not (#{"aml" "doccheck"} check-type)
+    (log/error "Invalid fraud check check-type")
+    (throw (ex-info "Invalid fraud check type" {:check-type check-type})))
   (client {:method :post
-           :path (str "/" type "/" ssid "/fraudcheck")
+           :path (str "/" check-type "/" ssid "/fraudcheck")
            :body data}))
 
 (comment
