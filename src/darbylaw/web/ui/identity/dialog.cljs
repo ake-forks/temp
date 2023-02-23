@@ -99,8 +99,7 @@
    [mui/stack {:spacing 1}
     [mui/dialog-title
      [mui/stack {:spacing 1 :direction :row}
-      [mui/typography {:variant "h6"}
-       "identity checks"]
+      "identity checks"
       [mui/box {:flex-grow 1}]
       [ui/icon-close {:on-click #(rf/dispatch [::set-dialog-open])}]]]
     [mui/dialog-content
