@@ -5,6 +5,7 @@
             [darbylaw.api.util.tx-fns :as tx-fns]
             [darbylaw.api.smart-search.api :as ss-api]
             [darbylaw.api.case-history :as case-history]
+            [darbylaw.api.util.http :as http]
             [clojure.string :as str]))
 
 
@@ -139,10 +140,9 @@
           {:event :identity.checks-added
            :case-id case-id
            :user user})))
-    {:status (if failed?
-               500
-               200)
-     :body {}}))
+    (if failed?
+      {:status http/status-500-internal-server-error}
+      {:status http/status-204-no-content})))
 
 (comment
   (check {:xtdb-node darbylaw.xtdb-node/xtdb-node

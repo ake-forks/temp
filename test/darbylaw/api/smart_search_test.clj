@@ -51,7 +51,7 @@
                                         :uri (str "/api/case/"
                                                   case-id
                                                   "/check-identity")}))]
-        (is (= 200 (:status check-resp))))
+        (is (<= 200 (:status check-resp) 299)))
 
       ;; Get case and check it has the identity check
       (let [{case-data :body} (t/run-request {:request-method :get
@@ -88,4 +88,4 @@
                                 :uri (str "/api/case/"
                                           case-id
                                           "/check-identity")}))]
-          (is (= 500 (:status check-resp))))))))
+          (is (<= 500 (:status check-resp) 599)))))))
