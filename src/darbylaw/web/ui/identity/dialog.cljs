@@ -11,6 +11,11 @@
   (fn [{:keys [db]} [_ case-id]]
     {:dispatch [::case-model/load-case! case-id]}))
 
+(rf/reg-event-fx ::submit-failure
+  (fn [{:keys [db]} [_ error-result]]
+    {::ui/notify-user-http-error {:message "Error starting identity checks"
+                                  :result error-result}}))
+
 (rf/reg-event-fx ::identity-check
   (fn [{:keys [db]} [_ case-id]]
     {:http-xhrio
