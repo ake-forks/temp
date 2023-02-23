@@ -72,7 +72,7 @@
       (map first)))
   (doseq [letter all-letters]
     (xt/submit-tx darbylaw.xtdb-node/xtdb-node
-      [[::xt/delete (:xt/id #spy/d letter)]])))
+      [[::xt/delete (:xt/id letter)]])))
 
 (defn get-notification-letter [doc-type {:keys [path-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
