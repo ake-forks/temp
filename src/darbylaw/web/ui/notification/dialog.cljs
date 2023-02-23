@@ -4,76 +4,62 @@
             [re-frame.core :as rf]
             [reagent-mui.components :as mui]
             [reagent.core :as r]
-            [darbylaw.web.ui.notification.model :as model]))
+            [darbylaw.web.ui.notification.model :as model]
+            [darbylaw.web.ui.bills.account-info :as account-info]
+            [darbylaw.api.bill.data :as bill-data]))
 
-(rf/reg-event-db ::open
-  (fn [db [_ notification]]
-    (-> db
-      (model/set-current-notification notification)
-      (assoc ::context {:dialog-open? true}))))
-
-(rf/reg-event-db ::close
-  (fn [db _]
-    (assoc-in db [::context :dialog-open?] false)))
-
-(rf/reg-sub ::context #(::context %))
-
-(rf/reg-sub ::dialog-open?
-  :<- [::context]
-  #(:dialog-open? %))
-
-(defn asset-data [] [:i "[asset data goes here]"])
+(defn asset-data []
+  (case (<< ::model/notification-type)
+    :utility [account-info/utility-bill-info]
+    :council-tax [account-info/council-tax-info]))
 
 (defn letter-viewer [] "letter-viewer")
 (defn conversation [] "conversation")
 
 (defn left-panel [] "left-panel")
 
-(rf/reg-event-db ::set-data-completed
-  (fn [db [_ completed?]]
-    (assoc-in db [::context :data-completed?] completed?)))
-
-(rf/reg-sub ::data-completed?
-  :<- [::context]
-  #(get % :data-completed? false))
-
 (defn right-panel []
-  [:<>
-   [mui/dialog-title
-    (case (<< ::model/notification-type)
-      :utility (str "household bills for " (<< ::model/utility-company-label)))
-    [mui/icon-button {:onClick #(rf/dispatch [::close])}
-     [ui/icon-close]]]
-   [mui/dialog-content
-    (when-not (<< ::model/notification-ongoing?)
-      [mui/stack
-       [asset-data]
-       [mui/typography {:sx {:font-weight 600}}
-        "Finished?"]
-       [mui/typography
-        (case (<< ::model/notification-type)
-          :utility (str
-                     "Let us know when you have provided all accounts at this address"
-                     " for " (<< ::model/utility-company-label) ". At that point,"
-                     " we will notify the company about the decease"
-                     " and ask for confirmation of the data entered."))]
-       [mui/form-control-label
-        {:label "All data is completed."
-         :control
-         (r/as-element
-           [mui/checkbox {:checked (<< ::data-completed?)
-                          :onChange #(rf/dispatch [::set-data-completed (ui/event-target-checked %)])}])}]])]
-   [mui/dialog-actions
-    [mui/fade {:in (<< ::data-completed?)}
-     [mui/button {:variant :contained
-                  :onClick (let [case-id (<< ::case-model/case-id)
-                                 context (<< ::model/notification)]
-                             #(rf/dispatch [::model/start-notification-process case-id context]))
-                  :sx {:visibility (if (<< ::data-completed?) :visible :hidden)}}
-      "Notify company"]]
-    [mui/button {:variant :outlined
-                 :onClick #(rf/dispatch [::close])}
-     "Close"]]])
+  (let [council-label (bill-data/get-council-label (:council (<< ::model/notification)))]
+    [:<>
+     [mui/dialog-title
+      (case (<< ::model/notification-type)
+        :utility (str "household bills for " (<< ::model/utility-company-label))
+        :council-tax council-label)
+      [mui/icon-button {:onClick #(rf/dispatch [::model/close-dialog])}
+       [ui/icon-close]]]
+     [mui/dialog-content
+      (when-not (<< ::model/notification-ongoing?)
+        [mui/stack
+         [asset-data]
+         [mui/typography {:sx {:font-weight 600}}
+          "Finished?"]
+         [mui/typography
+          (case (<< ::model/notification-type)
+            :utility (str
+                       "Let us know when you have provided all accounts at this address"
+                       " for " (<< ::model/utility-company-label) ". At that point,"
+                       " we will notify the company about the decease"
+                       " and ask for confirmation of the data entered.")
+            :council-tax (str
+                           "Once you are happy that the information provided is correct,"
+                           " we will notify " council-label "."))]
+         [mui/form-control-label
+          {:label "All data is completed."
+           :control
+           (r/as-element
+             [mui/checkbox {:checked (<< ::model/data-completed?)
+                            :onChange #(rf/dispatch [::model/set-data-completed (ui/event-target-checked %)])}])}]])]
+     [mui/dialog-actions
+      [mui/fade {:in (<< ::model/data-completed?)}
+       [mui/button {:variant :contained
+                    :onClick (let [case-id (<< ::case-model/case-id)
+                                   context (<< ::model/notification)]
+                               #(rf/dispatch [::model/start-notification-process case-id context]))
+                    :sx {:visibility (if (<< ::model/data-completed?) :visible :hidden)}}
+        "Notify company"]]
+      [mui/button {:variant :outlined
+                   :onClick #(rf/dispatch [::model/close-dialog])}
+       "Close"]]]))
 
 (defn dialog-content []
   [mui/stack {:spacing 1
@@ -89,7 +75,7 @@
     [right-panel]]])
 
 (defn dialog []
-  [mui/dialog {:open (boolean (<< ::dialog-open?))
+  [mui/dialog {:open (boolean (<< ::model/dialog-open?))
                :maxWidth (if (<< ::model/notification-ongoing?) :xl :sm)
                :fullWidth true}
    [dialog-content]])

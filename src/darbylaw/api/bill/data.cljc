@@ -1,5 +1,4 @@
-(ns darbylaw.api.bill.data
-  (:require [darbylaw.api.util.malli :as malli+]))
+(ns darbylaw.api.bill.data)
 
 (def bill-types
   (array-map
@@ -78,14 +77,13 @@
   [:and
    [:map
     [:bill-type [:set (into [:enum] (keys bill-types))]]
-    [:utility-company {:optional true} (into [:enum] (map :id companies))]
-    [:new-utility-company {:optional true} [:string {:min 1}]]
+    [:utility-company {:optional true} :keyword]
+    [:new-utility-company? {:optional true} :boolean]
     [:account-number {:optional true} :string]
     (if (= op :create)
       [:property [:or :uuid :string]]
       [:property :uuid])
-    [:meter-readings {:optional true} :string]]
-   (malli+/exclusive-keys [:utility-company :new-utility-company])])
+    [:meter-readings {:optional true} :string]]])
 
 (defn make-council-tax-schema [op]
   [:and
@@ -116,8 +114,14 @@
 (defn get-company-info [company-id]
   (get company-by-id company-id))
 
+(defn get-company-label [company-id]
+  (:common-name (get company-by-id company-id)))
+
 (def council-by-id
   (into {} (map (juxt :id identity) councils)))
 
 (defn get-council-info [council-id]
   (get council-by-id council-id))
+
+(defn get-council-label [council-id]
+  (:common-name (get council-by-id council-id)))

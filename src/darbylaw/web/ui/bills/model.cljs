@@ -6,8 +6,10 @@
     [darbylaw.api.bill.data :as bills-data]
     [darbylaw.web.ui.case-model :as case-model]
     [medley.core :as medley]
-    [reagent.core :as r]))
+    [reagent.core :as r]
+    [clojure.string :as string]))
 
+;TODO - go through and remove/amalgamate some of these subscriptions
 (rf/reg-sub ::companies
   (fn [_]
     bills-data/companies))
@@ -73,11 +75,16 @@
 (defn address-by-property-id [id]
   (let [properties @(rf/subscribe [::current-properties-by-id])]
     (:address (get properties id))))
-
 (def bills-dashboard-menu (r/atom nil))
 (rf/reg-sub ::bills-dialog
   (fn [db]
     (:dialog/bills db)))
+
+(defn create-company-id [s]
+  (-> s
+    (string/replace " " "-")
+    (string/lower-case)
+    (keyword)))
 
 (defn values-to-submit [{:keys [values] :as _fork-params}]
   (cond-> values
@@ -86,6 +93,17 @@
 
     (:utility-company values)
     (assoc :utility-company (keyword (:utility-company values)))
+
+    ;I have assoc'ed a custom utility company with the same :utility-company key as an existing one, but to differentiate
+    ;I added a new? flag (so later we can eg prompt lawyers to add the company to our existing list with an address)
+    ;This is because accounting for 2 attributes when looking for the name of the supplier made the later UI a mess
+    ;An alternative would be to do :new-utility-company as :utility-company in the current-case query so they are consistent
+    ;in the app-db even if they're not in xtdb
+    (:new-utility-company values)
+    (assoc :new-utility-company? true)
+
+    (:new-utility-company values)
+    (assoc :utility-company (create-company-id (:new-utility-company values)))
 
     (= :new-property (:property values))
     (assoc :property (:address-new values))
@@ -101,11 +119,9 @@
 
 (rf/reg-event-db
   ::show-bills-dialog
-  (fn [db [_ service supplier-id]]
+  (fn [db [_ context]]
     (reset! bills-dashboard-menu nil)
-    (assoc-in db [:dialog/bills]
-      {:service service
-       :id supplier-id})))
+    (assoc-in db [:dialog/bills] context)))
 
 (rf/reg-event-db ::save-temp-data
   (fn [db [_ fork-params]]
@@ -114,7 +130,7 @@
 
 (rf/reg-event-db ::clear-temp-data
   (fn [db]
-    (assoc-in db [:bills/temp-data] nil)))
+    (dissoc db :bills/temp-data)))
 
 (rf/reg-sub ::get-temp-data
   (fn [db]

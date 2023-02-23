@@ -6,7 +6,8 @@
     [darbylaw.web.ui.case-model :as case-model]
     [re-frame.core :as rf]
     [reagent-mui.components :as mui]
-    [clojure.edn :refer [read-string]]))
+    [clojure.edn :refer [read-string]]
+    ))
 
 (defn address-box [selected? child]
   [mui/paper (merge
@@ -20,12 +21,13 @@
                         {:border-color :primary.light}))})
    child])
 
-(defn property-select [{:keys [values set-handle-change] :as _fork-args}]
+(defn property-select [{:keys [values set-handle-change] :as _fork-args} dialog-type]
   (let [deceased-address @(rf/subscribe [::case-model/deceased-address])
         properties @(rf/subscribe [::model/current-properties])]
     [mui/form-control {:full-width true
                        :variant :filled
-                       :required true}
+                       :required true
+                       :disabled (= dialog-type :edit)}
      [mui/input-label {:id :property} "property address"]
      [mui/select
       {:name :property
@@ -63,4 +65,3 @@
         :variant :outlined
         :fullWidth true
         :required true}])))
-
