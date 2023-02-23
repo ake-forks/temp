@@ -23,10 +23,13 @@
     [darbylaw.web.ui.case-commons :as case-commons]
     [reagent-mui.lab.masonry :as mui-masonry]
     [darbylaw.web.ui.bills.add-dialog :as add-bill-dialog]
-    [darbylaw.web.ui.bills.model :as bill-model]
+    [darbylaw.web.ui.bills.bills-dialog :as bills-dialog]
+    [darbylaw.web.ui.bills.council-tax-dialog :as council-tax]
+    [darbylaw.web.ui.bills.model :as bills-model]
     [medley.core :as medley]
     [darbylaw.api.util.data :as data-util]
-    [darbylaw.web.ui.notification.dialog :as notification-dialog]))
+    [darbylaw.web.ui.notification.dialog :as notification-dialog]
+    [darbylaw.web.ui.notification.model :as notification-model]))
 
 (defn bank-item [bank]
   (let [bank-data (bank-list/bank-by-id (:bank-id bank))
@@ -90,6 +93,30 @@
      (or title "add")]
     [ui/icon-add]]])
 
+(defn menu-asset-add-button
+  "anchor = atom
+  options = a map of option labels and their on-click functions as key-value pairs"
+  [anchor options]
+  [:<>
+   [mui/card-action-area {:on-click (fn [e] (reset! anchor (.-target e)))
+                          :sx {:padding-top 1}}
+    [mui/stack {:direction :row
+                :spacing 2
+                :align-items :center}
+     [mui/typography {:variant :h5} "add"]
+     [ui/icon-add]]]
+   [mui/menu {:open (some? @anchor)
+              :anchor-el @anchor
+              :on-close #(reset! anchor nil)
+              :anchor-origin {:vertical "bottom"
+                              :horizontal "left"}
+              :transform-origin {:vertical "top"
+                                 :horizontal "left"}}
+    (map (fn [[k v]]
+           ^{:key k}
+           [mui/menu-item {:on-click v} k])
+      options)]])
+
 (defn format-currency
   [value]
   (format/format "%.2f" value))
@@ -120,6 +147,7 @@
    (when-not no-divider
      [mui/divider])])
 
+;I think we should move these cards to their respective asset areas (like we have for tasks)
 (defn funeral-card []
   (let [dialog-info @(rf/subscribe [::funeral-model/dialog-info])
         account @(rf/subscribe [::funeral-model/account])
@@ -179,14 +207,19 @@
 
 (defn bills-card []
   (let [current-case @(rf/subscribe [::case-model/current-case])
-        bills-by-property-id (group-by :property (:bills current-case))
-        used-property-ids (->> (:bills current-case)
+        bills-by-property-id (group-by :property (:utility-bills current-case))
+        council-tax-by-property-id (group-by :property (:council-tax current-case))
+        used-property-ids (->> (concat (:council-tax current-case) (:utility-bills current-case))
+                            (concat (:bills current-case))
                             (keep :property)
                             (distinct))
         properties-by-id (medley/index-by :id (:properties current-case))
-        company-id->label @(rf/subscribe [::bill-model/company-id->label])]
+        company-id->label @(rf/subscribe [::bills-model/company-id->label])
+        council-id->label @(rf/subscribe [::bills-model/council-id->label])]
     [:<>
-     [add-bill-dialog/dialog]
+     [add-bill-dialog/panel]
+     [bills-dialog/dialog]
+     [council-tax/panel]
      [notification-dialog/dialog]
      [asset-card {:title "household bills"}
       (for [property-id used-property-ids]
@@ -196,26 +229,45 @@
           (if-let [address (get-in properties-by-id [property-id :address])]
             (data-util/first-line address)
             "[unknown address]")]
-         (for [issuer (->> (get bills-by-property-id property-id)
-                        (map #(or (:issuer %)
-                                  (:custom-issuer-name %)))
-                        (distinct)
-                        (remove nil?))]
-           ^{:key issuer}
-           [asset-item {:title (if (keyword? issuer)
-                                 (company-id->label issuer)
-                                 issuer)
-                        :on-click #(rf/dispatch [::notification-dialog/open
+         (for [company (->> (get bills-by-property-id property-id)
+                         (map #(or (:utility-company %)
+                                 (:new-utility-company %)))
+                         (distinct)
+                         (remove nil?))]
+           ^{:key company}
+           [asset-item {:title (if (keyword? company)
+                                 (company-id->label company)
+                                 company)
+                        :on-click #(rf/dispatch [::notification-model/open
                                                  {:notification-type :utility
                                                   :case-id (:id current-case)
-                                                  :utility-company issuer
+                                                  :utility-company company
+                                                  :property property-id}])
+                        :indent 1
+                        :no-divider true}])
+         (for [council (->> (get council-tax-by-property-id property-id)
+                         (map #(:council %)))]
+           ^{:key council}
+           [asset-item {:title (if (keyword? council)
+                                 (council-id->label council)
+                                 council)
+                        :on-click #(rf/dispatch [::notification-model/open
+                                                 {:notification-type :council-tax
+                                                  :case-id (:id current-case)
+                                                  :council council
                                                   :property property-id}])
                         :indent 1
                         :no-divider true}])
          [mui/divider]])
-      [asset-add-button
-       {:title "add bill"
-        :on-click add-bill-dialog/show}]]]))
+      [menu-asset-add-button bills-model/bills-dashboard-menu
+       {"add utility" #(rf/dispatch [::bills-model/show-bills-dialog
+                                     {:service :utility
+                                      :id nil
+                                      :dialog :add}])
+        "add council tax" #(rf/dispatch [::bills-model/show-bills-dialog
+                                         {:service :council-tax
+                                          :id nil
+                                          :dialog :add}])}]]]))
 
 (defn heading [current-case]
   [mui/box {:sx {:background-color theme/off-white :padding-bottom {:xs "2rem" :xl "4rem"}}}

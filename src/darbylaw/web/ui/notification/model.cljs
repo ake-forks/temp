@@ -217,3 +217,30 @@
         :uri (str "/api/case/" case-id "/notification-letter/" letter-id)
         :on-success [::delete-letter-success on-completed]
         :on-failure [::delete-letter-failure on-completed]})}))
+
+;dialog events and subs
+
+(rf/reg-event-fx ::open
+  (fn [{:keys [db]} [_ notification]]
+    {:db (-> db
+           (set-current-notification notification)
+           (assoc ::context {:dialog-open? true}))
+     :dispatch [::load-conversation notification]}))
+
+(rf/reg-sub ::context #(::context %))
+
+(rf/reg-sub ::dialog-open?
+  :<- [::context]
+  #(:dialog-open? %))
+
+(rf/reg-event-db ::close-dialog
+  (fn [db _]
+    (assoc-in db [::context :dialog-open?] false)))
+
+(rf/reg-event-db ::set-data-completed
+  (fn [db [_ completed?]]
+    (assoc-in db [::context :data-completed?] completed?)))
+
+(rf/reg-sub ::data-completed?
+  :<- [::context]
+  #(get % :data-completed? false))
