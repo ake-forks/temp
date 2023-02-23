@@ -28,8 +28,7 @@
 (defn doccheck [data]
   (client {:method :post
            :path "/doccheck"
-           :body data
-           :schema {:body ss-data/smartdoc--schema}}))
+           :body data}))
 
 (defn get-doccheck [ssid]
   (client {:method :get
@@ -38,8 +37,7 @@
 (defn aml [data]
   (client {:method :post
            :path "/aml"
-           :body data
-           :schema {:body ss-data/uk-aml--schema}}))
+           :body data}))
 
 (defn fraudcheck [type ssid data]
   (when-not (#{"aml" "doccheck"} type)
@@ -47,8 +45,7 @@
     (throw (ex-info "Invalid fraud check type" {:type type})))
   (client {:method :post
            :path (str "/" type "/" ssid "/fraudcheck")
-           :body data
-           :schema {:body ss-data/fraudcheck--schema}}))
+           :body data}))
 
 (comment
   (lookup-doccheck-supported-documents)

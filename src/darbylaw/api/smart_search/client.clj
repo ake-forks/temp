@@ -27,25 +27,11 @@
 (defn wrap-ensure-success [handler]
   "Throw an exception if the response is not 200"
   (fn [request]
-    (let [{:keys [status] :as response} (handler request)]
+    (let [{:keys [status body] :as response} (handler request)]
       (when-not (= 200 status)
+        (log/error "Request failed" (:errors body))
         (throw (ex-info "Request failed" {:response response})))
       response)))
-
-(defn wrap-validate-schema [handler]
-  "Validate the request body against the schema at [:schema :body]
-  Throws an exception if the validation fails"
-  (fn [{:keys [schema body] :as request}]
-    (when-let [body-schema (:body schema)]
-      (when-not (m/validate body-schema body)
-        (-> body-schema
-            (m/explain body)
-            me/humanize
-            log/error)
-        (throw (ex-info "Invalid body" {:request request}))))
-    (-> request
-        (dissoc :schema)
-        handler)))
 
 ;; TODO: Check content-type header?
 (defn wrap-response-body [handler]
@@ -101,7 +87,6 @@
     http-kit-client
     [wrap-base-url
      wrap-base-headers
-     wrap-ensure-success
      wrap-response-body
      wrap-request-body
-     wrap-validate-schema]))
+     wrap-ensure-success]))
