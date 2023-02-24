@@ -36,11 +36,11 @@
   (fn [[has-checks? uk-aml fraudcheck smartdoc]]
     (if-not has-checks?
       :unknown
-      (if (= :processing (:final-result smartdoc))
-        :processing
-        (if (= #{:pass}
-               (->> [uk-aml fraudcheck smartdoc]
-                    (map :final-result)
-                    (into #{})))
-          :pass
-          :fail)))))
+      (if-not (= #{:pass}
+                 (->> [uk-aml fraudcheck smartdoc]
+                      (map :final-result)
+                      (into #{})))
+        :fail
+        (if (= :processing (:final-result smartdoc))
+          :processing
+          :pass)))))
