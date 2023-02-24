@@ -215,7 +215,8 @@
    {:fraudcheck
     check-props}
    {:smartdoc
-    check-props}])
+    check-props}
+   :override-result])
 
 (defn get-cases [{:keys [xtdb-node]}]
   (ring/response
