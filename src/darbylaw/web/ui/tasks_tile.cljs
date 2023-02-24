@@ -9,7 +9,8 @@
     [darbylaw.web.ui.case-model :as case-model]
     [darbylaw.web.ui.deceased-details-form :as dd-form]
     [darbylaw.web.ui.banking.tasks :as banking-tasks]
-    [darbylaw.web.ui.keydocs.tasks :refer [keydocs-tasks]]))
+    [darbylaw.web.ui.keydocs.tasks :refer [keydocs-tasks]]
+    [darbylaw.web.ui.identity.tasks :refer [identity-tasks]]))
 
 (defn valid? [validations data]
   (->> data
@@ -33,6 +34,7 @@
      "tasks"]
     [mui/divider]
     [mui/stack {:sx {:overflow-y :auto :max-height 280}}
+     [identity-tasks]
      [case-tasks @(rf/subscribe [::case-model/current-case])]
      [keydocs-tasks]
      [banking-tasks/banks]

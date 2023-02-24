@@ -152,6 +152,11 @@
                        :uploaded-by
                        :uploaded-at]}])
 
+(def check-props
+  [:ssid
+   :status
+   :result])
+
 (def common-case-eql
   ['(:xt/id {:as :id})
    :reference
@@ -203,7 +208,14 @@
 
    {'(:probate.property/_case {:as :properties})
     ['(:xt/id {:as :id})
-     :address]}])
+     :address]}
+
+   {:uk-aml
+    check-props}
+   {:fraudcheck
+    check-props}
+   {:smartdoc
+    check-props}])
 
 (defn get-cases [{:keys [xtdb-node]}]
   (ring/response

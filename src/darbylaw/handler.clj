@@ -24,6 +24,7 @@
     [darbylaw.api.buildingsociety :as buildsoc-api]
     [darbylaw.api.funeral :as funeral-api]
     [darbylaw.api.bill :as bill-api]
+    [darbylaw.api.smart-search :as smart-search-api]
     [darbylaw.api.bank-notification :as bank-notification-api]
     [darbylaw.api.bank-notification.mailing-controls :as mailing]
     [darbylaw.middleware.xtdb :refer [wrap-xtdb-node]]
@@ -77,7 +78,8 @@
      (funeral-api/routes)
      (bill-api/routes)
      (bank-notification-api/routes)
-     (mailing/routes)]]])
+     (mailing/routes)
+     (smart-search-api/routes)]]])
 
 (defn make-router []
   (ring/router
