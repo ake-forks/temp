@@ -44,8 +44,8 @@
              :error (boolean error)
              :autoComplete :off}
       error-icon? (assoc :InputProps
-                    (when error
-                      (error-icon-prop))))))
+                         (when error
+                           (error-icon-prop))))))
 
 (defn common-text-field-props [k fork-args]
   (common-input-field-props k fork-args {:error-icon? true}))
@@ -233,10 +233,10 @@
        [component (ui/mui-fork-args fork-args)])]
     (finally
       (when (and (some? form-state) clean-on-unmount?)
-        (reset! form-state
+        (reset! form-state nil
                 ;; Adapted from:
                 ;; https://github.com/luciodale/fork/blob/dd4da7ffbb5706cd3edbcbd4b545986ca84ea6df/src/fork/re_frame.cljs#L87
                 ;; Otherwise the form breaks after sending the new code
-                (merge (when (:keywordize-keys props)
-                         {:keywordize-keys true})
-                       {:values {} :touched #{}}))))))
+                #_(merge (when (:keywordize-keys props)
+                           {:keywordize-keys true})
+                         {:values {} :touched #{}}))))))
