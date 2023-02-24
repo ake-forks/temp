@@ -14,11 +14,6 @@
 (def accepted-filetypes
   #{".pdf" ".png" ".jpeg" ".jpg" ".gif"})
 
-(defn get-reference [xtdb-node case-id]
-  (-> (xt/pull (xt/db xtdb-node)
-        [:reference] case-id)
-    :reference))
-
 (defn document-present? [xtdb-node case-id document-name]
   (contains?
     (xt/pull (xt/db xtdb-node) (vec accepted-documents) case-id)
@@ -26,8 +21,8 @@
 
 (defn post-document [{:keys [xtdb-node user path-params multipart-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
-        reference (get-reference xtdb-node case-id)
-        {:keys [tempfile content-type]} (get multipart-params "file")
+        reference (xt-util/get-reference xtdb-node case-id)
+        {:keys [tempfile]} (get multipart-params "file")
         orig-filename (get multipart-params "filename")
         extension (data-util/file-extension orig-filename)
         document-name (keyword (:document-name path-params))

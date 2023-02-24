@@ -1,9 +1,12 @@
 (ns darbylaw.api.bill
   (:require [darbylaw.api.bill.data :as bill-data]
             [darbylaw.api.case-history :as case-history]
+            [darbylaw.api.util.data :as data-util]
             [darbylaw.api.util.http :as http]
             [darbylaw.api.util.tx-fns :as tx-fns]
             [darbylaw.api.util.xtdb :as xt-util]
+            [darbylaw.doc-store :as doc-store]
+            [darbylaw.api.util.files :refer [with-delete]]
             [xtdb.api :as xt]))
 
 (def bill-creation-schema
@@ -135,8 +138,76 @@
                                  :case-id case-id
                                  :user user
                                  :op :add
-                                 :event/bill council-tax-id})))) ;should this be event/council-tax?
-  {:status http/status-204-no-content})
+                                 :event/bill council-tax-id}))) ;should this be event/council-tax?
+    {:status 200
+     :body {:property property-id
+            :council (:council council-tax-data)}}))
+
+(comment
+  (defn post-notification [{:keys [xtdb-node user path-params multipart-params bank-type]}]
+    (let [case-id (parse-uuid (:case-id path-params))
+          bank-id (keyword (:bank-id path-params))
+          {:keys [tempfile content-type]} (get multipart-params "file")
+          asset-id (build-asset-id bank-type case-id bank-id)
+          letter-id (fetch-letter-id xtdb-node asset-id)]
+      (if-not letter-id
+        {:status http/status-404-not-found}
+        (let [username (:username user)]
+          (with-delete [tempfile tempfile]
+            (assert (= content-type docx-mime-type))
+            (convert-to-pdf-and-store xtdb-node case-id bank-id letter-id tempfile))
+          (xt-util/exec-tx xtdb-node
+            (concat
+              (tx-fns/set-value letter-id [:author] username)
+              (tx-fns/set-value letter-id [:by] username)
+              (case-history/put-event
+                {:event :bank-notification.letter-replaced
+                 :case-id case-id
+                 :user user
+                 :bank-id bank-id
+                 :letter-id letter-id})))
+          {:status http/status-204-no-content})))))
+
+(def accepted-filetypes
+  #{".pdf" ".png" ".jpeg" ".jpg" ".gif"})
+(defn upload-document [asset-type {:keys [xtdb-node user path-params multipart-params]}]
+  (let [case-id (parse-uuid (:case-id path-params))
+        asset-id (parse-uuid (:asset-id path-params))
+        {:keys [tempfile]} (get multipart-params "file")
+        reference (xt-util/get-reference xtdb-node case-id)
+        orig-filename (get multipart-params "filename")
+        extension (data-util/file-extension orig-filename)
+        document-id (random-uuid)
+        document-type (case asset-type
+                        :utility :probate.utility-doc
+                        :council-tax :probate.council-tax-doc)
+        filename (str reference "." (name asset-type) "." document-id extension)]
+    (assert (accepted-filetypes extension))
+    (assert (not (clojure.string/blank? reference)))
+    (with-delete [tempfile tempfile]
+      (doc-store/store (str case-id "/" filename) tempfile))
+    (xt-util/exec-tx-or-throw xtdb-node
+      (concat
+        [[::xt/put {:type document-type
+                    :xt/id filename
+                    (keyword
+                      (str document-type "/case")) case-id
+                    (keyword
+                      (str document-type "/asset")) asset-id
+                    :uploaded-by (:username user)
+                    :uploaded-at (xt-util/now)
+                    :original-filename orig-filename}]]
+        (tx-fns/set-value asset-id [:recent-bill] filename)
+        (case-history/put-event
+          {:event (keyword (str document-type ".uploaded"))
+           :case-id case-id
+           :asset-id asset-id
+           :document-id filename
+           :user user})))
+    {:status 204}))
+
+
+
 
 (defn routes []
   ["/case/:case-id/"
@@ -147,6 +218,7 @@
 
    ["council-tax" {:post {:handler add-council-tax
                           :parameters {:body council-tax-creation-schema}}}]
+   ["council-tax/document/:asset-id" {:post {:handler (partial upload-document :council-tax)}}]
    ["delete-council-tax/:council-tax-id" {:post {:handler delete-bill}}]
    ["update-council-tax/:council-tax-id" {:post {:handler update-bill}}]])
 

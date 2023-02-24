@@ -152,6 +152,12 @@
                        :uploaded-by
                        :uploaded-at]}])
 
+(def bill-props
+  ['(:xt/id {:as :filename})
+   :original-filename
+   :uploaded-by
+   :uploaded-at])
+
 (def common-case-eql
   ['(:xt/id {:as :id})
    :reference
@@ -201,7 +207,8 @@
 
    {'(:probate.council-tax/_case {:as :council-tax})
     (into
-      ['(:xt/id {:as :id})]
+      ['(:xt/id {:as :id})
+       {:recent-bill bill-props}]
       (bill-data/extract-council-tax-props
         (bill-data/make-council-tax-schema :query)))}
 
