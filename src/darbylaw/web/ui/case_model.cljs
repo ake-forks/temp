@@ -32,6 +32,10 @@
   :<- [::current-case]
   #(-> % :deceased :address))
 
+(rf/reg-sub ::properties
+  :<- [::current-case]
+  #(:properties %))
+
 (rf/reg-event-fx ::load-case!
   (fn [_ [_ case-id opts]]
     {:http-xhrio

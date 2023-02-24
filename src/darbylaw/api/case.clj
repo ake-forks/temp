@@ -167,6 +167,9 @@
    {:will document-props}
    {:grant-of-probate document-props}
 
+   {'(:notification-process/_case {:as :notification-process})
+    ['*]}
+
    {'(:probate.funeral-account/_case {:as :funeral-account
                                       :cardinality :one})
     [:title
@@ -196,10 +199,17 @@
                           :accounts]
                          letter-props)}
 
-   {:bills (into
-             ['(:xt/id {:as :id})]
-             (bill-data/extract-bill-props
-               (bill-data/make-bill-schema :query)))}
+   {'(:probate.council-tax/_case {:as :council-tax})
+    (into
+      ['(:xt/id {:as :id})]
+      (bill-data/extract-council-tax-props
+        (bill-data/make-council-tax-schema :query)))}
+
+   {'(:probate.bill/_case {:as :utility-bills})
+    (into
+      ['(:xt/id {:as :id})]
+      (bill-data/extract-bill-props
+        (bill-data/make-bill-schema :query)))}
 
    {'(:probate.property/_case {:as :properties})
     ['(:xt/id {:as :id})

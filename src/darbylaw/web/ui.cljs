@@ -5,6 +5,7 @@
     [reagent-mui.icons.arrow-back-sharp]
     [reagent-mui.icons.help-outline]
     [reagent-mui.icons.cloud-sync]
+    [reagent-mui.icons.description-outlined]
     [reagent-mui.icons.download]
     [reagent-mui.icons.error-outline]
     [reagent-mui.icons.edit]
@@ -49,6 +50,7 @@
 (def icon-arrow-back-sharp reagent-mui.icons.arrow-back-sharp/arrow-back-sharp)
 (def icon-help-outline reagent-mui.icons.help-outline/help-outline)
 (def icon-cloud-sync reagent-mui.icons.cloud-sync/cloud-sync)
+(def icon-description-outlined reagent-mui.icons.description-outlined/description-outlined)
 (def icon-download reagent-mui.icons.download/download)
 (def icon-error-outline reagent-mui.icons.error-outline/error-outline)
 (def icon-edit reagent-mui.icons.edit/edit)
@@ -85,6 +87,9 @@
   [mui/alert {:severity :warning
               :icon (r/as-element [icon-help-outline {:fontSize :inherit}])}
    message])
+
+(defn << [& args]
+  @(rf/subscribe (vec args)))
 
 (defn reg-fx+event
   "Registers an effect like re-frame's reg-fx, and registers
@@ -211,3 +216,10 @@
 
 (defn event-target-value [onchange-event]
   (.. onchange-event -target -value))
+
+(defn event-currentTarget [event]
+  (.-currentTarget event))
+
+(defn make-collapse-contents-full-width [props]
+  (update props :sx
+    assoc "& .MuiCollapse-wrapperInner" {:flex-grow 1}))

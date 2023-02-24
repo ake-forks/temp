@@ -39,7 +39,8 @@
     (map #(-> %
             (str/trim)
             (str/replace #"\s+" " ")))
-    (remove str/blank?)))
+    (remove str/blank?)
+    (str/join "\n")))
 
 (comment
   (sanitize-empty-space "\n\n line1\n line2 with\t tab\n"))
