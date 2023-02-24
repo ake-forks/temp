@@ -54,7 +54,7 @@ resource "aws_ssm_parameter" "post-service-map" {
 resource "aws_ssm_parameter" "smart-search-public-key" {
   name  = "ProbateTree_SmartSearchPublicKey_${terraform.workspace}"
   type  = "SecureString"
-  value = ""
+  value = "Change_Me"
 
   lifecycle {
     ignore_changes = [value]
