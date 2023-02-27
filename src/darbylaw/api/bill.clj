@@ -54,7 +54,7 @@
       :else
       (assert false (str "Unexpected type:" (type property))))))
 
-(defn add-bill [{:keys [xtdb-node user path-params body-params] :as args}]
+(defn add-utility [{:keys [xtdb-node user path-params body-params] :as args}]
   (let [case-id (parse-uuid (:case-id path-params))
         bill-id (random-uuid)
         [property-id property-tx] (handle-property args)
@@ -72,8 +72,10 @@
                                  :case-id case-id
                                  :user user
                                  :op :add
-                                 :event/bill bill-id}))))
-  {:status http/status-204-no-content})
+                                 :event/bill bill-id})))
+    {:status 200
+     :body {:property property-id
+            :utility-company (:utility-company bill-data)}}))
 
 (defn delete-bill [{:keys [xtdb-node user path-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
@@ -143,31 +145,6 @@
      :body {:property property-id
             :council (:council council-tax-data)}}))
 
-(comment
-  (defn post-notification [{:keys [xtdb-node user path-params multipart-params bank-type]}]
-    (let [case-id (parse-uuid (:case-id path-params))
-          bank-id (keyword (:bank-id path-params))
-          {:keys [tempfile content-type]} (get multipart-params "file")
-          asset-id (build-asset-id bank-type case-id bank-id)
-          letter-id (fetch-letter-id xtdb-node asset-id)]
-      (if-not letter-id
-        {:status http/status-404-not-found}
-        (let [username (:username user)]
-          (with-delete [tempfile tempfile]
-            (assert (= content-type docx-mime-type))
-            (convert-to-pdf-and-store xtdb-node case-id bank-id letter-id tempfile))
-          (xt-util/exec-tx xtdb-node
-            (concat
-              (tx-fns/set-value letter-id [:author] username)
-              (tx-fns/set-value letter-id [:by] username)
-              (case-history/put-event
-                {:event :bank-notification.letter-replaced
-                 :case-id case-id
-                 :user user
-                 :bank-id bank-id
-                 :letter-id letter-id})))
-          {:status http/status-204-no-content})))))
-
 (def accepted-filetypes
   #{".pdf" ".png" ".jpeg" ".jpg" ".gif"})
 (defn upload-document [asset-type {:keys [xtdb-node user path-params multipart-params]}]
@@ -217,8 +194,9 @@
 
 (defn routes []
   ["/case/:case-id/"
-   ["utility" {:post {:handler add-bill
+   ["utility" {:post {:handler add-utility
                       :parameters {:body bill-creation-schema}}}]
+   ["utility/document/:asset-id" {:post {:handler (partial upload-document :utility)}}]
    ["delete-utility/:bill-id" {:post {:handler delete-bill}}]
    ["update-utility/:bill-id" {:post {:handler update-bill}}]
 

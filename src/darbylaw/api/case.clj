@@ -214,7 +214,8 @@
 
    {'(:probate.bill/_case {:as :utility-bills})
     (into
-      ['(:xt/id {:as :id})]
+      ['(:xt/id {:as :id})
+       {:recent-bill bill-props}]
       (bill-data/extract-bill-props
         (bill-data/make-bill-schema :query)))}
 
