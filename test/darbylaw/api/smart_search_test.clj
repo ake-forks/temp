@@ -61,15 +61,15 @@
         (is (contains? case-data :fraudcheck))
         (is (contains? case-data :smartdoc))
         (let [uk-aml (:uk-aml case-data)]
-          (and (= "pass" (:result uk-aml))
-               (= "1234" (:ssid uk-aml))))
+          (is (and (= "pass" (:result uk-aml))
+                   (= "1234" (:ssid uk-aml)))))
         (let [fraudcheck (:fraudcheck case-data)]
-          (and (= "processed" (:status fraudcheck))
-               (= "low_risk" (:result fraudcheck))
-               (= "1234" (:ssid fraudcheck))))
+          (is (and (= "processed" (:status fraudcheck))
+                   (= "low_risk" (:result fraudcheck))
+                   (= "1234" (:ssid fraudcheck)))))
         (let [smartdoc (:smartdoc case-data)]
-          (and (= "waiting" (:status smartdoc))
-               (= "1234" (:ssid smartdoc)))))
+          (is (and (= "waiting" (:status smartdoc))
+                   (= "1234" (:ssid smartdoc))))))
 
       (testing "Override"
 
