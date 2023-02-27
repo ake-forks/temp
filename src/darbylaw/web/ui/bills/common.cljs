@@ -79,4 +79,6 @@
                                 (reset! filename "")
                                 (reset! model/file-uploading? true))
                    :hidden true
-                   :sx {:display :none}}]])))
+                   :sx {:display :none}
+                   :inputProps {:type :file
+                                :accept ".pdf, .png, .jpeg, .jpg, .gif"}}]])))
