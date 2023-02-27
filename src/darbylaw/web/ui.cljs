@@ -34,6 +34,7 @@
     [reagent-mui.icons.check-circle]
     [reagent-mui.icons.check]
     [reagent-mui.icons.close]
+    [reagent-mui.icons.currency-pound]
     [reagent-mui.components :as mui]
     [reagent-mui.lab.loading-button]
     [reagent.core :as r]
@@ -80,6 +81,7 @@
 (def icon-warning reagent-mui.icons.warning/warning)
 (def icon-mouse-outlined reagent-mui.icons.mouse-outlined/mouse-outlined)
 
+(def icon-pound reagent-mui.icons.currency-pound/currency-pound)
 (def icon-close reagent-mui.icons.close/close)
 (def loading-button reagent-mui.lab.loading-button/loading-button)
 

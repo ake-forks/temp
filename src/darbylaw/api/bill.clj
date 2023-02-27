@@ -9,6 +9,13 @@
 (def bill-creation-schema
   (bill-data/make-bill-schema :create))
 
+(def valuation-schema
+  [:map
+   [:account-number :string]
+   [:meter-readings {:optional true} :string]
+   [:valuation :string]])
+
+
 (def creation-props
   (bill-data/extract-bill-props bill-creation-schema))
 
@@ -138,8 +145,19 @@
                                  :event/bill council-tax-id})))) ;should this be event/council-tax?
   {:status http/status-204-no-content})
 
+(defn submit-valuation [{:keys [xtdb-node user path-params body-params] :as args}]
+  (let [asset-id (parse-uuid (:asset-id path-params))
+        asset-data (select-keys body-params [:valuation :account-number :meter-readings])]
+    (xt-util/exec-tx-or-throw xtdb-node
+      (concat
+        (tx-fns/set-values asset-id asset-data)))
+    {:status http/status-204-no-content}))
+
 (defn routes []
   ["/case/:case-id/"
+   ["submit-valuation/:asset-id" {:post {:handler submit-valuation
+                                         :parameters {:body valuation-schema}}}]
+
    ["utility" {:post {:handler add-bill
                       :parameters {:body bill-creation-schema}}}]
    ["delete-utility/:bill-id" {:post {:handler delete-bill}}]
