@@ -150,7 +150,7 @@
         new-result (get-in parameters [:query :new-result])]
     (xt-util/exec-tx xtdb-node
       (concat
-        (tx-fns/set-value case-id [:override-result]
+        (tx-fns/set-value case-id [:override-identity-check]
                           (when new-result
                             (keyword new-result)))
         (case-history/put-event

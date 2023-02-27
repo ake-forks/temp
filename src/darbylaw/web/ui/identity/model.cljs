@@ -30,7 +30,7 @@
 
 (rf/reg-sub ::override-result
   :<- [::case-model/current-case]
-  #(:override-result %))
+  #(:override-identity-check %))
 
 (rf/reg-sub ::current-final-result
   :<- [::override-result]

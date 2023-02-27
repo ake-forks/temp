@@ -216,7 +216,7 @@
     check-props}
    {:smartdoc
     check-props}
-   :override-result])
+   :override-identity-check])
 
 (defn get-cases [{:keys [xtdb-node]}]
   (ring/response
