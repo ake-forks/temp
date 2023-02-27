@@ -88,8 +88,11 @@
          [ui/icon-delete]]]]
       [confirmation-popover]]]))
 
-(defn recent-bill-component [])
-
+(comment"/household-bills/document/:filename")
+(rf/reg-event-fx ::open-document
+  (fn [_ [_ case-id filename]]
+    (js/window.open
+      (str "/api/case/" case-id "/household-bills/document/" filename))))
 
 (defn council-item [{:keys [account-number id recent-bill] :as data}]
   (let [case-id @(rf/subscribe [::case-model/case-id])
@@ -115,7 +118,8 @@
         (if recent-bill
           [mui/stack {:direction :row :spacing 1 :align-items :center}
            [mui/typography {:variant :body1} "recent bill:"]
-           [mui/button {:variant :text}
+           [mui/button {:variant :text
+                        :on-click #(rf/dispatch [::open-document case-id (-> data :recent-bill :filename)])}
             (:original-filename recent-bill)]
            [common/upload-button
             :council-tax

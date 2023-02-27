@@ -206,7 +206,13 @@
            :user user})))
     {:status 204}))
 
-
+(defn get-document [{:keys [path-params]}]
+  (let [case-id (parse-uuid (:case-id path-params))
+        filename (:filename path-params)
+        input-stream (doc-store/fetch
+                       (str case-id "/" filename))]
+    {:status 200
+     :body input-stream}))
 
 
 (defn routes []
@@ -220,7 +226,8 @@
                           :parameters {:body council-tax-creation-schema}}}]
    ["council-tax/document/:asset-id" {:post {:handler (partial upload-document :council-tax)}}]
    ["delete-council-tax/:council-tax-id" {:post {:handler delete-bill}}]
-   ["update-council-tax/:council-tax-id" {:post {:handler update-bill}}]])
+   ["update-council-tax/:council-tax-id" {:post {:handler update-bill}}]
+   ["household-bills/document/:filename" {:get {:handler get-document}}]])
 
 (comment
   (require 'darbylaw.xtdb-node)
