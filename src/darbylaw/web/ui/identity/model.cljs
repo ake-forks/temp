@@ -28,19 +28,26 @@
   (fn [[uk-aml fraudcheck smartdoc] _]
     (or (seq uk-aml) (seq fraudcheck) (seq smartdoc))))
 
+(rf/reg-sub ::override-result
+  :<- [::case-model/current-case]
+  #(:override-identity-check %))
+
 (rf/reg-sub ::current-final-result
+  :<- [::override-result]
   :<- [::has-checks?]
   :<- [::uk-aml]
   :<- [::fraudcheck]
   :<- [::smartdoc]
-  (fn [[has-checks? uk-aml fraudcheck smartdoc]]
-    (if-not has-checks?
-      :unknown
-      (if-not (= #{:pass}
-                 (->> [uk-aml fraudcheck smartdoc]
-                      (map :final-result)
-                      (into #{})))
-        :fail
-        (if (= :processing (:final-result smartdoc))
-          :processing
-          :pass)))))
+  (fn [[override-result has-checks? uk-aml fraudcheck smartdoc]]
+    (if override-result
+      override-result
+      (if-not has-checks?
+        :unknown
+        (if-not (= #{:pass}
+                   (->> [uk-aml fraudcheck smartdoc]
+                        (map :final-result)
+                        (into #{})))
+          :fail
+          (if (= :processing (:final-result smartdoc))
+            :processing
+            :pass))))))

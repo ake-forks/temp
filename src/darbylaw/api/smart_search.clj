@@ -74,14 +74,16 @@
              :country "gbr"}})
 
 (defn check-tx [case-id check-type data]
-  (let [check-id {:probate.identity-check/case case-id
-                  :check-type check-type}
+  (let [case-key (case check-type
+                   :uk-aml :probate.identity-check.uk-aml/case
+                   :fraudcheck :probate.identity-check.fraudcheck/case
+                   :smartdoc :probate.identity-check.smartdoc/case)
+        check-id {case-key case-id}
         check-data (merge data
                           check-id
-                          {:xt/id check-id})]
-    (concat
-      (tx-fns/set-values check-id check-data)
-      (tx-fns/set-value case-id [check-type] check-id))))
+                          {:xt/id check-id
+                           :check-type check-type})]
+    (tx-fns/set-values check-id check-data)))
 
 (defn response->check-data [response]
   (-> response
@@ -144,19 +146,34 @@
       {:status http/status-500-internal-server-error}
       {:status http/status-204-no-content})))
 
-(comment
-  (check {:xtdb-node darbylaw.xtdb-node/xtdb-node
-          :parameters {:path {:case-id (parse-uuid "f0c7c353-1258-4d0e-964c-95e1debf755b")}}})
-
-  (xt/pull (xt/db darbylaw.xtdb-node/xtdb-node)
-           '[*]
-           (parse-uuid "4daf0cdb-aa6b-4236-b640-7748f05d7514")))
-
+(defn override-checks [{:keys [xtdb-node user parameters]}]
+  (let [case-id (get-in parameters [:path :case-id])
+        new-result (get-in parameters [:query :new-result])]
+    (xt-util/exec-tx xtdb-node
+      (concat
+        (tx-fns/set-value case-id [:override-identity-check]
+                          (when new-result
+                            (keyword new-result)))
+        (case-history/put-event
+          (merge
+            {:event (if new-result
+                      :identity.checks-overridden
+                      :identity.checks-override-reset)
+             :case-id case-id
+             :user user}
+            (when new-result
+              {:result new-result})))))
+    {:status http/status-204-no-content}))
 
 
 ;; >> Routes
 
 (defn routes []
-  ["/case/:case-id/check-identity"
-   {:post {:handler check
-           :parameters {:path [:map [:case-id :uuid]]}}}])
+  ["/case/:case-id/identity-checks"
+   ["/run"
+    {:post {:handler check
+            :parameters {:path [:map [:case-id :uuid]]}}}]
+   ["/override"
+    {:post {:handler override-checks
+            :parameters {:path [:map [:case-id :uuid]]
+                         :query [:map [:new-result {:optional true} :string]]}}}]])

@@ -50,7 +50,7 @@
                         (t/run-request {:request-method :post
                                         :uri (str "/api/case/"
                                                   case-id
-                                                  "/check-identity")}))]
+                                                  "/identity-checks/run")}))]
         (is (<= 200 (:status check-resp) 299)))
 
       ;; Get case and check it has the identity check
@@ -61,15 +61,45 @@
         (is (contains? case-data :fraudcheck))
         (is (contains? case-data :smartdoc))
         (let [uk-aml (:uk-aml case-data)]
-          (and (= "pass" (:result uk-aml))
-               (= "1234" (:ssid uk-aml))))
+          (is (and (= "pass" (:result uk-aml))
+                   (= "1234" (:ssid uk-aml)))))
         (let [fraudcheck (:fraudcheck case-data)]
-          (and (= "processed" (:status fraudcheck))
-               (= "low_risk" (:result fraudcheck))
-               (= "1234" (:ssid fraudcheck))))
+          (is (and (= "processed" (:status fraudcheck))
+                   (= "low_risk" (:result fraudcheck))
+                   (= "1234" (:ssid fraudcheck)))))
         (let [smartdoc (:smartdoc case-data)]
-          (and (= "waiting" (:status smartdoc))
-               (= "1234" (:ssid smartdoc)))))
+          (is (and (= "waiting" (:status smartdoc))
+                   (= "1234" (:ssid smartdoc))))))
+
+      (testing "Override"
+
+        (testing "Set as :pass"
+          ;; Override
+          (let [override-resp 
+                (t/run-request {:request-method :post
+                                :uri (str "/api/case/"
+                                          case-id
+                                          "/identity-checks/override")
+                                :query-string (t/->query-string
+                                                {:new-result "pass"})})]
+            (is (<= 200 (:status override-resp) 299)))
+          ;; Check case
+          (let [{case-data :body} (t/run-request {:request-method :get
+                                                  :uri (str "/api/case/" case-id)})]
+            (is (= :pass (:override-identity-check case-data)))))
+
+        (testing "Reset"
+          ;; Override
+          (let [override-resp 
+                (t/run-request {:request-method :post
+                                :uri (str "/api/case/"
+                                          case-id
+                                          "/identity-checks/override")})]
+            (is (<= 200 (:status override-resp) 299)))
+          ;; Check case
+          (let [{case-data :body} (t/run-request {:request-method :get
+                                                  :uri (str "/api/case/" case-id)})]
+            (is (nil? (:override-identity-check case-data))))))
 
       (testing "SmartSearch returns an error"
         (let [;; Perform checks
@@ -87,5 +117,5 @@
                 (t/run-request {:request-method :post
                                 :uri (str "/api/case/"
                                           case-id
-                                          "/check-identity")}))]
+                                          "/identity-checks/run")}))]
           (is (<= 500 (:status check-resp) 599)))))))

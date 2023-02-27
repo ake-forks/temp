@@ -19,30 +19,26 @@
   (let [{case :body} (t/run-request (setup/get-case case-id))]
     (:funeral-expense case)))
 
-(defn ->query-string
-  [m]
-  (ring.util.codec/form-encode m))
-
 (defn upsert-funeral-account [case-id account]
   (ring-handler
     (merge
       {:request-method :put
        :uri (str "/api/case/" case-id "/funeral/account")
-       :query-string (->query-string account)
+       :query-string (t/->query-string account)
        :headers {"accept" "application/transit+json"}})))
 
 (defn post-other-expense [case-id expense]
   (t/run-request
     {:request-method :post
      :uri (str "/api/case/" case-id "/funeral/other")
-     :query-string (->query-string expense)
+     :query-string (t/->query-string expense)
      :headers {"accept" "application/transit+json"}}))
 
 (defn update-other-expense [case-id expense-id expense]
   (t/run-request
     {:request-method :put
      :uri (str "/api/case/" case-id "/funeral/other/" expense-id)
-     :query-string (->query-string expense)
+     :query-string (t/->query-string expense)
      :headers {"accept" "application/transit+json"}}))
 
 (deftest add_and_update_funeral-account

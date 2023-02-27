@@ -11,7 +11,7 @@
   (fn [{:keys [db]} [_ case-id]]
     {:dispatch [::case-model/load-case! case-id]}))
 
-(rf/reg-event-fx ::submit-failure
+(rf/reg-event-fx ::check-submit-failure
   (fn [{:keys [db]} [_ error-result]]
     {::ui/notify-user-http-error {:message "Error starting identity checks"
                                   :result error-result}}))
@@ -22,9 +22,26 @@
      (ui/build-http
        {:method :post
         :timeout 10000
-        :uri (str "/api/case/" case-id "/check-identity")
+        :uri (str "/api/case/" case-id "/identity-checks/run")
         :on-success [::submit-success case-id]
-        :on-failure [::submit-failure]})}))
+        :on-failure [::check-submit-failure]})}))
+
+(rf/reg-event-fx ::override-submit-failure
+  (fn [{:keys [db]} [_ error-result]]
+    {::ui/notify-user-http-error {:message "Error overriding result"
+                                  :result error-result}}))
+
+(rf/reg-event-fx ::set-override-result
+  (fn [_ [_ case-id new-result]]
+    {:http-xhrio
+     (ui/build-http
+       {:method :post
+        :timeout 10000
+        :uri (str "/api/case/" case-id "/identity-checks/override")
+        :url-params (when new-result
+                      {:new-result (name new-result)})
+        :on-success [::submit-success case-id]
+        :on-failure [::override-submit-failure]})}))
 
 (rf/reg-event-db ::set-dialog-open
   (fn [db [_ dialog-context]]
@@ -61,18 +78,61 @@
    [mui/table-cell
     [mui/link {:href link :target :_blank} ssid]]])
 
+(defn override-button [case-id]
+  (r/with-let [open? (r/atom false)
+               open-menu #(reset! open? true)
+               close-menu #(reset! open? false)
+               id (str (gensym "override-button-"))]
+    [:<>
+     [mui/button {:id id
+                  :variant :outlined
+                  :on-click open-menu
+                  :end-icon (r/as-element 
+                              (if @open?
+                                [ui/icon-keyboard-arrow-up]
+                                [ui/icon-keyboard-arrow-down]))}
+      "Override"]
+     [mui/menu {:open @open?
+                :on-close close-menu
+                :anchor-el (js/document.querySelector (str "#" id))}
+      [mui/menu-item {:on-click #(do (close-menu)
+                                     (rf/dispatch [::set-override-result case-id :pass]))
+                      :style {:min-width 120
+                              :color "green"}}
+       "pass"]
+      [mui/menu-item {:on-click #(do (close-menu)
+                                     (rf/dispatch [::set-override-result case-id :fail]))
+                      :style {:min-width 120
+                              :color "red"}}
+       "fail"]
+      [mui/menu-item {:on-click #(do (close-menu)
+                                     (rf/dispatch [::set-override-result case-id nil]))
+                      :style {:min-width 120}}
+       "unset"]]]))
+
 (def base-url "https://sandbox.smartsearchsecure.com")
 (defn content []
-  [mui/stack {:spacing 1}
-   [mui/table
-    [mui/table-head
-     [mui/table-row
-      [mui/table-cell] ; Status
-      [mui/table-cell "Check"]
-      [mui/table-cell "SSID"]]]
-    [mui/table-body
-     (if-not @(rf/subscribe [::model/has-checks?])
-       (let [case-id @(rf/subscribe [::case-model/case-id])]
+  (let [case-id @(rf/subscribe [::case-model/case-id])]
+    [mui/stack {:spacing 1}
+     [mui/stack {:direction :row
+                 :spacing 2
+                 :align-items :center}
+      [override-button case-id]
+      (when-let [override @(rf/subscribe [::model/override-result])]
+        [mui/typography
+         (case override
+           :pass [mui/typography {:color "green"}
+                  "pass"]
+           :fail [mui/typography {:color "red"}
+                  "fail"])])]
+     [mui/table
+      [mui/table-head
+       [mui/table-row
+        [mui/table-cell] ; Result/status
+        [mui/table-cell "Check"]
+        [mui/table-cell "SSID"]]]
+      [mui/table-body
+       (if-not @(rf/subscribe [::model/has-checks?])
          [mui/table-row
           [mui/table-cell {:col-span 5}
            [mui/alert {:severity :info}
@@ -81,23 +141,23 @@
             [mui/link {:on-click #(rf/dispatch [::identity-check case-id])
                        :style {:cursor :pointer}}
              "here"]
-            " to run the checks."]]])
-       [:<>
-        (let [uk-aml @(rf/subscribe [::model/uk-aml])]
-          [check-row "UK AML"
-           (:ssid uk-aml)
-           (:final-result uk-aml)
-           (str base-url "/aml/results/" (:ssid uk-aml))])
-        (let [fraudcheck @(rf/subscribe [::model/fraudcheck])]
-          [check-row "Fraud Check"
-           (:ssid fraudcheck)
-           (:final-result fraudcheck)
-           (str base-url "/aml/results/" (:ssid fraudcheck))])
-        (let [smartdoc @(rf/subscribe [::model/smartdoc])]
-          [check-row "SmartDoc Check"
-           (:ssid smartdoc)
-           (:final-result smartdoc)
-           (str base-url "/doccheck/results/" (:ssid smartdoc))])])]]])
+            " to run the checks."]]]
+         [:<>
+          (let [uk-aml @(rf/subscribe [::model/uk-aml])]
+            [check-row "UK AML"
+             (:ssid uk-aml)
+             (:final-result uk-aml)
+             (str base-url "/aml/results/" (:ssid uk-aml))])
+          (let [fraudcheck @(rf/subscribe [::model/fraudcheck])]
+            [check-row "Fraud Check"
+             (:ssid fraudcheck)
+             (:final-result fraudcheck)
+             (str base-url "/aml/results/" (:ssid fraudcheck))])
+          (let [smartdoc @(rf/subscribe [::model/smartdoc])]
+            [check-row "SmartDoc Check"
+             (:ssid smartdoc)
+             (:final-result smartdoc)
+             (str base-url "/doccheck/results/" (:ssid smartdoc))])])]]]))
 
 (defn dialog []
   [mui/dialog {:open (boolean @(rf/subscribe [::dialog-open?]))}
