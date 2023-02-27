@@ -71,6 +71,36 @@
           (and (= "waiting" (:status smartdoc))
                (= "1234" (:ssid smartdoc)))))
 
+      (testing "Override"
+
+        (testing "Set as :pass"
+          ;; Override
+          (let [override-resp 
+                (t/run-request {:request-method :post
+                                :uri (str "/api/case/"
+                                          case-id
+                                          "/override-checks")
+                                :query-string (t/->query-string
+                                                {:new-result "pass"})})]
+            (is (<= 200 (:status override-resp) 299)))
+          ;; Check case
+          (let [{case-data :body} (t/run-request {:request-method :get
+                                                  :uri (str "/api/case/" case-id)})]
+            (is (= :pass (:override-identity-check case-data)))))
+
+        (testing "Reset"
+          ;; Override
+          (let [override-resp 
+                (t/run-request {:request-method :post
+                                :uri (str "/api/case/"
+                                          case-id
+                                          "/override-checks")})]
+            (is (<= 200 (:status override-resp) 299)))
+          ;; Check case
+          (let [{case-data :body} (t/run-request {:request-method :get
+                                                  :uri (str "/api/case/" case-id)})]
+            (is (nil? (:override-identity-check case-data))))))
+
       (testing "SmartSearch returns an error"
         (let [;; Perform checks
               check-resp 
