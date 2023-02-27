@@ -145,7 +145,6 @@
       {:status http/status-204-no-content})))
 
 (defn override-checks [{:keys [xtdb-node user parameters]}]
-  (println parameters)
   (let [case-id (get-in parameters [:path :case-id])
         new-result (get-in parameters [:query :new-result])]
     (xt-util/exec-tx xtdb-node
