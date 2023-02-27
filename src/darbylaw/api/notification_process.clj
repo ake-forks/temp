@@ -1,10 +1,14 @@
-(ns darbylaw.api.notification
+(ns darbylaw.api.notification-process
   (:require
     [darbylaw.api.case-history :as case-history]
     [darbylaw.api.util.http :as http]
     [darbylaw.api.util.tx-fns :as tx-fns]
     [darbylaw.api.util.xtdb :as xt-util]
     [xtdb.api :as xt]))
+
+; A :notification-process is not a first-level entity. It is an application concept
+; that indirectly refers to related assets and :notification-letters by matching data,
+; i.e. those referred entities don't have a direct reference to the :notification-process.
 
 (defn select-mandatory [m ks]
   (doseq [k ks]

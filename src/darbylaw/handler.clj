@@ -24,7 +24,7 @@
     [darbylaw.api.buildingsociety :as buildsoc-api]
     [darbylaw.api.funeral :as funeral-api]
     [darbylaw.api.bill :as bill-api]
-    [darbylaw.api.notification :as notification-api]
+    [darbylaw.api.notification-process :as notification-api]
     [darbylaw.api.notification-letter :as notification-letter-api]
     [darbylaw.api.bank-notification :as bank-notification-api]
     [darbylaw.api.bank-notification.mailing-controls :as mailing]
