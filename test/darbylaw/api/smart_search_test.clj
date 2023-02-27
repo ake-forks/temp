@@ -50,7 +50,7 @@
                         (t/run-request {:request-method :post
                                         :uri (str "/api/case/"
                                                   case-id
-                                                  "/check-identity")}))]
+                                                  "/identity-checks/run")}))]
         (is (<= 200 (:status check-resp) 299)))
 
       ;; Get case and check it has the identity check
@@ -79,7 +79,7 @@
                 (t/run-request {:request-method :post
                                 :uri (str "/api/case/"
                                           case-id
-                                          "/override-checks")
+                                          "/identity-checks/override")
                                 :query-string (t/->query-string
                                                 {:new-result "pass"})})]
             (is (<= 200 (:status override-resp) 299)))
@@ -94,7 +94,7 @@
                 (t/run-request {:request-method :post
                                 :uri (str "/api/case/"
                                           case-id
-                                          "/override-checks")})]
+                                          "/identity-checks/override")})]
             (is (<= 200 (:status override-resp) 299)))
           ;; Check case
           (let [{case-data :body} (t/run-request {:request-method :get
@@ -117,5 +117,5 @@
                 (t/run-request {:request-method :post
                                 :uri (str "/api/case/"
                                           case-id
-                                          "/check-identity")}))]
+                                          "/identity-checks/run")}))]
           (is (<= 500 (:status check-resp) 599)))))))

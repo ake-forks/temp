@@ -22,7 +22,7 @@
      (ui/build-http
        {:method :post
         :timeout 10000
-        :uri (str "/api/case/" case-id "/check-identity")
+        :uri (str "/api/case/" case-id "/identity-checks/run")
         :on-success [::submit-success case-id]
         :on-failure [::check-submit-failure]})}))
 
@@ -37,7 +37,7 @@
      (ui/build-http
        {:method :post
         :timeout 10000
-        :uri (str "/api/case/" case-id "/override-checks")
+        :uri (str "/api/case/" case-id "/identity-checks/override")
         :url-params (when new-result
                       {:new-result (name new-result)})
         :on-success [::submit-success case-id]

@@ -167,11 +167,11 @@
 ;; >> Routes
 
 (defn routes []
-  ["/case/:case-id"
-   ["/check-identity"
+  ["/case/:case-id/identity-checks"
+   ["/run"
     {:post {:handler check
             :parameters {:path [:map [:case-id :uuid]]}}}]
-   ["/override-checks"
+   ["/override"
     {:post {:handler override-checks
             :parameters {:path [:map [:case-id :uuid]]
                          :query [:map [:new-result {:optional true} :string]]}}}]])
