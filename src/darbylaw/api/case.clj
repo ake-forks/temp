@@ -210,11 +210,17 @@
     ['(:xt/id {:as :id})
      :address]}
 
-   {:uk-aml
+   {'(:probate.identity-check.uk-aml/_case
+       {:as :uk-aml
+        :cardinality :one})
     check-props}
-   {:fraudcheck
+   {'(:probate.identity-check.fraudcheck/_case
+       {:as :fraudcheck
+        :cardinality :one})
     check-props}
-   {:smartdoc
+   {'(:probate.identity-check.smartdoc/_case
+       {:as :smartdoc
+        :cardinality :one})
     check-props}
    :override-identity-check])
 

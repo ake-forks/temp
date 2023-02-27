@@ -74,14 +74,16 @@
              :country "gbr"}})
 
 (defn check-tx [case-id check-type data]
-  (let [check-id {:probate.identity-check/case case-id
-                  :check-type check-type}
+  (let [case-key (case check-type
+                   :uk-aml :probate.identity-check.uk-aml/case
+                   :fraudcheck :probate.identity-check.fraudcheck/case
+                   :smartdoc :probate.identity-check.smartdoc/case)
+        check-id {case-key case-id}
         check-data (merge data
                           check-id
-                          {:xt/id check-id})]
-    (concat
-      (tx-fns/set-values check-id check-data)
-      (tx-fns/set-value case-id [check-type] check-id))))
+                          {:xt/id check-id
+                           :check-type check-type})]
+    (tx-fns/set-values check-id check-data)))
 
 (defn response->check-data [response]
   (-> response
