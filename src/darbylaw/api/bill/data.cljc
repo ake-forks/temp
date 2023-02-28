@@ -10,7 +10,7 @@
     :council-tax {:label "council tax"}
     :other {:label "other"}))
 
-(def companies
+(def test-companies
   [{:id :utility-1,
     :common-name "Utility 1",
     :org-name "Utility 1 Org",
@@ -37,6 +37,35 @@
     :address-county "",
     :address-country "",
     :logo nil}])
+
+(def companies
+  [{:id :affect-energy, :common-name "Affect Energy"}
+   {:id :boost-energy, :common-name "Boost Energy"}
+   {:id :british-gas, :common-name "British Gas"}
+   {:id :bulb-energy, :common-name "Bulb Energy"}
+   {:id :cooperative-energy, :common-name "Co-Operative Energy"}
+   {:id :e, :common-name "E"}
+   {:id :eon, :common-name "E.ON"}
+   {:id :ebico, :common-name "EBICo"}
+   {:id :ecotricity, :common-name "Ecotricity"}
+   {:id :edf-energy, :common-name "EDF Energy"}
+   {:id :good-energy, :common-name "Good Energy"}
+   {:id :green-energy-uk, :common-name "Green Energy UK"}
+   {:id :ms-energy, :common-name "M&S Energy"}
+   {:id :octopus-energy, :common-name "Octopus Energy"}
+   {:id :outfox-the-market, :common-name "Outfox the Market"}
+   {:id :ovo-energy, :common-name "Ovo Energy"}
+   {:id :sainsburys-energy, :common-name "Sainsbury's Energy"}
+   {:id :scottish-power, :common-name "Scottish Power"}
+   {:id :shell-energy, :common-name "Shell Energy"}
+   {:id :so-energy, :common-name "So Energy"}
+   {:id :sse, :common-name "SSE"}
+   {:id :southern-electric, :common-name "Southern Electric"}
+   {:id :scottish-hydro, :common-name "Scottish Hydro"}
+   {:id :swalec, :common-name "Swalec"}
+   {:id :telecom-utility-warehouse,
+    :common-name "Telecom Utility Warehouse"}
+   {:id :utilita-energy, :common-name "Utilita Energy"}])
 
 (def councils
   [{:id :council-1,
