@@ -186,6 +186,31 @@
               {:result new-result})))))
     {:status http/status-204-no-content}))
 
+(defn download [{:keys [xtdb-node parameters]}]
+  (let [case-id (get-in parameters [:path :case-id])
+        aml (xt/entity (xt/db xtdb-node)
+                       {:probate.identity-check.uk-aml/case case-id})
+        aml-report
+        (when-let [filename (:report aml)]
+          (doc-store/fetch (str case-id "/" filename)))
+
+        smartdoc (xt/entity (xt/db xtdb-node)
+                            {:probate.identity-check.smartdoc/case case-id})
+        smartdoc-report
+        (when-let [filename (:report smartdoc)]
+          (doc-store/fetch (str case-id "/" filename)))]
+    (if (or aml-report smartdoc-report)
+      {:status http/status-200-ok
+       :headers {"Content-Type" "application/pdf"}
+       :body (with-open [out (java.io.ByteArrayOutputStream.)]
+               (pdf/merge-pdfs
+                 :input (->> [aml-report smartdoc-report]
+                             (remove nil?))
+                 :output out)
+               (.toByteArray out))}
+      {:status http/status-404-not-found
+       :body {:error "No reports available"}})))
+
 
 ;; >> Routes
 
@@ -197,4 +222,7 @@
    ["/override"
     {:post {:handler override-checks
             :parameters {:path [:map [:case-id :uuid]]
-                         :query [:map [:new-result {:optional true} :string]]}}}]])
+                         :query [:map [:new-result {:optional true} :string]]}}}]
+   ["/download-pdf"
+    {:get {:handler download
+           :parameters {:path [:map [:case-id :uuid]]}}}]])
