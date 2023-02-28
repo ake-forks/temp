@@ -101,7 +101,7 @@
 
 
 (defonce form-state (r/atom nil))
-(defn valuation-form [{:keys [account-number id meter-readings valuation]}]
+(defn valuation-form [asset-type {:keys [account-number id meter-readings valuation]}]
   (let [case-id (<< ::case-model/case-id)]
     [form-util/form
      {:state form-state
@@ -109,12 +109,13 @@
       :initial-values {:account-number (or account-number "")
                        :meter-readings (or meter-readings "")
                        :valuation (or valuation "")}}
-     (fn [{:keys [values handle-submit submitting?] :as fork-args}]
+     (fn [{:keys [handle-submit] :as fork-args}]
        [:form {:on-submit handle-submit}
         [mui/stack {:spacing 0.5}
          [mui/stack {:direction :row :spacing 0.5}
           [bills-form/account-number-field fork-args]
-          [bills-form/meter-readings-field fork-args]]
+          (if (= asset-type :utility)
+            [bills-form/meter-readings-field fork-args])]
          [mui/stack {:direction :row :spacing 0.5}
           [bills-form/valuation-field fork-args]]
          [mui/button {:type :submit :variant :outlined} "save"]]])]))
@@ -167,12 +168,13 @@
         [mui/typography {:variant :h6} "account value: £" valuation])]
 
      (when @valuation-visible
-       [valuation-form data])
+       [valuation-form :utility data])
      [confirmation-popover]]))
 
 
 (defn council-item [{:keys [account-number id] :as data}]
-  (let [council-label (bill-data/get-council-label (:council (<< ::notification-model/notification)))]
+  (let [council-label (bill-data/get-council-label (:council (<< ::notification-model/notification)))
+        ongoing? (<< ::notification-model/notification-ongoing?)]
     [mui/box
      [mui/card
       [mui/stack {:direction :row :sx {:p 1}
@@ -182,12 +184,20 @@
                                            (when account-number
                                              (str ": " account-number)))]
        [mui/stack {:direction :row :spacing 2 :align-items :center}
-        [mui/icon-button {:on-click #(rf/dispatch [::edit-council data])}
-         [ui/icon-edit]]
-        [mui/icon-button {:on-click #(reset! popover {:anchor (ui/event-currentTarget %)
-                                                      :label council-label
-                                                      :id id})}
-         [ui/icon-delete]]]]
+        (when ongoing?
+          [mui/tooltip {:title "add valuation"}
+           [mui/icon-button {:on-click #(reset! valuation-visible (not @valuation-visible))}
+            [ui/icon-pound]]])
+        [mui/tooltip {:title "edit"}
+         [mui/icon-button {:on-click #(rf/dispatch [::edit-council data])}
+          [ui/icon-edit]]]
+        [mui/tooltip {:title "remove"}
+         [mui/icon-button {:on-click #(reset! popover {:anchor (ui/event-currentTarget %)
+                                                       :label council-label
+                                                       :id id})}
+          [ui/icon-delete]]]]]
+      (when @valuation-visible
+        [valuation-form :council-tax data])
       [confirmation-popover]]]))
 
 (defn utility-bill-info []
