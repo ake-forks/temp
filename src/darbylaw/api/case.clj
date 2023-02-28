@@ -18,6 +18,7 @@
    [:forename :string]
    [:middlename {:optional true} :string]
    [:surname :string]
+   [:gender [:enum "male" "female"]]
    [:date-of-birth date--schema]
 
    [:email :string]

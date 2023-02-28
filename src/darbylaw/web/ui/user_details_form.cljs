@@ -79,6 +79,16 @@
     ;; Don't filter results
     :filterOptions identity}])
 
+(defn gender-field [fork-args]
+  [form/autocomplete-field fork-args
+   {:name :gender
+    :label "Gender"
+    :options ["male" "female"]
+    :inner-config {:required true}
+    :disableClearable true
+    ;; Don't filter results
+    :filterOptions identity}])
+
 (defn name-fields [fork-args]
   [:<>
    [mui/text-field (merge (form/common-text-field-props :forename fork-args)
@@ -205,6 +215,7 @@
     [mui/stack {:direction :row
                 :spacing 2}
      [name-fields fork-args]]
+    [gender-field fork-args]
     [date-of-birth-picker fork-args]]
    [mui/stack {:spacing 2}
     [mui/typography {:variant :h5}
@@ -224,6 +235,7 @@
     (v/attr [:date-of-birth] (v/chain
                                (v-utils/not-nil)
                                (v-utils/valid-dayjs-date)))
+    (v/attr [:gender] (v/present))
 
     (v/attr [:email] (v/chain
                        (v/present)
@@ -277,6 +289,7 @@
                    :forename "John",
                    :surname "Doe",
                    :date-of-birth (dayjs/read "1979-12-13")
+                   :gender "male"
                    :email "test@test.com",
                    :phone "+441234123456",
                    :street-number "12",

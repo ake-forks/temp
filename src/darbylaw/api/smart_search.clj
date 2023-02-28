@@ -48,7 +48,7 @@
    :name {:title (:title pr-info)
           :first (:forename pr-info)
           :last (:surname pr-info)}
-   :gender "male" ;; TODO: Add to PR info
+   :gender (:gender pr-info)
    :date_of_birth (:date-of-birth pr-info)
    ;; TODO: Same as above
    :address {:building (:street-number pr-info)
