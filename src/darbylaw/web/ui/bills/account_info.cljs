@@ -172,7 +172,7 @@
      [confirmation-popover]]))
 
 
-(defn council-item [{:keys [account-number id] :as data}]
+(defn council-item [{:keys [account-number id valuation] :as data}]
   (let [council-label (bill-data/get-council-label (:council (<< ::notification-model/notification)))
         ongoing? (<< ::notification-model/notification-ongoing?)]
     [mui/box
@@ -180,9 +180,12 @@
       [mui/stack {:direction :row :sx {:p 1}
                   :justify-content :space-between
                   :align-items :center}
-       [mui/typography {:variant :body1} (str council-label " account"
-                                           (when account-number
-                                             (str ": " account-number)))]
+       [mui/stack {:spacing 0.5}
+        [mui/typography {:variant :body1} (if account-number
+                                            (str "council tax account no: " account-number)
+                                            "council tax account")]
+        (when (and valuation ongoing?)
+          [mui/typography {:variant :body1} (str "account value: £" valuation)])]
        [mui/stack {:direction :row :spacing 2 :align-items :center}
         (when ongoing?
           [mui/tooltip {:title "add valuation"}
