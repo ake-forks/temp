@@ -156,8 +156,8 @@
          (true? (:savings values))
          (false? (:all-join-accounts values))
          (true? (:stocks-shares values)))
-
      [might-need-probate fork-args]
+
      (and (false? (:savings values))
           (true? (:all-join-accounts values))
           (false? (:stocks-shares values)))
