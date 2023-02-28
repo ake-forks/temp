@@ -1,9 +1,18 @@
 (ns darbylaw.api.smart-search.client
   (:require [org.httpkit.client :as http]
+            [mount.core :as mount]
+            [darbylaw.config :refer [config]]
             [clojure.data.json :as json]
             [clojure.tools.logging :as log]
             [malli.core :as m]
             [malli.error :as me]))
+
+
+;; >> Config
+
+(mount/defstate base-api-url
+  :start (-> config :smart-search :base-url :api))
+
 
 
 ;; >> Middleware
@@ -55,15 +64,13 @@
           (update :headers merge {"Content-Type" "application/json"})
           handler))))
 
-;; TODO: Make base-url configurable  
-(def base-url "https://sandbox-api.smartsearchsecure.com")
 (defn wrap-base-url [handler]
   "If the user specifies a :path then add the base-url to the beginning at :url"
   (fn [request]
     (if-let [path (:path request)]
       (-> request
           (dissoc :path)
-          (assoc :url (str base-url path))
+          (assoc :url (str base-api-url path))
           handler)
       (handler request))))
 
