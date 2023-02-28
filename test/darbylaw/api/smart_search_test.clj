@@ -8,6 +8,8 @@
     [clojure.string :as str]
     [clojure.data.json :as json]))
 
+(def smallest-pdf "JVBERi0xLg10cmFpbGVyPDwvUm9vdDw8L1BhZ2VzPDwvS2lkc1s8PC9NZWRpYUJveFswIDAgMyAzXT4+XT4+Pj4+Pg==")
+
 (defn fake-handler [{:keys [url]} & _]
   (cond
     (str/ends-with? url "/auth/token")
@@ -30,6 +32,11 @@
       {:status 200
        :body (json/write-str
                {:data {:attributes {:ssid "1234" :status "processed" :result "low_risk"}}})})
+    (str/ends-with? url "/pdf-base64")
+    (future
+      {:status 200
+       :body (json/write-str
+               {:data {:attributes {:base64 smallest-pdf}}})})
     :else
     (throw (Exception. "Unexpected URL"))))
 
@@ -46,7 +53,8 @@
     (is (<= 200 (:status post-resp) 299))
 
     (testing "working case"
-      (let [check-resp (with-redefs [org.httpkit.client/request fake-handler]
+      (let [check-resp (with-redefs [org.httpkit.client/request fake-handler
+                                     darbylaw.doc-store/store (fn [& _])]
                         (t/run-request {:request-method :post
                                         :uri (str "/api/case/"
                                                   case-id
@@ -113,7 +121,8 @@
                                    :body (json/write-str
                                            {:errors [{:status "400" :title "Bad Request"}]})})
                                 :else
-                                (fake-handler request)))]
+                                (fake-handler request)))
+                            darbylaw.doc-store/store (fn [& _])]
                 (t/run-request {:request-method :post
                                 :uri (str "/api/case/"
                                           case-id
