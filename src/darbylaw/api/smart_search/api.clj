@@ -21,6 +21,10 @@
 
 ;; >> API Calls
 
+(defn export-pdf-base64 [ssid]
+  (client {:method :get
+           :path (str "/export/" ssid "/pdf-base64")}))
+
 (defn lookup-doccheck-supported-documents []
   (client {:method :get
            :path "/lookup/doccheck/supported-documents"

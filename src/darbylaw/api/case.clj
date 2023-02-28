@@ -155,7 +155,8 @@
 (def check-props
   [:ssid
    :status
-   :result])
+   :result
+   :report])
 
 (def common-case-eql
   ['(:xt/id {:as :id})
