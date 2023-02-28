@@ -25,11 +25,11 @@
    [:phone :string]
 
    [:flat {:optional true} :string]
-   [:building {:optional true} :string]
-   [:street-number {:optional true} :string]
+   [:building :string]
    [:street1 :string]
    [:street2 {:optional true} :string]
    [:town :string]
+   [:region {:optional true} :string]
    [:postcode :string]])
 
 (def personal-representative--props
