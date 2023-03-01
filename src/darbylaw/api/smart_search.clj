@@ -33,8 +33,6 @@
           :last (:surname pr-info)}
    :date_of_birth (:date-of-birth pr-info)
    :contacts {:mobile (:phone pr-info)}
-   ;; TODO: Match up requirements on PR info to schemas
-   ;; TODO: Fix this so that it actually makes sense
    :addresses [(let [{:keys [flat building
                              street1 street2
                              town region postcode]}
@@ -47,7 +45,6 @@
                         (when street2 {:street_2 street2})
                         (when region {:region region})))]})
 
-;; TODO: Maybe pull out hard coded values into separate `base` def and merge?
 (defn ->doccheck-data [{:keys [case-ref pr-info]}]
   {:client_ref case-ref
    :sanction_region "gbr"
@@ -56,7 +53,6 @@
           :last (:surname pr-info)}
    :gender (:gender pr-info)
    :date_of_birth (:date-of-birth pr-info)
-   ;; TODO: Same as above
    :address (let [{:keys [flat building
                           street1 street2
                           town region postcode]}
