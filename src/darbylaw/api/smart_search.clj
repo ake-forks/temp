@@ -1,11 +1,14 @@
 (ns darbylaw.api.smart-search
   (:require [xtdb.api :as xt]
             [clojure.tools.logging :as log]
+            [darbylaw.doc-store :as doc-store]
             [darbylaw.api.util.xtdb :as xt-util]
             [darbylaw.api.util.tx-fns :as tx-fns]
             [darbylaw.api.smart-search.api :as ss-api]
             [darbylaw.api.case-history :as case-history]
             [darbylaw.api.util.http :as http]
+            [darbylaw.api.util.base64 :refer [decode-base64]]
+            [darbylaw.api.util.pdf :as pdf]
             [clojure.string :as str]))
 
 
@@ -92,7 +95,7 @@
 
 (defn check [{:keys [xtdb-node user parameters]}]
   (let [case-id (get-in parameters [:path :case-id])
-        check-data (get-check-data xtdb-node case-id)
+        {:keys [case-ref] :as check-data} (get-check-data xtdb-node case-id)
 
         ;; We perform each of the checks in their own try catches as they can independently fail
         ;; But even if they do fail we still want to save their results in one transaction so that the history will be updated correctly
@@ -125,12 +128,30 @@
             (log/error e "Failed SmartDoc API Call")
             nil))
 
+        aml-filename
+        (try
+          (let [export-resp (ss-api/export-pdf-base64 (:ssid aml-data))
+                base64 (get-in export-resp [:body :data :attributes :base64])
+                bytes (decode-base64 base64)
+
+                document-id (random-uuid)
+                filename (str case-ref ".identity.aml-report." document-id ".pdf")]
+            (doc-store/store
+              (str case-id "/" filename)
+              bytes
+              {:content-type "application/pdf"})
+            filename)
+          (catch Exception e
+            (log/error e "Failed to store AML report")
+            nil))
+
         failed? (or (nil? aml-data)
                     (nil? fraudcheck-data)
-                    (nil? smartdoc-data))]
+                    (nil? smartdoc-data)
+                    (nil? aml-filename))]
     (xt-util/exec-tx xtdb-node
       (concat
-        (->> [[:uk-aml aml-data]
+        (->> [[:uk-aml (assoc aml-data :report aml-filename)]
               [:fraudcheck fraudcheck-data]
               [:smartdoc smartdoc-data]]
              ;; Remove failed checks
@@ -165,6 +186,31 @@
               {:result new-result})))))
     {:status http/status-204-no-content}))
 
+(defn download [{:keys [xtdb-node parameters]}]
+  (let [case-id (get-in parameters [:path :case-id])
+        aml (xt/entity (xt/db xtdb-node)
+                       {:probate.identity-check.uk-aml/case case-id})
+        aml-report
+        (when-let [filename (:report aml)]
+          (doc-store/fetch (str case-id "/" filename)))
+
+        smartdoc (xt/entity (xt/db xtdb-node)
+                            {:probate.identity-check.smartdoc/case case-id})
+        smartdoc-report
+        (when-let [filename (:report smartdoc)]
+          (doc-store/fetch (str case-id "/" filename)))]
+    (if (or aml-report smartdoc-report)
+      {:status http/status-200-ok
+       :headers {"Content-Type" "application/pdf"}
+       :body (with-open [out (java.io.ByteArrayOutputStream.)]
+               (pdf/merge-pdfs
+                 :input (->> [aml-report smartdoc-report]
+                             (remove nil?))
+                 :output out)
+               (.toByteArray out))}
+      {:status http/status-404-not-found
+       :body {:error "No reports available"}})))
+
 
 ;; >> Routes
 
@@ -176,4 +222,7 @@
    ["/override"
     {:post {:handler override-checks
             :parameters {:path [:map [:case-id :uuid]]
-                         :query [:map [:new-result {:optional true} :string]]}}}]])
+                         :query [:map [:new-result {:optional true} :string]]}}}]
+   ["/download-pdf"
+    {:get {:handler download
+           :parameters {:path [:map [:case-id :uuid]]}}}]])

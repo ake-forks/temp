@@ -112,7 +112,8 @@
 
 (def base-url "https://sandbox.smartsearchsecure.com")
 (defn content []
-  (let [case-id @(rf/subscribe [::case-model/case-id])]
+  (let [case-id @(rf/subscribe [::case-model/case-id])
+        case-ref @(rf/subscribe [::case-model/current-case-reference])]
     [mui/stack {:spacing 1}
      [mui/stack {:direction :row
                  :spacing 2
@@ -124,7 +125,23 @@
            :pass [mui/typography {:color "green"}
                   "pass"]
            :fail [mui/typography {:color "red"}
-                  "fail"])])]
+                  "fail"])])
+      [mui/box {:flex-grow 1}]
+      (when @(rf/subscribe [::model/has-checks?])
+        (let [{aml-report :report} @(rf/subscribe [::model/uk-aml])
+              {smartdoc-report :report} @(rf/subscribe [::model/smartdoc])
+              show? (or aml-report smartdoc-report)
+              partial? (not (and aml-report smartdoc-report))]
+          (when show?
+            [mui/button {:href (str "/api/case/" case-id "/identity-checks/download-pdf")
+                         :download (str case-ref ".identity."
+                                        (if partial?
+                                          "partial-report"
+                                          "full-report")
+                                        ".pdf")}
+             (if partial?
+               "partial report"
+               "full report")])))]
      [mui/table
       [mui/table-head
        [mui/table-row
