@@ -11,6 +11,9 @@
             [darbylaw.web.ui.notification.letter-commons :refer [letter-header]]
             [darbylaw.web.ui.components.pdf-viewer :refer [pdf-viewer]]))
 
+(defn draft-icon []
+  [ui/icon-drafts-outlined])
+
 (defonce delete-confirmation-open? (r/atom false))
 
 (defn delete-confirmation-dialog []

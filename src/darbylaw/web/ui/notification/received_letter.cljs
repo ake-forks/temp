@@ -34,11 +34,19 @@
     :update (rf/dispatch [::model/close-letter])))
 
 (defn letter-icon []
+  ; Icon with badge containing arrow
   [mui/badge {:badgeContent "\u2199"
-              :color :primary
-              :sx {"& .MuiBadge-badge" {:font-weight :bold
-                                        :background-color :text.primary}}}
-   [ui/icon-mail-outlined]])
+              ;:anchorOrigin {:vertical :bottom
+              ;               :horizontal :right}
+              #_#_:color :primary
+              :sx {"& .MuiBadge-badge" {:top 4
+                                        :right -4
+                                        :font-weight :bold
+                                        #_#_:background-color :text.primary}}}
+   [ui/icon-mail-outlined]]
+  #_[mui/stack {:direction :row}
+     [ui/icon-mail-outlined]
+     "\u2199"])
 
 (defn pdf-view-panel []
   [pdf-viewer {:src (let [letter (<< ::model/open-letter)]
@@ -83,13 +91,14 @@
      :create [pdf-upload-panel fork-args]
      :update [pdf-view-panel])
 
-   [mui/dialog-content {:sx {:flex-grow 0}}
-    [mui/form-control-label
-     {:control (r/as-element [mui/checkbox])
-      :name :contains-valuation
-      :checked (:contains-valuation values false)
-      :on-change handle-change
-      :label "Contains valuation information"}]]
+   ; Removed for now.
+   #_[mui/dialog-content {:sx {:flex-grow 0}}
+      [mui/form-control-label
+       {:control (r/as-element [mui/checkbox])
+        :name :contains-valuation
+        :checked (:contains-valuation values false)
+        :on-change handle-change
+        :label "Contains valuation information"}]]
 
    [mui/dialog-actions
     [mui/button {:variant :outlined

@@ -25,10 +25,12 @@
      [mui/menu-item {:on-click #(do (close-menu!)
                                     (rf/dispatch [::model/generate-notification-letter
                                                   notification]))}
+      [mui/list-item-icon [letter/draft-icon]]
       [mui/list-item-text
        "create notification letter"]]
      [mui/menu-item {:on-click #(do (close-menu!)
                                     (rf/dispatch [::model/open-upload-received-letter true]))}
+      [mui/list-item-icon [received-letter/letter-icon]]
       [mui/list-item-text
        "upload received letter"]]]))
 
@@ -55,7 +57,7 @@
                              :cursor :pointer}
                         :onClick #(rf/dispatch [::model/open-letter (:xt/id letter)])}
          [mui/list-item-icon {:sx {:color :unset}}
-          [ui/icon-drafts-outlined]
+          [letter/draft-icon]
           #_[mui/badge {:badgeContent "\u2197"
                         :color :primary
                         :sx {"& .MuiBadge-badge" {:font-weight :bold
