@@ -76,11 +76,13 @@
         :refer [ui/icon-warning-amber {:style {:color "orange"}}]
         :fail [ui/icon-warning {:style {:color "red"}}])])))
 
-(defn check-row [title {:keys [ssid final-result dashboard]}]
+(defn check-row [title {:keys [ssid result status final-result dashboard]}]
   [mui/table-row
    [mui/table-cell
     (when final-result
-      [check-icon final-result])]
+      [mui/tooltip {:title (or result status)}
+       [:div
+        [check-icon final-result]]])]
    [mui/table-cell
     title]
    [mui/table-cell
