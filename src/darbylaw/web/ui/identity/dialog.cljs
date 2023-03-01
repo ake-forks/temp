@@ -137,7 +137,7 @@
           [:dispatch [::identity-check (get-in db [::alert-dialog-context :case-id])]]]}))
 
 (defn alert-dialog []
-  [mui/dialog {:open @(rf/subscribe [::alert-dialog-open?])
+  [mui/dialog {:open (boolean @(rf/subscribe [::alert-dialog-open?]))
                :max-width :xs}
    [mui/dialog-title "Are you sure?"]
    [mui/dialog-content "Continuing will perform another set of checks and ask the user to submit another set of documents."]
@@ -177,7 +177,8 @@
                  :spacing 2
                  :align-items :center}
       [override-button case-id]
-      [mui/collapse {:in override :orientation :horizontal}
+      [mui/collapse {:in (boolean override)
+                     :orientation :horizontal}
        [mui/stack {:direction :row
                    :align-items :center
                    :min-width "50px"}
