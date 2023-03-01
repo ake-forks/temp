@@ -1,5 +1,6 @@
 (ns darbylaw.api.case
   (:require [xtdb.api :as xt]
+            [medley.core :as m]
             [reitit.coercion]
             [reitit.coercion.malli]
             [ring.util.response :as ring]
@@ -230,9 +231,9 @@
 
 (defn enrich-case [c]
   (-> c
-      (update :uk-aml (partial ss-utils/add-dashboard-link "/aml/results/"))
-      (update :fraudcheck (partial ss-utils/add-dashboard-link "/aml/results/"))
-      (update :smartdoc (partial ss-utils/add-dashboard-link "/doccheck/results/"))))
+      (m/update-existing :uk-aml (partial ss-utils/add-dashboard-link "/aml/results/"))
+      (m/update-existing :fraudcheck (partial ss-utils/add-dashboard-link "/aml/results/"))
+      (m/update-existing :smartdoc (partial ss-utils/add-dashboard-link "/doccheck/results/"))))
 
 (defn get-cases [{:keys [xtdb-node]}]
   (ring/response

@@ -1,6 +1,7 @@
 (ns darbylaw.web.ui.bills.model
   (:require [re-frame.core :as rf]
             [darbylaw.api.bill.data :as bills-data]
+            [darbylaw.api.bill.council-data :as council-data]
             [darbylaw.web.ui.case-model :as case-model]
             [medley.core :as medley]))
 
@@ -26,7 +27,7 @@
 
 (rf/reg-sub ::councils
   (fn [_]
-    bills-data/councils))
+    council-data/councils))
 
 (rf/reg-sub ::all-council-ids
   :<- [::councils]

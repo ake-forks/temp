@@ -158,7 +158,7 @@ resource "aws_ecs_task_definition" "probatetree" {
             "valueFrom" : aws_ssm_parameter.post-service-map.arn
           },
           {
-            "name" : "SMART_SEARCH_PUBLIC_KEY"
+            "name" : "SMART_SEARCH_CONFIG"
             "valueFrom" : aws_ssm_parameter.smart-search-map.arn
           }
         ]
