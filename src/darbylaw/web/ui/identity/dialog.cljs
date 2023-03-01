@@ -9,16 +9,19 @@
 
 (rf/reg-event-fx ::submit-success
   (fn [{:keys [db]} [_ case-id]]
-    {:dispatch [::case-model/load-case! case-id]}))
+    {:db (assoc db ::checks-submitting? false)
+     :dispatch [::case-model/load-case! case-id]}))
 
 (rf/reg-event-fx ::check-submit-failure
   (fn [{:keys [db]} [_ error-result]]
-    {::ui/notify-user-http-error {:message "Error starting identity checks"
+    {:db (assoc db ::checks-submitting? false)
+     ::ui/notify-user-http-error {:message "Error starting identity checks"
                                   :result error-result}}))
 
 (rf/reg-event-fx ::identity-check
   (fn [{:keys [db]} [_ case-id]]
-    {:http-xhrio
+    {:db (assoc db ::checks-submitting? true)
+     :http-xhrio
      (ui/build-http
        {:method :post
         :timeout 10000
@@ -50,6 +53,10 @@
                  ::dialog-context dialog-context})
       (assoc db ::dialog-open? false))))
 
+(rf/reg-sub ::checks-submitting?
+  (fn [db]
+    (::checks-submitting? db)))
+
 (rf/reg-sub ::dialog-open?
   (fn [db]
     (::dialog-open? db)))
@@ -63,16 +70,19 @@
                   :cursor :pointer}
           :on-click #(rf/dispatch [::set-dialog-open {}])}
       (case result
-        :fail [ui/icon-error-outline {:style {:color "red"}}]
-        :refer [ui/icon-error-outline {:style {:color "orange"}}]
+        :unknown [ui/icon-playlist-play {:style {:color "grey"}}]
+        :processing [ui/icon-pending {:style {:color "grey"}}]
         :pass [ui/icon-check {:style {:color "green"}}]
-        :unknown [ui/icon-directions-run {:style {:color "grey"}}]
-        :processing [ui/icon-directions-run {:style {:color "grey"}}])])))
+        :refer [ui/icon-warning-amber {:style {:color "orange"}}]
+        :fail [ui/icon-warning {:style {:color "red"}}])])))
 
-(defn check-row [title {:keys [ssid final-result dashboard]}]
+(defn check-row [title {:keys [ssid result status final-result dashboard]}]
   [mui/table-row
    [mui/table-cell
-    [check-icon final-result]]
+    (when final-result
+      [mui/tooltip {:title (or result status)}
+       [:div
+        [check-icon final-result]]])]
    [mui/table-cell
     title]
    [mui/table-cell
@@ -97,36 +107,96 @@
                 :anchor-el (js/document.querySelector (str "#" id))}
       [mui/menu-item {:on-click #(do (close-menu)
                                      (rf/dispatch [::set-override-result case-id :pass]))
-                      :style {:min-width 120
-                              :color "green"}}
-       "pass"]
+                      :style {:min-width 120}}
+       [mui/list-item-icon {:style {:color "green"}}
+        [ui/icon-check]]
+       [mui/list-item-text {:style {:color "green"}}
+        "pass"]]
       [mui/menu-item {:on-click #(do (close-menu)
                                      (rf/dispatch [::set-override-result case-id :fail]))
-                      :style {:min-width 120
-                              :color "red"}}
-       "fail"]
-      [mui/menu-item {:on-click #(do (close-menu)
-                                     (rf/dispatch [::set-override-result case-id nil]))
                       :style {:min-width 120}}
-       "unset"]]]))
+       [mui/list-item-icon {:style {:color "red"}}
+        [ui/icon-warning]]
+       [mui/list-item-text {:style {:color "red"}}
+        "fail"]]]]))
 
-(def base-url "https://sandbox.smartsearchsecure.com")
+(rf/reg-sub ::alert-dialog-open?
+  (fn [db]
+    (::alert-dialog-open? db)))
+
+(rf/reg-event-db ::set-alert-dialog-open
+  (fn [db [_ dialog-context]]
+    (if (some? dialog-context)
+      (merge db {::alert-dialog-open? true
+                 ::alert-dialog-context dialog-context})
+      (assoc db ::alert-dialog-open? false))))
+
+(rf/reg-event-fx ::alert-confirm
+  (fn [{:keys [db]} _]
+    {:fx [[:dispatch [::set-alert-dialog-open nil]]
+          [:dispatch [::identity-check (get-in db [::alert-dialog-context :case-id])]]]}))
+
+(defn alert-dialog []
+  [mui/dialog {:open (boolean @(rf/subscribe [::alert-dialog-open?]))
+               :max-width :xs}
+   [mui/dialog-title "Are you sure?"]
+   [mui/dialog-content "Continuing will perform another set of checks and ask the user to submit another set of documents."]
+   [mui/dialog-actions
+    [mui/button {:variant :outlined
+                 :full-width true
+                 :on-click #(rf/dispatch [::set-alert-dialog-open nil])}
+     "Cancel"]
+    [mui/button {:variant :contained
+                 :full-width true
+                 :color :primary
+                 :on-click #(rf/dispatch [::alert-confirm])}
+     "Yes"]]])
+
+(defn check-table []
+  [mui/table
+   [mui/table-head
+    [mui/table-row
+     [mui/table-cell] ; Result/status
+     [mui/table-cell "Check"]
+     [mui/table-cell "SSID"]]]
+   [mui/table-body
+    [check-row "UK AML"
+     @(rf/subscribe [::model/uk-aml])]
+    [check-row "Fraud Check"
+     @(rf/subscribe [::model/fraudcheck])]
+    [check-row "SmartDoc Check"
+     @(rf/subscribe [::model/smartdoc])]]])
+
 (defn content []
   (let [case-id @(rf/subscribe [::case-model/case-id])
-        case-ref @(rf/subscribe [::case-model/current-case-reference])]
+        case-ref @(rf/subscribe [::case-model/current-case-reference])
+        override @(rf/subscribe [::model/override-result])]
     [mui/stack {:spacing 1}
+     [alert-dialog]
      [mui/stack {:direction :row
                  :spacing 2
                  :align-items :center}
       [override-button case-id]
-      (when-let [override @(rf/subscribe [::model/override-result])]
-        [mui/typography
-         (case override
-           :pass [mui/typography {:color "green"}
-                  "pass"]
-           :fail [mui/typography {:color "red"}
-                  "fail"])])
+      [mui/collapse {:in (boolean override)
+                     :orientation :horizontal}
+       [mui/stack {:direction :row
+                   :align-items :center
+                   :min-width "50px"}
+        (case override
+          :pass [mui/typography {:color :green}
+                 "pass"]
+          :fail [mui/typography {:color :red}
+                 "fail"]
+          ;; HACK: Make the text transparent so that the width doesn't jankily change
+          ;;       Also use a four letter word like the others
+          [mui/typography {:color :transparent}
+           "four"])
+        [mui/icon-button {:on-click #(rf/dispatch [::set-override-result case-id nil])}
+         [ui/icon-refresh]]]]
       [mui/box {:flex-grow 1}]
+      [mui/icon-button {:on-click #(rf/dispatch [::set-alert-dialog-open {:case-id case-id}])
+                        :disabled @(rf/subscribe [::checks-submitting?])}
+       [ui/icon-playlist-play]]
       (when @(rf/subscribe [::model/has-checks?])
         (let [{aml-report :report} @(rf/subscribe [::model/uk-aml])
               {smartdoc-report :report} @(rf/subscribe [::model/smartdoc])
@@ -142,33 +212,26 @@
              (if partial?
                "partial report"
                "full report")])))]
-     [mui/table
-      [mui/table-head
+     (if-not @(rf/subscribe [::model/has-checks?])
        [mui/table-row
-        [mui/table-cell] ; Result/status
-        [mui/table-cell "Check"]
-        [mui/table-cell "SSID"]]]
-      [mui/table-body
-       (if-not @(rf/subscribe [::model/has-checks?])
-         [mui/table-row
-          [mui/table-cell {:col-span 5}
-           [mui/alert {:severity :info}
-            [mui/alert-title "No checks run"]
+        [mui/table-cell {:col-span 5}
+         [mui/alert {:severity :info}
+          [mui/alert-title "No checks run"]
+          (if-not @(rf/subscribe [::checks-submitting?])
+           [mui/typography
             "Click " 
-            [mui/link {:on-click #(rf/dispatch [::identity-check case-id])
+            [mui/link {:on-click #(rf/dispatch [::set-alert-dialog-open {:case-id case-id}])
                        :style {:cursor :pointer}}
              "here"]
-            " to run the checks."]]]
-         [:<>
-          [check-row "UK AML"
-           @(rf/subscribe [::model/uk-aml])]
-          [check-row "Fraud Check"
-           @(rf/subscribe [::model/fraudcheck])]
-          [check-row "SmartDoc Check"
-           @(rf/subscribe [::model/smartdoc])]])]]]))
+            " to run the checks."]
+           [mui/typography
+            "Running checks..."])]]]
+       [check-table])]))
 
 (defn dialog []
   [mui/dialog {:open (boolean @(rf/subscribe [::dialog-open?]))}
+   [mui/backdrop {:open (boolean @(rf/subscribe [::checks-submitting?]))}
+    [mui/circular-progress]]
    [mui/stack {:spacing 1}
     [mui/dialog-title
      [mui/stack {:spacing 1 :direction :row}
