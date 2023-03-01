@@ -1,5 +1,6 @@
 (ns darbylaw.api.bill.data
-  (:require [darbylaw.api.util.malli :as malli+]))
+  (:require [darbylaw.api.util.malli :as malli+]
+            [darbylaw.api.bill.council-data :as councils]))
 
 (def bill-types
   (array-map
@@ -67,7 +68,7 @@
     :common-name "Telecom Utility Warehouse"}
    {:id :utilita-energy, :common-name "Utilita Energy"}])
 
-(def councils
+(def test-councils
   [{:id :council-1,
     :common-name "Council 1",
     :org-name "Council 1 Org",
@@ -100,7 +101,7 @@
    [:map
     [:bill-type [:set (into [:enum] (keys bill-types))]]
     [:issuer {:optional true} (into [:enum] (map :id (concat companies
-                                                        councils)))]
+                                                        councils/councils)))]
     [:custom-issuer-name {:optional true} [:string {:min 1}]]
     [:custom-issuer-address {:optional true} [:string {:min 1}]]
     [:amount [:re #"-?\d*\.?\d{0,2}"]]
@@ -126,7 +127,7 @@
   (get company-by-id company-id))
 
 (def council-by-id
-  (into {} (map (juxt :id identity) councils)))
+  (into {} (map (juxt :id identity) councils/councils)))
 
 (defn get-council-info [council-id]
   (get council-by-id council-id))
