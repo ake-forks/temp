@@ -118,14 +118,7 @@
        [mui/list-item-icon {:style {:color "red"}}
         [ui/icon-warning]]
        [mui/list-item-text {:style {:color "red"}}
-        "fail"]]
-      [mui/menu-item {:on-click #(do (close-menu)
-                                     (rf/dispatch [::set-override-result case-id nil]))
-                      :style {:min-width 120}}
-       [mui/list-item-icon
-        [ui/icon-refresh]]
-       [mui/list-item-text
-        "unset"]]]]))
+        "fail"]]]]))
 
 (rf/reg-sub ::alert-dialog-open?
   (fn [db]
@@ -176,20 +169,29 @@
 
 (defn content []
   (let [case-id @(rf/subscribe [::case-model/case-id])
-        case-ref @(rf/subscribe [::case-model/current-case-reference])]
+        case-ref @(rf/subscribe [::case-model/current-case-reference])
+        override @(rf/subscribe [::model/override-result])]
     [mui/stack {:spacing 1}
      [alert-dialog]
      [mui/stack {:direction :row
                  :spacing 2
                  :align-items :center}
       [override-button case-id]
-      (when-let [override @(rf/subscribe [::model/override-result])]
-        [mui/typography
-         (case override
-           :pass [mui/typography {:color "green"}
-                  "pass"]
-           :fail [mui/typography {:color "red"}
-                  "fail"])])
+      [mui/collapse {:in override :orientation :horizontal}
+       [mui/stack {:direction :row
+                   :align-items :center
+                   :min-width "50px"}
+        (case override
+          :pass [mui/typography {:color :green}
+                 "pass"]
+          :fail [mui/typography {:color :red}
+                 "fail"]
+          ;; HACK: Make the text transparent so that the width doesn't jankily change
+          ;;       Also use a four letter word like the others
+          [mui/typography {:color :transparent}
+           "four"])
+        [mui/icon-button {:on-click #(rf/dispatch [::set-override-result case-id nil])}
+         [ui/icon-refresh]]]]
       [mui/box {:flex-grow 1}]
       [mui/icon-button {:on-click #(rf/dispatch [::set-alert-dialog-open {:case-id case-id}])
                         :disabled @(rf/subscribe [::checks-submitting?])}
