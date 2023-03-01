@@ -117,7 +117,6 @@
        [mui/list-item-text
         "unset"]]]]))
 
-(def base-url "https://sandbox.smartsearchsecure.com")
 (defn content []
   (let [case-id @(rf/subscribe [::case-model/case-id])
         case-ref @(rf/subscribe [::case-model/current-case-reference])]
