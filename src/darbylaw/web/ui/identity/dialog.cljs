@@ -79,7 +79,8 @@
 (defn check-row [title {:keys [ssid final-result dashboard]}]
   [mui/table-row
    [mui/table-cell
-    [check-icon final-result]]
+    (when final-result
+      [check-icon final-result])]
    [mui/table-cell
     title]
    [mui/table-cell
