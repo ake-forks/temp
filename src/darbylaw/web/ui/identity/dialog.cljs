@@ -63,11 +63,11 @@
                   :cursor :pointer}
           :on-click #(rf/dispatch [::set-dialog-open {}])}
       (case result
-        :fail [ui/icon-error-outline {:style {:color "red"}}]
-        :refer [ui/icon-error-outline {:style {:color "orange"}}]
+        :unknown [ui/icon-playlist-play {:style {:color "grey"}}]
+        :processing [ui/icon-pending {:style {:color "grey"}}]
         :pass [ui/icon-check {:style {:color "green"}}]
-        :unknown [ui/icon-directions-run {:style {:color "grey"}}]
-        :processing [ui/icon-directions-run {:style {:color "grey"}}])])))
+        :refer [ui/icon-warning-amber {:style {:color "orange"}}]
+        :fail [ui/icon-warning {:style {:color "red"}}])])))
 
 (defn check-row [title {:keys [ssid final-result dashboard]}]
   [mui/table-row
@@ -97,18 +97,25 @@
                 :anchor-el (js/document.querySelector (str "#" id))}
       [mui/menu-item {:on-click #(do (close-menu)
                                      (rf/dispatch [::set-override-result case-id :pass]))
-                      :style {:min-width 120
-                              :color "green"}}
-       "pass"]
+                      :style {:min-width 120}}
+       [mui/list-item-icon {:style {:color "green"}}
+        [ui/icon-check]]
+       [mui/list-item-text {:style {:color "green"}}
+        "pass"]]
       [mui/menu-item {:on-click #(do (close-menu)
                                      (rf/dispatch [::set-override-result case-id :fail]))
-                      :style {:min-width 120
-                              :color "red"}}
-       "fail"]
+                      :style {:min-width 120}}
+       [mui/list-item-icon {:style {:color "red"}}
+        [ui/icon-warning]]
+       [mui/list-item-text {:style {:color "red"}}
+        "fail"]]
       [mui/menu-item {:on-click #(do (close-menu)
                                      (rf/dispatch [::set-override-result case-id nil]))
                       :style {:min-width 120}}
-       "unset"]]]))
+       [mui/list-item-icon
+        [ui/icon-refresh]]
+       [mui/list-item-text
+        "unset"]]]]))
 
 (def base-url "https://sandbox.smartsearchsecure.com")
 (defn content []
