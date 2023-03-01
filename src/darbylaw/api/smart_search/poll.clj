@@ -6,6 +6,7 @@
     [darbylaw.api.util.tx-fns :as tx-fns]
     [darbylaw.api.util.xtdb :as xt-util]
     [darbylaw.api.util.base64 :refer [decode-base64]]
+    [darbylaw.api.case-history :as case-history]
     [darbylaw.doc-store :as doc-store]
     [mount.core :as mount]
     [darbylaw.xtdb-node :as xtdb-node]
@@ -45,27 +46,30 @@
         (let [smartdoc-resp (ss-api/get-doccheck ssid)
               updated-data (-> smartdoc-resp
                                (get-in [:body :data :attributes])
-                               (select-keys [:status :result]))
+                               (select-keys [:status :result]))]
+          (if-not (terminal? (:status updated-data))
+            ;; If we've not reached a terminal state then just update the state in the database
+            (xt-util/exec-tx-or-throw xtdb-node
+              (tx-fns/set-values check-id updated-data))
+            ;; Otherwise:
+            ;; - Upload the report to the document store
+            ;; - Update the state in the database
+            ;; - Update the case history
+            (let [export-resp (ss-api/export-pdf-base64 ssid)
+                  base64 (get-in export-resp [:body :data :attributes :base64])
+                  bytes (decode-base64 base64)
 
-              smartdoc-filename
-              (when (terminal? (:status updated-data))
-                (let [export-resp (ss-api/export-pdf-base64 ssid)
-                      base64 (get-in export-resp [:body :data :attributes :base64])
-                      bytes (decode-base64 base64)
-
-                      document-id (random-uuid)
-                      filename (str reference ".identity.smartdoc-report." document-id ".pdf")]
-                  (doc-store/store
-                    (str case-id "/" filename)
-                    bytes
-                    {:content-type "application/pdf"})
-                  filename))]
-          (xt-util/exec-tx-or-throw xtdb-node
-            (concat
-              ;; TODO: Add to case history
-              (tx-fns/set-values check-id 
-                                 (cond-> updated-data
-                                   smartdoc-filename (assoc :report smartdoc-filename))))))
+                  document-id (random-uuid)
+                  filename (str reference ".identity.smartdoc-report." document-id ".pdf")]
+              (doc-store/store
+                (str case-id "/" filename)
+                bytes
+                {:content-type "application/pdf"})
+              (xt-util/exec-tx-or-throw xtdb-node
+                (concat
+                  (tx-fns/set-values check-id (assoc updated-data :report filename))
+                  (case-history/put-event {:event :identity.smartdoc-updated
+                                           :case-id case-id}))))))
         (catch Exception e
           (log/error e "Failed syncing check ssid:" ssid))))))
 
