@@ -10,9 +10,8 @@
     [:<>
      (when (= final-result :unknown)
        [layout/task-item
-        {:title "run the identity checks"
-         :body (str "the identity checks aren't run automatically (yet)."
-                    " please run them manually")
+        {:title "run identity checks"
+         :body "please run the identity checks"
          :icon-path layout/task-icon
          :on-click #(rf/dispatch [::identity-dialog/set-dialog-open {}])}])
      ;; Anything other than a pass or no checks (:unknown) requires manual
@@ -20,8 +19,7 @@
      (when (and (not= final-result :pass)
                 (not= final-result :unknown))
        [layout/task-item
-        {:title "manually review identity checks"
-         :body (str "the identity checks requires some manual intervention."
-                    " please manually review the results")
+        {:title "review identity checks"
+         :body (str "manual intervention required")
          :icon-path layout/task-icon
          :on-click #(rf/dispatch [::identity-dialog/set-dialog-open {}])}])]))
