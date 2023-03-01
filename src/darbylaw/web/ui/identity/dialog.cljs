@@ -124,10 +124,43 @@
        [mui/list-item-text
         "unset"]]]]))
 
+(rf/reg-sub ::alert-dialog-open?
+  (fn [db]
+    (::alert-dialog-open? db)))
+
+(rf/reg-event-db ::set-alert-dialog-open
+  (fn [db [_ dialog-context]]
+    (if (some? dialog-context)
+      (merge db {::alert-dialog-open? true
+                 ::alert-dialog-context dialog-context})
+      (assoc db ::alert-dialog-open? false))))
+
+(rf/reg-event-fx ::alert-confirm
+  (fn [{:keys [db]} _]
+    {:fx [[:dispatch [::set-alert-dialog-open nil]]
+          [:dispatch [::identity-check (get-in db [::alert-dialog-context :case-id])]]]}))
+
+(defn alert-dialog []
+  [mui/dialog {:open @(rf/subscribe [::alert-dialog-open?])
+               :max-width :xs}
+   [mui/dialog-title "Are you sure?"]
+   [mui/dialog-content "Continuing will perform another set of checks and ask the user to submit another set of documents."]
+   [mui/dialog-actions
+    [mui/button {:variant :outlined
+                 :full-width true
+                 :on-click #(rf/dispatch [::set-alert-dialog-open nil])}
+     "Cancel"]
+    [mui/button {:variant :contained
+                 :full-width true
+                 :color :primary
+                 :on-click #(rf/dispatch [::alert-confirm])}
+     "Yes"]]])
+
 (defn content []
   (let [case-id @(rf/subscribe [::case-model/case-id])
         case-ref @(rf/subscribe [::case-model/current-case-reference])]
     [mui/stack {:spacing 1}
+     [alert-dialog]
      [mui/stack {:direction :row
                  :spacing 2
                  :align-items :center}
@@ -170,7 +203,7 @@
             (if-not @(rf/subscribe [::checks-submitting?])
              [mui/typography
               "Click " 
-              [mui/link {:on-click #(rf/dispatch [::identity-check case-id])
+              [mui/link {:on-click #(rf/dispatch [::set-alert-dialog-open {:case-id case-id}])
                          :style {:cursor :pointer}}
                "here"]
               " to run the checks."]
