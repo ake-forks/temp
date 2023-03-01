@@ -69,14 +69,14 @@
         :unknown [ui/icon-directions-run {:style {:color "grey"}}]
         :processing [ui/icon-directions-run {:style {:color "grey"}}])])))
 
-(defn check-row [title ssid result link]
+(defn check-row [title {:keys [ssid final-result dashboard]}]
   [mui/table-row
    [mui/table-cell
-    [check-icon result]]
+    [check-icon final-result]]
    [mui/table-cell
     title]
    [mui/table-cell
-    [mui/link {:href link :target :_blank} ssid]]])
+    [mui/link {:href dashboard :target :_blank} ssid]]])
 
 (defn override-button [case-id]
   (r/with-let [open? (r/atom false)
@@ -160,21 +160,12 @@
              "here"]
             " to run the checks."]]]
          [:<>
-          (let [uk-aml @(rf/subscribe [::model/uk-aml])]
-            [check-row "UK AML"
-             (:ssid uk-aml)
-             (:final-result uk-aml)
-             (str base-url "/aml/results/" (:ssid uk-aml))])
-          (let [fraudcheck @(rf/subscribe [::model/fraudcheck])]
-            [check-row "Fraud Check"
-             (:ssid fraudcheck)
-             (:final-result fraudcheck)
-             (str base-url "/aml/results/" (:ssid fraudcheck))])
-          (let [smartdoc @(rf/subscribe [::model/smartdoc])]
-            [check-row "SmartDoc Check"
-             (:ssid smartdoc)
-             (:final-result smartdoc)
-             (str base-url "/doccheck/results/" (:ssid smartdoc))])])]]]))
+          [check-row "UK AML"
+           @(rf/subscribe [::model/uk-aml])]
+          [check-row "Fraud Check"
+           @(rf/subscribe [::model/fraudcheck])]
+          [check-row "SmartDoc Check"
+           @(rf/subscribe [::model/smartdoc])]])]]]))
 
 (defn dialog []
   [mui/dialog {:open (boolean @(rf/subscribe [::dialog-open?]))}

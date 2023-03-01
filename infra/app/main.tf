@@ -51,8 +51,8 @@ resource "aws_ssm_parameter" "post-service-map" {
   }
 }
 
-resource "aws_ssm_parameter" "smart-search-public-key" {
-  name  = "ProbateTree_SmartSearchPublicKey_${terraform.workspace}"
+resource "aws_ssm_parameter" "smart-search-map" {
+  name  = "ProbateTree_SmartSearchMap_${terraform.workspace}"
   type  = "SecureString"
   value = "Change_Me"
 
@@ -158,8 +158,8 @@ resource "aws_ecs_task_definition" "probatetree" {
             "valueFrom" : aws_ssm_parameter.post-service-map.arn
           },
           {
-            "name" : "SMART_SEARCH_PUBLIC_KEY"
-            "valueFrom" : aws_ssm_parameter.smart-search-public-key.arn
+            "name" : "SMART_SEARCH_CONFIG"
+            "valueFrom" : aws_ssm_parameter.smart-search-map.arn
           }
         ]
         logConfiguration = {

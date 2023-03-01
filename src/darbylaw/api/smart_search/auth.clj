@@ -11,14 +11,14 @@
 
 ;; >> Config
 
-;; TODO: Add all these to config?
-(def company-name "Darby & Darby")
+(mount/defstate company-name
+  :start (-> config :smart-search :company-name))
 
 (mount/defstate public-key
   :start (-> config :smart-search :public-key))
 
-;; TODO: Change to service user
-(def user-email "osm@juxt.pro")
+(mount/defstate user-email
+  :start (-> config :smart-search :service-user))
 
 
 
