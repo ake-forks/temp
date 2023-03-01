@@ -218,6 +218,13 @@
         :on-success [::delete-letter-success on-completed]
         :on-failure [::delete-letter-failure on-completed]})}))
 
+(rf/reg-event-db ::open-upload-received-letter
+  (fn [db [_ open?]]
+    (assoc-in db [::context :upload-received-letter] {:open? open?})))
+
+(rf/reg-sub ::upload-received-letter?
+  #(get-in % [::context :upload-received-letter :open?]))
+
 ;dialog events and subs
 
 (rf/reg-event-fx ::open

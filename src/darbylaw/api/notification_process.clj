@@ -56,12 +56,15 @@
         notification-props (get-notification-props body-params)
         resp (->> (xt/q (xt/db xtdb-node)
                     {:find '[(pull letter [*]) modified-at]
-                     :where (into [['letter :type :probate.notification-letter]
-                                   ['letter :probate.notification-letter/case case-id]
-                                   ['letter :modified-at 'modified-at]]
+                     :in '[case-id]
+                     :where (into
+                              '[(or [letter :probate.notification-letter/case case-id]
+                                    [letter :probate.received-letter/case case-id])
+                                [letter :modified-at modified-at]]
                               (for [[k v] notification-props]
                                 ['letter k v]))
-                     :order-by [['modified-at :desc]]})
+                     :order-by [['modified-at :desc]]}
+                    case-id)
                (map first))]
     {:status http/status-200-ok
      :body resp}))

@@ -7,7 +7,9 @@
             [reagent.core :as r]
             [darbylaw.web.ui.case-model :as case-model]
             [darbylaw.web.ui.notification.model :as model]
-            [darbylaw.web.ui.components.upload-button :refer [upload-button]]))
+            [darbylaw.web.ui.components.upload-button :refer [upload-button]]
+            [darbylaw.web.ui.notification.letter-commons :refer [letter-header]]
+            [darbylaw.web.ui.components.pdf-viewer :refer [pdf-viewer]]))
 
 (defonce delete-confirmation-open? (r/atom false))
 
@@ -154,30 +156,12 @@
                     :sx {:align-self :flex-start}}
         "delete letter"]]]]))
 
-(defn pdf-viewer [props]
-  (r/with-let [loading? (r/atom true)]
-    [:<>
-     [mui/box {:sx (merge {:mt 2
-                           :text-align :center}
-                          (when-not @loading?
-                            {:display :none}))}
-      [mui/circular-progress]]
-     [:iframe (merge props
-                     {:frameBorder 0
-                      :onLoad #(reset! loading? false)}
-                     (when @loading?
-                       {:style {:display :none}}))]]))
-
 (defn panel []
   (let [case-id (<< ::case-model/case-id)
         letter-id (<< ::model/open-letter-id)
         letter-data (<< ::model/open-letter)]
     [mui/stack {:sx {:height 1}}
-     [mui/stack {:direction :row}
-      [mui/icon-button {:onClick #(rf/dispatch [::model/close-letter])
-                        :sx {:align-self :center
-                             :ml 1}}
-       [ui/icon-arrow-back-sharp]]
+     [letter-header {:on-back #(rf/dispatch [::model/close-letter])}
       [mui/list-item
        [mui/list-item-icon [ui/icon-description-outlined {:color :unset}]]
        [mui/list-item-text
@@ -206,5 +190,5 @@
           "send"]
          [send-confirmation-dialog]])]
      ^{:key @pdf-viewer-refresh}
-     [pdf-viewer {:style {:flex-grow 1}
+     [pdf-viewer {:sx {:flex-grow 1}
                   :src (str "/api/case/" case-id "/notification-letter/" letter-id "/pdf")}]]))

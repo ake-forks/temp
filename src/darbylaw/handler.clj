@@ -26,6 +26,7 @@
     [darbylaw.api.bill :as bill-api]
     [darbylaw.api.notification-process :as notification-api]
     [darbylaw.api.notification-letter :as notification-letter-api]
+    [darbylaw.api.received-letter :as received-letter-api]
     [darbylaw.api.bank-notification :as bank-notification-api]
     [darbylaw.api.bank-notification.mailing-controls :as mailing]
     [darbylaw.middleware.xtdb :refer [wrap-xtdb-node]]
@@ -80,6 +81,7 @@
      (bill-api/routes)
      (notification-api/routes)
      (notification-letter-api/routes)
+     (received-letter-api/routes)
      (bank-notification-api/routes)
      (mailing/routes)]]])
 
