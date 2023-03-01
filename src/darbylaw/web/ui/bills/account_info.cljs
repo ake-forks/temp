@@ -71,9 +71,34 @@
                     :full-width true
                     :on-click #(rf/dispatch [::delete! notification-type case-id (get @popover :asset-id)])} "yes, remove account"]]]]))
 
-(defn utility-item [{:keys [bill-type account-number id recent-bill] :as data}]
+(defn get-latest-bill [recent-bills]
+  (first (sort-by :uploaded-at #(> %1 %2) recent-bills)))
+
+(defn recent-bill-component [bill-type {:keys [id recent-bill]}]
   (let [case-id @(rf/subscribe [::case-model/case-id])
-        type-string (interpose " & " bill-type)]
+        latest-bill (get-latest-bill recent-bill)]
+    [mui/stack {:spacing 1 :direction :row :align-items :center}
+     (if latest-bill
+       [mui/stack {:direction :row :spacing 1 :align-items :center}
+        [mui/typography {:variant :body1} "recent bill:"]
+        [mui/button {:variant :text
+                     :on-click #(rf/dispatch [::open-document case-id (:filename latest-bill)])}
+         (:original-filename latest-bill)]
+        [common/upload-button
+         bill-type
+         case-id
+         id
+         {:variant :outlined}
+         "replace"]]
+       [common/upload-button
+        bill-type
+        case-id
+        id
+        {:variant :outlined}
+        "upload recent bill?"])]))
+
+(defn utility-item [{:keys [bill-type account-number id] :as data}]
+  (let [type-string (interpose " & " bill-type)]
     [mui/box
      [mui/card
       [mui/stack {:sx {:p 1}
@@ -91,34 +116,15 @@
           [ui/icon-delete]]]]
        (when account-number
          [mui/typography {:variant :body1} (str "account number: " account-number)])
-       [mui/stack {:spacing 1 :direction :row :align-items :center}
-        (if recent-bill
-          [mui/stack {:direction :row :spacing 1 :align-items :center}
-           [mui/typography {:variant :body1} "recent bill:"]
-           [mui/button {:variant :text
-                        :on-click #(rf/dispatch [::open-document case-id (-> data :recent-bill :filename)])}
-            (:original-filename recent-bill)]
-           [common/upload-button
-            :utility
-            case-id
-            id
-            {:variant :outlined}
-            "replace"]]
-          [common/upload-button
-           :utility
-           case-id
-           id
-           {:variant :outlined}
-           "upload recent bill?"])]]
+       [recent-bill-component :utility data]]
       [confirmation-popover]]]))
 (rf/reg-event-fx ::open-document
   (fn [_ [_ case-id filename]]
     (js/window.open
       (str "/api/case/" case-id "/household-bills/document/" filename))))
 
-(defn council-item [{:keys [account-number id recent-bill] :as data}]
-  (let [case-id @(rf/subscribe [::case-model/case-id])
-        council-label (bill-data/get-council-label (:council (<< ::notification-model/notification)))]
+(defn council-item [{:keys [account-number id] :as data}]
+  (let [council-label (bill-data/get-council-label (:council (<< ::notification-model/notification)))]
     [mui/box
      [mui/card
       [mui/stack {:sx {:p 1}
@@ -136,25 +142,7 @@
           [ui/icon-delete]]]]
        (when account-number
          [mui/typography {:variant :body1} (str "account number: " account-number)])
-       [mui/stack {:spacing 1 :direction :row :align-items :center}
-        (if recent-bill
-          [mui/stack {:direction :row :spacing 1 :align-items :center}
-           [mui/typography {:variant :body1} "recent bill:"]
-           [mui/button {:variant :text
-                        :on-click #(rf/dispatch [::open-document case-id (-> data :recent-bill :filename)])}
-            (:original-filename recent-bill)]
-           [common/upload-button
-            :council-tax
-            case-id
-            id
-            {:variant :outlined}
-            "replace"]]
-          [common/upload-button
-           :council-tax
-           case-id
-           id
-           {:variant :outlined}
-           "upload recent bill?"])]]
+       [recent-bill-component :council-tax data]]
       [confirmation-popover]]]))
 
 (defn utility-bill-info []

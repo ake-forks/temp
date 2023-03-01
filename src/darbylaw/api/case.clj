@@ -208,14 +208,14 @@
    {'(:probate.council-tax/_case {:as :council-tax})
     (into
       ['(:xt/id {:as :id})
-       {:recent-bill bill-props}]
+       {'(:probate.council-tax-doc/_asset {:as :recent-bill}) bill-props}]
       (bill-data/extract-council-tax-props
         (bill-data/make-council-tax-schema :query)))}
 
    {'(:probate.bill/_case {:as :utility-bills})
     (into
       ['(:xt/id {:as :id})
-       {:recent-bill bill-props}]
+       {'(:probate.utility-doc/_asset {:as :recent-bill}) bill-props}]
       (bill-data/extract-bill-props
         (bill-data/make-bill-schema :query)))}
 

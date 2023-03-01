@@ -156,8 +156,8 @@
         extension (data-util/file-extension orig-filename)
         document-id (random-uuid)
         document-type (case asset-type
-                        :utility :probate.utility-doc
-                        :council-tax :probate.council-tax-doc)
+                        :utility "probate.utility-doc"
+                        :council-tax "probate.council-tax-doc")
         filename (str reference "." (name asset-type) "." document-id extension)]
     (assert (accepted-filetypes extension))
     (assert (not (clojure.string/blank? reference)))
@@ -165,8 +165,7 @@
       (doc-store/store (str case-id "/" filename) tempfile))
     (xt-util/exec-tx-or-throw xtdb-node
       (concat
-        [[::xt/put {:type document-type
-                    :xt/id filename
+        [[::xt/put {:xt/id filename
                     (keyword
                       (str document-type "/case")) case-id
                     (keyword
@@ -174,7 +173,6 @@
                     :uploaded-by (:username user)
                     :uploaded-at (xt-util/now)
                     :original-filename orig-filename}]]
-        (tx-fns/set-value asset-id [:recent-bill] filename)
         (case-history/put-event
           {:event (keyword (str document-type ".uploaded"))
            :case-id case-id
