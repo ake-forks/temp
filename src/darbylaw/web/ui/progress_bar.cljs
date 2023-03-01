@@ -51,7 +51,11 @@
   [{:label "Case Created"
     :status-fn (constantly :completed)} 
    {:label "Identity Check"
-    :tooltip "We are waiting on SmartSearch to complete your ID check."
+    :tooltip (fn [& _]
+               (case @(rf/subscribe [::identity-model/current-final-result])
+                 :unknown "We're waiting on an admin to run the checks."
+                 :pass "Identity checks have passed."
+                 "Some manual intervention is required."))
     :status-fn (fn [& _]
                  (r/as-element
                    [identity-dialog/check-icon]))}
@@ -92,7 +96,10 @@
                    label]]]]
             (with-meta
               (if tooltip
-                [mui/tooltip {:title tooltip :position :top}
+                [mui/tooltip {:title (if (fn? tooltip)
+                                       (tooltip current-case)
+                                       tooltip)
+                              :position :top}
                  elem]
                 elem)
               {:key label}))))]]))
