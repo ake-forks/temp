@@ -49,9 +49,8 @@
      "\u2199"])
 
 (defn pdf-view-panel []
-  [pdf-viewer {:src (let [letter (<< ::model/open-letter)]
-                      (str "/api/case/" (:probate.received-letter/case letter)
-                           "/received-letter/" (:xt/id letter) "/pdf"))
+  [pdf-viewer {:src (str "/api/case/" (<< ::model/open-letter-case-id)
+                         "/received-letter/" (<< ::model/open-letter-id) "/pdf")
                :sx {:flex-grow 1}}])
 
 (defn pdf-upload-panel [{:keys [set-values] :as _fork-args}]
@@ -76,7 +75,32 @@
                            :on-load-data-url #(rf/dispatch [::set-file-data-url %])}
         "upload pdf scan..."]])))
 
-(defn content [{:keys [values handle-change handle-submit submitting? errors]
+(defonce delete-confirmation-open? (r/atom false))
+
+(defn delete-confirmation-dialog []
+  [mui/dialog {:open (boolean @delete-confirmation-open?)
+               :maxWidth :sm}
+   [mui/dialog-title "confirm delete"]
+   [mui/dialog-content
+    "Do you want to delete the letter?"]
+   [mui/dialog-actions
+    [mui/button {:variant :contained
+                 :onClick #(reset! delete-confirmation-open? false)}
+     "No, cancel"]
+    [mui/button {:variant :outlined
+                 :color :error
+                 :onClick (let [case-id (<< ::model/open-letter-case-id)
+                                letter-id (<< ::model/open-letter-id)]
+                            (fn []
+                              (rf/dispatch
+                                [::model/delete-letter
+                                 {:case-id case-id
+                                  :letter-id letter-id
+                                  :on-completed
+                                  #(reset! delete-confirmation-open? false)}])))}
+     "Yes, delete"]]])
+
+(defn content [{:keys [_values _handle-change handle-submit submitting? errors]
                 :as fork-args}]
   [mui/stack {:sx {:height 1}}
    [letter-header {:on-back close!}
@@ -85,7 +109,16 @@
       [letter-icon]]
      [mui/list-item-text
       {:primary "new received letter"
-       :secondary "in preparation"}]]]
+       :secondary "in preparation"}]]
+    (when (= :update (<< ::edit-mode))
+      [mui/stack {:direction :row
+                  :sx {:align-self :center}}
+       [delete-confirmation-dialog]
+       [mui/button {:variant :outlined
+                    :color :error
+                    :startIcon (r/as-element [ui/icon-delete])
+                    :onClick #(reset! delete-confirmation-open? true)}
+        "Delete"]])]
 
    (case (<< ::edit-mode)
      :create [pdf-upload-panel fork-args]
@@ -100,15 +133,16 @@
         :on-change handle-change
         :label "Contains valuation information"}]]
 
-   [mui/dialog-actions
-    [mui/button {:variant :outlined
-                 :onClick close!}
-     "Cancel"]
-    [mui/button {:variant :contained
-                 :onClick handle-submit
-                 :disabled (boolean (or (seq errors)
-                                        submitting?))}
-     "Save"]]])
+   (when (= :create (<< ::edit-mode))
+     [mui/dialog-actions
+      [mui/button {:variant :outlined
+                   :onClick close!}
+       "Cancel"]
+      [mui/button {:variant :contained
+                   :onClick handle-submit
+                   :disabled (boolean (or (seq errors)
+                                          submitting?))}
+       "Save"]])])
 
 (rf/reg-fx ::close close!)
 

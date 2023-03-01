@@ -28,7 +28,7 @@
      "No, cancel"]
     [mui/button {:variant :outlined
                  :color :error
-                 :onClick (let [case-id (<< ::case-model/case-id)
+                 :onClick (let [case-id (<< ::model/open-letter-case-id)
                                 letter-id (<< ::model/open-letter-id)]
                             (fn []
                               (rf/dispatch [::model/delete-letter
@@ -156,7 +156,8 @@
                     :onClick (fn []
                                (reset! delete-confirmation-open? true)
                                (close!))
-                    :sx {:align-self :flex-start}}
+                    :sx {:align-self :flex-start}
+                    :color :error}
         "delete letter"]]]]))
 
 (defn panel []

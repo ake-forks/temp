@@ -25,6 +25,7 @@
     [darbylaw.api.funeral :as funeral-api]
     [darbylaw.api.bill :as bill-api]
     [darbylaw.api.notification-process :as notification-api]
+    [darbylaw.api.letter :as letter-api]
     [darbylaw.api.notification-letter :as notification-letter-api]
     [darbylaw.api.received-letter :as received-letter-api]
     [darbylaw.api.bank-notification :as bank-notification-api]
@@ -80,6 +81,7 @@
      (funeral-api/routes)
      (bill-api/routes)
      (notification-api/routes)
+     (letter-api/routes)
      (notification-letter-api/routes)
      (received-letter-api/routes)
      (bank-notification-api/routes)
