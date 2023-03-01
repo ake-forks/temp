@@ -1,5 +1,6 @@
 (ns darbylaw.api.case
   (:require [xtdb.api :as xt]
+            [medley.core :as m]
             [reitit.coercion]
             [reitit.coercion.malli]
             [ring.util.response :as ring]
@@ -7,7 +8,8 @@
             [darbylaw.api.case-history :as case-history]
             [darbylaw.api.util.xtdb :as xt-util]
             [darbylaw.api.util.tx-fns :as tx-fns]
-            [darbylaw.api.bill.data :as bill-data]))
+            [darbylaw.api.bill.data :as bill-data]
+            [darbylaw.api.smart-search.utils :as ss-utils]))
 
 (def date--schema
   [:re #"^\d{4}-\d{2}-\d{2}$"])
@@ -157,7 +159,8 @@
   [:ssid
    :status
    :result
-   :report])
+   :report
+   :dashboard])
 
 (def common-case-eql
   ['(:xt/id {:as :id})
@@ -226,13 +229,19 @@
     check-props}
    :override-identity-check])
 
+(defn enrich-case [c]
+  (-> c
+      (m/update-existing :uk-aml (partial ss-utils/add-dashboard-link "/aml/results/"))
+      (m/update-existing :fraudcheck (partial ss-utils/add-dashboard-link "/aml/results/"))
+      (m/update-existing :smartdoc (partial ss-utils/add-dashboard-link "/doccheck/results/"))))
+
 (defn get-cases [{:keys [xtdb-node]}]
   (ring/response
     (->> (xt/q (xt/db xtdb-node)
            {:find [(list 'pull 'case common-case-eql)]
             :where '[[case :type :probate.case]]})
-      (map (fn [[case]]
-             case)))))
+         (map first)
+         (map enrich-case))))
 
 (def get-case__query
   {:find [(list 'pull 'case common-case-eql)]
@@ -247,7 +256,10 @@
       {:status http/status-404-not-found}
       (do
         (assert (= 1 (count results)))
-        (ring/response (ffirst results))))))
+        (-> results
+            ffirst
+            enrich-case
+            ring/response)))))
 
 (defn get-case-history [{:keys [xtdb-node path-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
