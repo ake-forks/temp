@@ -89,26 +89,31 @@
                                   :result error-result}}))
 
 (rf/reg-event-fx ::submit-valuation
-  (fn [{:keys [db]} [_  case-id existing-id fork-params]]
+  (fn [{:keys [db]} [_ asset-type case-id existing-id fork-params]]
     {:db (model/set-submitting db fork-params true)
      :http-xhrio
      (ui/build-http
        {:method :post
-        :uri (str "/api/case/" case-id "/submit-valuation/" existing-id)
+        :uri
+        (case asset-type
+          :utility (str "/api/case/" case-id "/update-utility/" existing-id)
+          :council-tax (str "/api/case/" case-id "/update-council-tax/" existing-id))
         :params (:values fork-params)
         :on-success [::submit-success case-id fork-params]
         :on-failure [::submit-failure fork-params]})}))
 
 
 (defonce form-state (r/atom nil))
-(defn valuation-form [asset-type {:keys [account-number id meter-readings valuation]}]
+(defn valuation-form [asset-type {:keys [account-number id meter-readings valuation property]}]
   (let [case-id (<< ::case-model/case-id)]
     [form-util/form
      {:state form-state
-      :on-submit #(rf/dispatch [::submit-valuation case-id id %])
+      :on-submit #(rf/dispatch [::submit-valuation asset-type case-id id %])
       :initial-values {:account-number (or account-number "")
-                       :meter-readings (or meter-readings "")
-                       :valuation (or valuation "")}}
+                       :valuation (or valuation "")
+                       :property property
+                       (if (= asset-type :utility)
+                         :meter-readings) (or meter-readings "")}}
      (fn [{:keys [handle-submit] :as fork-args}]
        [:form {:on-submit handle-submit}
         [mui/stack {:spacing 0.5}
