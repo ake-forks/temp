@@ -9,16 +9,19 @@
 
 (rf/reg-event-fx ::submit-success
   (fn [{:keys [db]} [_ case-id]]
-    {:dispatch [::case-model/load-case! case-id]}))
+    {:db (assoc db ::checks-submitting? false)
+     :dispatch [::case-model/load-case! case-id]}))
 
 (rf/reg-event-fx ::check-submit-failure
   (fn [{:keys [db]} [_ error-result]]
-    {::ui/notify-user-http-error {:message "Error starting identity checks"
+    {:db (assoc db ::checks-submitting? false)
+     ::ui/notify-user-http-error {:message "Error starting identity checks"
                                   :result error-result}}))
 
 (rf/reg-event-fx ::identity-check
   (fn [{:keys [db]} [_ case-id]]
-    {:http-xhrio
+    {:db (assoc db ::checks-submitting? true)
+     :http-xhrio
      (ui/build-http
        {:method :post
         :timeout 10000
@@ -49,6 +52,10 @@
       (merge db {::dialog-open? true
                  ::dialog-context dialog-context})
       (assoc db ::dialog-open? false))))
+
+(rf/reg-sub ::checks-submitting?
+  (fn [db]
+    (::checks-submitting? db)))
 
 (rf/reg-sub ::dialog-open?
   (fn [db]
@@ -160,11 +167,15 @@
           [mui/table-cell {:col-span 5}
            [mui/alert {:severity :info}
             [mui/alert-title "No checks run"]
-            "Click " 
-            [mui/link {:on-click #(rf/dispatch [::identity-check case-id])
-                       :style {:cursor :pointer}}
-             "here"]
-            " to run the checks."]]]
+            (if-not @(rf/subscribe [::checks-submitting?])
+             [mui/typography
+              "Click " 
+              [mui/link {:on-click #(rf/dispatch [::identity-check case-id])
+                         :style {:cursor :pointer}}
+               "here"]
+              " to run the checks."]
+             [mui/typography
+              "Running checks..."])]]] 
          [:<>
           [check-row "UK AML"
            @(rf/subscribe [::model/uk-aml])]
@@ -175,6 +186,8 @@
 
 (defn dialog []
   [mui/dialog {:open (boolean @(rf/subscribe [::dialog-open?]))}
+   [mui/backdrop {:open (boolean @(rf/subscribe [::checks-submitting?]))}
+    [mui/circular-progress]]
    [mui/stack {:spacing 1}
     [mui/dialog-title
      [mui/stack {:spacing 1 :direction :row}
