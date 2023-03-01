@@ -193,7 +193,7 @@
       [mui/box {:flex-grow 1}]
       [mui/icon-button {:on-click #(rf/dispatch [::set-alert-dialog-open {:case-id case-id}])
                         :disabled @(rf/subscribe [::checks-submitting?])}
-       [ui/icon-refresh]]
+       [ui/icon-playlist-play]]
       (when @(rf/subscribe [::model/has-checks?])
         (let [{aml-report :report} @(rf/subscribe [::model/uk-aml])
               {smartdoc-report :report} @(rf/subscribe [::model/smartdoc])
