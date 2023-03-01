@@ -68,6 +68,58 @@
     :common-name "Telecom Utility Warehouse"}
    {:id :utilita-energy, :common-name "Utilita Energy"}])
 
+(def water-companies
+  [{:id :affinity-water, :common-name "Affinity Water"}
+   {:id :albion-water, :common-name "Albion Water"}
+   {:id :anglian-water-services, :common-name "Anglian Water Services"}
+   {:id :bristol-water-plc, :common-name "Bristol Water plc"}
+   {:id :cambridge-water-company, :common-name "Cambridge Water Company"}
+   {:id :icosa-water, :common-name "Icosa Water"}
+   {:id :hafren-dyfrdwy-severn-dee,
+    :common-name "Hafren Dyfrdwy (Severn Dee)"}
+   {:id :dr-cymru-welsh-water, :common-name "Dŵr Cymru Welsh Water"}
+   {:id :northern-ireland-water, :common-name "Northern Ireland Water"}
+   {:id :independent-water-networks,
+    :common-name "Independent Water Networks"}
+   {:id :northumbrian-water, :common-name "Northumbrian Water"}
+   {:id :portsmouth-water, :common-name "Portsmouth Water"}
+   {:id :severn-trent-water, :common-name "Severn Trent Water"}
+   {:id :south-east-water, :common-name "South East Water"}
+   {:id :south-staffs-water, :common-name "South Staffs Water"}
+   {:id :south-west-water, :common-name "South West Water"}
+   {:id :southern-water-services, :common-name "Southern Water Services"}
+   {:id :sutton-and-east-surrey-water-ses,
+    :common-name "Sutton and East Surrey Water (SES)"}
+   {:id :thames-water-utilities, :common-name "Thames Water Utilities"}
+   {:id :united-utilities-water, :common-name "United Utilities Water"}
+   {:id :veolia-water-outsourcing, :common-name "Veolia Water Outsourcing"}
+   {:id :wessex-water-services, :common-name "Wessex Water Services"}
+   {:id :yorkshire-water-services, :common-name "Yorkshire Water Services"}
+   {:id :leep-utilities, :common-name "Leep Utilities"}
+   {:id :uisce-irish-water, :common-name "UISCE Irish Water"}
+   {:id :guernsey-water, :common-name "Guernsey Water"}
+   {:id :jersey-water, :common-name "Jersey Water"}
+   {:id :tideway, :common-name "Tideway"}])
+
+(def telecom-companies
+  [{:id :bt, :common-name "BT"}
+   {:id :sky, :common-name "Sky"}
+   {:id :talktalk, :common-name "TalkTalk"}
+   {:id :virgin-media, :common-name "Virgin Media"}
+   {:id :vodafone, :common-name "Vodafone"}
+   {:id :community-fibre, :common-name "Community Fibre"}
+   {:id :ee, :common-name "EE"}
+   {:id :g-network, :common-name "G Network"}
+   {:id :kcom, :common-name "KCOM"}
+   {:id :now-broadband, :common-name "Now Broadband"}
+   {:id :onestream, :common-name "Onestream"}
+   {:id :plusnet, :common-name "Plusnet"}
+   {:id :shell-energy-broadband, :common-name "Shell Energy Broadband"}
+   {:id :three, :common-name "Three"}
+   {:id :trooli, :common-name "Trooli"}
+   {:id :truespeed, :common-name "Truespeed"}
+   {:id :direct-save-telecom, :common-name "Direct Save Telecom"}])
+
 (def test-councils
   [{:id :council-1,
     :common-name "Council 1",
