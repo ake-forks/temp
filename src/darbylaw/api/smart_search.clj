@@ -1,6 +1,7 @@
 (ns darbylaw.api.smart-search
   (:require [xtdb.api :as xt]
             [clojure.tools.logging :as log]
+            [darbylaw.config :refer [profile]]
             [darbylaw.doc-store :as doc-store]
             [darbylaw.api.util.xtdb :as xt-util]
             [darbylaw.api.util.tx-fns :as tx-fns]
@@ -67,9 +68,10 @@
                      (when region {:region region})))
    :issuing_country "gbr"
    :document_type ["driving_licence" "passport"]
-   ;:scan_type "enhanced_selfie"
-   ; For testing purposes use basic_selfie
-   :scan_type "basic_selfie"
+   :scan_type (if (= :production profile)
+                ;; `enhanced_selfie` is a lot slower so we'll only use that in production
+                "enhanced_selfie"
+                "basic_selfie")
    :mobile_number (:phone pr-info)})
 
 (defn ->fraudcheck-data [{:keys [case-ref pr-info]}]
