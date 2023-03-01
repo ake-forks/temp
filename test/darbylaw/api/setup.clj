@@ -6,9 +6,10 @@
    :forename "John"
    :surname "Doe"
    :date-of-birth "1980-01-21"
+   :gender "male"
    :email "john.doe@test.com"
    :phone "+441234123456"
-   :street-number "16"
+   :building "25"
    :street1 "A Street"
    :town "London"
    :postcode "SW1W 0NY"})

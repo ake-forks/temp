@@ -14,7 +14,6 @@
 
 ;; >> Handlers
 
-;; TODO: There's probably another function somewhere I can use
 (defn get-check-data [xtdb-node case-id]
   (let [{:keys [case-ref pr-info]}
         (xt/pull (xt/db xtdb-node)
@@ -36,10 +35,17 @@
    :contacts {:mobile (:phone pr-info)}
    ;; TODO: Match up requirements on PR info to schemas
    ;; TODO: Fix this so that it actually makes sense
-   :addresses [{:building (:street-number pr-info)
-                :street_1 (:street1 pr-info)
-                :town (:town pr-info)
-                :postcode (:postcode pr-info)}]})
+   :addresses [(let [{:keys [flat building
+                             street1 street2
+                             town region postcode]}
+                     pr-info]
+                 (merge {:building building
+                         :street_1 street1
+                         :town town
+                         :postcode postcode}
+                        (when flat {:flat flat})
+                        (when street2 {:street_2 street2})
+                        (when region {:region region})))]})
 
 ;; TODO: Maybe pull out hard coded values into separate `base` def and merge?
 (defn ->doccheck-data [{:keys [case-ref pr-info]}]
@@ -48,14 +54,21 @@
    :name {:title (:title pr-info)
           :first (:forename pr-info)
           :last (:surname pr-info)}
-   :gender "male" ;; TODO: Add to PR info
+   :gender (:gender pr-info)
    :date_of_birth (:date-of-birth pr-info)
    ;; TODO: Same as above
-   :address {:building (:street-number pr-info)
-             :street_1 (:street1 pr-info)
-             :town (:town pr-info)
-             :postcode (:postcode pr-info)
-             :country "gbr"}
+   :address (let [{:keys [flat building
+                          street1 street2
+                          town region postcode]}
+                  pr-info]
+              (merge {:building building
+                      :street_1 street1
+                      :town town
+                      :postcode postcode
+                      :country "gbr"}
+                     (when flat {:flat flat})
+                     (when street2 {:street_2 street2})
+                     (when region {:region region})))
    :issuing_country "gbr"
    :document_type ["driving_licence" "passport"]
    ;:scan_type "enhanced_selfie"
@@ -71,10 +84,15 @@
           :last (:surname pr-info)}
    :date_of_birth (:date-of-birth pr-info)
    :contacts {:mobile (:phone pr-info)}
-   :address {:line_1 (str/join " " [(:street-number pr-info) (:street1 pr-info)])
-             :city (:town pr-info)
-             :postcode (:postcode pr-info)
-             :country "gbr"}})
+   :address (let [{:keys [flat building
+                          street1 street2
+                          town region postcode]}
+                  pr-info]
+              {:line_1 (->> [flat building] (remove nil?) (str/join ", "))
+               :line_2 (->> [street1 street2] (remove nil?) (str/join ", "))
+               :city town
+               :postcode postcode
+               :country "gbr"})})
 
 (defn check-tx [case-id check-type data]
   (let [case-key (case check-type
