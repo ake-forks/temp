@@ -157,6 +157,21 @@
                  :on-click #(rf/dispatch [::alert-confirm])}
      "Yes"]]])
 
+(defn check-table []
+  [mui/table
+   [mui/table-head
+    [mui/table-row
+     [mui/table-cell] ; Result/status
+     [mui/table-cell "Check"]
+     [mui/table-cell "SSID"]]]
+   [mui/table-body
+    [check-row "UK AML"
+     @(rf/subscribe [::model/uk-aml])]
+    [check-row "Fraud Check"
+     @(rf/subscribe [::model/fraudcheck])]
+    [check-row "SmartDoc Check"
+     @(rf/subscribe [::model/smartdoc])]]])
+
 (defn content []
   (let [case-id @(rf/subscribe [::case-model/case-id])
         case-ref @(rf/subscribe [::case-model/current-case-reference])]
@@ -192,34 +207,21 @@
              (if partial?
                "partial report"
                "full report")])))]
-     [mui/table
-      [mui/table-head
+     (if-not @(rf/subscribe [::model/has-checks?])
        [mui/table-row
-        [mui/table-cell] ; Result/status
-        [mui/table-cell "Check"]
-        [mui/table-cell "SSID"]]]
-      [mui/table-body
-       (if-not @(rf/subscribe [::model/has-checks?])
-         [mui/table-row
-          [mui/table-cell {:col-span 5}
-           [mui/alert {:severity :info}
-            [mui/alert-title "No checks run"]
-            (if-not @(rf/subscribe [::checks-submitting?])
-             [mui/typography
-              "Click " 
-              [mui/link {:on-click #(rf/dispatch [::set-alert-dialog-open {:case-id case-id}])
-                         :style {:cursor :pointer}}
-               "here"]
-              " to run the checks."]
-             [mui/typography
-              "Running checks..."])]]] 
-         [:<>
-          [check-row "UK AML"
-           @(rf/subscribe [::model/uk-aml])]
-          [check-row "Fraud Check"
-           @(rf/subscribe [::model/fraudcheck])]
-          [check-row "SmartDoc Check"
-           @(rf/subscribe [::model/smartdoc])]])]]]))
+        [mui/table-cell {:col-span 5}
+         [mui/alert {:severity :info}
+          [mui/alert-title "No checks run"]
+          (if-not @(rf/subscribe [::checks-submitting?])
+           [mui/typography
+            "Click " 
+            [mui/link {:on-click #(rf/dispatch [::set-alert-dialog-open {:case-id case-id}])
+                       :style {:cursor :pointer}}
+             "here"]
+            " to run the checks."]
+           [mui/typography
+            "Running checks..."])]]]
+       [check-table])]))
 
 (defn dialog []
   [mui/dialog {:open (boolean @(rf/subscribe [::dialog-open?]))}
