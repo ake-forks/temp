@@ -1,9 +1,13 @@
 (ns darbylaw.api.bill
   (:require [darbylaw.api.bill.data :as bill-data]
             [darbylaw.api.case-history :as case-history]
+            [darbylaw.api.util.data :as data-util]
             [darbylaw.api.util.http :as http]
             [darbylaw.api.util.tx-fns :as tx-fns]
             [darbylaw.api.util.xtdb :as xt-util]
+            [darbylaw.api.util.model :as model]
+            [darbylaw.doc-store :as doc-store]
+            [darbylaw.api.util.files :refer [with-delete]]
             [xtdb.api :as xt]))
 
 (def bill-creation-schema
@@ -51,7 +55,7 @@
       :else
       (assert false (str "Unexpected type:" (type property))))))
 
-(defn add-bill [{:keys [xtdb-node user path-params body-params] :as args}]
+(defn add-utility [{:keys [xtdb-node user path-params body-params] :as args}]
   (let [case-id (parse-uuid (:case-id path-params))
         bill-id (random-uuid)
         [property-id property-tx] (handle-property args)
@@ -69,8 +73,10 @@
                                  :case-id case-id
                                  :user user
                                  :op :add
-                                 :event/bill bill-id}))))
-  {:status http/status-204-no-content})
+                                 :event/bill bill-id})))
+    {:status 200
+     :body {:property property-id
+            :utility-company (:utility-company bill-data)}}))
 
 (defn delete-bill [{:keys [xtdb-node user path-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
@@ -107,8 +113,10 @@
                                  :case-id case-id
                                  :user user
                                  :op :update
-                                 :event/bill bill-id}))))
-  {:status http/status-204-no-content})
+                                 :event/bill bill-id})))
+    {:status 200
+     :body {:property property-id
+            :utility-company (:utility-company bill-data)}}))
 
 (defn add-council-tax [{:keys [xtdb-node user path-params body-params] :as args}]
   (let [case-id (parse-uuid (:case-id path-params))
@@ -129,21 +137,71 @@
                                  :case-id case-id
                                  :user user
                                  :op :add
-                                 :event/bill council-tax-id})))) ;should this be event/council-tax?
-  {:status http/status-204-no-content})
+                                 :event/bill council-tax-id}))) ;should this be event/council-tax?
+    {:status 200
+     :body {:property property-id
+            :council (:council council-tax-data)}}))
+
+(def accepted-filetypes
+  #{".pdf" ".png" ".jpeg" ".jpg" ".gif"})
+(defn upload-document [asset-type {:keys [xtdb-node user path-params multipart-params]}]
+  (let [case-id (parse-uuid (:case-id path-params))
+        asset-id (parse-uuid (:asset-id path-params))
+        {:keys [tempfile]} (get multipart-params "file")
+        reference (model/get-reference xtdb-node case-id)
+        orig-filename (get multipart-params "filename")
+        extension (data-util/file-extension orig-filename)
+        document-id (random-uuid)
+        document-type (case asset-type
+                        :utility "probate.utility-doc"
+                        :council-tax "probate.council-tax-doc")
+        filename (str reference "." (name asset-type) "." document-id extension)]
+    (assert (accepted-filetypes extension))
+    (assert (not (clojure.string/blank? reference)))
+    (with-delete [tempfile tempfile]
+      (doc-store/store (str case-id "/" filename) tempfile))
+    (xt-util/exec-tx-or-throw xtdb-node
+      (concat
+        [[::xt/put {:xt/id filename
+                    (keyword
+                      (str document-type "/case")) case-id
+                    (keyword
+                      (str document-type "/asset")) asset-id
+                    :uploaded-by (:username user)
+                    :uploaded-at (xt-util/now)
+                    :original-filename orig-filename}]]
+        (case-history/put-event
+          {:event (keyword (str document-type ".uploaded"))
+           :case-id case-id
+           :asset-id asset-id
+           :document-id filename
+           :user user})))
+    {:status 204}))
+
+(defn get-document [{:keys [path-params]}]
+  (let [case-id (parse-uuid (:case-id path-params))
+        filename (:filename path-params)
+        input-stream (doc-store/fetch
+                       (str case-id "/" filename))]
+    {:status 200
+     :body input-stream}))
+
 
 (defn routes []
   ["/case/:case-id/"
-
-   ["utility" {:post {:handler add-bill
+   ["utility" {:post {:handler add-utility
                       :parameters {:body bill-creation-schema}}}]
+   ["utility/document/:asset-id" {:post {:handler (partial upload-document :utility)}}]
    ["delete-utility/:bill-id" {:post {:handler delete-bill}}]
    ["update-utility/:bill-id" {:post {:handler (partial update-bill :utility)}}]
 
    ["council-tax" {:post {:handler add-council-tax
                           :parameters {:body council-tax-creation-schema}}}]
+   ["council-tax/document/:asset-id" {:post {:handler (partial upload-document :council-tax)}}]
    ["delete-council-tax/:council-tax-id" {:post {:handler delete-bill}}]
-   ["update-council-tax/:council-tax-id" {:post {:handler (partial update-bill :council-tax)}}]])
+   ["update-council-tax/:council-tax-id" {:post {:handler (partial update-bill :council-tax)}}]
+   ["household-bills/document/:filename" {:get {:handler get-document}}]])
+
 
 (comment
   (require 'darbylaw.xtdb-node)

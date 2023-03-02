@@ -7,7 +7,7 @@
     [re-frame.core :as rf]
     [reagent-mui.components :as mui]
     [clojure.edn :refer [read-string]]
-    ))
+    [reagent.core :as r]))
 
 (defn address-box [selected? child]
   [mui/paper (merge
@@ -65,3 +65,20 @@
         :variant :outlined
         :fullWidth true
         :required true}])))
+(defn upload-button [_asset-type _case-id _asset-id _props _label]
+  (r/with-let [_ (reset! model/file-uploading? false)
+               filename (r/atom "")]
+    (fn [asset-type case-id asset-id props label]
+      [ui/loading-button (merge props {:component "label"
+                                       :loading @model/file-uploading?})
+       label
+       [mui/input {:type :file
+                   :value @filename
+                   :onChange #(let [selected-file (-> % .-target .-files first)]
+                                (rf/dispatch [::model/upload-file asset-type case-id asset-id selected-file])
+                                (reset! filename "")
+                                (reset! model/file-uploading? true))
+                   :hidden true
+                   :sx {:display :none}
+                   :inputProps {:type :file
+                                :accept ".pdf, .png, .jpeg, .jpg, .gif"}}]])))

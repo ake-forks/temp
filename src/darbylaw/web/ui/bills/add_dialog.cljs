@@ -6,6 +6,7 @@
     [reagent-mui.components :as mui]
     [reagent.core :as r]
     [darbylaw.web.ui.case-model :as case-model]
+    [darbylaw.web.ui.notification.model :as notification-model]
     [darbylaw.web.ui.bills.add-form :as form]
     [darbylaw.web.ui.bills.model :as model]
     [darbylaw.web.ui.bills.common :as common]
@@ -14,12 +15,17 @@
 (defonce form-state (r/atom nil))
 
 (rf/reg-event-fx ::submit-success
-  (fn [{:keys [db]} [_ case-id fork-params _response]]
+  (fn [{:keys [db]} [_ case-id fork-params response]]
     {:db (-> db
            (model/set-submitting fork-params false))
      ; Should we wait until case is loaded to close the dialog?
      :fx [[:dispatch [::model/close-clear-dialog]]
-          [:dispatch [::case-model/load-case! case-id]]]}))
+          [:dispatch [::case-model/load-case! case-id]]
+          [:dispatch [::notification-model/open
+                      {:notification-type :utility
+                       :case-id case-id
+                       :utility-company (:utility-company response)
+                       :property (:property response)}]]]}))
 
 (rf/reg-event-fx ::submit-failure
   (fn [{:keys [db]} [_ fork-params error-result]]
