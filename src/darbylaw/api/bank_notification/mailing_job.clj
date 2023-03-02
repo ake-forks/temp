@@ -32,7 +32,7 @@
                      (not [letter :upload-state])]
              :in [send-action]}
            send-action)
-      (map first))))
+         (map first))))
 
 (comment
   (fetch-letters-to-send darbylaw.xtdb-node/xtdb-node :fake))
@@ -41,6 +41,9 @@
   (when (and (seq letters)
              (doc-store/available?)
              (mailing/available? real|fake))
+    (assert (<= (count letters)
+                (-> config/config :mailing-service :max-batch-size))
+            "Only a max of :max-batch-size letters can be uploaded at once")
     (doseq [letter-data letters]
       (let [{:keys [case-id bank-id]
              letter-id :xt/id} letter-data
