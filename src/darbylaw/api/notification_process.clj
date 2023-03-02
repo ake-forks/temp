@@ -20,7 +20,10 @@
   (case notification-type
     :utility (select-mandatory params [:notification-type
                                        :utility-company
-                                       :property])))
+                                       :property])
+    :council-tax (select-mandatory params [:notification-type
+                                           :council
+                                           :property])))
 
 (defn start-notification-process [{:keys [xtdb-node body-params user] :as req}]
   (let [case-id (get-in req [:parameters :path :case-id])
