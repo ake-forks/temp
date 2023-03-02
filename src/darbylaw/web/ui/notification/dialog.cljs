@@ -51,7 +51,9 @@
                     :onClick (let [notification (<< ::model/notification)]
                                #(rf/dispatch [::model/start-notification notification]))
                     :sx {:visibility (if (<< ::model/data-completed?) :visible :hidden)}}
-        "Notify company"]]
+        (case (<< ::model/notification-type)
+          :utility "Notify company"
+          :council-tax "Notify council")]]
       [mui/button {:variant :outlined
                    :onClick #(rf/dispatch [::model/close-dialog])}
        "Close"]]]))
