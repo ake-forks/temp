@@ -163,12 +163,9 @@
           (false? (:stocks-shares values)))
      [dont-need-probate fork-args])])
 
-(defonce form-state (r/atom nil))
-
 (defn content []
   [form-util/form
-   {:state form-state
-    :clean-on-unmount true
+   {:clean-on-unmount true
     :keywordize-keys true
     :prevent-default? true}
    layout])
