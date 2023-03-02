@@ -3,11 +3,6 @@
             [medley.core])
   (:import (java.util Date)))
 
-(defn get-reference [xtdb-node case-id]
-  (-> (xt/pull (xt/db xtdb-node)
-        [:reference] case-id)
-    :reference))
-
 (def assoc-in--txfn
   '(fn [ctx eid ks v]
      (when-let [e (xtdb.api/entity (xtdb.api/db ctx) eid)]

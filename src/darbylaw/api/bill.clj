@@ -5,6 +5,7 @@
             [darbylaw.api.util.http :as http]
             [darbylaw.api.util.tx-fns :as tx-fns]
             [darbylaw.api.util.xtdb :as xt-util]
+            [darbylaw.api.util.model :as model]
             [darbylaw.doc-store :as doc-store]
             [darbylaw.api.util.files :refer [with-delete]]
             [xtdb.api :as xt]))
@@ -151,7 +152,7 @@
   (let [case-id (parse-uuid (:case-id path-params))
         asset-id (parse-uuid (:asset-id path-params))
         {:keys [tempfile]} (get multipart-params "file")
-        reference (xt-util/get-reference xtdb-node case-id)
+        reference (model/get-reference xtdb-node case-id)
         orig-filename (get multipart-params "filename")
         extension (data-util/file-extension orig-filename)
         document-id (random-uuid)

@@ -4,6 +4,7 @@
     [darbylaw.api.util.tx-fns :as tx-fns]
     [darbylaw.api.util.xtdb :as xt-util]
     [darbylaw.api.util.data :as data-util]
+    [darbylaw.api.util.model :as model]
     [darbylaw.doc-store :as doc-store]
     [xtdb.api :as xt]
     [darbylaw.api.util.files :refer [with-delete]]))
@@ -21,7 +22,7 @@
 
 (defn post-document [{:keys [xtdb-node user path-params multipart-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
-        reference (xt-util/get-reference xtdb-node case-id)
+        reference (model/get-reference xtdb-node case-id)
         {:keys [tempfile]} (get multipart-params "file")
         orig-filename (get multipart-params "filename")
         extension (data-util/file-extension orig-filename)
