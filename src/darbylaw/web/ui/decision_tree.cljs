@@ -43,13 +43,13 @@
                  :sx {:background-color "#1aac00"}
                  :on-click #(set-values {name true})
                  :style
-                 (when (and (touched name) (true? (values name)))
+                 (when (and (touched name) (false? (values name)))
                    mui-yes-disabled-button-style)}
      "yes"]
     [mui/button {:variant :contained
                  :on-click #(set-values {name false})
                  :style
-                 (when (and (touched name) (false? (values name)))
+                 (when (and (touched name) (true? (values name)))
                    mui-no-disabled-button-style)}
      "no"]]
    [mui/divider]])
