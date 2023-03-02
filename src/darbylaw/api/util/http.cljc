@@ -9,3 +9,9 @@
 (def status-429-too-many-requests 429)
 
 (def status-500-internal-server-error 500)
+
+(def docx-mime-type
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+
+(def pdf-mime-type
+  "application/pdf")

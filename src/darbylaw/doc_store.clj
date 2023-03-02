@@ -37,10 +37,12 @@
 
 (comment
   ; Dummy implemenatation for dev tests
-  (defn store [key f]
+  (defn store [_key f]
     (println "stored " f)
     (Thread/sleep 1000)))
 
+(defn store-case-file [case-id ^String key ^File f]
+  (store (str case-id "/" key) f))
 
 (defn fetch-raw [key]
   (try
@@ -53,6 +55,9 @@
 (defn fetch [key]
   (-> key fetch-raw .getObjectContent))
 
+(defn fetch-case-file [case-id key]
+  (fetch (str case-id "/" key)))
+
 (defn fetch-to-file [key ^File file]
   (try
     (.getObject s3 (GetObjectRequest. bucket-name key) file)
@@ -60,6 +65,12 @@
       (if (= (.getErrorCode exc) "NoSuchKey")
         (throw (ex-info "Not found" {:error ::not-found} exc))
         (throw exc)))))
+
+(defn fetch-case-file-to-file [case-id key file]
+  (fetch-to-file (str case-id "/" key) file))
+
+(defn delete-case-file [case-id key]
+  (.deleteObject s3 bucket-name (str case-id "/" key)))
 
 (defn available? []
   (try

@@ -1,6 +1,5 @@
 (ns darbylaw.api.bill.data
-  (:require [darbylaw.api.util.malli :as malli+]
-            [darbylaw.api.bill.council-data :as councils]))
+  (:require [darbylaw.api.bill.council-data :as councils]))
 
 (def bill-types
   (array-map
@@ -8,7 +7,7 @@
     :electricity {:label "electricity"}
     :telephone {:label "telephone"}
     :broadband {:label "broadband"}
-    :council-tax {:label "council tax"}
+    :water {:label "water"}
     :other {:label "other"}))
 
 (def test-companies
@@ -152,22 +151,35 @@
   [:and
    [:map
     [:bill-type [:set (into [:enum] (keys bill-types))]]
-    [:issuer {:optional true} (into [:enum] (map :id (concat companies
-                                                        councils/councils)))]
-    [:custom-issuer-name {:optional true} [:string {:min 1}]]
-    [:custom-issuer-address {:optional true} [:string {:min 1}]]
-    [:amount [:re #"-?\d*\.?\d{0,2}"]]
+    [:utility-company {:optional true} :keyword]
+    [:new-utility-company? {:optional true} :boolean]
     [:account-number {:optional true} :string]
+    [:valuation {:optional true} :string]
     (if (= op :create)
       [:property [:or :uuid :string]]
       [:property :uuid])
-    [:meter-readings {:optional true} :string]]
-   (malli+/exclusive-keys [:issuer :custom-issuer-name])
-   (malli+/when-then :custom-issuer-name :custom-issuer-address)])
+    [:meter-readings {:optional true} :string]]])
+
+(defn make-council-tax-schema [op]
+  [:and
+   [:map
+    [:council (into [:enum] (map :id councils/councils))]
+    [:account-number {:optional true} :string]
+    [:valuation {:optional true} :string]
+    (if (= op :create)
+      [:property [:or :uuid :string]]
+      [:property :uuid])]])
 
 (defn extract-bill-props [bill-schema]
   (assert (= :map (-> bill-schema second first)))
   (->> bill-schema
+    second ; skip :and
+    rest ; skip :map
+    (mapv first)))
+
+(defn extract-council-tax-props [council-tax-schema]
+  (assert (= :map (-> council-tax-schema second first)))
+  (->> council-tax-schema
     second ; skip :and
     rest ; skip :map
     (mapv first)))
@@ -178,8 +190,14 @@
 (defn get-company-info [company-id]
   (get company-by-id company-id))
 
+(defn get-company-label [company-id]
+  (:common-name (get company-by-id company-id)))
+
 (def council-by-id
   (into {} (map (juxt :id identity) councils/councils)))
 
 (defn get-council-info [council-id]
   (get council-by-id council-id))
+
+(defn get-council-label [council-id]
+  (:common-name (get council-by-id council-id)))

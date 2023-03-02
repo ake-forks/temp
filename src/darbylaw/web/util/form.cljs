@@ -44,8 +44,8 @@
              :error (boolean error)
              :autoComplete :off}
       error-icon? (assoc :InputProps
-                         (when error
-                           (error-icon-prop))))))
+                    (when error
+                      (error-icon-prop))))))
 
 (defn common-text-field-props [k fork-args]
   (common-input-field-props k fork-args {:error-icon? true}))
@@ -216,27 +216,27 @@
   (r/with-let [{form-state :state
                 :keys [clean-on-unmount?]
                 :as props} (-> (merge
-                                  {:clean-on-unmount? true
-                                   :keywordize-keys true
-                                   :prevent-default? true}
-                                  props)
-                              (medley/update-existing :validation
-                                (fn [validation]
-                                  (fn [data]
-                                    (try
-                                      (validation data)
-                                      (catch :default e
-                                        (js/console.error "Error during validation: " e)
-                                        [{:type ::validation-error :error e}]))))))]
+                                 {:clean-on-unmount? true
+                                  :keywordize-keys true
+                                  :prevent-default? true}
+                                 props)
+                             (medley/update-existing :validation
+                               (fn [validation]
+                                 (fn [data]
+                                   (try
+                                     (validation data)
+                                     (catch :default e
+                                       (js/console.error "Error during validation: " e)
+                                       [{:type ::validation-error :error e}]))))))]
     [fork/form props
      (fn [fork-args]
        [component (ui/mui-fork-args fork-args)])]
     (finally
       (when (and (some? form-state) clean-on-unmount?)
         (reset! form-state nil
-                ;; Adapted from:
-                ;; https://github.com/luciodale/fork/blob/dd4da7ffbb5706cd3edbcbd4b545986ca84ea6df/src/fork/re_frame.cljs#L87
-                ;; Otherwise the form breaks after sending the new code
-                #_(merge (when (:keywordize-keys props)
-                           {:keywordize-keys true})
-                         {:values {} :touched #{}}))))))
+          ;; Adapted from:
+          ;; https://github.com/luciodale/fork/blob/dd4da7ffbb5706cd3edbcbd4b545986ca84ea6df/src/fork/re_frame.cljs#L87
+          ;; Otherwise the form breaks after sending the new code
+          #_(merge (when (:keywordize-keys props)
+                     {:keywordize-keys true})
+              {:values {} :touched #{}}))))))

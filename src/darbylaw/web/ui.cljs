@@ -8,7 +8,9 @@
     [reagent-mui.icons.arrow-back-sharp]
     [reagent-mui.icons.help-outline]
     [reagent-mui.icons.cloud-sync]
+    [reagent-mui.icons.description-outlined]
     [reagent-mui.icons.download]
+    [reagent-mui.icons.drafts-outlined]
     [reagent-mui.icons.error-outline]
     [reagent-mui.icons.edit]
     [reagent-mui.icons.expand-more]
@@ -25,6 +27,7 @@
     [reagent-mui.icons.priority-high]
     [reagent-mui.icons.add-circle]
     [reagent-mui.icons.person-outline]
+    [reagent-mui.icons.question-mark]
     [reagent-mui.icons.refresh]
     [reagent-mui.icons.search]
     [reagent-mui.icons.send]
@@ -37,6 +40,7 @@
     [reagent-mui.icons.check-circle]
     [reagent-mui.icons.check]
     [reagent-mui.icons.close]
+    [reagent-mui.icons.currency-pound]
     [reagent-mui.components :as mui]
     [reagent-mui.lab.loading-button]
     [reagent.core :as r]
@@ -57,7 +61,9 @@
 (def icon-arrow-back-sharp reagent-mui.icons.arrow-back-sharp/arrow-back-sharp)
 (def icon-help-outline reagent-mui.icons.help-outline/help-outline)
 (def icon-cloud-sync reagent-mui.icons.cloud-sync/cloud-sync)
+(def icon-description-outlined reagent-mui.icons.description-outlined/description-outlined)
 (def icon-download reagent-mui.icons.download/download)
+(def icon-drafts-outlined reagent-mui.icons.drafts-outlined/drafts-outlined)
 (def icon-error-outline reagent-mui.icons.error-outline/error-outline)
 (def icon-edit reagent-mui.icons.edit/edit)
 (def icon-expand-more reagent-mui.icons.expand-more/expand-more)
@@ -69,6 +75,7 @@
 (def icon-mail reagent-mui.icons.mail/mail)
 (def icon-mail-outlined reagent-mui.icons.mail-outlined/mail-outlined)
 (def icon-open-in-new reagent-mui.icons.open-in-new/open-in-new)
+(def icon-question-mark reagent-mui.icons.question-mark/question-mark)
 (def icon-link reagent-mui.icons.link/link)
 (def icon-outbox reagent-mui.icons.outbox/outbox)
 (def icon-priority-high reagent-mui.icons.priority-high/priority-high)
@@ -87,6 +94,7 @@
 (def icon-warning-amber reagent-mui.icons.warning-amber/warning-amber)
 (def icon-mouse-outlined reagent-mui.icons.mouse-outlined/mouse-outlined)
 
+(def icon-pound reagent-mui.icons.currency-pound/currency-pound)
 (def icon-close reagent-mui.icons.close/close)
 (def loading-button reagent-mui.lab.loading-button/loading-button)
 
@@ -94,6 +102,9 @@
   [mui/alert {:severity :warning
               :icon (r/as-element [icon-help-outline {:fontSize :inherit}])}
    message])
+
+(defn << [& args]
+  @(rf/subscribe (vec args)))
 
 (defn reg-fx+event
   "Registers an effect like re-frame's reg-fx, and registers
@@ -167,6 +178,12 @@
                          :handlers {"u" cljs.core/uuid}})}
     params))
 
+(defn make-form-data [m]
+  (let [form-data (js/FormData.)]
+    (doseq [[k v] m]
+      (.append form-data (name k) v))
+    form-data))
+
 (defn http-error-user-message [xhrio-failure-result]
   (let [{:keys [status]} xhrio-failure-result]
     ; see https://github.com/day8/re-frame-http-fx#step-3b-handling-on-failure
@@ -223,3 +240,10 @@
 
 (defn event-target-value [onchange-event]
   (.. onchange-event -target -value))
+
+(defn event-currentTarget [event]
+  (.-currentTarget event))
+
+(defn make-collapse-contents-full-width [props]
+  (update props :sx
+    assoc "& .MuiCollapse-wrapperInner" {:flex-grow 1}))
