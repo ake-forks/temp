@@ -1,8 +1,9 @@
 (ns darbylaw.web.ui.bills.council-tax-dialog
   (:require
-    [darbylaw.web.ui :as ui]
+    [darbylaw.web.ui :as ui :refer [<<]]
     [darbylaw.web.util.form :as form-util]
     [darbylaw.web.ui.case-model :as case-model]
+    [darbylaw.web.ui.notification.model :as notification-model]
     [darbylaw.web.ui.bills.common :as common]
     [re-frame.core :as rf]
     [reagent-mui.components :as mui]
@@ -12,12 +13,18 @@
 (defonce form-state (r/atom nil))
 
 (rf/reg-event-fx ::submit-success
-  (fn [{:keys [db]} [_ case-id fork-params _response]]
+  (fn [{:keys [db]} [_ case-id fork-params response]]
     {:db (-> db
            (model/set-submitting fork-params false))
      ; Should we wait until case is loaded to close the dialog?
      :fx [[:dispatch [::model/show-bills-dialog nil]]
-          [:dispatch [::case-model/load-case! case-id]]]}))
+          [:dispatch [::case-model/load-case! case-id]]
+          [:dispatch [::notification-model/open
+                      {:notification-type :council-tax
+                       :case-id case-id
+                       :council (:council response)
+                       :property (:property response)}]]]}))
+
 
 (rf/reg-event-fx ::submit-failure
   (fn [{:keys [db]} [_ fork-params error-result]]
@@ -53,7 +60,7 @@
   (let [relationship @(rf/subscribe [::case-model/relationship])]
     [:form {:on-submit handle-submit}
      [mui/dialog-content {:style {:height "50vh"
-                                  :width "60vw"
+                                  :width "100%"
                                   :padding "1rem"}}
       [mui/stack {:spacing 1 :sx {:height 1 :width 1}}
        [council-select fork-args dialog-type]
@@ -86,7 +93,8 @@
         case-id @(rf/subscribe [::case-model/case-id])
         temp-data (rf/subscribe [::model/get-temp-data])]
     [mui/dialog {:open (= :council-tax (:service dialog))
-                 :maxWidth false
+                 :maxWidth :md
+                 :full-width true
                  :scroll :paper}
      [mui/dialog-title
       [mui/stack {:direction :row :justify-content :space-between}
@@ -97,6 +105,14 @@
           "")]
        [mui/icon-button {:onClick #(rf/dispatch [::model/show-bills-dialog nil])}
         [ui/icon-close]]]]
+
+     (if (= dialog-type :edit)
+       [common/upload-button
+        :council-tax
+        case-id
+        (:id @temp-data)
+        {:full-width false}
+        "upload recent bill"])
      [form-util/form
       {:state form-state
        :on-submit #(rf/dispatch [::submit!

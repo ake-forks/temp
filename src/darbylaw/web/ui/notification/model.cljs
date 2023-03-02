@@ -98,8 +98,9 @@
     {:dispatch [::load-conversation notification]}))
 
 (rf/reg-event-fx ::generate-notification-letter-failure
-  (fn [_ [_ error-result]]
-    {::ui/notify-user-http-error {:result error-result}}))
+  (fn [_ [_ notification error-result]]
+    {:dispatch [::load-conversation notification]
+     ::ui/notify-user-http-error {:result error-result}}))
 
 (rf/reg-event-fx ::generate-notification-letter
   (fn [{:keys [db]} [_ notification]]
@@ -114,7 +115,7 @@
         :params notification
         :timeout 16000
         :on-success [::generate-notification-letter-success notification]
-        :on-failure [::generate-notification-letter-failure]})}))
+        :on-failure [::generate-notification-letter-failure notification]})}))
 
 (rf/reg-event-db ::open-letter
   (fn [db [_ letter-id]]

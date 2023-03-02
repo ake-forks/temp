@@ -35,14 +35,17 @@
                      "received-letter"
                      (name notification-type)
                      (case notification-type
-                       :utility (name (:utility-company params)))
+                       :utility (name (:utility-company params))
+                       :council-tax (name (:council params)))
                      (random-uuid)
                      "pdf"])]
     (with-delete [tempfile tempfile]
       (doc-store/store-case-file case-id letter-id tempfile))
     (let [specific-props (case notification-type
                            :utility (select-mandatory params [:utility-company
-                                                              :property]))]
+                                                              :property])
+                           :council-tax (select-mandatory params [:council
+                                                                  :property]))]
       (xt-util/exec-tx-or-throw xtdb-node
         (concat
           [[::xt/put (merge {:type :probate.received-letter

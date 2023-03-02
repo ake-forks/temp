@@ -9,7 +9,7 @@
     [darbylaw.api.util.http :as http]
     [darbylaw.api.util.files :as files-util :refer [with-delete]]
     [darbylaw.api.case-history :as case-history]
-    [darbylaw.api.bill.notification-template :as utility-template]))
+    [darbylaw.api.bill.notification-template :as template]))
 
 (defn convert-to-pdf-and-store [case-id letter-id docx]
   (with-delete [pdf (files-util/create-temp-file letter-id ".pdf")]
@@ -27,23 +27,27 @@
   (let [case-id (parse-uuid (:case-id path-params))
         notification-type (:notification-type body-params)
         template-data (case notification-type
-                        :utility (utility-template/letter-template-data
-                                   xtdb-node :utility case-id nil))
+                        :utility (template/letter-template-data xtdb-node :utility case-id nil)
+                        :council-tax (template/letter-template-data xtdb-node :council-tax case-id nil))
         _ (assert (:reference template-data))
         letter-id (str/join "."
                     [(:reference template-data)
                      "notification"
                      (name notification-type)
                      (case notification-type
-                       :utility (name (:utility-company body-params)))
+                       :utility (name (:utility-company body-params))
+                       :council-tax (name (:council body-params)))
                      (random-uuid)])]
     (with-delete [docx (files-util/create-temp-file letter-id ".docx")]
       (case notification-type
-        :utility (utility-template/render-docx :utility template-data docx))
+        :utility (template/render-docx :utility template-data docx)
+        :council-tax (template/render-docx :council-tax template-data docx))
       (convert-to-pdf-and-store case-id letter-id docx))
     (let [specific-props (case notification-type
                            :utility (select-mandatory body-params [:utility-company
-                                                                   :property]))]
+                                                                   :property])
+                           :council-tax (select-mandatory body-params [:council
+                                                                       :property]))]
       (xt-util/exec-tx-or-throw xtdb-node
         (concat
           [[::xt/put (merge {:type :probate.notification-letter
