@@ -18,6 +18,8 @@
 (def off-white "#EEEEEE")
 (def pale-grey "#DADADA")
 
+(def lime "#8FBF2C")
+
 
 (def theme
   {:palette
