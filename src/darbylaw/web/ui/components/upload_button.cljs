@@ -10,10 +10,12 @@
                      child]
   [ui/loading-button (merge button-props
                             {:component "label"
-                             :loading (boolean @uploading?-atom)})
+                             :loading (when uploading?-atom
+                                        (boolean @uploading?-atom))})
    child
    [mui/input {:type :file
-               :value (or @filename-atom "")
+               :value (when filename-atom
+                        (or @filename-atom ""))
                :onChange #(let [selected-file (-> % .-target .-files first)]
                             (on-file-selected selected-file)
                             (reset! filename-atom "")

@@ -1,7 +1,6 @@
 (ns darbylaw.api.notification-letter
   (:require
     [clojure.string :as str]
-    [clojure.tools.logging :as log]
     [darbylaw.api.util.tx-fns :as tx-fns]
     [xtdb.api :as xt]
     [darbylaw.doc-store :as doc-store]
@@ -131,30 +130,6 @@
                :letter-id letter-id})))
         {:status http/status-204-no-content}))))
 
-(defn delete-notification-letter [{:keys [xtdb-node user path-params]}]
-  (let [case-id (parse-uuid (:case-id path-params))
-        letter-id (:letter-id path-params)]
-    (if-not letter-id
-      {:status http/status-404-not-found}
-      (do
-        (xt-util/exec-tx xtdb-node
-          (concat
-            [[::xt/delete letter-id]]
-            (case-history/put-event
-              {:event :notification-letter.deleted
-               :case-id case-id
-               :user user
-               :letter-id letter-id})))
-        (try
-          (doc-store/delete-case-file case-id (str letter-id ".docx"))
-          (catch Exception e
-            (log/warn e "Could not delete docx for letter " letter-id)))
-        (try
-          (doc-store/delete-case-file case-id (str letter-id ".pdf"))
-          (catch Exception e
-            (log/warn e "Could not delete pdf for letter " letter-id)))
-        {:status http/status-204-no-content}))))
-
 (defn routes []
   [["/case/:case-id"
     ["/generate-notification-letter"
@@ -165,6 +140,4 @@
      {:get {:handler (partial get-notification-letter :docx)}
       :post {:handler post-notification-letter}}]
     ["/notification-letter/:letter-id/send"
-     {:post {:handler send-notification-letter}}]
-    ["/notification-letter/:letter-id"
-     {:delete {:handler delete-notification-letter}}]]])
+     {:post {:handler send-notification-letter}}]]])

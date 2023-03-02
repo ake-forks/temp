@@ -60,6 +60,8 @@
   [mui/stack {:spacing 1
               :direction :row
               :sx {:height "95vh"}}
+   ; This was a try to introduce animation when the conversation panel is first shown.
+   ; Layout was too challenging to setup correctly.
    #_[mui/collapse (-> {:in (<< ::model/notification-ongoing?)
                         :orientation :horizontal
                         :spacing 1

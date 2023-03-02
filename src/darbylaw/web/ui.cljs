@@ -7,6 +7,7 @@
     [reagent-mui.icons.cloud-sync]
     [reagent-mui.icons.description-outlined]
     [reagent-mui.icons.download]
+    [reagent-mui.icons.drafts-outlined]
     [reagent-mui.icons.error-outline]
     [reagent-mui.icons.edit]
     [reagent-mui.icons.expand-more]
@@ -23,6 +24,7 @@
     [reagent-mui.icons.priority-high]
     [reagent-mui.icons.add-circle]
     [reagent-mui.icons.person-outline]
+    [reagent-mui.icons.question-mark]
     [reagent-mui.icons.refresh]
     [reagent-mui.icons.search]
     [reagent-mui.icons.send]
@@ -53,6 +55,7 @@
 (def icon-cloud-sync reagent-mui.icons.cloud-sync/cloud-sync)
 (def icon-description-outlined reagent-mui.icons.description-outlined/description-outlined)
 (def icon-download reagent-mui.icons.download/download)
+(def icon-drafts-outlined reagent-mui.icons.drafts-outlined/drafts-outlined)
 (def icon-error-outline reagent-mui.icons.error-outline/error-outline)
 (def icon-edit reagent-mui.icons.edit/edit)
 (def icon-expand-more reagent-mui.icons.expand-more/expand-more)
@@ -64,6 +67,7 @@
 (def icon-mail reagent-mui.icons.mail/mail)
 (def icon-mail-outlined reagent-mui.icons.mail-outlined/mail-outlined)
 (def icon-open-in-new reagent-mui.icons.open-in-new/open-in-new)
+(def icon-question-mark reagent-mui.icons.question-mark/question-mark)
 (def icon-link reagent-mui.icons.link/link)
 (def icon-outbox reagent-mui.icons.outbox/outbox)
 (def icon-priority-high reagent-mui.icons.priority-high/priority-high)
@@ -164,6 +168,12 @@
                          ; https://groups.google.com/g/clojurescript/c/_B52tadgUgw/m/7r6uCh_EBgAJ
                          :handlers {"u" cljs.core/uuid}})}
     params))
+
+(defn make-form-data [m]
+  (let [form-data (js/FormData.)]
+    (doseq [[k v] m]
+      (.append form-data (name k) v))
+    form-data))
 
 (defn http-error-user-message [xhrio-failure-result]
   (let [{:keys [status]} xhrio-failure-result]
