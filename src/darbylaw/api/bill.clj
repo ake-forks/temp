@@ -113,8 +113,10 @@
                                  :case-id case-id
                                  :user user
                                  :op :update
-                                 :event/bill bill-id}))))
-  {:status http/status-204-no-content})
+                                 :event/bill bill-id})))
+    {:status 200
+     :body {:property property-id
+            :utility-company (:utility-company bill-data)}}))
 
 (defn add-council-tax [{:keys [xtdb-node user path-params body-params] :as args}]
   (let [case-id (parse-uuid (:case-id path-params))

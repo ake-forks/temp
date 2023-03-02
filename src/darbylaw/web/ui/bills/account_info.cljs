@@ -84,6 +84,10 @@
         :on-success [::submit-success case-id fork-params]
         :on-failure [::submit-failure fork-params]})}))
 
+(rf/reg-event-fx ::open-document
+  (fn [_ [_ case-id filename]]
+    (js/window.open
+      (str "/api/case/" case-id "/household-bills/document/" filename))))
 
 (defonce form-state (r/atom nil))
 (defn valuation-form [asset-type {:keys [account-number id meter-readings valuation property]}]
@@ -106,8 +110,6 @@
          [mui/stack {:direction :row :spacing 0.5}
           [bills-form/valuation-field fork-args]]
          [mui/button {:type :submit :variant :outlined} "save"]]])]))
-
-
 
 (defn confirmation-popover []
   (let [case-id (<< ::case-model/case-id)
@@ -166,40 +168,32 @@
                    :justify-content :space-between
                    :align-items :center}
         [mui/typography {:variant :h6} type-string]
-        [mui/stack {:direction :row :spacing 2 :align-items :center}]
-        (when ongoing?
-          [mui/tooltip {:title "add valuation"}
-           [mui/icon-button {:on-click #(reset! valuation-visible (not @valuation-visible))}
-            [ui/icon-pound]]])
-        [mui/tooltip {:title "edit"}
-         [mui/icon-button {:on-click #(rf/dispatch [::edit-utility data])}
-          [ui/icon-edit]]]
-        [mui/tooltip {:title "remove"}
-         [mui/icon-button {:on-click #(reset! popover {:anchor (ui/event-currentTarget %)
-                                                       :label type-string
-                                                       :id id})}
-          [ui/icon-delete]]]]]
-      (when valuation
-        [mui/typography {:variant :h6} "account value: £" valuation])]
-
-     (when @valuation-visible
-       [valuation-form :utility data])
-     [confirmation-popover
-                                                       :asset-id id
-          [ui/icon-delete]
-       (when account-number
+        [mui/stack {:direction :row :spacing 2 :align-items :center}
+         (when ongoing?
+           [mui/tooltip {:title "add valuation"}
+            [mui/icon-button {:on-click #(reset! valuation-visible (not @valuation-visible))}
+             [ui/icon-pound]]])
+         [mui/tooltip {:title "edit"}
+          [mui/icon-button {:on-click #(rf/dispatch [::edit-utility data])}
+           [ui/icon-edit]]]
+         [mui/tooltip {:title "remove"}
+          [mui/icon-button {:on-click #(reset! popover {:anchor (ui/event-currentTarget %)
+                                                        :label type-string
+                                                        :asset-id id})}
+           [ui/icon-delete]]]]]
+       (when (not (clojure.string/blank? account-number))
          [mui/typography {:variant :body1} (str "account number: " account-number)])
-       [recent-bill-component :utility data]
+       (when valuation
+         [mui/typography {:variant :h6} "account value: £" valuation])
+       [recent-bill-component :utility data]]
+      (when @valuation-visible
+        [valuation-form :utility data])
       [confirmation-popover]]]))
-(rf/reg-event-fx ::open-document
-  (fn [_ [_ case-id filename]]
-    (js/window.open
-      (str "/api/case/" case-id "/household-bills/document/" filename))))
 
 
 (defn council-item [{:keys [account-number id valuation] :as data}]
   (let [council-label (bill-data/get-council-label (:council (<< ::notification-model/notification)))
-        ongoing? (<< ::notification-model/notification-ongoing?)]
+        ongoing? true #_(<< ::notification-model/notification-ongoing?)]
     [mui/box
      [mui/card
       [mui/stack {:sx {:p 1}
@@ -207,33 +201,29 @@
        [mui/stack {:direction :row
                    :justify-content :space-between
                    :align-items :center}
-        [mui/typography {:variant :body1} (str council-label)]]
-       [mui/stack {:spacing 0.5}
-        [mui/typography {:variant :body1} (if account-number
-                                            (str "council tax account no: " account-number)
-                                            "council tax account")]
-        (when (and valuation ongoing?)
-          [mui/typography {:variant :body1} (str "account value: £" valuation)])]
-       [mui/stack {:direction :row :spacing 2 :align-items :center}
-        (when ongoing?
-          [mui/tooltip {:title "add valuation"}
-           [mui/icon-button {:on-click #(reset! valuation-visible (not @valuation-visible))}
-            [ui/icon-pound]]])
-        [mui/tooltip {:title "edit"}
-         [mui/icon-button {:on-click #(rf/dispatch [::edit-council data])}
-          [ui/icon-edit]]]
-        [mui/tooltip {:title "remove"}
-         [mui/icon-button {:on-click #(reset! popover {:anchor (ui/event-currentTarget %)
-                                                       :label council-label
-                                                       :id id})}
-          [ui/icon-delete]]]]]
+        [mui/typography {:variant :body1} (str council-label)]
+        [mui/stack {:direction :row :spacing 2 :align-items :center}
+         (when ongoing?
+           [mui/tooltip {:title "add valuation"}
+            [mui/icon-button {:on-click #(reset! valuation-visible (not @valuation-visible))}
+             [ui/icon-pound]]])
+         [mui/tooltip {:title "edit"}
+          [mui/icon-button {:on-click #(rf/dispatch [::edit-council data])}
+           [ui/icon-edit]]]
+         [mui/tooltip {:title "remove"}
+          [mui/icon-button {:on-click #(reset! popover {:anchor (ui/event-currentTarget %)
+                                                        :label council-label
+                                                        :asset-id id})}
+           [ui/icon-delete]]]]]
+       [mui/typography {:variant :body1} (if (not (clojure.string/blank? account-number))
+                                           (str "council tax account no: " account-number)
+                                           "council tax account")]
+       (when (and valuation ongoing?)
+         [mui/typography {:variant :body1} (str "account value: £" valuation)])
+       [recent-bill-component :council-tax data]]
+
       (when @valuation-visible
-        [valuation-form :council-tax data
-                                                       :asset-id id
-          [ui/icon-delete]]
-       (when account-number
-         [mui/typography {:variant :body1} (str "account number: " account-number)])
-       [recent-bill-component :council-tax data])
+        [valuation-form :council-tax data])
       [confirmation-popover]]]))
 
 (defn utility-bill-info []
