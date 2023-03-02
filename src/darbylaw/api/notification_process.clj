@@ -1,10 +1,14 @@
-(ns darbylaw.api.notification
+(ns darbylaw.api.notification-process
   (:require
     [darbylaw.api.case-history :as case-history]
     [darbylaw.api.util.http :as http]
     [darbylaw.api.util.tx-fns :as tx-fns]
     [darbylaw.api.util.xtdb :as xt-util]
     [xtdb.api :as xt]))
+
+; A :notification-process is not a first-level entity. It is an application concept
+; that indirectly refers to related assets and :notification-letters by matching data,
+; i.e. those referred entities don't have a direct reference to the :notification-process.
 
 (defn select-mandatory [m ks]
   (doseq [k ks]
@@ -52,12 +56,15 @@
         notification-props (get-notification-props body-params)
         resp (->> (xt/q (xt/db xtdb-node)
                     {:find '[(pull letter [*]) modified-at]
-                     :where (into [['letter :type :probate.notification-letter]
-                                   ['letter :probate.notification-letter/case case-id]
-                                   ['letter :modified-at 'modified-at]]
+                     :in '[case-id]
+                     :where (into
+                              '[(or [letter :probate.notification-letter/case case-id]
+                                    [letter :probate.received-letter/case case-id])
+                                [letter :modified-at modified-at]]
                               (for [[k v] notification-props]
                                 ['letter k v]))
-                     :order-by [['modified-at :desc]]})
+                     :order-by [['modified-at :desc]]}
+                    case-id)
                (map first))]
     {:status http/status-200-ok
      :body resp}))

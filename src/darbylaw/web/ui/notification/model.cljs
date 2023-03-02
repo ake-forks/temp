@@ -138,6 +138,14 @@
   (fn [[letter-by-id id]]
     (get letter-by-id id)))
 
+(rf/reg-sub ::open-letter-case-id
+  :<- [::open-letter]
+  (fn [letter]
+    (when letter
+      (case (:type letter)
+        :probate.notification-letter (:probate.notification-letter/case letter)
+        :probate.received-letter (:probate.received-letter/case letter)))))
+
 (rf/reg-sub ::letter-in-preparation?
   :<- [::open-letter]
   (fn [letter]
@@ -214,9 +222,16 @@
     {:http-xhrio
      (ui/build-http
        {:method :delete
-        :uri (str "/api/case/" case-id "/notification-letter/" letter-id)
+        :uri (str "/api/case/" case-id "/letter/" letter-id)
         :on-success [::delete-letter-success on-completed]
         :on-failure [::delete-letter-failure on-completed]})}))
+
+(rf/reg-event-db ::open-upload-received-letter
+  (fn [db [_ open?]]
+    (assoc-in db [::context :upload-received-letter] {:open? open?})))
+
+(rf/reg-sub ::upload-received-letter?
+  #(get-in % [::context :upload-received-letter :open?]))
 
 ;dialog events and subs
 

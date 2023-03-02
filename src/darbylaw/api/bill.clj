@@ -94,10 +94,9 @@
                                  :event/bill bill-id}))))
   {:status http/status-204-no-content})
 
-(defn update-bill [{:keys [xtdb-node user path-params body-params] :as args}]
+(defn update-bill [bill-type {:keys [xtdb-node user path-params body-params] :as args}]
   (let [case-id (parse-uuid (:case-id path-params))
         [property-id property-tx] (handle-property args)
-        bill-type (if (contains? path-params :bill-id) :utility :council-tax)
         bill-id (case bill-type
                   :utility (parse-uuid (:bill-id path-params))
                   :council-tax (parse-uuid (:council-tax-id path-params)))
@@ -109,16 +108,11 @@
     (xt-util/exec-tx-or-throw xtdb-node
       (concat
         property-tx
-        [[::xt/put (merge bill-data
-                     {:xt/id bill-id
-                      :type :probate.bill
-                      (case bill-type
-                        :utility :probate.bill/case
-                        :council-tax :probate.council-tax/case) case-id})]]
+        (tx-fns/set-values bill-id bill-data)
         (case-history/put-event {:event (keyword (str bill-type "-updated"))
                                  :case-id case-id
                                  :user user
-                                 :op :delete
+                                 :op :update
                                  :event/bill bill-id}))))
   {:status http/status-204-no-content})
 
@@ -197,14 +191,15 @@
                       :parameters {:body bill-creation-schema}}}]
    ["utility/document/:asset-id" {:post {:handler (partial upload-document :utility)}}]
    ["delete-utility/:bill-id" {:post {:handler delete-bill}}]
-   ["update-utility/:bill-id" {:post {:handler update-bill}}]
+   ["update-utility/:bill-id" {:post {:handler (partial update-bill :utility)}}]
 
    ["council-tax" {:post {:handler add-council-tax
                           :parameters {:body council-tax-creation-schema}}}]
    ["council-tax/document/:asset-id" {:post {:handler (partial upload-document :council-tax)}}]
    ["delete-council-tax/:council-tax-id" {:post {:handler delete-bill}}]
-   ["update-council-tax/:council-tax-id" {:post {:handler update-bill}}]
+   ["update-council-tax/:council-tax-id" {:post {:handler (partial update-bill :council-tax)}}]
    ["household-bills/document/:filename" {:get {:handler get-document}}]])
+
 
 (comment
   (require 'darbylaw.xtdb-node)

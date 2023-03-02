@@ -80,6 +80,7 @@
     [:utility-company {:optional true} :keyword]
     [:new-utility-company? {:optional true} :boolean]
     [:account-number {:optional true} :string]
+    [:valuation {:optional true} :string]
     (if (= op :create)
       [:property [:or :uuid :string]]
       [:property :uuid])
@@ -90,6 +91,7 @@
    [:map
     [:council (into [:enum] (map :id councils))]
     [:account-number {:optional true} :string]
+    [:valuation {:optional true} :string]
     (if (= op :create)
       [:property [:or :uuid :string]]
       [:property :uuid])]])

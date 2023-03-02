@@ -1,16 +1,18 @@
 (ns darbylaw.web.ui.bills.add-form
-  (:require [darbylaw.web.util.form :as form-util]
-            [darbylaw.web.ui.bills.model :as model]
-            [re-frame.core :as rf]
-            [reagent-mui.components :as mui]
-            [reagent.core :as r]
-            [darbylaw.web.ui :as ui]
-            [darbylaw.web.ui.case-model :as case-model]
-            [vlad.core :as v]
-            [darbylaw.web.util.vlad :as v+ :refer [v-some? v-when]]
-            [clojure.edn :refer [read-string]]
-            [darbylaw.api.util.data :as data-util]
-            [darbylaw.web.ui.bills.common :as common]))
+  (:require
+    [clojure.string :as string]
+    [darbylaw.web.util.form :as form-util]
+    [darbylaw.web.ui.bills.model :as model]
+    [re-frame.core :as rf]
+    [reagent-mui.components :as mui]
+    [reagent.core :as r]
+    [darbylaw.web.ui :as ui]
+    [darbylaw.web.ui.case-model :as case-model]
+    [vlad.core :as v]
+    [darbylaw.web.util.vlad :as v+ :refer [v-some? v-when]]
+    [clojure.edn :refer [read-string]]
+    [darbylaw.api.util.data :as data-util]
+    [darbylaw.web.ui.bills.common :as common]))
 
 (defn type-of-bill-choice [{:keys [values set-handle-change submitting?] :as _fork-args}]
   (let [all-bill-types @(rf/subscribe [::model/bill-types])
@@ -147,6 +149,30 @@
                                    :label "account number"
                                    :required true}])
 
+(defn toggle-negative [s]
+  (if (string/starts-with? s "-")
+    (subs s 1)
+    (str "-" s)))
+(defn valuation-field [{:keys [state values] :as fork-args}]
+  [mui/stack {:direction :row :spacing 0.5}
+   [form-util/text-field fork-args {:name :valuation
+                                    :label "account value"
+                                    :required true
+                                    :InputProps
+                                    {:start-adornment
+                                     (r/as-element
+                                       [mui/input-adornment {:position :start} "£"])}}]
+   [mui/stack {:direction :row :align-items :center :spacing 0.5}
+    [mui/typography {:variant :body2} "credit"]
+    [mui/switch {:checked  (string/starts-with? (or (:valuation values) " ") "-")
+                 :on-click #(swap! state update-in [:values :valuation] toggle-negative)}]
+    [mui/typography {:variant :body2} "outstanding"]]
+   #_[mui/form-control-label
+      {:label "debt?"
+       :checked  (string/starts-with? (or (:valuation values) " ") "-")
+       :on-click #(swap! state update-in [:values :valuation] toggle-negative)
+       :control (r/as-element [mui/switch])}]])
+
 (defn property-field [{:keys [values handle-change set-handle-change] :as fork-args}]
   (let [error (form-util/get-error :property fork-args)]
     [mui/form-control {:error (boolean error)}
@@ -230,7 +256,7 @@
 
 (defn meter-readings-field [fork-args]
   [form-util/text-field fork-args {:name :meter-readings
-                                   :label "meter readings"}])
+                                   :label "meter reading"}])
 
 (defn form [fork-args]
   [mui/stack {:spacing 2}

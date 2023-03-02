@@ -6,11 +6,12 @@
             [darbylaw.web.ui :as ui :refer [<<]]
             [darbylaw.web.ui.notification.model :as model]
             [darbylaw.web.ui.notification.letter :as letter]
+            [darbylaw.web.ui.notification.received-letter :as received-letter]
             [darbylaw.web.ui.mailing.letter-commons :as letter-commons]))
 
 (def anchor (r/atom nil))
 
-(defn create-menu []
+(defn add-menu []
   (let [close-menu! #(reset! anchor nil)
         notification (<< ::model/notification)]
     [mui/menu {:open (some? @anchor)
@@ -24,9 +25,12 @@
      [mui/menu-item {:on-click #(do (close-menu!)
                                     (rf/dispatch [::model/generate-notification-letter
                                                   notification]))}
+      [mui/list-item-icon [letter/draft-icon]]
       [mui/list-item-text
        "create notification letter"]]
-     [mui/menu-item {:on-click close-menu!}
+     [mui/menu-item {:on-click #(do (close-menu!)
+                                    (rf/dispatch [::model/open-upload-received-letter true]))}
+      [mui/list-item-icon [received-letter/letter-icon]]
       [mui/list-item-text
        "upload received letter"]]]))
 
@@ -52,14 +56,38 @@
         [mui/list-item {:sx {:background-color :background.paper
                              :cursor :pointer}
                         :onClick #(rf/dispatch [::model/open-letter (:xt/id letter)])}
-         [mui/list-item-icon
-          [ui/icon-description-outlined]]
+         [mui/list-item-icon {:sx {:color :unset}}
+          [letter/draft-icon]
+          #_[mui/badge {:badgeContent "\u2197"
+                        :color :primary
+                        :sx {"& .MuiBadge-badge" {:font-weight :bold
+                                                  :background-color :text.primary}}}
+             [ui/icon-mail-outlined]]]
          [mui/list-item-text
           {:primary "notification letter"
            :secondary (letter-commons/letter-state-caption letter)}]
          [mui/list-item-text
           {:secondary (date-util/show-date-local-numeric (:modified-at letter))
-           :sx {:flex-grow 0}}]])
+           :sx {:flex-grow 0}}]]
+
+        :probate.received-letter
+        [mui/list-item {:sx {:background-color :background.paper
+                             :cursor :pointer}
+                        :onClick #(rf/dispatch [::model/open-letter (:xt/id letter)])}
+         [mui/list-item-icon {:sx {:color :unset}}
+          [received-letter/letter-icon]]
+         [mui/list-item-text
+          {:primary "received letter"
+           :secondary "received"}]
+         [mui/list-item-text
+          {:secondary (date-util/show-date-local-numeric (:modified-at letter))
+           :sx {:flex-grow 0}}]]
+
+        ; else
+        [mui/list-item {:sx {:background-color :background.paper}}
+         [mui/list-item-icon [ui/icon-question-mark]]
+         [mui/list-item-text
+          {:secondary (str "unknown item of type " (:type letter))}]])
 
       [mui/divider]])])
 
@@ -74,8 +102,8 @@
       [mui/button {:startIcon (r/as-element [ui/icon-add])
                    :variant :contained
                    :onClick #(reset! anchor (ui/event-currentTarget %))}
-       "create"]
-      [create-menu]]]
+       "add"]
+      [add-menu]]]
     [mui/dialog-content
      [mui/paper {:variant :outlined
                  :square true
@@ -95,6 +123,16 @@
                "no communications yet"]))]]]])
 
 (defn panel []
-  (if (<< ::model/open-letter)
-    [letter/panel]
-    [conversation-panel]))
+  (let [open-letter (<< ::model/open-letter)]
+    (cond
+      open-letter
+      (case (:type open-letter)
+        :probate.notification-letter [letter/panel]
+        :probate.received-letter [received-letter/panel]
+        [conversation-panel])
+
+      (<< ::model/upload-received-letter?)
+      [received-letter/panel]
+
+      :else
+      [conversation-panel])))
