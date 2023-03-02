@@ -3,7 +3,6 @@
     [darbylaw.web.ui :as ui]
     [darbylaw.web.util.form :as form-util]
     [darbylaw.web.ui.bills.model :as model]
-    [darbylaw.web.ui.case-model :as case-model]
     [re-frame.core :as rf]
     [reagent-mui.components :as mui]
     [clojure.edn :refer [read-string]]
@@ -22,8 +21,7 @@
    child])
 
 (defn property-select [{:keys [values set-handle-change] :as _fork-args} dialog-type]
-  (let [deceased-address @(rf/subscribe [::case-model/deceased-address])
-        properties @(rf/subscribe [::model/current-properties])]
+  (let [properties @(rf/subscribe [::model/current-properties])]
     [mui/form-control {:full-width true
                        :variant :filled
                        :required true
@@ -40,15 +38,10 @@
                    (set-handle-change
                      {:value (read-string (ui/event-target-value evt))
                       :path [:property]}))}
-
-      [mui/menu-item {:value (pr-str :deceased)
-                      :sx {:white-space :pre}}
-       deceased-address]
-      [mui/divider]
       (map (fn [property]
              ^{:key (:id property)}
              [mui/menu-item {:value (pr-str (:id property))}
-              [mui/typography (str (:address property))]])
+              [mui/typography {:white-space :pre} (str (:address property))]])
         properties)
       [mui/menu-item {:value (pr-str :new-property)} "add new address"]]]))
 
@@ -65,6 +58,7 @@
         :variant :outlined
         :fullWidth true
         :required true}])))
+
 (defn upload-button [_asset-type _case-id _asset-id _props _label]
   (r/with-let [_ (reset! model/file-uploading? false)
                filename (r/atom "")]
