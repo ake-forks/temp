@@ -54,7 +54,6 @@
          [mui/typography {:variant :h6} (str "supply address")]
          [common/address-box false
           (case (:property values)
-            :deceased @(rf/subscribe [::case-model/deceased-address])
             :new-property (:address-new values)
             (model/address-by-property-id (:property values)))]]
         [mui/box
