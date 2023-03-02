@@ -103,16 +103,26 @@
 (defn update-deceased [{:keys [xtdb-node user path-params body-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
         deceased-data body-params
-        deceased-id {:probate.deceased/case case-id}]
+        deceased-id {:probate.deceased/case case-id}
+        new-property-id (random-uuid)]
     (xt-util/exec-tx xtdb-node
       (concat
         [[::xt/put (merge deceased-data
                      deceased-id
                      {:xt/id deceased-id
                       :type :probate.deceased})]]
+        [[::xt/put {:xt/id new-property-id
+                    :type :probate.property
+                    :probate.property/case case-id
+                    :address (:address deceased-data)}]]
         (case-history/put-event {:event :updated.deceased
                                  :case-id case-id
-                                 :user user})))
+                                 :user user})
+        (case-history/put-event {:event :added.property
+                                 :case-id case-id
+                                 :user user
+                                 :op :add
+                                 :event/property new-property-id})))
     {:status 200
      :body deceased-data}))
 
