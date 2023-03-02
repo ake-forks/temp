@@ -56,6 +56,10 @@
            (str/includes? content-type "application/transit+json")))
     (update :body #(transit/read (transit/reader % :json)))))
 
+(defn ->query-string
+  [m]
+  (ring.util.codec/form-encode m))
+
 (defn run-request [req]
   (read-transit-body
     (ring-handler

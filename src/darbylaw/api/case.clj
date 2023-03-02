@@ -1,5 +1,6 @@
 (ns darbylaw.api.case
   (:require [xtdb.api :as xt]
+            [medley.core :as m]
             [reitit.coercion]
             [reitit.coercion.malli]
             [ring.util.response :as ring]
@@ -7,7 +8,8 @@
             [darbylaw.api.case-history :as case-history]
             [darbylaw.api.util.xtdb :as xt-util]
             [darbylaw.api.util.tx-fns :as tx-fns]
-            [darbylaw.api.bill.data :as bill-data]))
+            [darbylaw.api.bill.data :as bill-data]
+            [darbylaw.api.smart-search.utils :as ss-utils]))
 
 (def date--schema
   [:re #"^\d{4}-\d{2}-\d{2}$"])
@@ -18,17 +20,18 @@
    [:forename :string]
    [:middlename {:optional true} :string]
    [:surname :string]
+   [:gender [:enum "male" "female"]]
    [:date-of-birth date--schema]
 
    [:email :string]
    [:phone :string]
 
    [:flat {:optional true} :string]
-   [:building {:optional true} :string]
-   [:street-number {:optional true} :string]
+   [:building :string]
    [:street1 :string]
    [:street2 {:optional true} :string]
    [:town :string]
+   [:region {:optional true} :string]
    [:postcode :string]])
 
 (def personal-representative--props
@@ -100,16 +103,26 @@
 (defn update-deceased [{:keys [xtdb-node user path-params body-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
         deceased-data body-params
-        deceased-id {:probate.deceased/case case-id}]
+        deceased-id {:probate.deceased/case case-id}
+        new-property-id (random-uuid)]
     (xt-util/exec-tx xtdb-node
       (concat
         [[::xt/put (merge deceased-data
                      deceased-id
                      {:xt/id deceased-id
                       :type :probate.deceased})]]
+        [[::xt/put {:xt/id new-property-id
+                    :type :probate.property
+                    :probate.property/case case-id
+                    :address (:address deceased-data)}]]
         (case-history/put-event {:event :updated.deceased
                                  :case-id case-id
-                                 :user user})))
+                                 :user user})
+        (case-history/put-event {:event :added.property
+                                 :case-id case-id
+                                 :user user
+                                 :op :add
+                                 :event/property new-property-id})))
     {:status 200
      :body deceased-data}))
 
@@ -157,6 +170,13 @@
    :original-filename
    :uploaded-by
    :uploaded-at])
+
+(def check-props
+  [:ssid
+   :status
+   :result
+   :report
+   :dashboard])
 
 (def common-case-eql
   ['(:xt/id {:as :id})
@@ -221,15 +241,35 @@
 
    {'(:probate.property/_case {:as :properties})
     ['(:xt/id {:as :id})
-     :address]}])
+     :address]}
+
+   {'(:probate.identity-check.uk-aml/_case
+       {:as :uk-aml
+        :cardinality :one})
+    check-props}
+   {'(:probate.identity-check.fraudcheck/_case
+       {:as :fraudcheck
+        :cardinality :one})
+    check-props}
+   {'(:probate.identity-check.smartdoc/_case
+       {:as :smartdoc
+        :cardinality :one})
+    check-props}
+   :override-identity-check])
+
+(defn enrich-case [c]
+  (-> c
+      (m/update-existing :uk-aml (partial ss-utils/add-dashboard-link "/aml/results/"))
+      (m/update-existing :fraudcheck (partial ss-utils/add-dashboard-link "/aml/results/"))
+      (m/update-existing :smartdoc (partial ss-utils/add-dashboard-link "/doccheck/results/"))))
 
 (defn get-cases [{:keys [xtdb-node]}]
   (ring/response
     (->> (xt/q (xt/db xtdb-node)
            {:find [(list 'pull 'case common-case-eql)]
             :where '[[case :type :probate.case]]})
-      (map (fn [[case]]
-             case)))))
+         (map first)
+         (map enrich-case))))
 
 (def get-case__query
   {:find [(list 'pull 'case common-case-eql)]
@@ -244,7 +284,10 @@
       {:status http/status-404-not-found}
       (do
         (assert (= 1 (count results)))
-        (ring/response (ffirst results))))))
+        (-> results
+            ffirst
+            enrich-case
+            ring/response)))))
 
 (defn get-case-history [{:keys [xtdb-node path-params]}]
   (let [case-id (parse-uuid (:case-id path-params))

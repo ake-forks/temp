@@ -2,6 +2,9 @@
   (:require
     [reagent-mui.icons.account-balance]
     [reagent-mui.icons.add]
+    [reagent-mui.icons.directions-run]
+    [reagent-mui.icons.playlist-play]
+    [reagent-mui.icons.pending]
     [reagent-mui.icons.arrow-back-sharp]
     [reagent-mui.icons.help-outline]
     [reagent-mui.icons.cloud-sync]
@@ -31,6 +34,7 @@
     [reagent-mui.icons.delete-icon]
     [reagent-mui.icons.upload]
     [reagent-mui.icons.warning]
+    [reagent-mui.icons.warning-amber]
     [reagent-mui.icons.mouse-outlined]
     [reagent-mui.icons.arrow-forward-ios]
     [reagent-mui.icons.check-circle]
@@ -47,8 +51,12 @@
     [accountant.core :as accountant]
     ["@mui/material/styles" :as mui-styles]
     [reagent-mui.util]
+    ["@mui/material/TextField" :as MuiTextField]
     [lambdaisland.uri :refer [query-string->map]]))
 
+(def icon-directions-run reagent-mui.icons.directions-run/directions-run)
+(def icon-playlist-play reagent-mui.icons.playlist-play/playlist-play)
+(def icon-pending reagent-mui.icons.pending/pending)
 (def icon-add reagent-mui.icons.add/add)
 (def icon-arrow-back-sharp reagent-mui.icons.arrow-back-sharp/arrow-back-sharp)
 (def icon-help-outline reagent-mui.icons.help-outline/help-outline)
@@ -83,6 +91,7 @@
 (def icon-check-base reagent-mui.icons.check/check)
 (def icon-upload reagent-mui.icons.upload/upload)
 (def icon-warning reagent-mui.icons.warning/warning)
+(def icon-warning-amber reagent-mui.icons.warning-amber/warning-amber)
 (def icon-mouse-outlined reagent-mui.icons.mouse-outlined/mouse-outlined)
 
 (def icon-pound reagent-mui.icons.currency-pound/currency-pound)
@@ -222,6 +231,9 @@
 (defn theme-spacing [arg]
   (fn [theme]
     (.spacing theme arg)))
+
+(def original-mui-text-field
+  (reagent-mui.util/adapt-react-class (.-default MuiTextField) "mui-text-field"))
 
 (defn event-target-checked [onchange-event]
   (.. onchange-event -target -checked))

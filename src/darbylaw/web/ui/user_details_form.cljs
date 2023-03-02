@@ -11,10 +11,10 @@
             [darbylaw.web.util.form :as form]
             [darbylaw.web.util.phone :as phone]
             [darbylaw.web.util.vlad :as v-utils]
-            [applied-science.js-interop :as j]
             [darbylaw.web.ui.case-model :as case-model]
             [darbylaw.web.util.dayjs :as dayjs]
-            [clojure.string :as str]))
+            [clojure.string :as str])
+  (:require-macros [reagent-mui.util :refer [react-component]]))
 
 (defn adapt-initial-values [initial-values]
   (-> initial-values
@@ -79,6 +79,16 @@
     ;; Don't filter results
     :filterOptions identity}])
 
+(defn gender-field [fork-args]
+  [form/autocomplete-field fork-args
+   {:name :gender
+    :label "Gender"
+    :options ["male" "female"]
+    :inner-config {:required true}
+    :disableClearable true
+    ;; Don't filter results
+    :filterOptions identity}])
+
 (defn name-fields [fork-args]
   [:<>
    [mui/text-field (merge (form/common-text-field-props :forename fork-args)
@@ -101,17 +111,17 @@
                                    :path [:date-of-birth]})
     :disabled submitting?
     :renderInput
-    (fn [params]
-      (r/as-element
-        [mui/text-field
-         (merge (js->clj params)
-           {:name :date-of-birth
-            :label (let [date-pattern (j/get-in params [:inputProps :placeholder])]
-                     (str "Date of Birth (" date-pattern ")"))
-            :required true
-            :autoComplete :off
-            :error (boolean (form/get-error :date-of-birth fork-args))
-            :onBlur handle-blur})]))
+    (react-component [props]
+      ; see https://github.com/arttuka/reagent-material-ui/issues/39
+      [ui/original-mui-text-field
+       (merge props
+              {:name :date-of-birth
+               :label (let [date-pattern (get-in props [:input-props :placeholder])]
+                        (str "Date of Birth (" date-pattern ")"))
+               :required true
+               :autoComplete :off
+               :error (boolean (form/get-error :date-of-birth fork-args))
+               :onBlur handle-blur})])
     :openTo :year
     :views [:year :month :day]}])
 
@@ -122,19 +132,17 @@
     [mui/text-field (merge (form/common-text-field-props :flat fork-args)
                       {:label "Flat"})]
     [mui/text-field (merge (form/common-text-field-props :building fork-args)
-                      {:label "Building Name"})]]
-   [mui/stack {:direction :row
-               :spacing 2}
-    [mui/text-field (merge (form/common-text-field-props :street-number fork-args)
-                      {:label "Street Number"
-                       :helperText (form/get-error :street-number fork-args)})]
-    [mui/text-field (merge (form/common-text-field-props :street1 fork-args)
-                      {:label "Street"
+                      {:label "House No/Name"
                        :required true
                        :full-width true})]]
-   [mui/text-field (merge (form/common-text-field-props :street2 fork-args)
-                     {:label "Address Line 2"
+   [mui/text-field (merge (form/common-text-field-props :street1 fork-args)
+                     {:label "Street"
+                      :required true
                       :full-width true})]
+   [mui/text-field (merge (form/common-text-field-props :street2 fork-args)
+                     {:label "Address Line 2"})]
+   [mui/text-field (merge (form/common-text-field-props :region fork-args)
+                     {:label "Region"})]
    [mui/stack {:direction :row :spacing 2}
     [mui/text-field (merge (form/common-text-field-props :town fork-args)
                       {:label "Town/City"
@@ -205,6 +213,7 @@
     [mui/stack {:direction :row
                 :spacing 2}
      [name-fields fork-args]]
+    [gender-field fork-args]
     [date-of-birth-picker fork-args]]
    [mui/stack {:spacing 2}
     [mui/typography {:variant :h5}
@@ -224,6 +233,7 @@
     (v/attr [:date-of-birth] (v/chain
                                (v-utils/not-nil)
                                (v-utils/valid-dayjs-date)))
+    (v/attr [:gender] (v/present))
 
     (v/attr [:email] (v/chain
                        (v/present)
@@ -232,13 +242,7 @@
                        (v/present)
                        (v-utils/valid-phone)))
 
-    ; We show Street Number as required, but provide a hint
-    ; that Building Name can be provided as an alternative.
-    (v-utils/present-or-alternative [:street-number] [:building])
-    ; alternative: show both fields as required when either is blank
-    #_(v-utils/either-present [[:street-number]]
-        [:building])
-
+    (v/attr [:building] (v/present))
     (v/attr [:street1] (v/present))
     (v/attr [:town] (v/present))
     (v/attr [:postcode] (v/present))))
@@ -277,10 +281,13 @@
                    :forename "John",
                    :surname "Doe",
                    :date-of-birth (dayjs/read "1979-12-13")
+                   :gender "male"
                    :email "test@test.com",
                    :phone "+441234123456",
-                   :street-number "12",
+                   :flat "4",
+                   :building "25",
                    :street1 "Sesame",
+                   :street2 "Street",
                    :town "Bristol",
                    :postcode "SW1W 0NY"}]
    (swap! form-state assoc

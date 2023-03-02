@@ -18,8 +18,8 @@
 
 (defn get-error [k {:keys [touched errors attempted-submissions] :as _fork-args}]
   (and (pos? attempted-submissions)
-    (touched k)
-    (get errors [k])))
+       (touched k)
+       (get errors [k])))
 
 (defn error-icon-prop []
   {:endAdornment
@@ -44,8 +44,8 @@
              :error (boolean error)
              :autoComplete :off}
       error-icon? (assoc :InputProps
-                         (when error
-                           (error-icon-prop))))))
+                    (when error
+                      (error-icon-prop))))))
 
 (defn common-text-field-props [k fork-args]
   (common-input-field-props k fork-args {:error-icon? true}))
@@ -144,7 +144,7 @@
       (let [button-text (or (:text button) "Submit")
             button (dissoc button :text)
             alert-text (or (:text alert)
-                         "There is some missing or invalid data")
+                           "There is some missing or invalid data")
             alert (dissoc alert :text)]
         [:<>
          [ui/loading-button (merge

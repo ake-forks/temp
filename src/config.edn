@@ -39,4 +39,10 @@
   :local-sftp-server {:enabled? #profile {:default false
                                           :test true
                                           :dev true}
-                      :port 2222}}}
+                      :port 2222}}
+ :smart-search #profile {#{:production :staging} #edn #env SMART_SEARCH_CONFIG
+                         :default {:company-name "Darby & Darby"
+                                   :public-key "2dd0e593557d73fe4753aed4caa7a0b8"
+                                   :service-user "osm@juxt.pro"
+                                   :base-url {:api "https://sandbox-api.smartsearchsecure.com"
+                                              :dashboard "https://sandbox.smartsearchsecure.com"}}}}

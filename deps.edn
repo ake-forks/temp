@@ -39,6 +39,8 @@
         pdfboxing/pdfboxing {:mvn/version "0.1.14"}
         ;; Data
         camel-snake-kebab/camel-snake-kebab {:mvn/version "0.4.3"}
+        org.clojure/data.json {:mvn/version "2.4.0"}
+        org.clj-commons/digest {:mvn/version "1.4.100"}
         ;; AWS API
         com.amazonaws/aws-java-sdk-core {:mvn/version "1.12.344"}
         com.amazonaws/aws-java-sdk-s3 {:mvn/version "1.12.344"}

@@ -43,13 +43,13 @@
                  :sx {:background-color "#1aac00"}
                  :on-click #(set-values {name true})
                  :style
-                 (when (and (touched name) (true? (values name)))
+                 (when (and (touched name) (false? (values name)))
                    mui-yes-disabled-button-style)}
      "yes"]
     [mui/button {:variant :contained
                  :on-click #(set-values {name false})
                  :style
-                 (when (and (touched name) (false? (values name)))
+                 (when (and (touched name) (true? (values name)))
                    mui-no-disabled-button-style)}
      "no"]]
    [mui/divider]])
@@ -143,8 +143,6 @@
       [mui/button {:variant :contained}
        "request a call back"]]]]])
 
-
-
 ;; >> Content
 
 (defn layout [{:keys [handle-submit values touched]
@@ -152,25 +150,22 @@
   [:form {:on-submit handle-submit}
    [question-list fork-args]
    (cond
-     (or (true? (values :know-already))
-         (and (true? (values :own-house))
-             (true? (values :sole-owner)))
-         (true? (values :savings))
-         (false? (values :all-join-accounts))
-         (true? (values :stocks-shares)))
+     (or (true? (:know-already values))
+         (and (true? (:own-house values))
+              (true? (:sole-owner values)))
+         (true? (:savings values))
+         (false? (:all-join-accounts values))
+         (true? (:stocks-shares values)))
      [might-need-probate fork-args]
 
-     (and (false? (values :savings))
-          (true? (values :all-join-accounts))
-          (false? (values :stocks-shares)))
+     (and (false? (:savings values))
+          (true? (:all-join-accounts values))
+          (false? (:stocks-shares values)))
      [dont-need-probate fork-args])])
-
-(defonce form-state (r/atom nil))
 
 (defn content []
   [form-util/form
-   {:state form-state
-    :clean-on-unmount true
+   {:clean-on-unmount true
     :keywordize-keys true
     :prevent-default? true}
    layout])

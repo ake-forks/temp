@@ -1,7 +1,8 @@
 (ns darbylaw.doc-store
   (:require [darbylaw.config :as config]
             [mount.core :as mount]
-            [clojure.tools.logging :as log])
+            [clojure.tools.logging :as log]
+            [clojure.java.io :as io])
   (:import (com.amazonaws.services.s3 AmazonS3ClientBuilder AmazonS3)
            (java.io File FileInputStream)
            (com.amazonaws.services.s3.model AmazonS3Exception ListObjectsRequest GetObjectRequest ObjectMetadata)))
@@ -26,10 +27,10 @@
    (when-not (.doesBucketExistV2 s3 bucket-name)
       (.createBucket s3 bucket-name))
    (.putObject s3 bucket-name key f))
-  ([^String key ^File f {:keys [content-type]}]
+  ([^String key f {:keys [content-type]}]
    (when-not (.doesBucketExistV2 s3 bucket-name)
       (.createBucket s3 bucket-name))
-   (with-open [fs (FileInputStream. f)]
+   (with-open [fs (io/input-stream f)]
      (let [metadata (doto (ObjectMetadata.)
                       (.setContentType content-type))]
        (.putObject s3 bucket-name key fs metadata)))))

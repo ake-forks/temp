@@ -17,6 +17,7 @@
     [darbylaw.web.ui.overview-tile :as overview]
     [darbylaw.web.ui.tasks-tile :as tasks]
     [darbylaw.web.ui.keydocs.dialog :as key-docs]
+    [darbylaw.web.ui.identity.dialog :as identity-dialog]
     [re-frame.core :as rf]
     [reagent.format :as format]
     [darbylaw.web.theme :as theme]
@@ -307,6 +308,7 @@
       [tasks/tasks-tile]
       [key-docs/dash-button]
       [key-docs/dialog]
+      [identity-dialog/dialog]
       [overview/overview-card]]]]])
 
 (defn panel* []

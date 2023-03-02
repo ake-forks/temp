@@ -5,12 +5,12 @@
     [fork.re-frame :as fork]
     [re-frame.core :as rf]
     [darbylaw.api.bill.data :as bills-data]
+    [darbylaw.api.bill.council-data :as council-data]
     [darbylaw.web.ui.case-model :as case-model]
     [medley.core :as medley]
     [reagent.core :as r]
     [clojure.string :as string]))
 
-;TODO - go through and remove/amalgamate some of these subscriptions
 (rf/reg-sub ::companies
   (fn [_]
     bills-data/companies))
@@ -24,7 +24,7 @@
   (let [label-by-id (into {} (map (juxt :id :common-name) coll))]
     (fn [id]
       (or (get label-by-id (keyword id))
-        (name id)))))
+          (name id)))))
 
 (rf/reg-sub ::company-id->label
   :<- [::companies]
@@ -33,7 +33,7 @@
 
 (rf/reg-sub ::councils
   (fn [_]
-    bills-data/councils))
+    council-data/councils))
 
 (rf/reg-sub ::all-council-ids
   :<- [::councils]
@@ -50,6 +50,10 @@
     (for [[name {:keys [label]}] bills-data/bill-types]
       {:name name
        :label label})))
+
+(rf/reg-sub ::current-bills
+  :<- [::case-model/current-case]
+  #(:bills %))
 
 (rf/reg-sub ::used-billing-addresses
   :<- [::current-bills]

@@ -116,11 +116,12 @@
   [pr]
   (->> [(:flat pr)
         (:building pr)
-        (:street-number pr)
         (:street1 pr)
         (:street2 pr)
         (:town pr)
+        (:region pr)
         (:postcode pr)]
+       (remove nil?)
        (remove str/blank?)
        (str/join "\n")))
 
