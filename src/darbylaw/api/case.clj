@@ -228,14 +228,14 @@
    {'(:probate.council-tax/_case {:as :council-tax})
     (into
       ['(:xt/id {:as :id})
-       {'(:probate.council-tax-doc/_asset {:as :recent-bill}) bill-props}]
+       {'(:probate.council-tax-bill/_council-tax {:as :recent-bill}) bill-props}]
       (bill-data/extract-council-tax-props
         (bill-data/make-council-tax-schema :query)))}
 
-   {'(:probate.bill/_case {:as :utility-bills})
+   {'(:probate.utility/_case {:as :utilities})
     (into
       ['(:xt/id {:as :id})
-       {'(:probate.utility-doc/_asset {:as :recent-bill}) bill-props}]
+       {'(:probate.utility-bill/_utility {:as :recent-bill}) bill-props}]
       (bill-data/extract-bill-props
         (bill-data/make-bill-schema :query)))}
 
@@ -276,6 +276,12 @@
    :where '[[case :type :probate.case]
             [case :xt/id case-id]]
    :in '[case-id]})
+
+(comment
+  (xt/entity (xt/db darbylaw.xtdb-node/xtdb-node)
+    #uuid"0261303e-0edf-41d8-adb6-caff8d58ea5f")
+  (xt/q (xt/db darbylaw.xtdb-node/xtdb-node) get-case__query
+    #uuid"cd62f859-6b9f-4093-bbb9-7679ad838a62"))
 
 (defn get-case [{:keys [xtdb-node path-params]}]
   (let [case-id (parse-uuid (:case-id path-params))

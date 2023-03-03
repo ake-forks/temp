@@ -208,10 +208,10 @@
 
 (defn bills-card []
   (let [current-case @(rf/subscribe [::case-model/current-case])
-        bills-by-property-id (group-by :property (:utility-bills current-case))
+        utilities-by-property-id (group-by :property (:utilities current-case))
         council-tax-by-property-id (group-by :property (:council-tax current-case))
-        used-property-ids (->> (concat (:council-tax current-case) (:utility-bills current-case))
-                            (concat (:bills current-case))
+        used-property-ids (->> (concat (:council-tax current-case)
+                                       (:utilities current-case))
                             (keep :property)
                             (distinct))
         properties-by-id (medley/index-by :id (:properties current-case))
@@ -230,9 +230,9 @@
           (if-let [address (get-in properties-by-id [property-id :address])]
             (data-util/first-line address)
             "[unknown address]")]
-         (for [company (->> (get bills-by-property-id property-id)
+         (for [company (->> (get utilities-by-property-id property-id)
                          (map #(or (:utility-company %)
-                                 (:new-utility-company %)))
+                                   (:new-utility-company %)))
                          (distinct)
                          (remove nil?))]
            ^{:key company}

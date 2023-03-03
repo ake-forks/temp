@@ -219,18 +219,18 @@
     :width 200
     :group "Building Society Accounts"}
 
-   {:field :bill-types
-    :headerName "Type(s)"
+   {:field :utility-services
+    :headerName "Utility bill(s)"
     :hide true
-    :valueGetter #(->> % :row :bills (mapcat :bill-type) (remove nil?) (str/join ", ")) 
+    :valueGetter #(->> % :row :utilities (mapcat :services) (remove nil?) (str/join ", "))
     :width 200
-    :group "Bills"}
-   {:field :bill-account-numbers
-    :headerName "Account Number(s)"
+    :group "Utility Bills"}
+   {:field :utility-account-numbers
+    :headerName "Utility Account Number(s)"
     :hide true
-    :valueGetter #(->> % :row :bills (map :account-number) (remove nil?) (str/join ", ")) 
+    :valueGetter #(->> % :row :utilities (map :account-number) (remove nil?) (str/join ", "))
     :width 200
-    :group "Bills"}])
+    :group "Utility Bills"}])
 
 (defn wrap-method [method]
   "Wrap a method so that it receives a clj map instead of a js object"

@@ -97,33 +97,33 @@
   (fn [property]
     (:address property)))
 
-(rf/reg-sub ::dialog-bills
-  :<- [::model/current-bills]
+(rf/reg-sub ::dialog-utilities
+  :<- [::model/current-utilities]
   :<- [::dialog-context]
-  (fn [[all-bills {:keys [utility-company property]}]]
-    (->> all-bills
-      (filter (fn [bill]
-                (and (= utility-company (:issuer bill))
-                     (= property (:property bill))))))))
+  (fn [[all-utilities {:keys [utility-company property]}]]
+    (->> all-utilities
+      (filter (fn [utility]
+                (and (= utility-company (:issuer utility))
+                     (= property (:property utility))))))))
 
-(defn bill-types-str [bill-types]
-  (->> bill-data/bill-types
+(defn services-str [services]
+  (->> bill-data/utility-services
     (keep (fn [[k {:keys [label]}]]
-            (when (contains? bill-types k)
+            (when (contains? services k)
               label)))
     (str/join " & ")))
 
-(defn bill-row [bill]
+(defn utility-row [data]
   [mui/card {:elevation 2}
    [mui/card-content
     [mui/stack {:direction :row
                 :spacing 2
                 :sx {:align-items :center}}
      [mui/stack {:sx {:flex-grow 1}}
-      [mui/typography {:variant :subtitle} [:b (bill-types-str (:bill-type bill))]]
-      (when-let [account-number (:account-number bill)]
+      [mui/typography {:variant :subtitle} [:b (services-str (:services data))]]
+      (when-let [account-number (:account-number data)]
         [mui/typography {:variant :subtitle2} "account: " account-number])]
-     [mui/typography {:variant :h6} (str "£" (:amount bill))]
+     [mui/typography {:variant :h6} (str "£" (:amount data))]
      [mui/box
       [mui/icon-button
        [ui/icon-edit]]
@@ -394,11 +394,11 @@
           address)]]]
      [mui/stack
       [mui/typography {:sx {:font-weight 600}}
-       "Bills"]
+       "Utility accounts"]
       [mui/stack {:spacing 2}
-       (for [bill @(rf/subscribe [::dialog-bills])]
-         ^{:key (:id bill)}
-         [bill-row bill])]]
+       (for [utility @(rf/subscribe [::dialog-utilities])]
+         ^{:key (:id utility)}
+         [utility-row utility])]]
      (let [notification-ongoing? @(rf/subscribe [::notification-ongoing])]
        (when-not notification-ongoing?
          [mui/stack
