@@ -3,7 +3,8 @@
     [clojure.tools.logging :as log]
     [darbylaw.api.util.http :as http]
     [xtdb.api :as xt]
-    [darbylaw.api.bank-notification.mailing-job :refer [upload-mail! fetch-letters-to-send]]
+    [darbylaw.api.bank-notification.mailing-fetch :refer [fetch-letters-to-send]]
+    [darbylaw.api.bank-notification.mailing-job :refer [upload-mail!]]
     [darbylaw.api.bank-notification.mailing-sync-job :refer [sync!]]))
 
 (defn get-mailing-items [{:keys [xtdb-node]}]
