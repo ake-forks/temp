@@ -1,11 +1,9 @@
 (ns darbylaw.web.ui.landing
   (:require [darbylaw.web.routes :as routes]
-            [darbylaw.web.styles :as styles]
             [darbylaw.web.theme :as theme]
             [darbylaw.web.ui :as ui]
             [darbylaw.web.ui.app-layout :as c]
             [reagent-mui.components :as mui]
-            [kee-frame.core :as kf]
             [re-frame.core :as rf]
             [reagent.core :as r]))
 
@@ -35,7 +33,8 @@
   [app-bar
    [mui/stack {:direction :row
                :spacing 2}
-    [logo]
+    [:img {:src "/images/Probate-tree-narrow.png"}]
+    #_[logo]
     [mui/stack {:direction :row}
      [menu-item {:on-click #(rf/dispatch [::ui/navigate [:about]])}
        "about"]
@@ -60,7 +59,8 @@
   [mui/box
    {:sx {:background-image (str "url(" url ")")
          :background-position "top left"
-         :background-repeat :repeat}}
+         :background-size :cover
+         :background-repeat :no-repeat}}
    (into [:<>] body)])
 
 (defn tall [& body]
@@ -92,7 +92,7 @@
 ;; TODO: Fix so that it fits the screen size permanently
 ;;       Use javascript?
 (defn probate-made-easy []
-  [background "/images/grey-squares.png"
+  [background "/images/home-trees-1920-1080.jpeg"
    [mui/container {:max-width :xl}
     [mui/stack {}
      [tall
@@ -100,9 +100,9 @@
        [mui/grid {:container true}
         [mui/grid {:item true :xs 4}
          [mui/stack {:spacing 3}
-          [mui/typography {:variant :h4}
+          [mui/typography {:variant :h4 :color :white}
             "probate made easy"]
-          [mui/typography {:variant :text}
+          [mui/typography {:variant :text :color :white}
            "Lorem ipsum dolor sit amet, consetetur sadipscing
 elitr, s ed diam nonumy eirmod tempor invidunt ut
 labore e t dolore magna aliquyam erat, sed diam volu
@@ -111,15 +111,16 @@ ea rebum . Stet clita kasd gubergren, no sea takimata
 sanctus  est Lorem."]
           [mui/box {:sx {:pt 2}}
            [mui/button {:variant :contained
+                        :size :large
+                        :style {:background-color theme/lime
+                                :font-weight :normal
+                                :textTransform :none}
                         :on-click #(rf/dispatch [::ui/navigate :decision-tree])}
             "do I need probate?"]]]]]]]
      [centred-horizontally
       [mui/stack
-       [ui/icon-mouse-outlined]
-       [ui/icon-keyboard-arrow-down]]]]]])
-
-
-
+       [ui/icon-mouse-outlined {:style {:color :white}}]
+       [ui/icon-keyboard-arrow-down {:style {:color :white}}]]]]]])
 ;; >> Price section
 
 (defn big-price []
@@ -127,12 +128,17 @@ sanctus  est Lorem."]
               :spacing 1
               :align-items :flex-end}
    [mui/typography {:variant :body1
+                    :color theme/lime
                     :style {:font-size "1.2rem"}}
+
     "from"]
-   [mui/typography {:variant :h2}
+   [mui/typography {:variant :h2
+                    :color theme/lime}
     "£750"]
    [mui/typography {:variant :body1
+                    :color theme/lime
                     :style {:font-size "1.2rem"}}
+
     "/ probate"]])
 
 (def price-lines
@@ -166,14 +172,18 @@ tempor invidunt ut labore et dolore."]
         line]])]]
   [mui/box
    [mui/button {:variant :contained
+                :size :large
+                :style {:background-color theme/lime
+                        :font-weight :normal
+                        :textTransform :none}
                 :on-click #(rf/dispatch [::ui/navigate :decision-tree])}
     "do I need probate?"]]])
 
 (defn price-image []
   [mui/box
-   {:sx {:background-image (str "url(/images/grey-squares.png)")
-         :background-position "top left"
-         :background-repeat :repeat
+   {:sx {:background-image (str "url(/images/home-laptop-mock.jpg)")
+         :background-position "center center"
+         :background-repeat :no-repeat
 
          ;; Have price image fill available space
          :width "100%"
