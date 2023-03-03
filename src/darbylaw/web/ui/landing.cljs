@@ -119,11 +119,8 @@ sanctus  est Lorem."]
             "do I need probate?"]]]]]]]
      [centred-horizontally
       [mui/stack
-       [ui/icon-mouse-outlined]
-       [ui/icon-keyboard-arrow-down]]]]]])
-
-
-
+       [ui/icon-mouse-outlined {:style {:color :white}}]
+       [ui/icon-keyboard-arrow-down {:style {:color :white}}]]]]]])
 ;; >> Price section
 
 (defn big-price []
