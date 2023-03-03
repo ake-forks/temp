@@ -87,7 +87,7 @@
                           :variant :contained}
        "Save"]]]))
 
-(defn first-layout [{:keys [handle-submit submitting?] :as fork-args}]
+(defn first-layout [{:keys [values handle-submit submitting?] :as fork-args}]
   [:form {:on-submit handle-submit}
    [mui/dialog-content {:style {:height "50vh"
                                 :width "50vw"
@@ -104,7 +104,12 @@
      "Cancel"]
     [ui/loading-button {:onClick #(rf/dispatch [::model/save-temp-data fork-args])
                         :loading submitting?
-                        :variant :contained}
+                        :variant :contained
+                        :disabled (or
+                                    (clojure.string/blank? (:property values))
+                                    (clojure.string/blank? (or
+                                                             (:utility-company values)
+                                                             (:new-utility-company values))))}
      "Next"]]])
 
 (defn panel []
