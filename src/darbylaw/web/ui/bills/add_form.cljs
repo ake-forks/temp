@@ -49,7 +49,7 @@
                        (r/as-element [:b label])
                        label)}]])])]
      (when error
-       [mui/form-helper-text "At least one bill type is required"])]))
+       [mui/form-helper-text "At least one bill type is required."])]))
 
 
 (defn supplier-fields [{:keys [values handle-change] :as fork-args}]
