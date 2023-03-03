@@ -41,9 +41,10 @@
   (when (and (seq letters)
              (doc-store/available?)
              (mailing/available? real|fake))
-    (assert (<= (count letters)
-                (-> config/config :mailing-service :max-batch-size))
-            "Only a max of :max-batch-size letters can be uploaded at once")
+    (let [n-letters (count letters)
+          max-batch-size (-> config/config :mailing-service :max-batch-size)]
+      (assert (<= n-letters max-batch-size) "Only a max of :max-batch-size letters can be uploaded at once")
+      (log/infof "Uploading %d/%d letters for mailing" n-letters max-batch-size))
     (doseq [letter-data letters]
       (let [{:keys [case-id bank-id]
              letter-id :xt/id} letter-data
