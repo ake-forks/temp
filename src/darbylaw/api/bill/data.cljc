@@ -38,7 +38,7 @@
     :address-country "",
     :logo nil}])
 
-(def companies
+(def energy-companies
   [{:id :affect-energy, :common-name "Affect Energy"}
    {:id :boost-energy, :common-name "Boost Energy"}
    {:id :british-gas, :common-name "British Gas"}
@@ -118,6 +118,9 @@
    {:id :trooli, :common-name "Trooli"}
    {:id :truespeed, :common-name "Truespeed"}
    {:id :direct-save-telecom, :common-name "Direct Save Telecom"}])
+
+(def companies
+  (concat energy-companies water-companies telecom-companies))
 
 (def test-councils
   [{:id :council-1,
