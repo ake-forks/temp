@@ -139,8 +139,21 @@
 (defn alert-dialog []
   [mui/dialog {:open (boolean @(rf/subscribe [::alert-dialog-open?]))
                :max-width :xs}
-   [mui/dialog-title "Are you sure?"]
-   [mui/dialog-content "Continuing will perform another set of checks and ask the user to submit another set of documents."]
+   [mui/dialog-title "Run Checks"]
+   [mui/dialog-content
+    (let [nickname @(rf/subscribe [::case-model/nickname])]
+      [:<>
+       [mui/typography
+         "Continuing will:"]
+       [mui/list {:sx {:list-style-type :disc
+                       :list-style-position :inside}}
+        [mui/list-item {:sx {:display :list-item}}
+         (str "Perform a set of checks on " nickname)]
+        [mui/list-item {:sx {:display :list-item}}
+         (str "Ask " nickname " to submit a set of documents")]]
+       (when @(rf/subscribe [::model/has-checks?])
+         [mui/typography
+           "If you want to re-run a single check, use the SmartSearch UI by clicking on an SSID"])])]
    [mui/dialog-actions
     [mui/button {:variant :outlined
                  :full-width true
@@ -150,7 +163,7 @@
                  :full-width true
                  :color :primary
                  :on-click #(rf/dispatch [::alert-confirm])}
-     "Yes"]]])
+     "Run"]]])
 
 (defn check-table []
   [mui/table
