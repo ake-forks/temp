@@ -88,29 +88,30 @@
        "Save"]]]))
 
 (defn first-layout [{:keys [values handle-submit submitting?] :as fork-args}]
-  [:form {:on-submit handle-submit}
-   [mui/dialog-content {:style {:height "50vh"
-                                :width "50vw"
-                                :padding "1rem"}}
-    [mui/stack {:spacing 2}
-     [form/supplier-fields fork-args]
-     [mui/divider]
-     [common/property-select fork-args :add]
-     [common/new-property-input fork-args]]]
-   [mui/dialog-actions
-    [mui/button {:onClick #(do (rf/dispatch [::model/clear-temp-data]) (rf/dispatch [::model/show-bills-dialog nil]))
-                 :disabled @(rf/subscribe [::model/form-submitting?])
-                 :variant :outlined}
-     "Cancel"]
-    [ui/loading-button {:onClick #(rf/dispatch [::model/save-temp-data fork-args])
-                        :loading submitting?
-                        :variant :contained
-                        :disabled (or
-                                    (clojure.string/blank? (:property values))
-                                    (clojure.string/blank? (or
-                                                             (:utility-company values)
-                                                             (:new-utility-company values))))}
-     "Next"]]])
+  (let [incomplete? (or
+                      (clojure.string/blank? (:property values))
+                      (clojure.string/blank? (or
+                                               (:utility-company values)
+                                               (:new-utility-company values))))]
+    [:form {:on-submit handle-submit}
+     [mui/dialog-content {:style {:height "50vh"
+                                  :width "50vw"
+                                  :padding "1rem"}}
+      [mui/stack {:spacing 2}
+       [form/supplier-fields fork-args]
+       [mui/divider]
+       [common/property-select fork-args :add]
+       [common/new-property-input fork-args]]]
+     [mui/dialog-actions
+      [mui/button {:onClick #(do (rf/dispatch [::model/clear-temp-data]) (rf/dispatch [::model/show-bills-dialog nil]))
+                   :disabled @(rf/subscribe [::model/form-submitting?])
+                   :variant :outlined}
+       "Cancel"]
+      [ui/loading-button {:onClick #(rf/dispatch [::model/save-temp-data fork-args])
+                          :loading submitting?
+                          :variant :contained
+                          :disabled incomplete?}
+       "Next"]]]))
 
 (defn panel []
   (let [dialog @(rf/subscribe [::model/bills-dialog])
@@ -133,7 +134,8 @@
                                  case-id
                                  %
                                  (when temp-data (:id @temp-data))])
-       :initial-values (when temp-data @temp-data)}
+       :initial-values (when temp-data @temp-data)
+       :validation #(form/validate :utility %)}
       (fn [fork-args]
         (if (some? @temp-data)
           [second-layout fork-args]
