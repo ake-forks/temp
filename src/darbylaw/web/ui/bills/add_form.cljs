@@ -9,15 +9,18 @@
     [darbylaw.web.ui :as ui]
     [darbylaw.web.ui.case-model :as case-model]
     [vlad.core :as v]
-    [darbylaw.web.util.vlad :as v+ :refer [v-some? v-when]]
+    [darbylaw.web.util.vlad :refer [v-some? v-when]]
     [clojure.edn :refer [read-string]]
     [darbylaw.api.util.data :as data-util]
     [darbylaw.web.ui.bills.common :as common]))
 
-(defn type-of-bill-choice [{:keys [values set-handle-change submitting?] :as _fork-args}]
+(defn type-of-bill-choice [{:keys [values set-handle-change submitting?] :as fork-args}]
   (let [all-bill-types @(rf/subscribe [::model/bill-types])
-        checked-values (get values :bill-type #{})]
+        checked-values (get values :bill-type #{})
+        error (form-util/get-error :bill-type fork-args)]
     [mui/form-control
+     {:required true
+      :error (boolean error)}
      [mui/form-label "bill type (select all applicable)"]
      [mui/stack {:direction :row}
       (for [bill-types (partition 2 all-bill-types)]
@@ -45,7 +48,8 @@
               :label (if (contains? checked-values name)
                        (r/as-element [:b label])
                        label)}]])])]
-     [mui/form-helper-text "helper text"]]))
+     (when error
+       [mui/form-helper-text "At least one bill type is required."])]))
 
 
 (defn supplier-fields [{:keys [values handle-change] :as fork-args}]
@@ -271,23 +275,31 @@
    [amount-field fork-args]
    [meter-readings-field fork-args]])
 
-(def validation
+(def utility-validation
   (v/join
     (v/attr [:property] (v-some?))
     (v-when #(= :new-property (:property %))
       (v/attr [:address-new] (v/present)))
-    (v-when #(= "custom" (:issuer-known %))
+    (v-when #(:utility-company-unknown %)
       (v/join
-        (v/attr [:custom-issuer-name] (v/present))
-        (v/attr [:custom-issuer-address] (v/present))))
-    (v-when #(= "known" (:issuer-known %))
-      (v/attr [:issuer] (v/present)))
-    (v/attr [:amount] (v/chain
-                        (v/present)
-                        (v+/currency?)))))
+        (v/attr [:new-utility-company] (v/present))))
+    (v-when #(not (:utility-company-unknown %))
+      (v/attr [:utility-company] (v/present)))
+    (v/attr [:account-number] (v/present))
+    (v/attr [:bill-type] (v/length-over 0))))
 
-(defn validate [form-data]
-  (v/field-errors validation form-data))
+(def council-tax-validation
+  (v/join
+    (v/attr [:council] (v/present))
+    (v/attr [:property] (v-some?))
+    (v-when #(= :new-property (:property %))
+      (v/attr [:address-new] (v/present)))))
+
+
+(defn validate [asset-type form-data]
+  (case asset-type
+    :utility (v/field-errors utility-validation form-data)
+    :council-tax (v/field-errors council-tax-validation form-data)))
 
 (comment
   ;from values-to-submit

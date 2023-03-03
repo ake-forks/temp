@@ -22,10 +22,10 @@
 
 (defn property-select [{:keys [values set-handle-change] :as _fork-args} dialog-type]
   (let [properties @(rf/subscribe [::model/current-properties])]
-    [mui/form-control {:full-width true
-                       :variant :filled
-                       :required true
-                       :disabled (= dialog-type :edit)}
+    [mui/form-control  {:full-width true
+                        :variant :filled
+                        :required true
+                        :disabled (= dialog-type :edit)}
      [mui/input-label {:id :property} "property address"]
      [mui/select
       {:name :property
