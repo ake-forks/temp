@@ -26,7 +26,7 @@
                             :case-id test-case-id
                             :bank-id :test-bank}
 
-        ;; Create some letters in the past (more than a month)
+        ;; Create some letters sent in the past (more than a month)
         ;; These will be cleaned up later
         _ (xt/await-tx xtdb-node
             (xt/submit-tx xtdb-node
@@ -37,12 +37,11 @@
                 (mailing-watchdog/watch (get letter-ids 4))
                 [[::xt/put (merge common-letter-data
                              {:xt/id (get letter-ids 5)
-                              :upload-state :uploaded
-                              :send-state :error})]]
+                              :upload-state :uploaded})]]
                 (mailing-watchdog/watch (get letter-ids 5)))
               {::xt/tx-time #inst "2020"}))
 
-        ; Create some letters now
+        ; Create some letters sent now
         _ (xt-util/exec-tx xtdb-node
             (concat
               [[::xt/put (merge common-letter-data
@@ -58,7 +57,7 @@
                             :upload-state :uploaded})]]
               (mailing-watchdog/watch (get letter-ids 3))))
 
-        ;; As expected, there are 4 letters being watched
+        ;; As expected, there are 5 letters being watched
         _ (is (= 5 (count (mailing-watchdog/get-watches (xt/db xtdb-node)))))
 
         ;; Get letters to send
