@@ -59,18 +59,21 @@
                         :deceased {(:probate.deceased/_case {:as :deceased
                                                              :cardinality :one})
                                    [:forename :surname :date-of-death]}])
-            (pull council-tax [*])]
+            (pull council-tax [*])
+            (pull property [:address])]
     :where '[[case :type :probate.case]
              [case :xt/id case-id]
              [council-tax :type :probate.council-tax]
-             [council-tax :xt/id council-tax-id]]
+             [council-tax :xt/id council-tax-id]
+             [council-tax :property property-id]
+             [property :xt/id property-id]]
     :in '[case-id council-tax-id]}
    case-id council-tax-id])
 
 (defn get-council-letter-data [xtdb-node case-id council-tax-id]
-  (let [[case-data council-data] (xt-util/fetch-one
-                                   (apply xt/q (xt/db xtdb-node)
-                                     (council-template-query case-id council-tax-id)))
+  (let [[case-data council-data property-data] (xt-util/fetch-one
+                                                 (apply xt/q (xt/db xtdb-node)
+                                                   (council-template-query case-id council-tax-id)))
         account-info (if (str/blank? (:account-number council-data))
                        "Unknown"
                        (:account-number council-data))]
@@ -80,7 +83,8 @@
         (assoc :date (.toString (LocalDate/now)))
         (assoc :council (merge
                           (assoc council-data :account-number account-info)
-                          (generate-council-address (:council council-data))))))))
+                          (generate-council-address (:council council-data))))
+        (assoc :property property-data)))))
 
 (comment
   (council-template-query #uuid"2bcee42c-df67-4aff-93e1-b91002239a38" #uuid"eabeaa33-251d-4c09-a445-0df40d091a75")
