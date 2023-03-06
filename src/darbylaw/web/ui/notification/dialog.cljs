@@ -61,7 +61,7 @@
 (defn dialog-content []
   [mui/stack {:spacing 1
               :direction :row
-              :sx {:height "95vh"}}
+              :sx {:height "100%"}}
    ; This was a try to introduce animation when the conversation panel is first shown.
    ; Layout was too challenging to setup correctly.
    #_[mui/collapse (-> {:in (<< ::model/notification-ongoing?)
@@ -72,11 +72,12 @@
    (when (<< ::model/notification-ongoing?)
      [mui/box {:sx {:flex-grow 1}}
       [conversation/panel]])
-   [mui/stack
-    [right-panel]]])
+   [right-panel]])
 
 (defn dialog []
   [mui/dialog {:open (boolean (<< ::model/dialog-open?))
                :maxWidth (if (<< ::model/notification-ongoing?) :xl :sm)
-               :fullWidth (<< ::model/notification-ongoing?)}
+               :fullWidth (<< ::model/notification-ongoing?)
+               :PaperProps {; full height
+                            :sx {:height "100%"}}}
    [dialog-content]])
