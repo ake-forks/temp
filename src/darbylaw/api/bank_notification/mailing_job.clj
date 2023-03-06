@@ -12,7 +12,8 @@
     [darbylaw.xtdb-node :as xtdb-node]
     [darbylaw.api.settings :as settings]
     [darbylaw.api.util.tx-fns :as tx-fns]
-    [chime.core :as ch])
+    [chime.core :as ch]
+    [darbylaw.api.bank-notification.mailing-watchdog :as mailing-watchdog])
   (:import (java.time LocalTime Period ZoneId ZonedDateTime)
            java.time.temporal.ChronoUnit
            (clojure.lang ExceptionInfo)))
@@ -35,13 +36,12 @@
            send-action)
          (map first))))
 
-(comment
-  (fetch-letters-to-send darbylaw.xtdb-node/xtdb-node :fake))
-
 (defn upload-mail! [xtdb-node real|fake letters]
   (when (and (seq letters)
              (doc-store/available?)
              (mailing/available? real|fake))
+    (let [letter-ids (map :xt/id letters)]
+      (mailing-watchdog/assert-no-duplicates xtdb-node letter-ids))
     (let [n-letters (count letters)
           max-batch-size (-> config/config :mailing-service :max-batch-size)]
       (assert (<= n-letters max-batch-size)
@@ -75,7 +75,9 @@
                   (mailing/post-letter real|fake (.getCanonicalPath temp-file) remote-filename)
                   (log/debug "Uploaded file for mailing: " remote-filename))
                 (xt-util/exec-tx xtdb-node
-                  (tx-fns/set-value letter-id [:upload-state] :uploaded))
+                  (concat
+                    (tx-fns/set-value letter-id [:upload-state] :uploaded)
+                    (mailing-watchdog/watch letter-id)))
                 (catch ExceptionInfo exc
                   (if (= (-> exc ex-data :error) ::doc-store/not-found)
                     (xt-util/exec-tx xtdb-node
