@@ -1,5 +1,6 @@
 (ns darbylaw.web.ui.bills.account-info
   (:require
+    [clojure.string :as str]
     [darbylaw.web.ui.bills.common :as common]
     [darbylaw.web.util.form :as form-util]
     [reagent-mui.components :as mui]
@@ -84,8 +85,8 @@
         :on-success [::submit-success case-id fork-params]
         :on-failure [::submit-failure fork-params]})}))
 
-(rf/reg-event-fx ::open-document
-  (fn [_ [_ case-id filename]]
+(ui/reg-fx+event ::open-document
+  (fn [{:keys [case-id filename]}]
     (js/window.open
       (str "/api/case/" case-id "/household-bills/document/" filename))))
 
@@ -142,7 +143,9 @@
        [mui/stack {:direction :row :spacing 1 :align-items :center}
         [mui/typography {:variant :body1} "recent bill:"]
         [mui/button {:variant :text
-                     :on-click #(rf/dispatch [::open-document case-id (:filename latest-bill)])}
+                     :on-click #(rf/dispatch [::open-document
+                                              {:case-id case-id
+                                               :filename (:filename latest-bill)}])}
          (:original-filename latest-bill)]
         [common/upload-button
          bill-type
@@ -157,8 +160,10 @@
         {:variant :outlined}
         "upload recent bill?"])]))
 
-(defn utility-item [{:keys [bill-type account-number id valuation] :as data}]
-  (let [type-string (interpose " & " bill-type)
+(defn utility-item [{:keys [services account-number id valuation] :as data}]
+  (let [services-str (->> services
+                       (map name)
+                       (str/join " & "))
         ongoing? (<< ::notification-model/notification-ongoing?)]
     [mui/box
      [mui/card
@@ -167,7 +172,7 @@
        [mui/stack {:direction :row
                    :justify-content :space-between
                    :align-items :center}
-        [mui/typography {:variant :h6} type-string]
+        [mui/typography {:variant :h6} services-str]
         [mui/stack {:direction :row :spacing 2 :align-items :center}
          (when ongoing?
            [mui/tooltip {:title "add valuation"}
@@ -178,10 +183,10 @@
            [ui/icon-edit]]]
          [mui/tooltip {:title "remove"}
           [mui/icon-button {:on-click #(reset! popover {:anchor (ui/event-currentTarget %)
-                                                        :label type-string
+                                                        :label services-str
                                                         :asset-id id})}
            [ui/icon-delete]]]]]
-       (when (not (clojure.string/blank? account-number))
+       (when (not (str/blank? account-number))
          [mui/typography {:variant :body1} (str "account number: " account-number)])
        (when valuation
          [mui/typography {:variant :h6} "account value: £" valuation])
@@ -226,7 +231,7 @@
         [valuation-form :council-tax data])
       [confirmation-popover]]]))
 
-(defn utility-bill-info []
+(defn utility-info []
   (let [notification-data (<< ::notification-model/notification)
         data (bills-model/current-utility-data (:utility-company notification-data) (:property notification-data))]
     [mui/stack {:spacing 1}

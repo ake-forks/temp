@@ -8,7 +8,8 @@
             [darbylaw.api.util.model :as model]
             [darbylaw.doc-store :as doc-store]
             [darbylaw.api.util.files :refer [with-delete]]
-            [xtdb.api :as xt]))
+            [xtdb.api :as xt]
+            [clojure.string :as str]))
 
 (def bill-creation-schema
   (bill-data/make-bill-schema :create))
@@ -25,7 +26,7 @@
 
 (comment
   (require '[malli.core :as malli])
-  (malli.core/explain bill-creation-schema {:bill-type #{:other}
+  (malli.core/explain bill-creation-schema {:services #{:other}
                                             ;:issuer :utility-1
                                             :amount "10"
                                             :custom-issuer-name "hola"
@@ -57,32 +58,35 @@
 
 (defn add-utility [{:keys [xtdb-node user path-params body-params] :as args}]
   (let [case-id (parse-uuid (:case-id path-params))
-        bill-id (random-uuid)
+        utility-id (random-uuid)
         [property-id property-tx] (handle-property args)
-        bill-data (-> body-params
-                    (select-keys creation-props)
-                    (assoc :property property-id))]
+        data (-> body-params
+               (select-keys creation-props)
+               (assoc :property property-id))]
     (xt-util/exec-tx-or-throw xtdb-node
       (concat
         property-tx
-        [[::xt/put (merge bill-data
-                     {:xt/id bill-id
-                      :type :probate.bill
-                      :probate.bill/case case-id})]]
+        [[::xt/put (merge data
+                          {:xt/id utility-id
+                           :type :probate.utility
+                           :probate.utility/case case-id})]]
         (case-history/put-event {:event :utility-added
                                  :case-id case-id
                                  :user user
                                  :op :add
-                                 :event/bill bill-id})))
+                                 :event/utility utility-id})))
     {:status 200
      :body {:property property-id
-            :utility-company (:utility-company bill-data)}}))
+            :utility-company (:utility-company data)}}))
 
 (defn delete-bill [{:keys [xtdb-node user path-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
-        bill-type (if (contains? path-params :bill-id) :utility :council-tax)
+        bill-type (cond
+                    (contains? path-params :utility-id) :utility
+                    (contains? path-params :council-tax-id) :council-tax
+                    :else (assert false))
         bill-id (case bill-type
-                  :utility (parse-uuid (:bill-id path-params))
+                  :utility (parse-uuid (:utility-id path-params))
                   :council-tax (parse-uuid (:council-tax-id path-params)))]
     (xt-util/exec-tx-or-throw xtdb-node
       (concat
@@ -91,14 +95,14 @@
                                  :case-id case-id
                                  :user user
                                  :op :delete
-                                 :event/bill bill-id}))))
+                                 (keyword (name :event) (name bill-type)) bill-id}))))
   {:status http/status-204-no-content})
 
 (defn update-bill [bill-type {:keys [xtdb-node user path-params body-params] :as args}]
   (let [case-id (parse-uuid (:case-id path-params))
         [property-id property-tx] (handle-property args)
         bill-id (case bill-type
-                  :utility (parse-uuid (:bill-id path-params))
+                  :utility (parse-uuid (:utility-id path-params))
                   :council-tax (parse-uuid (:council-tax-id path-params)))
         bill-data (-> body-params
                     (select-keys (case bill-type
@@ -113,7 +117,7 @@
                                  :case-id case-id
                                  :user user
                                  :op :update
-                                 :event/bill bill-id})))
+                                 (keyword (name :event) (name bill-type)) bill-id})))
     {:status 200
      :body {:property property-id
             :utility-company (:utility-company bill-data)}}))
@@ -137,13 +141,14 @@
                                  :case-id case-id
                                  :user user
                                  :op :add
-                                 :event/bill council-tax-id}))) ;should this be event/council-tax?
+                                 :event/council-tax council-tax-id})))
     {:status 200
      :body {:property property-id
             :council (:council council-tax-data)}}))
 
 (def accepted-filetypes
   #{".pdf" ".png" ".jpeg" ".jpg" ".gif"})
+
 (defn upload-document [asset-type {:keys [xtdb-node user path-params multipart-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
         asset-id (parse-uuid (:asset-id path-params))
@@ -152,26 +157,24 @@
         orig-filename (get multipart-params "filename")
         extension (data-util/file-extension orig-filename)
         document-id (random-uuid)
-        document-type (case asset-type
-                        :utility "probate.utility-doc"
-                        :council-tax "probate.council-tax-doc")
+        document-type-str (name (case asset-type
+                                  :utility :probate.utility-bill
+                                  :council-tax :probate.council-tax-bill))
         filename (str reference "." (name asset-type) "." document-id extension)]
     (assert (accepted-filetypes extension))
-    (assert (not (clojure.string/blank? reference)))
+    (assert (not (str/blank? reference)))
     (with-delete [tempfile tempfile]
       (doc-store/store (str case-id "/" filename) tempfile))
     (xt-util/exec-tx-or-throw xtdb-node
       (concat
         [[::xt/put {:xt/id filename
-                    (keyword
-                      (str document-type "/case")) case-id
-                    (keyword
-                      (str document-type "/asset")) asset-id
+                    (keyword document-type-str (name :case)) case-id
+                    (keyword document-type-str (name asset-type)) asset-id
                     :uploaded-by (:username user)
                     :uploaded-at (xt-util/now)
                     :original-filename orig-filename}]]
         (case-history/put-event
-          {:event (keyword (str document-type ".uploaded"))
+          {:event (keyword (str document-type-str ".uploaded"))
            :case-id case-id
            :asset-id asset-id
            :document-id filename
@@ -192,8 +195,8 @@
    ["utility" {:post {:handler add-utility
                       :parameters {:body bill-creation-schema}}}]
    ["utility/document/:asset-id" {:post {:handler (partial upload-document :utility)}}]
-   ["delete-utility/:bill-id" {:post {:handler delete-bill}}]
-   ["update-utility/:bill-id" {:post {:handler (partial update-bill :utility)}}]
+   ["delete-utility/:utility-id" {:post {:handler delete-bill}}]
+   ["update-utility/:utility-id" {:post {:handler (partial update-bill :utility)}}]
 
    ["council-tax" {:post {:handler add-council-tax
                           :parameters {:body council-tax-creation-schema}}}]
@@ -205,6 +208,15 @@
 
 (comment
   (require 'darbylaw.xtdb-node)
+
   (xt/q (xt/db darbylaw.xtdb-node/xtdb-node)
     '{:find [(pull doc [*])]
-      :where [[doc :type :probate.bill]]}))
+      :where [[doc :type :probate.utility]]})
+
+  (map first
+    (xt/q (xt/db darbylaw.xtdb-node/xtdb-node)
+      '{:find [(pull e [*]) t]
+        :where [[e :type :event]
+                [e :event/case #uuid"cd62f859-6b9f-4093-bbb9-7679ad838a62"]
+                [e :timestamp t]]
+        :order-by [[t :asc]]})))

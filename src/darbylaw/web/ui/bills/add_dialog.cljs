@@ -71,7 +71,7 @@
           (:common-name supplier-data)
           ". If you have a recent meter reading, entering that information below can speed up the next steps.")]
        [mui/stack {:direction :row :spacing 2}
-        [form/type-of-bill-choice fork-args]
+        [form/services-choice fork-args]
         [mui/divider {:orientation :vertical}]
         [mui/stack {:spacing 1}
          [form/account-number-field fork-args]

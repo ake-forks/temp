@@ -14,19 +14,19 @@
     [darbylaw.api.util.data :as data-util]
     [darbylaw.web.ui.bills.common :as common]))
 
-(defn type-of-bill-choice [{:keys [values set-handle-change submitting?] :as fork-args}]
-  (let [all-bill-types @(rf/subscribe [::model/bill-types])
-        checked-values (get values :bill-type #{})
-        error (form-util/get-error :bill-type fork-args)]
+(defn services-choice [{:keys [values set-handle-change submitting?] :as fork-args}]
+  (let [all-services @(rf/subscribe [::model/utility-services])
+        checked-values (get values :services #{})
+        error (form-util/get-error :services fork-args)]
     [mui/form-control
      {:required true
       :error (boolean error)}
-     [mui/form-label "bill type (select all applicable)"]
+     [mui/form-label "billed services (select all applicable)"]
      [mui/stack {:direction :row}
-      (for [bill-types (partition 2 all-bill-types)]
-        ^{:key (pr-str bill-types)}
+      (for [services (partition 2 all-services)]
+        ^{:key (pr-str services)}
         [mui/stack
-         (for [{:keys [name label]} bill-types]
+         (for [{:keys [name label]} services]
            ^{:key name}
            [mui/form-group
             [mui/form-control-label
@@ -42,15 +42,14 @@
                                                        (conj name)
                                                        (disj :council-tax)))
                                                    (disj checked-values name))
-                                          :path [:bill-type]}))
+                                          :path [:services]}))
                            :name name
                            :disabled submitting?}])
               :label (if (contains? checked-values name)
                        (r/as-element [:b label])
                        label)}]])])]
      (when error
-       [mui/form-helper-text "At least one bill type is required."])]))
-
+       [mui/form-helper-text "At least one is required."])]))
 
 (defn supplier-fields [{:keys [values handle-change] :as fork-args}]
   [:<>
@@ -264,7 +263,7 @@
 
 (defn form [fork-args]
   [mui/stack {:spacing 2}
-   [type-of-bill-choice fork-args]
+   [services-choice fork-args]
    [mui/divider]
    [supplier-fields fork-args]
    [mui/divider]
@@ -286,7 +285,7 @@
     (v-when #(not (:utility-company-unknown %))
       (v/attr [:utility-company] (v/present)))
     (v/attr [:account-number] (v/present))
-    (v/attr [:bill-type] (v/length-over 0))))
+    (v/attr [:services] (v/length-over 0))))
 
 (def council-tax-validation
   (v/join
