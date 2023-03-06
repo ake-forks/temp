@@ -1,23 +1,24 @@
 (ns darbylaw.api.bank-notification.mailing-watchdog
   (:require [xtdb.api :as xt]
             [clojure.set :as set]
-            [mount.core :as mount]
-            [chime.core :as ch]
             [clojure.tools.logging :as log]
             [clojure.string :as str]
-            [darbylaw.api.util.tx-fns :as tx-fns]
-            [darbylaw.xtdb-node :as xtdb-node])
+            [darbylaw.api.util.tx-fns :as tx-fns])
   (:import (java.time Period ZonedDateTime ZoneId)
            (java.time.temporal ChronoUnit)))
 
 
-;; >> Public API
+;; >> XTDB Utils
 
 (defn put-with-tx-time [m]
   (tx-fns/invoke ::put-with-tx-data [m]
    '(fn [ctx m]
       (let [tx (xtdb.api/indexing-tx ctx)]
         [[::xt/put (assoc m :timestamp (::xt/tx-time tx))]]))))
+
+
+
+;; DB API
 
 (defn watch [letter-id]
   "Create a watch for the letter"
@@ -29,6 +30,14 @@
   "Remove a watch for the letter"
   (let [id {:watchdog.mailing/letter letter-id}]
     [[::xt/delete id]]))
+
+(defn get-watches
+  "Returns a list of the current watches"
+  [db]
+  (->> (xt/q db
+         '{:find [(pull watch [*])]
+           :where [[watch :watchdog.mailing/letter _]]})
+       (map first)))
 
 
 
@@ -60,15 +69,7 @@
 
 
 
-;; >> Background Service
-
-(defn get-watches
-  "Returns a list of the current watches"
-  [db]
-  (->> (xt/q db
-         '{:find [(pull watch [*])]
-           :where [[watch :watchdog.mailing/letter _]]})
-       (map first)))
+;; >> Assert functions
 
 (defn assert-no-duplicates [xtdb-node letter-ids]
   "Assert no letters are being sent twice, if not clean up old watches"
