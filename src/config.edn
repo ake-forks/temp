@@ -23,6 +23,7 @@
 
  :mailing-service
  {:upload-time "10:30"
+  :max-batch-size 100
   :ssh #profile {:default #edn #env POST_SERVICE_MAP
                  :test {:fake {:host "localhost"
                                :port 2222
