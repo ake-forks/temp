@@ -7,6 +7,7 @@
     [darbylaw.api.services.local-sftp-server :as local-sftp]
     [darbylaw.api.services.mailing :as mailing]
     [darbylaw.api.bank-notification.mailing-sync-job :as sync]
+    [darbylaw.api.bank-notification.mailing-job :as mailing-job]
     [darbylaw.api.bank-notification.mailing-watchdog :as mailing-watchdog]
     [clojure.java.io :as jio]
     [darbylaw.xtdb-node :refer [xtdb-node]]
@@ -60,7 +61,13 @@
         ;; As expected, there are 4 letters being watched
         _ (is (= 5 (count (mailing-watchdog/get-watches (xt/db xtdb-node)))))
 
-        _ (mailing-watchdog/check-and-clean xtdb-node)
+        ;; Get letters to send
+        letters-to-send (mailing-job/fetch-letters-to-send xtdb-node :real)
+        _ (is (empty? letters-to-send))
+
+        ;; Check there are no duplicates
+        _ (is (mailing-watchdog/assert-no-duplicates xtdb-node
+                                                     (map :xt/id letters-to-send)))
 
         ;; Old watches are cleaned up
         _ (is (= 3 (count (mailing-watchdog/get-watches (xt/db xtdb-node)))))
@@ -72,5 +79,11 @@
                            {:xt/id (get letter-ids 1)
                             :send-action :send})]]))
 
+        ;; Get letters to send
+        letters-to-send (mailing-job/fetch-letters-to-send xtdb-node :real)
+        _ (is (= 1 (count letters-to-send)))
+
         ;; An exception is thrown as letters should not be sent twice
-        _ (is (thrown? Exception (mailing-watchdog/check-and-clean xtdb-node)))]))
+        _ (is (thrown? AssertionError 
+                       (mailing-watchdog/assert-no-duplicates xtdb-node
+                                                              (map :xt/id letters-to-send))))]))
