@@ -6,7 +6,8 @@
             [darbylaw.web.ui.notification.model :as model]
             [darbylaw.web.ui.notification.conversation :as conversation]
             [darbylaw.web.ui.bills.account-info :as account-info]
-            [darbylaw.api.bill.data :as bill-data]))
+            [darbylaw.api.bill.data :as bill-data]
+            [darbylaw.web.ui.components.dialog :as dialog]))
 
 (defn asset-data []
   (case (<< ::model/notification-type)
@@ -15,13 +16,11 @@
 
 (defn right-panel []
   (let [council-label (bill-data/get-council-label (:council (<< ::model/notification)))]
-    [:<>
-     [mui/dialog-title
+    [mui/stack
+     [dialog/title {:on-click-close #(rf/dispatch [::model/close-dialog])}
       (case (<< ::model/notification-type)
-        :utility (str "household bills for " (<< ::model/utility-company-label))
-        :council-tax council-label)
-      [mui/icon-button {:onClick #(rf/dispatch [::model/close-dialog])}
-       [ui/icon-close]]]
+       :utility (str "household bills for " (<< ::model/utility-company-label))
+       :council-tax council-label)]
      [mui/dialog-content {:sx {:width 540}}
       [asset-data]
       (when-not (<< ::model/notification-ongoing?)
