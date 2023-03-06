@@ -17,7 +17,8 @@
      ;; Anything other than a pass or no checks (:unknown) requires manual
      ;; intervention
      (when (and (not= final-result :pass)
-                (not= final-result :unknown))
+                (not= final-result :unknown)
+                (nil? @(rf/subscribe [::model/override-result])))
        [layout/task-item
         {:title "review identity checks"
          :body (str "manual intervention required")
