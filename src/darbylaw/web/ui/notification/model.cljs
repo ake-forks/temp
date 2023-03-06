@@ -2,8 +2,7 @@
   (:require [darbylaw.web.ui :as ui]
             [medley.core :as medley]
             [re-frame.core :as rf]
-            [darbylaw.web.ui.case-model :as case-model]
-            [darbylaw.web.ui.bills.model :as bills-model]))
+            [darbylaw.web.ui.case-model :as case-model]))
 
 (defn set-current-notification [db notification]
   (-> db
@@ -34,12 +33,6 @@
 (rf/reg-sub ::notification-type
   :<- [::notification]
   #(:notification-type %))
-
-(rf/reg-sub ::utility-company-label
-  :<- [::bills-model/company-id->label]
-  :<- [::notification]
-  (fn [[id->label context]]
-    (id->label (:utility-company context))))
 
 (rf/reg-event-fx ::start-notification-success
   (fn [_ [_ case-id _response]]

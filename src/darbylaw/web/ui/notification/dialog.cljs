@@ -4,24 +4,40 @@
             [reagent-mui.components :as mui]
             [reagent.core :as r]
             [darbylaw.web.ui.notification.model :as model]
+            [darbylaw.web.ui.bills.model :as bills-model]
             [darbylaw.web.ui.notification.conversation :as conversation]
             [darbylaw.web.ui.bills.account-info :as account-info]
             [darbylaw.api.bill.data :as bill-data]
-            [darbylaw.web.ui.components.dialog :as dialog]))
+            [darbylaw.web.ui.components.dialog :as dialog]
+            [darbylaw.web.ui.bills.common :as bills-common]))
 
 (defn asset-data []
   (case (<< ::model/notification-type)
     :utility [account-info/utility-info]
     :council-tax [account-info/council-tax-info]))
 
+(defn at-address []
+  [mui/stack {:align-items :flex-start}
+   [mui/typography "at address:"
+    (bills-common/address-box false (<< ::bills-model/address))]])
+
 (defn right-panel []
   (let [council-label (bill-data/get-council-label (:council (<< ::model/notification)))]
     [mui/stack
      [dialog/title {:on-click-close #(rf/dispatch [::model/close-dialog])}
       (case (<< ::model/notification-type)
-       :utility (<< ::model/utility-company-label)
-       :council-tax council-label)]
-     [mui/dialog-content {:sx {:width 540}}
+       :utility
+       [mui/stack
+        (<< ::bills-model/utility-company-label)
+        [at-address]]
+
+       :council-tax
+       [mui/stack
+        council-label
+        [at-address]])]
+
+     [mui/dialog-content {:sx {:pt 0
+                               :width 540}}
       [asset-data]
       (when-not (<< ::model/notification-ongoing?)
         [mui/stack {:sx {:mt 2}}
@@ -31,7 +47,7 @@
           (case (<< ::model/notification-type)
             :utility (str
                        "Let us know when you have provided all accounts at this address"
-                       " for " (<< ::model/utility-company-label) ". At that point,"
+                       " for " (<< ::bills-model/utility-company-label) ". At that point,"
                        " we will notify the company about the decease"
                        " and ask for confirmation of the data entered.")
             :council-tax (str
