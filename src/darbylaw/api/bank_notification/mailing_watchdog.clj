@@ -7,7 +7,6 @@
             [clojure.string :as str]
             [darbylaw.api.util.tx-fns :as tx-fns]
             [darbylaw.xtdb-node :as xtdb-node]
-            [darbylaw.api.bank-notification.mailing-fetch :refer [fetch-letters-to-send]]
             [darbylaw.api.bank-notification.mailing-config :refer [mailing-upload-time]])
   (:import (java.time Period ZonedDateTime ZoneId)
            (java.time.temporal ChronoUnit)))

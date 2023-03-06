@@ -13,7 +13,6 @@
     [darbylaw.api.settings :as settings]
     [darbylaw.api.util.tx-fns :as tx-fns]
     [chime.core :as ch]
-    [darbylaw.api.bank-notification.mailing-fetch :refer [fetch-letters-to-send]]
     [darbylaw.api.bank-notification.mailing-watchdog :as mailing-watchdog]
     [darbylaw.api.bank-notification.mailing-config :refer [mailing-upload-time]])
   (:import (java.time Period ZoneId ZonedDateTime)
@@ -23,6 +22,19 @@
 (defn disabled? [xtdb-node]
   (-> (settings/fetch-settings xtdb-node)
     :post-letters-disabled?))
+
+(defn fetch-letters-to-send [xtdb-node real|fake]
+  (let [send-action (case real|fake
+                      :real :send
+                      :fake :fake-send)]
+    (->> (xt/q (xt/db xtdb-node)
+           '{:find [(pull letter [*])]
+             :where [[letter :type :probate.bank-notification-letter]
+                     [letter :send-action send-action]
+                     (not [letter :upload-state])]
+             :in [send-action]}
+           send-action)
+         (map first))))
 
 (defn upload-mail! [xtdb-node real|fake letters]
   (when (and (seq letters)
