@@ -19,7 +19,7 @@
     [mui/stack
      [dialog/title {:on-click-close #(rf/dispatch [::model/close-dialog])}
       (case (<< ::model/notification-type)
-       :utility (str "household bills for " (<< ::model/utility-company-label))
+       :utility (<< ::model/utility-company-label)
        :council-tax council-label)]
      [mui/dialog-content {:sx {:width 540}}
       [asset-data]
