@@ -32,9 +32,9 @@
             (pull bill [*])]
     :where ['[case :type :probate.case]
             '[case :xt/id case-id]
-            '[bill :type :probate.bill]
+            '[bill :type :probate.utility]
             '[bill :xt/id bill-id]
-            '[bill :probate.bill/case case-id]
+            '[bill :probate.utility/case case-id]
             '[bill :bill-type bill-type]
             (case bill-type
               :utility '[(!= bill-type :council-tax)]
@@ -142,7 +142,7 @@
     ;; TODO: Think about best way to retrieve bills
     #_
     (xt/q (xt/db darbylaw.xtdb-node/xtdb-node)
-          '{:find [(pull case [{:bills [*]}])
+          '{:find [(pull case [{:utilities [*]}])
                    (pull bill [*])]
             :where [[case :type :probate.case]
                     [case :xt/id case-id]
@@ -152,8 +152,8 @@
     #_
     (xt/q (xt/db darbylaw.xtdb-node/xtdb-node)
       '{:find [(pull bill [*])]
-        :where [[bill :type :probate.bill]
-                [bill :probate.bill/case case-id]
+        :where [[bill :type :probate.utility]
+                [bill :probate.utility/case case-id]
                 [bill :bill-type bill-type]
                 [(== :council-tax bill-type)]]
         :in [case-id bill-id]}

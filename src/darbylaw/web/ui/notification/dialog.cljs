@@ -10,7 +10,7 @@
 
 (defn asset-data []
   (case (<< ::model/notification-type)
-    :utility [account-info/utility-bill-info]
+    :utility [account-info/utility-info]
     :council-tax [account-info/council-tax-info]))
 
 (defn right-panel []

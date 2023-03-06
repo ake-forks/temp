@@ -45,20 +45,20 @@
   (fn [councils]
     (id->label-fn councils)))
 
-(rf/reg-sub ::bill-types
+(rf/reg-sub ::utility-services
   (fn [_]
-    (for [[name {:keys [label]}] bills-data/bill-types]
+    (for [[name {:keys [label]}] bills-data/utility-services]
       {:name name
        :label label})))
 
-(rf/reg-sub ::current-bills
+(rf/reg-sub ::current-utilities
   :<- [::case-model/current-case]
-  #(:bills %))
+  #(:utilities %))
 
 (rf/reg-sub ::used-billing-addresses
-  :<- [::current-bills]
-  (fn [bills]
-    (->> bills
+  :<- [::current-utilities]
+  (fn [utilities]
+    (->> utilities
       (map :address)
       (filter string?)
       (distinct))))
@@ -84,9 +84,9 @@
 
 (defn current-utility-data [utility-company property]
   (let [current-case (<< ::case-model/current-case)
-        bills-by-property-id (group-by :property (:utility-bills current-case))]
+        utilities-by-property-id (group-by :property (:utilities current-case))]
     (filter #(= utility-company (:utility-company %))
-      (get bills-by-property-id (uuid (str property))))))
+      (get utilities-by-property-id (uuid (str property))))))
 
 (defn current-council-data [council property]
   (let [current-case (<< ::case-model/current-case)

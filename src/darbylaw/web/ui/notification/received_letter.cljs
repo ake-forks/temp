@@ -197,4 +197,4 @@
 
 (comment
   (pr-str (-> @re-frame.db/app-db :current-case :id))
-  (-> @re-frame.db/app-db :current-case :utility-bills first))
+  (-> @re-frame.db/app-db :current-case :utilities first))

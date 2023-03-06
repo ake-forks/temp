@@ -1,7 +1,7 @@
 (ns darbylaw.api.bill.data
   (:require [darbylaw.api.bill.council-data :as councils]))
 
-(def bill-types
+(def utility-services
   (array-map
     :gas {:label "gas"}
     :electricity {:label "electricity"}
@@ -153,7 +153,7 @@
 (defn make-bill-schema [op]
   [:and
    [:map
-    [:bill-type [:set (into [:enum] (keys bill-types))]]
+    [:services [:set (into [:enum] (keys utility-services))]]
     [:utility-company {:optional true} :keyword]
     [:new-utility-company? {:optional true} :boolean]
     [:account-number {:optional true} :string]
