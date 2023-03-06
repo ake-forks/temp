@@ -77,7 +77,7 @@
         watched-letter-ids (->> watches (map :watchdog.mailing/letter) (into #{}))
         duplicate-letter-ids (set/intersection letter-ids watched-letter-ids)]
     (when-not (empty? duplicate-letter-ids)
-      (log/errorf "Found %s letters: %s"
+      (log/errorf "Found %s duplicate letters: %s"
                  (count duplicate-letter-ids) 
                  (str/join ", " duplicate-letter-ids))
       (throw (AssertionError. "Letters potentially being sent twice")))
