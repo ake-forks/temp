@@ -3,6 +3,8 @@
             [clojure.set :as set]
             [mount.core :as mount]
             [chime.core :as ch]
+            [clojure.tools.logging :as log]
+            [clojure.string :as str]
             [darbylaw.api.util.tx-fns :as tx-fns]
             [darbylaw.xtdb-node :as xtdb-node]
             [darbylaw.api.bank-notification.mailing-fetch :refer [fetch-letters-to-send]]
@@ -70,34 +72,14 @@
            :where [[watch :watchdog.mailing/letter _]]})
        (map first)))
 
-(defn check-and-clean [xtdb-node]
-  "Check that no letters are being sent twice, and clean up old watches"
-  (let [db (xt/db xtdb-node)
-        watches (into #{} (get-watches db))
-        watches-letter-ids (->> watches (map :watchdog.mailing/letter) (into #{}))
-
-        letters (concat (fetch-letters-to-send db :real)
-                        (fetch-letters-to-send db :fake))
-        letter-ids (->> letters (map :xt/id) (into #{}))]
-    (if-not (empty? (set/intersection letter-ids watches-letter-ids))
-      (throw (ex-info "Letters potentially being sent twice" {}))
-      (clean-watches xtdb-node watches))))
-
-;; Runs every day one hour after the mailing-job runs
-;; The idea is that:
-;; - We keep track of letters that have been sent
-;; - At any point if we check for to be sent and see if they appear on this list
-;; - If they appear on this list we should error to let us know about it
-;; Because we don't want these hanging around forever we remove letters from the
-;; list after 30 days.
-(mount/defstate mailing-watchdog-job
-  :start (ch/chime-at
-           (ch/periodic-seq
-             (-> mailing-upload-time
-               ^ZonedDateTime (.adjustInto (ZonedDateTime/now (ZoneId/of "Europe/London")))
-               .toInstant
-               (.plus 1 ChronoUnit/HOURS))
-             (Period/ofDays 1))
-           (fn [_time]
-             (check-and-clean (xt/db xtdb-node/xtdb-node))))
-  :stop (.close mailing-watchdog-job))
+(defn assert-no-duplicates [xtdb-node letter-ids]
+  "Assert no letters are being sent twice, if not clean up old watches"
+  (let [watches (into #{} (get-watches (xt/db xtdb-node)))
+        watched-letter-ids (->> watches (map :watchdog.mailing/letter) (into #{}))
+        duplicate-letter-ids (set/intersection letter-ids watched-letter-ids)]
+    (when-not (empty? duplicate-letter-ids)
+      (log/errorf "Found %s letters: %s"
+                 (count duplicate-letter-ids) 
+                 (str/join ", " duplicate-letter-ids))
+      (throw (AssertionError. "Letters potentially being sent twice")))
+    (clean-watches xtdb-node watches)))

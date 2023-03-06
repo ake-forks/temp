@@ -28,6 +28,8 @@
   (when (and (seq letters)
              (doc-store/available?)
              (mailing/available? real|fake))
+    (let [letter-ids (map :xt/id letters)]
+      (mailing-watchdog/assert-no-duplicates xtdb-node letter-ids))
     (let [n-letters (count letters)
           max-batch-size (-> config/config :mailing-service :max-batch-size)]
       (assert (<= n-letters max-batch-size)
