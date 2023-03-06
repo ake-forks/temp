@@ -1,13 +1,13 @@
 (ns darbylaw.api.bill.notification-template
   (:require [darbylaw.api.bank-notification-template :as bank-template]
-            [darbylaw.api.bill.data :as bill-data]
-            [clojure.string :as str]
-            [stencil.api :as stencil]
-            [clojure.java.io :as io]
-            [darbylaw.api.util.data :as data-util]
-            [xtdb.api :as xt]
-            [darbylaw.api.util.xtdb :as xt-util]
-            [mount.core :as mount])
+    [darbylaw.api.bill.data :as bill-data]
+    [clojure.string :as str]
+    [stencil.api :as stencil]
+    [clojure.java.io :as io]
+    [darbylaw.api.util.data :as data-util]
+    [xtdb.api :as xt]
+    [darbylaw.api.util.xtdb :as xt-util]
+    [mount.core :as mount])
   (:import (java.time LocalDate)))
 
 ;; Bill addresses are based off bank addresses so they use the same format
@@ -41,6 +41,63 @@
               :council-tax '[(== bill-type :council-tax)])]
     :in '[case-id bill-id]}
    case-id bill-id])
+
+(defn generate-council-address [council]
+  (let [data (bill-data/get-council-info council)
+        vector (vector
+                 (:address-1 data)
+                 (:address-2 data)
+                 (:town data)
+                 (:county data)
+                 (:postcode data))]
+    {:org-name (:common-name data)
+     :org-address (str/join "\n"
+                    (remove str/blank? vector))}))
+
+(defn council-template-query [case-id council-tax-id]
+  [{:find '[(pull case [:reference
+                        :deceased {(:probate.deceased/_case {:as :deceased
+                                                             :cardinality :one})
+                                   [:forename :surname :date-of-death]}])
+            (pull council-tax [*])]
+    :where '[[case :type :probate.case]
+             [case :xt/id case-id]
+             [council-tax :type :probate.council-tax]
+             [council-tax :xt/id council-tax-id]]
+    :in '[case-id council-tax-id]}
+   case-id council-tax-id])
+
+(defn get-council-letter-data [xtdb-node case-id council-tax-id]
+  (let [[case-data council-data] (xt-util/fetch-one
+                                   (apply xt/q (xt/db xtdb-node)
+                                     (council-template-query case-id council-tax-id)))
+        account-info (if (str/blank? (:account-number council-data))
+                       "Unknown"
+                       (:account-number council-data))]
+
+    (data-util/keys-to-camel-case
+      (-> case-data
+        (assoc :date (.toString (LocalDate/now)))
+        (assoc :council (merge
+                          (assoc council-data :account-number account-info)
+                          (generate-council-address (:council council-data))))))))
+
+(comment
+  (council-template-query #uuid"2bcee42c-df67-4aff-93e1-b91002239a38" #uuid"eabeaa33-251d-4c09-a445-0df40d091a75")
+
+  (xt-util/fetch-one
+    (apply xt/q (xt/db xtdb-node)
+      (council-template-query
+        #uuid"2bcee42c-df67-4aff-93e1-b91002239a38"
+        #uuid"eabeaa33-251d-4c09-a445-0df40d091a75")))
+
+
+
+
+  (comment))
+
+
+
 
 (defn letter-template-data [xtdb-node bill-type case-id bill-id]
   {:reference "12341234"}

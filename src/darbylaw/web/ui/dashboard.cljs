@@ -246,8 +246,8 @@
                                                   :property property-id}])
                         :indent 1
                         :no-divider true}])
-         (for [council (->> (get council-tax-by-property-id property-id)
-                         (map #(:council %)))]
+
+         (for [{:keys [council id]} (get council-tax-by-property-id property-id)]
            ^{:key council}
            [asset-item {:title (if (keyword? council)
                                  (council-id->label council)
@@ -256,7 +256,8 @@
                                                  {:notification-type :council-tax
                                                   :case-id (:id current-case)
                                                   :council council
-                                                  :property property-id}])
+                                                  :property property-id
+                                                  :asset-id id}])
                         :indent 1
                         :no-divider true}])
          [mui/divider]])

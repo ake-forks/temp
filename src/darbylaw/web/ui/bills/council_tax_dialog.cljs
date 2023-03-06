@@ -23,7 +23,8 @@
                       {:notification-type :council-tax
                        :case-id case-id
                        :council (:council response)
-                       :property (:property response)}]]]}))
+                       :property (:property response)
+                       :asset-id (:id response)}]]]}))
 
 
 (rf/reg-event-fx ::submit-failure
