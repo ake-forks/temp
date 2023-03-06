@@ -7,6 +7,7 @@
     [darbylaw.api.bill.data :as bills-data]
     [darbylaw.api.bill.council-data :as council-data]
     [darbylaw.web.ui.case-model :as case-model]
+    [darbylaw.web.ui.notification.model :as notification-model]
     [medley.core :as medley]
     [reagent.core :as r]
     [clojure.string :as string]))
@@ -199,3 +200,31 @@
         :format nil
         :on-success [::upload-success case-id]
         :on-failure [::upload-failure]})}))
+
+; When notification dialog is open:
+
+(rf/reg-sub ::current-property-id
+  :<- [::notification-model/notification]
+  #(:property %))
+
+(rf/reg-sub ::current-utility-company-id
+  :<- [::notification-model/notification]
+  #(:utility-company %))
+
+(rf/reg-sub ::utility-company-label
+  :<- [::current-utility-company-id]
+  :<- [::company-id->label]
+  (fn [[utility-company id->label]]
+    (id->label utility-company)))
+
+(rf/reg-sub ::current-property
+  :<- [::current-property-id]
+  :<- [::current-properties-by-id]
+  (fn [[id id->property]]
+    (id->property id)))
+
+(rf/reg-sub ::address
+  :<- [::current-property]
+  (fn [property]
+    (:address property)))
+
