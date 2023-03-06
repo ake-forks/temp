@@ -13,9 +13,8 @@
     [darbylaw.api.settings :as settings]
     [darbylaw.api.util.tx-fns :as tx-fns]
     [chime.core :as ch]
-    [darbylaw.api.bank-notification.mailing-watchdog :as mailing-watchdog]
-    [darbylaw.api.bank-notification.mailing-config :refer [mailing-upload-time]])
-  (:import (java.time Period ZoneId ZonedDateTime)
+    [darbylaw.api.bank-notification.mailing-watchdog :as mailing-watchdog])
+  (:import (java.time LocalTime Period ZoneId ZonedDateTime)
            java.time.temporal.ChronoUnit
            (clojure.lang ExceptionInfo)))
 
@@ -88,6 +87,9 @@
         (upload-mail! xtdb-node :real (fetch-letters-to-send xtdb-node :real))
         (finally
           (log/info "Finished uploading letters to external mailing system."))))))
+
+(mount/defstate mailing-upload-time
+  :start (-> config/config :mailing-service :upload-time LocalTime/parse))
 
 (mount/defstate mailing-upload-job
   :start (ch/chime-at

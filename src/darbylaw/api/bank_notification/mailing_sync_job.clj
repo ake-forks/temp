@@ -5,7 +5,7 @@
     [clojure.tools.logging :as log]
     [darbylaw.api.case-history :as case-history]
     [darbylaw.api.services.mailing :as mailing]
-    [darbylaw.api.bank-notification.mailing-config :refer [mailing-upload-time]]
+    [darbylaw.api.bank-notification.mailing-job :refer [mailing-upload-time]]
     [darbylaw.api.util.tx-fns :as tx-fns]
     [darbylaw.api.util.xtdb :as xt-util]
     [mount.core :as mount]
