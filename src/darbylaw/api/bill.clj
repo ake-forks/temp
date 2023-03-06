@@ -74,7 +74,7 @@
                                  :case-id case-id
                                  :user user
                                  :op :add
-                                 :event/bill utility-id})))
+                                 :event/utility utility-id})))
     {:status 200
      :body {:property property-id
             :utility-company (:utility-company data)}}))
@@ -95,7 +95,7 @@
                                  :case-id case-id
                                  :user user
                                  :op :delete
-                                 :event/bill bill-id}))))
+                                 (keyword (name :event) (name bill-type)) bill-id}))))
   {:status http/status-204-no-content})
 
 (defn update-bill [bill-type {:keys [xtdb-node user path-params body-params] :as args}]
@@ -117,7 +117,7 @@
                                  :case-id case-id
                                  :user user
                                  :op :update
-                                 :event/bill bill-id})))
+                                 (keyword (name :event) (name bill-type)) bill-id})))
     {:status 200
      :body {:property property-id
             :utility-company (:utility-company bill-data)}}))
@@ -141,7 +141,7 @@
                                  :case-id case-id
                                  :user user
                                  :op :add
-                                 :event/bill council-tax-id}))) ;should this be event/council-tax?
+                                 :event/council-tax council-tax-id})))
     {:status 200
      :body {:property property-id
             :council (:council council-tax-data)}}))
@@ -208,6 +208,15 @@
 
 (comment
   (require 'darbylaw.xtdb-node)
+
   (xt/q (xt/db darbylaw.xtdb-node/xtdb-node)
     '{:find [(pull doc [*])]
-      :where [[doc :type :probate.utility]]}))
+      :where [[doc :type :probate.utility]]})
+
+  (map first
+    (xt/q (xt/db darbylaw.xtdb-node/xtdb-node)
+      '{:find [(pull e [*]) t]
+        :where [[e :type :event]
+                [e :event/case #uuid"cd62f859-6b9f-4093-bbb9-7679ad838a62"]
+                [e :timestamp t]]
+        :order-by [[t :asc]]})))
