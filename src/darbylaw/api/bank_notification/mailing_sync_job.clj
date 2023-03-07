@@ -5,7 +5,7 @@
     [clojure.tools.logging :as log]
     [darbylaw.api.case-history :as case-history]
     [darbylaw.api.services.mailing :as mailing]
-    [darbylaw.api.bank-notification.mailing-job :as upload-job]
+    [darbylaw.api.bank-notification.mailing-job :refer [mailing-upload-time]]
     [darbylaw.api.util.tx-fns :as tx-fns]
     [darbylaw.api.util.xtdb :as xt-util]
     [mount.core :as mount]
@@ -159,10 +159,10 @@
              (remove (fn [instant]
                        (let [t (instant->localtime instant (ZoneId/of "Europe/London"))
                              exclusion-start
-                             (.minus upload-job/mailing-upload-time
+                             (.minus mailing-upload-time
                                      5 ChronoUnit/MINUTES)
                              exclusion-end
-                             (.plus upload-job/mailing-upload-time
+                             (.plus mailing-upload-time
                                     65 ChronoUnit/MINUTES)]
                          (and (.isAfter t exclusion-start)
                               (.isBefore t exclusion-end))))))
