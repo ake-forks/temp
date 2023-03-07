@@ -25,6 +25,7 @@
       (filter (fn [notification]
                 (let [select-relevant #(select-keys % [:notification-type
                                                        :utility-company
+                                                       :council
                                                        :property])]
                   (= (select-relevant current-notification)
                      (select-relevant notification)))))

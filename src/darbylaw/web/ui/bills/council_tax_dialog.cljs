@@ -13,16 +13,17 @@
 (defonce form-state (r/atom nil))
 
 (rf/reg-event-fx ::submit-success
-  (fn [{:keys [db]} [_ case-id fork-params response]]
+  (fn [{:keys [db]} [_ case-id {:keys [values] :as fork-params} response]]
     {:db (-> db
            (model/set-submitting fork-params false))
      ; Should we wait until case is loaded to close the dialog?
      :fx [[:dispatch [::model/show-bills-dialog nil]]
+          [:dispatch [::model/clear-temp-data]]
           [:dispatch [::case-model/load-case! case-id]]
           [:dispatch [::notification-model/open
                       {:notification-type :council-tax
                        :case-id case-id
-                       :council (:council response)
+                       :council (keyword (:council values))
                        :property (:property response)}]]]}))
 
 
@@ -103,16 +104,9 @@
           :add "add council tax"
           :edit "edit council tax"
           "")]
-       [mui/icon-button {:onClick #(rf/dispatch [::model/show-bills-dialog nil])}
+       [mui/icon-button {:onClick #(do (rf/dispatch [::model/clear-temp-data])
+                                       (rf/dispatch [::model/show-bills-dialog nil]))}
         [ui/icon-close]]]]
-
-     (if (= dialog-type :edit)
-       [common/upload-button
-        :council-tax
-        case-id
-        (:id @temp-data)
-        {:full-width false}
-        "upload recent bill"])
      [form-util/form
       {:state form-state
        :on-submit #(rf/dispatch [::submit!
