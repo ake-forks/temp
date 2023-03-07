@@ -52,7 +52,7 @@
                                   :uri "/api/case"
                                   :body-params {:personal-representative pr-info}})
         case-id (-> post-resp :body :id)]
-    (is (<= 200 (:status post-resp) 299))
+    (t/assert-success post-resp)
 
     (testing "working case"
 
@@ -62,7 +62,7 @@
                        (t/run-request {:request-method :get
                                        :uri (str "/api/case/"
                                                  case-id
-                                                 "/identity-checks/download-pdf")}))]
+                                                 "/identity/checks/download-pdf")}))]
           (is (= 404 (:status dl-resp)))))
 
       (testing "run checks"
@@ -71,8 +71,8 @@
                           (t/run-request {:request-method :post
                                           :uri (str "/api/case/"
                                                     case-id
-                                                    "/identity-checks/run")}))]
-          (is (<= 200 (:status check-resp) 299)))
+                                                    "/identity/checks/run")}))]
+          (t/assert-success check-resp))
 
         ;; Get case and check it has the identity check
         (let [{case-data :body} (t/run-request {:request-method :get
@@ -100,10 +100,10 @@
                 (t/run-request {:request-method :post
                                 :uri (str "/api/case/"
                                           case-id
-                                          "/identity-checks/override")
+                                          "/identity/checks/override")
                                 :query-string (t/->query-string
                                                 {:new-result "pass"})})]
-            (is (<= 200 (:status override-resp) 299)))
+            (t/assert-success override-resp))
           ;; Check case
           (let [{case-data :body} (t/run-request {:request-method :get
                                                   :uri (str "/api/case/" case-id)})]
@@ -115,8 +115,8 @@
                 (t/run-request {:request-method :post
                                 :uri (str "/api/case/"
                                           case-id
-                                          "/identity-checks/override")})]
-            (is (<= 200 (:status override-resp) 299)))
+                                          "/identity/checks/override")})]
+            (t/assert-success override-resp))
           ;; Check case
           (let [{case-data :body} (t/run-request {:request-method :get
                                                   :uri (str "/api/case/" case-id)})]
@@ -128,8 +128,8 @@
                        (t/run-request {:request-method :get
                                        :uri (str "/api/case/"
                                                  case-id
-                                                 "/identity-checks/download-pdf")}))]
-          (is (<= 200 (:status dl-resp) 299))))
+                                                 "/identity/checks/download-pdf")}))]
+          (t/assert-success dl-resp)))
 
       (testing "SmartSearch returns an error"
         (let [;; Perform checks
@@ -148,5 +148,5 @@
                 (t/run-request {:request-method :post
                                 :uri (str "/api/case/"
                                           case-id
-                                          "/identity-checks/run")}))]
+                                          "/identity/checks/run")}))]
           (is (<= 500 (:status check-resp) 599)))))))

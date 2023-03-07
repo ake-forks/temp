@@ -231,14 +231,15 @@
 ;; >> Routes
 
 (defn routes []
-  ["/case/:case-id/identity-checks"
-   ["/run"
-    {:post {:handler check
-            :parameters {:path [:map [:case-id :uuid]]}}}]
-   ["/override"
-    {:post {:handler override-checks
-            :parameters {:path [:map [:case-id :uuid]]
-                         :query [:map [:new-result {:optional true} :string]]}}}]
-   ["/download-pdf"
-    {:get {:handler download
-           :parameters {:path [:map [:case-id :uuid]]}}}]])
+  ["/case/:case-id/identity"
+   ["/checks"
+    ["/run"
+     {:post {:handler check
+             :parameters {:path [:map [:case-id :uuid]]}}}]
+    ["/override"
+     {:post {:handler override-checks
+             :parameters {:path [:map [:case-id :uuid]]
+                          :query [:map [:new-result {:optional true} :string]]}}}]
+    ["/download-pdf"
+     {:get {:handler download
+            :parameters {:path [:map [:case-id :uuid]]}}}]]])

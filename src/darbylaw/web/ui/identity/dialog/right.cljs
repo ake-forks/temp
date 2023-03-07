@@ -106,7 +106,7 @@
               show? (or aml-report smartdoc-report)
               partial? (not (and aml-report smartdoc-report))]
           (when show?
-            [mui/button {:href (str "/api/case/" case-id "/identity-checks/download-pdf")
+            [mui/button {:href (str "/api/case/" case-id "/identity/checks/download-pdf")
                          :download (str case-ref ".identity."
                                         (if partial?
                                           "partial-report"
