@@ -230,24 +230,27 @@
           (if-let [address (get-in properties-by-id [property-id :address])]
             (data-util/first-line address)
             "[unknown address]")]
-         (for [company (->> (get utilities-by-property-id property-id)
-                         (map #(or (:utility-company %)
-                                   (:new-utility-company %)))
-                         (distinct)
-                         (remove nil?))]
-           ^{:key company}
-           [asset-item {:title (if (keyword? company)
-                                 (company-id->label company)
-                                 company)
+         (for [utility-company (->> (get utilities-by-property-id property-id)
+                                 (map #(:utility-company %))
+                                 (distinct)
+                                 (remove nil?))]
+
+           ^{:key utility-company}
+           [asset-item {:title (if (keyword? utility-company)
+                                 (company-id->label utility-company)
+                                 utility-company)
                         :on-click #(rf/dispatch [::notification-model/open
                                                  {:notification-type :utility
                                                   :case-id (:id current-case)
-                                                  :utility-company company
+                                                  :utility-company utility-company
                                                   :property property-id}])
                         :indent 1
                         :no-divider true}])
 
-         (for [{:keys [council id]} (get council-tax-by-property-id property-id)]
+         (for [council (->> (get council-tax-by-property-id property-id)
+                         (map #(:council %))
+                         (distinct)
+                         (remove nil?))]
            ^{:key council}
            [asset-item {:title (if (keyword? council)
                                  (council-id->label council)
@@ -256,8 +259,7 @@
                                                  {:notification-type :council-tax
                                                   :case-id (:id current-case)
                                                   :council council
-                                                  :property property-id
-                                                  :asset-id id}])
+                                                  :property property-id}])
                         :indent 1
                         :no-divider true}])
          [mui/divider]])
@@ -273,6 +275,7 @@
 
 (defn heading [current-case]
   [mui/box {:sx {:background-color theme/off-white :padding-bottom {:xs "2rem" :xl "4rem"}}}
+
    [mui/container {:maxWidth :xl :class (styles/main-content)}
     [mui/stack {:spacing 3}
      [mui/stack {:direction :row

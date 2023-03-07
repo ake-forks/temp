@@ -26,10 +26,14 @@
 (defn generate-notification-letter [{:keys [xtdb-node user path-params body-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
         notification-type (:notification-type body-params)
+        property-id (:property body-params)
+        institution (case notification-type
+                      :utility (:utility-company body-params)
+                      :council-tax (:council body-params))
         asset-id (:asset-id body-params)
         template-data (case notification-type
-                        :utility (template/letter-template-data xtdb-node :utility case-id nil)
-                        :council-tax (template/get-council-letter-data xtdb-node case-id asset-id))
+                        :utility (template/get-letter-data xtdb-node :utility case-id institution property-id)
+                        :council-tax (template/get-letter-data xtdb-node :council-tax case-id institution property-id))
         _ (assert (:reference template-data))
         letter-id (str/join "."
                     [(:reference template-data)
