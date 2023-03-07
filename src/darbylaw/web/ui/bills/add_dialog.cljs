@@ -15,7 +15,7 @@
 (defonce form-state (r/atom nil))
 
 (rf/reg-event-fx ::submit-success
-  (fn [{:keys [db]} [_ case-id fork-params response]]
+  (fn [{:keys [db]} [_ case-id {:keys [values] :as fork-params} response]]
     {:db (-> db
            (model/set-submitting fork-params false))
      ; Should we wait until case is loaded to close the dialog?
@@ -24,7 +24,7 @@
           [:dispatch [::notification-model/open
                       {:notification-type :utility
                        :case-id case-id
-                       :utility-company (:utility-company response)
+                       :utility-company (keyword (:utility-company values))
                        :property (:property response)}]]]}))
 
 (rf/reg-event-fx ::submit-failure
