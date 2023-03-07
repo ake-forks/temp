@@ -198,7 +198,7 @@
 
 (defn council-item [{:keys [account-number id valuation] :as data}]
   (let [council-label (bill-data/get-council-label (:council (<< ::notification-model/notification)))
-        ongoing? true #_(<< ::notification-model/notification-ongoing?)]
+        ongoing? (<< ::notification-model/notification-ongoing?)]
     [mui/box
      [mui/card
       [mui/stack {:sx {:p 1}
