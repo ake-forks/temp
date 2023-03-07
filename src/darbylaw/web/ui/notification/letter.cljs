@@ -9,10 +9,8 @@
             [darbylaw.web.ui.notification.model :as model]
             [darbylaw.web.ui.components.upload-button :refer [upload-button]]
             [darbylaw.web.ui.notification.letter-commons :refer [letter-header]]
+            [darbylaw.web.ui.mailing.letter-commons :refer [get-icon-outgoing-letter]]
             [darbylaw.web.ui.components.pdf-viewer :refer [pdf-viewer]]))
-
-(defn draft-icon []
-  [ui/icon-drafts-outlined])
 
 (defonce delete-confirmation-open? (r/atom false))
 
@@ -167,7 +165,8 @@
     [mui/stack {:sx {:height 1}}
      [letter-header {:on-back #(rf/dispatch [::model/close-letter])}
       [mui/list-item
-       [mui/list-item-icon [ui/icon-description-outlined {:color :unset}]]
+       [mui/list-item-icon {:sx {:color :unset}}
+        [get-icon-outgoing-letter letter-data]]
        [mui/list-item-text
         {:primary "notification letter"
          :secondary (str (let [author (:author letter-data)]

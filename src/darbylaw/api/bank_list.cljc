@@ -402,4 +402,5 @@
   (get bank-by-id bank-id))
 
 (defn bank-label [bank-id]
-  (get-in bank-by-id [bank-id :common-name]))
+  (or (get-in bank-by-id [bank-id :common-name])
+      (name bank-id)))

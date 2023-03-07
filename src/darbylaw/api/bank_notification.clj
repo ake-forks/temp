@@ -1,5 +1,6 @@
 (ns darbylaw.api.bank-notification
-  (:require [xtdb.api :as xt]
+  (:require [clojure.string :as str]
+            [xtdb.api :as xt]
             [clojure.java.io :as io]
             [mount.core :as mount]
             [darbylaw.api.bank-notification-template :as template]
@@ -11,10 +12,8 @@
             [darbylaw.api.util.xtdb :as xt-util]
             [darbylaw.api.util.http :as http]
             [darbylaw.api.util.files :as files-util :refer [with-delete]]
-            [darbylaw.api.bank-notification.letter-store :as letter-store]
             [darbylaw.api.util.tx-fns :as tx-fns]
-            [darbylaw.api.case-history :as case-history]
-            [darbylaw.api.util.data :as data-util]))
+            [darbylaw.api.case-history :as case-history]))
 
 (defn build-asset-id [bank-type case-id bank-id]
   {:type (case bank-type
@@ -28,7 +27,7 @@
 (mount/defstate blank-page
   :start (io/resource "darbylaw/templates/blank-page.pdf"))
 
-(defn convert-to-pdf [xtdb-node case-id bank-id letter-id docx]
+(defn convert-to-pdf [xtdb-node case-id letter-id docx]
   (with-delete [letter-pdf (files-util/create-temp-file (str letter-id "-interim") ".pdf")
                 death-cert-docx (files-util/create-temp-file (str letter-id "-death-cert") ".docx")
                 death-cert-pdf (files-util/create-temp-file (str letter-id "-death-cert") ".pdf")]
@@ -53,10 +52,10 @@
         :output (.getAbsolutePath final-pdf))
       final-pdf)))
 
-(defn convert-to-pdf-and-store [xtdb-node case-id bank-id letter-id docx]
-  (with-delete [final-pdf (convert-to-pdf xtdb-node case-id bank-id letter-id docx)]
-    (doc-store/store (letter-store/s3-key case-id bank-id letter-id ".docx") docx)
-    (doc-store/store (letter-store/s3-key case-id bank-id letter-id ".pdf") final-pdf)))
+(defn convert-to-pdf-and-store [xtdb-node case-id letter-id docx]
+  (with-delete [final-pdf (convert-to-pdf xtdb-node case-id letter-id docx)]
+    (doc-store/store-case-file case-id (str letter-id ".docx") docx)
+    (doc-store/store-case-file case-id (str letter-id ".pdf") final-pdf)))
 
 (defn generate-notification-letter [{:keys [xtdb-node user path-params bank-type]}]
   (let [case-id (parse-uuid (:case-id path-params))
@@ -75,25 +74,28 @@
                         (random-uuid))]
         (with-delete [docx (files-util/create-temp-file letter-id ".docx")]
           (template/render-docx bank-type letter-template-data docx)
-          (convert-to-pdf-and-store xtdb-node case-id bank-id letter-id docx))
+          (convert-to-pdf-and-store xtdb-node case-id letter-id docx))
         (let [tx2 (xt-util/exec-tx xtdb-node
                     (concat
                       ; Second check inside tx.
                       assert-letter-not-exists-tx
-                      [[::xt/put {:type :probate.bank-notification-letter
+                      ; same schema as in notification-letter namespace:
+                      [[::xt/put {:type :probate.notification-letter
                                   :xt/id letter-id
-                                  :case-id case-id
-                                  :bank-type bank-type
-                                  :bank-id bank-id
+                                  :probate.notification-letter/case case-id
                                   :author :generated
-                                  :by (:username user)}]]
+                                  :by (:username user)
+                                  :modified-at (xt-util/now)
+                                  :notification-type bank-type
+                                  bank-type bank-id}]]
                       (tx-fns/set-value asset-id [:notification-letter] letter-id)
                       (case-history/put-event
-                        {:event :bank-notification.letter-generated
+                        {:event :notification.letter-generated
                          :case-id case-id
                          :user user
-                         :bank-id bank-id
-                         :letter-id letter-id})))]
+                         :letter-id letter-id
+                         :notification-type bank-type
+                         bank-type bank-id})))]
           (if (xt/tx-committed? xtdb-node tx2)
             {:status 204}
             {:status http/status-409-conflict
@@ -110,7 +112,7 @@
       (not= (:xt/id letter) letter-id)
       {:status http/status-404-not-found}
 
-      (some? (:send-action letter))
+      (some? (:mail/send-action letter))
       {:status http/status-409-conflict}
 
       :else
@@ -120,20 +122,20 @@
       (let [letter-template-data (template/get-letter-template-data xtdb-node bank-type case-id bank-id)]
         (with-delete [docx (files-util/create-temp-file letter-id ".docx")]
           (template/render-docx bank-type letter-template-data docx)
-          (convert-to-pdf-and-store xtdb-node case-id bank-id letter-id docx))
+          (convert-to-pdf-and-store xtdb-node case-id letter-id docx))
         (xt-util/exec-tx xtdb-node
           (concat
             (tx-fns/set-values letter-id
               {:author :generated
                :by (:username user)
-               :review-by nil
-               :review-timestamp nil})
+               :modified-at (xt-util/now)})
             (case-history/put-event
-              {:event :bank-notification.letter-generated
+              {:event :notification.letter-generated
                :case-id case-id
                :user user
-               :bank-id bank-id
-               :letter-id letter-id})))
+               :letter-id letter-id
+               :notification-type bank-type
+               bank-type bank-id})))
         {:status http/status-204-no-content}))))
 
 (def docx-mime-type
@@ -155,13 +157,15 @@
       (let [username (:username user)]
         (with-delete [tempfile tempfile]
           (assert (= content-type docx-mime-type))
-          (convert-to-pdf-and-store xtdb-node case-id bank-id letter-id tempfile))
+          (convert-to-pdf-and-store xtdb-node case-id letter-id tempfile))
         (xt-util/exec-tx xtdb-node
           (concat
-            (tx-fns/set-value letter-id [:author] username)
-            (tx-fns/set-value letter-id [:by] username)
+            (tx-fns/set-values letter-id
+              {:author username
+               :by username
+               :modified-at (xt-util/now)})
             (case-history/put-event
-              {:event :bank-notification.letter-replaced
+              {:event :notification.letter-replaced
                :case-id case-id
                :user user
                :bank-id bank-id
@@ -175,11 +179,10 @@
         letter-id (fetch-letter-id xtdb-node asset-id)]
     (if-not letter-id
       {:status http/status-404-not-found}
-      (let [input-stream (doc-store/fetch
-                           (letter-store/s3-key case-id bank-id letter-id
-                             (case doc-type
-                               :docx ".docx"
-                               :pdf ".pdf")))]
+      (let [input-stream (doc-store/fetch-case-file case-id
+                           (str letter-id (case doc-type
+                                            :docx ".docx"
+                                            :pdf ".pdf")))]
         {:status http/status-200-ok
          :headers {"Content-Type" (case doc-type
                                     :docx docx-mime-type
@@ -196,11 +199,14 @@
     (let [tx (xt-util/exec-tx xtdb-node
                (concat
                  (tx-fns/assert-equals asset-id [:notification-letter] letter-id)
-                 (tx-fns/set-value letter-id [:review-by] (:username user))
-                 (tx-fns/set-value letter-id [:review-timestamp] (xt-util/now))
-                 (tx-fns/set-value letter-id [:send-action] send-action)
+                 (tx-fns/assert-nil letter-id [:mail/send-action])
+                 (tx-fns/set-value letter-id [:sent-by] (:username user))
+                 (tx-fns/set-value letter-id [:sent-at] (xt-util/now))
+                 (tx-fns/set-value letter-id [:mail/send-action] send-action)
                  (case-history/put-event
-                   {:event :bank-notification.letter-reviewed
+                   {:event (if (#{:send :fake-send} send-action)
+                             :notification.letter-sent
+                             :notification.letter-not-sent)
                     :case-id case-id
                     :user user
                     :bank-id bank-id
@@ -215,8 +221,7 @@
         asset-id (build-asset-id bank-type case-id bank-id)
         {letter-id :valuation-letter} (xt/pull (xt/db xtdb-node)
                                         [:valuation-letter] asset-id)
-        input-stream (doc-store/fetch
-                       (letter-store/s3-key case-id bank-id letter-id ".pdf"))]
+        input-stream (doc-store/fetch-case-file case-id letter-id)]
     {:status 200
      :headers {"Content-Type" "application/pdf"}
      :body input-stream}))
@@ -226,32 +231,37 @@
         bank-id (keyword (:bank-id path-params))
         {:keys [tempfile content-type]} (get multipart-params "file")
         _ (assert (= content-type "application/pdf"))
-        filename (get multipart-params "filename")
-        letter-id (str (random-uuid)
-                       "."
-                       (data-util/strip-end filename ".pdf"))]
+        _filename (get multipart-params "filename")
+        case-data (xt/pull (xt/db xtdb-node) [:reference] case-id)
+        letter-id (str/join "."
+                    [(:reference case-data)
+                     "received-letter"
+                     (name bank-type)
+                     (name bank-id)
+                     (random-uuid)
+                     "pdf"])]
     (with-delete [tempfile tempfile]
-      (doc-store/store (letter-store/s3-key case-id bank-id letter-id ".pdf") tempfile))
-    (do
-      (xt-util/exec-tx xtdb-node
-        (concat
-          [[::xt/put {:type :probate.received-bank-letter
-                      :xt/id letter-id
-                      :case-id case-id
-                      :bank-id bank-id
-                      :original-filename filename
-                      :contains-valuation true
-                      :uploaded-by (:username user)
-                      :uploaded-at (xt-util/now)}]]
-          ; This should be obsolete when we support multiple valuation letters:
-          (tx-fns/set-value (build-asset-id bank-type case-id bank-id)
-            [:valuation-letter] letter-id)
-          (case-history/put-event
-            {:event :bank-notification.valuation-letter-updated
-             :user user
-             :case-id case-id
-             :bank-id bank-id
-             :letter-id letter-id}))))
+      (doc-store/store-case-file case-id letter-id tempfile))
+    (xt-util/exec-tx xtdb-node
+      (concat
+        [[::xt/put {:type :probate.received-letter
+                    :xt/id letter-id
+                    :probate.received-letter/case case-id
+                    :uploaded-by (:username user)
+                    :uploaded-at (xt-util/now)
+                    :contains-valuation true
+                    :notification-type bank-type
+                    bank-type bank-id}]]
+        ; This should be obsolete when we support multiple valuation letters:
+        (tx-fns/set-value (build-asset-id bank-type case-id bank-id)
+          [:valuation-letter] letter-id)
+        (case-history/put-event
+          {:event :notification.letter-received
+           :user user
+           :case-id case-id
+           :letter-id letter-id
+           :notification-type bank-type
+           bank-type bank-id})))
     {:status 204}))
 
 (defn mark-values-confirmed [{:keys [xtdb-node user path-params bank-type]}]

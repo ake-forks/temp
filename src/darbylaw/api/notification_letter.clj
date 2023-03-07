@@ -60,8 +60,8 @@
                              :probate.notification-letter/case case-id
                              :author :generated
                              :by (:username user)
-                             :notification-type notification-type
-                             :modified-at (xt-util/now)}
+                             :modified-at (xt-util/now)
+                             :notification-type notification-type}
                             specific-props)]]
           (case-history/put-event (merge {:event :notification.letter-generated
                                           :case-id case-id
@@ -105,12 +105,12 @@
     (let [tx (xt-util/exec-tx xtdb-node
                (concat
                  (tx-fns/assert-equals letter-id [:probate.notification-letter/case] case-id)
-                 (tx-fns/assert-nil letter-id [:send-action])
-                 (tx-fns/set-value letter-id [:send-action] send-action)
+                 (tx-fns/assert-nil letter-id [:mail/send-action])
+                 (tx-fns/set-value letter-id [:mail/send-action] send-action)
                  (tx-fns/set-value letter-id [:sent-by] (:username user))
                  (tx-fns/set-value letter-id [:sent-at] (xt-util/now))
                  (case-history/put-event
-                   {:event :notification-letter.sent
+                   {:event :notification.letter-sent
                     :case-id case-id
                     :user user
                     :letter-id letter-id})))]
@@ -130,10 +130,12 @@
           (convert-to-pdf-and-store case-id letter-id tempfile))
         (xt-util/exec-tx xtdb-node
           (concat
-            (tx-fns/set-value letter-id [:author] username)
-            (tx-fns/set-value letter-id [:by] username)
+            (tx-fns/set-values letter-id
+              {:author username
+               :by username
+               :modified-at (xt-util/now)})
             (case-history/put-event
-              {:event :notification-letter.replaced
+              {:event :notification.letter-replaced
                :case-id case-id
                :user user
                :letter-id letter-id})))

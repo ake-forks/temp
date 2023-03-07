@@ -29,5 +29,6 @@
   (go!)
 
   (mount/stop (mount/only [#'pdf/office-manager]))
+  (mount/stop (mount/only [#'darbylaw.xtdb-node/xtdb-node]))
   (mount/start)
   ,)

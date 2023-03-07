@@ -456,7 +456,8 @@
   (into {} (map (juxt :id identity) buildsoc-list)))
 
 (defn buildsoc-label [buildsoc-id]
-  (get-in buildsoc-by-id [buildsoc-id :common-name]))
+  (or (get-in buildsoc-by-id [buildsoc-id :common-name])
+      (name buildsoc-id)))
 
 (defn get-buildsoc-info [buildsoc-id]
   (get buildsoc-by-id buildsoc-id))

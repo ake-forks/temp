@@ -144,7 +144,7 @@
 (rf/reg-sub ::letter-in-preparation?
   :<- [::open-letter]
   (fn [letter]
-    (not (:send-action letter))))
+    (not (:mail/send-action letter))))
 
 (rf/reg-event-fx ::send-letter-success
   (fn [{:keys [db]} _]

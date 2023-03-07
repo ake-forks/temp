@@ -51,9 +51,9 @@
           [[::xt/put (merge {:type :probate.received-letter
                              :xt/id letter-id
                              :probate.received-letter/case case-id
-                             :by (:username user)
-                             :notification-type notification-type
-                             :modified-at (xt-util/now)}
+                             :uploaded-by (:username user)
+                             :uploaded-at (xt-util/now)
+                             :notification-type notification-type}
                             specific-props)]]
           (case-history/put-event (merge {:event :notification.letter-received
                                           :case-id case-id
