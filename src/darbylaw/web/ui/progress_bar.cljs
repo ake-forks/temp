@@ -4,7 +4,7 @@
     [reagent.core :as r]
     [re-frame.core :as rf]
     [darbylaw.web.ui :as ui]
-    [darbylaw.web.ui.identity.dialog :as identity-dialog]
+    [darbylaw.web.ui.identity.dialog.utils :refer [check-icon]]
     [darbylaw.web.ui.identity.model :as identity-model]))
 
 (rf/reg-sub ::current-case
@@ -58,7 +58,7 @@
                  "Some manual intervention is required."))
     :status-fn (fn [& _]
                  (r/as-element
-                   [identity-dialog/check-icon]))}
+                   [check-icon]))}
    {:label "Complete Assets"
     :tooltip "Add bank and utitity assets via the dashboard."
     :status-fn (fn [current-case]

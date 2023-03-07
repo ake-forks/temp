@@ -6,6 +6,28 @@
     [re-frame.core :as rf]
     [reagent.core :as r]))
 
+
+;; >> Dialog
+
+(rf/reg-event-db ::set-dialog-open
+  (fn [db [_ dialog-context]]
+    (if (some? dialog-context)
+      (merge db {::dialog-open? true
+                 ::dialog-context dialog-context})
+      (assoc db ::dialog-open? false))))
+
+(rf/reg-sub ::dialog-open?
+  (fn [db]
+    (::dialog-open? db)))
+
+(rf/reg-sub ::submitting?
+  (fn [db]
+    (::submitting? db)))
+
+
+
+;; >> Data
+
 (rf/reg-sub ::uk-aml
   :<- [::case-model/current-case]
   #(when-let [uk-aml (:uk-aml %)]
@@ -51,3 +73,49 @@
           (if (= :processing (:final-result smartdoc))
             :processing
             :pass))))))
+
+
+
+;; >> Generic Submit Effects
+
+(rf/reg-event-fx ::submit-success
+  (fn [{:keys [db]} [_ case-id]]
+    {:db (assoc db ::submitting? false)
+     :dispatch [::case-model/load-case! case-id]}))
+
+(rf/reg-event-fx ::submit-failure
+  (fn [{:keys [db]} [_ message error-result]]
+    {:db (assoc db ::submitting? false)
+     ::ui/notify-user-http-error {:message message
+                                  :result error-result}}))
+
+
+
+;; >> Identity Submit Effects
+
+(rf/reg-event-fx ::identity-check
+  (fn [{:keys [db]} [_ case-id]]
+    {:db (assoc db ::submitting? true)
+     :http-xhrio
+     (ui/build-http
+       {:method :post
+        :timeout 10000
+        :uri (str "/api/case/" case-id "/identity-checks/run")
+        :on-success [::submit-success case-id]
+        :on-failure [::submit-failure "Error starting identity checks"]})}))
+
+
+
+;; >> Override Submit Effects
+
+(rf/reg-event-fx ::set-override-result
+  (fn [_ [_ case-id new-result]]
+    {:http-xhrio
+     (ui/build-http
+       {:method :post
+        :timeout 10000
+        :uri (str "/api/case/" case-id "/identity-checks/override")
+        :url-params (when new-result
+                      {:new-result (name new-result)})
+        :on-success [::submit-success case-id]
+        :on-failure [::submit-failure "Error overriding result"]})}))
