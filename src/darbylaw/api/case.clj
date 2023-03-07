@@ -258,7 +258,11 @@
        {:as :smartdoc
         :cardinality :one})
     check-props}
-   :override-identity-check])
+   :override-identity-check
+   {'(:probate.identity-check.note/_case
+      {:as :identity-check-note
+       :cardinality :one})
+    [:note]}])
 
 (defn enrich-case [c]
   (-> c

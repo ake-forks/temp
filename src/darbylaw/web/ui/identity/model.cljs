@@ -74,6 +74,10 @@
             :processing
             :pass))))))
 
+(rf/reg-sub ::note
+  :<- [::case-model/current-case]
+  #(get-in % [:identity-check-note :note]))
+
 
 
 ;; >> Generic Submit Effects
@@ -119,3 +123,38 @@
                       {:new-result (name new-result)})
         :on-success [::submit-success case-id]
         :on-failure [::submit-failure "Error overriding result"]})}))
+
+
+
+;; >> Note Submit Effects
+
+(rf/reg-event-fx ::note-submit-success
+  (fn [{:keys [db]} [_ case-id]]
+    {:db (assoc db ::note-submit-success true)
+     :dispatch [::submit-success case-id]
+     :dispatch-later {:ms 1000 :dispatch [::note-clear-status]}}))
+
+(rf/reg-event-fx ::note-submit-failure
+  (fn [{:keys [db]} [_ message error-result]]
+    {:db (assoc db ::note-submit-success false)
+     :dispatch-later {:ms 1000 :dispatch [::note-clear-status]}}))
+ 
+(rf/reg-event-db ::note-clear-status
+  (fn [db _]
+    (dissoc db ::note-submit-success)))
+
+(rf/reg-sub ::note-submit-status
+  (fn [db]
+    (::note-submit-success db)))
+
+(rf/reg-event-fx ::save-note
+  (fn [{:keys [db]} [_ case-id values]]
+    {:db (dissoc db ::note-submit-success)
+     :http-xhrio
+     (ui/build-http
+       {:method :post
+        :timeout 10000
+        :uri (str "/api/case/" case-id "/identity/note")
+        :params values
+        :on-success [::note-submit-success case-id]
+        :on-failure [::note-submit-failure "Error saving note"]})}))

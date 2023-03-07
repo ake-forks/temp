@@ -4,16 +4,20 @@
     [darbylaw.web.ui :as ui]
     [darbylaw.web.ui.identity.model :as model]
     [darbylaw.web.ui.identity.dialog.right :as right]
+    [darbylaw.web.ui.identity.dialog.left :as left]
     [re-frame.core :as rf]))
 
 (defn dialog-content []
   [mui/dialog-content
    [mui/stack {:spacing 3
                :direction :row}
+    [left/panel]
     [right/panel]]])
 
 (defn dialog []
-  [mui/dialog {:open (boolean @(rf/subscribe [::model/dialog-open?]))}
+  [mui/dialog {:open (boolean @(rf/subscribe [::model/dialog-open?]))
+               :max-width :md
+               :full-width true}
    [mui/backdrop {:open (boolean @(rf/subscribe [::model/submitting?]))}
     [mui/circular-progress]]
    [mui/stack {:spacing 1}

@@ -42,6 +42,9 @@
     :else
     (throw (Exception. "Unexpected URL"))))
 
+(def note-1 "test note 1")
+(def note-2 "test note 2")
+
 (use-fixtures :once
   (t/use-mount-states t/ring-handler-states))
 
@@ -64,6 +67,19 @@
                                                  case-id
                                                  "/identity/checks/download-pdf")}))]
           (is (= 404 (:status dl-resp)))))
+
+      (testing "can add a note before checks are performed"
+        (let [note-resp (t/run-request {:request-method :post
+                                        :uri (str "/api/case/" case-id "/identity/note")
+                                        :body-params {:note note-1}})]
+          (t/assert-success note-resp)
+
+          ;; Get case and check it has the note
+          (let [{case-data :body} (t/run-request {:request-method :get
+                                                  :uri (str "/api/case/" case-id)})]
+            (is (contains? case-data :identity-check-note))
+            (is (= (get-in case-data [:identity-check-note :note])
+                   note-1)))))
 
       (testing "run checks"
         (let [check-resp (with-redefs [org.httpkit.client/request fake-handler
@@ -91,6 +107,24 @@
           (let [smartdoc (:smartdoc case-data)]
             (is (and (= "waiting" (:status smartdoc))
                      (= "1234" (:ssid smartdoc)))))))
+
+      (testing "note still exists and can be changed"
+        (let [{case-data :body} (t/run-request {:request-method :get
+                                                :uri (str "/api/case/" case-id)})]
+          (is (contains? case-data :identity-check-note))
+          (is (= (get-in case-data [:identity-check-note :note])
+                 note-1)))
+
+        (let [note-resp (t/run-request {:request-method :post
+                                        :uri (str "/api/case/" case-id "/identity/note")
+                                        :body-params {:note note-2}})]
+          (t/assert-success note-resp)
+
+          (let [{case-data :body} (t/run-request {:request-method :get
+                                                  :uri (str "/api/case/" case-id)})]
+            (is (contains? case-data :identity-check-note))
+            (is (= (get-in case-data [:identity-check-note :note])
+                   note-2)))))
 
       (testing "Override"
 
