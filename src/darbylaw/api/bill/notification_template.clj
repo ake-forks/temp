@@ -12,26 +12,15 @@
   (:import (java.time LocalDate)))
 
 ;Temp address data for all utility companies
-(def temp-utility-data
-  {:address-1 "11 Temp Street"
-   :address-2 ""
-   :town "London"
-   :county ""
-   :postcode "W1 9YZ"})
+
 (defn generate-utility-address [company]
   (let [data (bill-data/get-company-info company)
         vector (vector
-                 (:address-1 temp-utility-data)
-                 (:address-2 temp-utility-data)
-                 (:town temp-utility-data)
-                 (:county temp-utility-data)
-                 (:postcode temp-utility-data))
-        #_(vector
-            (:address-1 data)
-            (:address-2 data)
-            (:town data)
-            (:county data)
-            (:postcode data))]
+                 (:address-1 data)
+                 (:address-2 data)
+                 (:town data)
+                 (:county data)
+                 (:postcode data))]
     {:org-name (:common-name data)
      :org-address (str/join "\n"
                     (remove str/blank? vector))}))
@@ -77,15 +66,17 @@
     :in '[case-id property-id]}
    case-id property-id])
 
+
+
 (defn get-letter-data [xtdb-node asset-type case-id institution property-id]
   (let [database (xt/db xtdb-node)
         [case-data property-data] (xt-util/fetch-one
                                     (apply xt/q database
                                       (case-query case-id property-id)))
-        asset-data (mapv #(first %) (apply xt/q database
-                                      (case asset-type
-                                        :utility (utility-query case-id institution property-id)
-                                        :council-tax (council-query case-id institution property-id))))]
+        asset-data (mapv first (apply xt/q database
+                                 (case asset-type
+                                   :utility (utility-query case-id institution property-id)
+                                   :council-tax (council-query case-id institution property-id))))]
 
     (data-util/keys-to-camel-case
       (merge
@@ -94,15 +85,15 @@
           (assoc :property property-data))
         (case asset-type
           :utility
-          (assoc case-data :utility (merge
-                                      {:account-number (mapv #(:account-number %) asset-data)}
-                                      (generate-utility-address (:utility-company (first asset-data)))))
+          (merge
+            {:account-number (mapv #(:account-number %) asset-data)}
+            (generate-utility-address (:utility-company (first asset-data))))
           :council-tax
-          (assoc case-data :council (merge
-                                      {:account-number (if-let [acc (:account-number (first asset-data))]
-                                                         acc
-                                                         "Unknown")}
-                                      (generate-council-address (:council (first asset-data))))))))))
+          (merge
+            {:account-number (if-let [acc (:account-number (first asset-data))]
+                               acc
+                               "Unknown")}
+            (generate-council-address (:council (first asset-data)))))))))
 
 (comment
   (get-letter-data node/xtdb-node
