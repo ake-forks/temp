@@ -144,7 +144,8 @@
                                  :event/council-tax council-tax-id})))
     {:status 200
      :body {:property property-id
-            :council (:council council-tax-data)}}))
+            :council (:council council-tax-data)
+            :id council-tax-id}}))
 
 (def accepted-filetypes
   #{".pdf" ".png" ".jpeg" ".jpg" ".gif"})

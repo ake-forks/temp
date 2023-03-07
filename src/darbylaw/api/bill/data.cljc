@@ -197,7 +197,7 @@
   (:common-name (get company-by-id company-id)))
 
 (def council-by-id
-  (into {} (map (juxt :id identity) councils/councils)))
+  (into {} (map (juxt :id identity) councils/council-addresses-e-and-w)))
 
 (defn get-council-info [council-id]
   (get council-by-id council-id))
