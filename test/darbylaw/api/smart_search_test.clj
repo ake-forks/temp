@@ -1,10 +1,8 @@
 (ns darbylaw.api.smart-search-test
   (:require
-    [clojure.test :refer :all]
-    [darbylaw.test.common :as t :refer [submap?]]
-    [darbylaw.handler :refer [ring-handler]]
+    [clojure.test :refer [deftest is testing use-fixtures]]
+    [darbylaw.test.common :as t]
     [darbylaw.api.bank-notification :refer [blank-page]]
-    [cognitect.transit :as transit]
     [darbylaw.api.setup :as sample]
     [clojure.string :as str]
     [clojure.data.json :as json]

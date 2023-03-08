@@ -86,7 +86,7 @@
    :contacts {:mobile (:phone pr-info)}
    :address (let [{:keys [flat building
                           street1 street2
-                          town region postcode]}
+                          town postcode]}
                   pr-info]
               {:line_1 (->> [flat building] (remove nil?) (str/join ", "))
                :line_2 (->> [street1 street2] (remove nil?) (str/join ", "))

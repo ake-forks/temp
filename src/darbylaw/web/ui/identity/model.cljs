@@ -3,8 +3,7 @@
     [darbylaw.web.ui :as ui]
     [darbylaw.api.smart-search.data :as ss-data]
     [darbylaw.web.ui.case-model :as case-model]
-    [re-frame.core :as rf]
-    [reagent.core :as r]))
+    [re-frame.core :as rf]))
 
 
 ;; >> Dialog
@@ -141,6 +140,7 @@
 (rf/reg-event-fx ::note-submit-failure
   (fn [{:keys [db]} [_ message error-result]]
     {:db (assoc db ::note-submit-success false)
+     :dispatch [::submit-failure message error-result]
      :dispatch-later {:ms 1000 :dispatch [::note-clear-status]}}))
  
 (rf/reg-event-db ::note-clear-status
