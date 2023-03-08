@@ -1,15 +1,10 @@
 (ns darbylaw.api.bank-notification.mailing-watchdog-test
   (:require
-    [clojure.string :as str]
     [clojure.test :refer [deftest is use-fixtures]]
     [darbylaw.api.util.xtdb :as xt-util]
     [darbylaw.test.common :as t]
-    [darbylaw.api.services.local-sftp-server :as local-sftp]
-    [darbylaw.api.services.mailing :as mailing]
-    [darbylaw.api.bank-notification.mailing-sync-job :as sync]
     [darbylaw.api.bank-notification.mailing-job :as mailing-job]
     [darbylaw.api.bank-notification.mailing-watchdog :as mailing-watchdog]
-    [clojure.java.io :as jio]
     [darbylaw.xtdb-node :refer [xtdb-node]]
     [xtdb.api :as xt]))
 
