@@ -155,7 +155,7 @@
    [:map
     [:services [:set (into [:enum] (keys utility-services))]]
     [:utility-company {:optional true} :keyword]
-    [:new-utility-company? {:optional true} :boolean]
+    [:new-utility-name {:optional true} :string]
     [:account-number {:optional true} :string]
     [:valuation {:optional true} :string]
     (if (= op :create)

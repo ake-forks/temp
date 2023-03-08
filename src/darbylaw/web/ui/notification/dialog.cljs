@@ -22,13 +22,25 @@
     (bills-common/address-box false (<< ::bills-model/address))]])
 
 (defn right-panel []
-  (let [council-label (bill-data/get-council-label (:council (<< ::model/notification)))]
+  (let [notification-db (<< ::model/notification)
+        council-label (bill-data/get-council-label (:council notification-db))
+        current-data (first (case (<< ::model/notification-type)
+                              :utility (bills-model/current-utility-data
+                                         (:utility-company notification-db)
+                                         (:property notification-db))
+                              :council-tax (bills-model/current-council-data
+                                             (:utility-company notification-db)
+                                             (:property notification-db))))
+        new-utility? (some? (:new-utility-name current-data))
+        utility-label (if new-utility?
+                        (:new-utility-name current-data)
+                        (<< ::bills-model/utility-company-label))]
     [mui/stack
      [dialog/title {:on-click-close #(rf/dispatch [::model/close-dialog])}
       (case (<< ::model/notification-type)
        :utility
        [mui/stack
-        (<< ::bills-model/utility-company-label)
+        utility-label
         [at-address]]
 
        :council-tax
@@ -47,7 +59,7 @@
           (case (<< ::model/notification-type)
             :utility (str
                        "Let us know when you have provided all accounts at this address"
-                       " for " (<< ::bills-model/utility-company-label) ". At that point,"
+                       " for " utility-label ". At that point,"
                        " we will notify the company about the decease"
                        " and ask for confirmation of the data entered.")
             :council-tax (str
