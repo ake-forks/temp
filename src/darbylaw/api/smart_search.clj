@@ -7,6 +7,7 @@
             [darbylaw.api.util.tx-fns :as tx-fns]
             [darbylaw.api.smart-search.api :as ss-api]
             [darbylaw.api.smart-search.note :as note]
+            [darbylaw.api.smart-search.documents :as documents]
             [darbylaw.api.case-history :as case-history]
             [darbylaw.api.util.http :as http]
             [darbylaw.api.util.base64 :refer [decode-base64]]
@@ -244,4 +245,5 @@
     ["/download-pdf"
      {:get {:handler download
             :parameters {:path [:map [:case-id :uuid]]}}}]]
-   (note/routes)])
+   (note/routes)
+   (documents/routes)])

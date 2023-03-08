@@ -262,7 +262,11 @@
    {'(:probate.identity-check.note/_case
       {:as :identity-check-note
        :cardinality :one})
-    [:note]}])
+    [:note]}
+   {:identity-user-docs
+    ['(:xt/id {:as :document-id})
+     :original-filename
+     :uploaded-by]}])
 
 (defn enrich-case [c]
   (-> c
