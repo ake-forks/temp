@@ -47,6 +47,11 @@
 
 ;; >> Cards
 
+(defn history-button [id]
+  [mui/tooltip {:title "Go to case history"}
+   [mui/icon-button {:href (kf/path-for [:case-history {:case-id id}])}
+    [ui/icon-history-edu]]])
+
 (defn case-item
   [{:keys [id reference fake loading?] :as _case
     {:keys [surname forename postcode]} :personal-representative}]
@@ -75,11 +80,7 @@
       [mui/box
        (when fake
          (case-commons/fake-case-chip fake))]
-      [mui/tooltip {:title "Go to case history"}
-       [mui/icon-button {:href (kf/path-for [:case-history {:case-id id}])}
-        [ui/icon-history-edu]]
-       #_[mui/link {:href (kf/path-for [:case-history {:case-id id}])}
-          "history"]]]]]])
+      [history-button id]]]]])
 
 (defn no-cases-found
   []
@@ -138,6 +139,13 @@
                    (r/as-element
                      [mui/icon-button {:href (kf/path-for [:dashboard {:case-id id}])}
                       [ui/icon-link]]))}
+   {:field :history
+    :headerName ""
+    :width 0 ; Fit to button width
+    :hideable false
+    :renderCell #(let [id (-> % :row :id)]
+                   (r/as-element
+                     [history-button id]))}
    {:field :reference :headerName "Reference"}
    {:field :fake
     :valueGetter #(-> % :row :fake (or false))
