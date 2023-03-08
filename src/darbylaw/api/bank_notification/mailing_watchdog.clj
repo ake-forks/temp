@@ -75,6 +75,7 @@
   "Assert no letters are being sent twice, if not clean up old watches"
   (let [watches (into #{} (get-watches (xt/db xtdb-node)))
         watched-letter-ids (->> watches (map :watchdog.mailing/letter) (into #{}))
+        letter-ids (into #{} letter-ids)
         duplicate-letter-ids (set/intersection letter-ids watched-letter-ids)]
     (when-not (empty? duplicate-letter-ids)
       (log/errorf "Found %s duplicate letters: %s"
