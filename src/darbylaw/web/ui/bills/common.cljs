@@ -38,11 +38,14 @@
                    (set-handle-change
                      {:value (read-string (ui/event-target-value evt))
                       :path [:property]}))}
-      (map (fn [property]
-             ^{:key (:id property)}
-             [mui/menu-item {:value (pr-str (:id property))}
-              [mui/typography {:white-space :pre} (str (:address property))]])
-        properties)
+      (interpose
+        [mui/divider]
+        (map (fn [property]
+               ^{:key (:id property)}
+               [mui/menu-item {:value (pr-str (:id property))}
+                [mui/typography {:white-space :pre} (str (:address property))]])
+          properties))
+      [mui/divider]
       [mui/menu-item {:value (pr-str :new-property)} "add new address"]]]))
 
 (defn new-property-input [{:keys [values] :as fork-args}]

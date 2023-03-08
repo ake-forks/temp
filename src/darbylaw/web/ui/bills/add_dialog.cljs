@@ -64,7 +64,11 @@
             (model/address-by-property-id (:property values)))]]
         [mui/box
          [mui/typography {:variant :h6} "supplier"]
-         [mui/typography {:variant :h5} (:common-name supplier-data)]]
+         (if (some? supplier-data)
+           [mui/typography {:variant :h5} (:common-name supplier-data)]
+           [mui/typography {:variant :h5} (:new-utility-company temp-data)])]
+
+
         [mui/divider]]
        [mui/typography {:variant :body1}
         (str "The account number will be found on all correspondence from "
@@ -124,7 +128,8 @@
      [mui/dialog-title
       [mui/stack {:direction :row
                   :justify-content :space-between}
-       "add utility"
+       [mui/typography {:variant :h4}
+        "add utility"]
        [mui/icon-button {:onClick #(rf/dispatch [::model/close-clear-dialog])}
         [ui/icon-close]]]]
      [form-util/form
