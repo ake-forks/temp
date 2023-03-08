@@ -12,7 +12,8 @@
             [darbylaw.web.ui.components.pdf-viewer :refer [pdf-viewer]]
             [darbylaw.web.ui.components.file-input-button :refer [file-input-button]]
             [darbylaw.web.util.form :as form-util]
-            [vlad.core :as v]))
+            [vlad.core :as v]
+            [darbylaw.web.ui.mailing.letter-commons :as letter-commons]))
 
 (rf/reg-event-db ::set-file-data-url
   (fn [db [_ data-url]]
@@ -32,21 +33,6 @@
   (case (<< ::edit-mode)
     :create (rf/dispatch [::model/open-upload-received-letter false])
     :update (rf/dispatch [::model/close-letter])))
-
-(defn letter-icon []
-  ; Icon with badge containing arrow
-  [mui/badge {:badgeContent "\u2199"
-              ;:anchorOrigin {:vertical :bottom
-              ;               :horizontal :right}
-              #_#_:color :primary
-              :sx {"& .MuiBadge-badge" {:top 4
-                                        :right -4
-                                        :font-weight :bold
-                                        #_#_:background-color :text.primary}}}
-   [ui/icon-mail-outlined]]
-  #_[mui/stack {:direction :row}
-     [ui/icon-mail-outlined]
-     "\u2199"])
 
 (defn pdf-view-panel []
   [pdf-viewer {:src (str "/api/case/" (<< ::model/open-letter-case-id)
@@ -106,7 +92,7 @@
    [letter-header {:on-back close!}
     [mui/list-item
      [mui/list-item-icon {:sx {:color :unset}}
-      [letter-icon]]
+      [letter-commons/icon-received-letter]]
      [mui/list-item-text
       {:primary "new received letter"
        :secondary "in preparation"}]]

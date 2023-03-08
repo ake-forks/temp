@@ -159,8 +159,8 @@
   [{:notification-letter ['(:xt/id {:as :id})
                           :author
                           :by
-                          :review-by
-                          :review-timestamp]}
+                          :sent-by
+                          :sent-at]}
    {:valuation-letter ['(:xt/id {:as :id})
                        :uploaded-by
                        :uploaded-at]}])

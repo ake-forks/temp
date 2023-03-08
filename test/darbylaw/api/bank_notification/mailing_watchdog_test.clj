@@ -22,9 +22,8 @@
 
         ; Create some letters in DB
         test-case-id (random-uuid)
-        common-letter-data {:type :probate.bank-notification-letter
-                            :case-id test-case-id
-                            :bank-id :test-bank}
+        common-letter-data {:probate.notification-letter/case test-case-id
+                            :mail/send-action :send}
 
         ;; Create some letters sent in the past (more than a month)
         ;; These will be cleaned up later
@@ -76,7 +75,7 @@
             (concat
               [[::xt/put (merge common-letter-data
                            {:xt/id (get letter-ids 1)
-                            :send-action :send})]]))
+                            :mail/send-action :send})]]))
 
         ;; Get letters to send
         letters-to-send (mailing-job/fetch-letters-to-send xtdb-node :real)

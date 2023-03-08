@@ -150,8 +150,8 @@
                               {:send-action :send}))
         _ (is (<= 200 (:status resp) 299))
         bank-data (get (get-bank-data bank-type case-id) bank-id)
-        _ (is (some? (get-in bank-data [:notification-letter :review-by])))
-        _ (is (some? (get-in bank-data [:notification-letter :review-timestamp])))
+        _ (is (some? (get-in bank-data [:notification-letter :sent-by])))
+        _ (is (some? (get-in bank-data [:notification-letter :sent-at])))
 
         ; Regenerating the letter after reviewed is not allowed
         resp (t/run-request (bank-request :post (str "/notification-letter/" letter-id "/regenerate")))

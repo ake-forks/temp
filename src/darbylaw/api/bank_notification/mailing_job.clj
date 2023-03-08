@@ -4,7 +4,6 @@
     [darbylaw.config :as config]
     [darbylaw.api.util.xtdb :as xt-util]
     [clojure.tools.logging :as log]
-    [darbylaw.api.bank-notification.letter-store :as letter-store]
     [darbylaw.doc-store :as doc-store]
     [darbylaw.api.util.files :as files-util :refer [with-delete]]
     [darbylaw.api.services.mailing :as mailing]
@@ -15,7 +14,6 @@
     [chime.core :as ch]
     [darbylaw.api.bank-notification.mailing-watchdog :as mailing-watchdog])
   (:import (java.time LocalTime Period ZoneId ZonedDateTime)
-           java.time.temporal.ChronoUnit
            (clojure.lang ExceptionInfo)))
 
 (defn disabled? [xtdb-node]
@@ -28,9 +26,8 @@
                       :fake :fake-send)]
     (->> (xt/q (xt/db xtdb-node)
            '{:find [(pull letter [*])]
-             :where [(or [letter :type :probate.bank-notification-letter]
-                         [letter :type :probate.notification-letter])
-                     [letter :send-action send-action]
+             :where [[letter :probate.notification-letter/case]
+                     [letter :mail/send-action send-action]
                      (not [letter :upload-state])]
              :in [send-action]}
            send-action)
@@ -48,11 +45,8 @@
               (format "Suspiciously high number of letters to send (%d/%d)" n-letters max-batch-size))
       (log/infof "Uploading %d/%d letters for mailing" n-letters max-batch-size))
     (doseq [letter-data letters]
-      (let [{:keys [case-id  bank-id]
-             new-case-id :probate.notification-letter/case
-             letter-type :type
+      (let [{case-id :probate.notification-letter/case
              letter-id :xt/id} letter-data
-            case-id (or case-id new-case-id)
             tx (xt-util/exec-tx xtdb-node
                  (concat
                    [[::xt/match (:xt/id letter-data) letter-data]]
@@ -62,15 +56,9 @@
           (try
             (with-delete [temp-file (files-util/create-temp-file letter-id ".pdf")]
               (try
-                (case letter-type
-                  :probate.bank-notification-letter
-                  (doc-store/fetch-to-file
-                    (letter-store/s3-key case-id bank-id letter-id ".pdf")
-                    temp-file)
-                  :probate.notification-letter
-                  (doc-store/fetch-case-file-to-file
-                    case-id (str letter-id ".pdf")
-                    temp-file))
+                (doc-store/fetch-case-file-to-file
+                  case-id (str letter-id ".pdf")
+                  temp-file)
                 (let [remote-filename (str letter-id ".pdf")]
                   (mailing/post-letter real|fake (.getCanonicalPath temp-file) remote-filename)
                   (log/debug "Uploaded file for mailing: " remote-filename))
@@ -123,3 +111,6 @@
            (fn [_time]
              (upload-mail-job xtdb-node/xtdb-node)))
   :stop (.close mailing-upload-job))
+
+(comment
+  (upload-mail-job xtdb-node/xtdb-node))

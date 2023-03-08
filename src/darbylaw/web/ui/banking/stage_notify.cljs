@@ -105,6 +105,7 @@
        {:method :post
         :uri (str "/api/case/" case-id "/" (name type) "/" (name asset-id)
                "/notification-letter/" letter-id "/regenerate")
+        :timeout 16000
         :on-success [::regenerate-finished case-id]
         :on-failure [::regenerate-finished case-id]})}))
 

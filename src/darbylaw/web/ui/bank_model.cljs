@@ -56,6 +56,7 @@
      (ui/build-http
        {:method :post
         :uri (str "/api/case/" case-id "/bank/" (name bank-id) "/generate-notification-letter")
+        :timeout 16000
         :on-success [::generate-notification-letter--success case-id bank-id]})}))
 
 (defn ongoing-notification-process? [db bank-id]

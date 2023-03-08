@@ -51,11 +51,13 @@
     (remove-dirs)
     (keep #(if-let [m (parse-fn (:filename %))]
              (merge % m)
-             (log/error "Unexpected filename: " (:filename %))))))
+             (do
+               (log/error "Unexpected filename: " (:filename %))
+               nil)))))
 
 (def letters-awaiting-send
   '{:find [(pull letter [*])]
-    :where [[letter :type :probate.bank-notification-letter]
+    :where [[letter :mail/send-action]
             [letter :upload-state :uploaded]
             (not [letter :send-state])]})
 
@@ -67,9 +69,9 @@
         (throw e)))))
 
 (defn sync! [remote xtdb-node]
-  (let [; Snapshot of uploaded letters taken first, for preventing
-        ; syncing letters uploaded during the execution of this procedure.
-        uploaded (xt/q (xt/db xtdb-node) letters-awaiting-send)
+  (let [; Snapshot for uploaded letters taken first, for preventing
+        ; syncing letters that are uploaded during the execution of this procedure.
+        uploaded-db-snapshot (xt/db xtdb-node)
         ; Both `ls` operations one just after another to reduce the risk of
         ; in-between changes, and have a snapshot as consistent as possible.
         awaiting-files (mailing/run-sftp-command remote :ls)
@@ -85,18 +87,19 @@
     ; errors folder, so it has to be corrected and marked as `:errored`.
     (doseq [{:keys [letter-id error filename]} errored-files]
       (try
-        (if-let [{:keys [case-id bank-id]} (xt/entity (xt/db xtdb-node) letter-id)]
+        (if-let [letter (xt/entity (xt/db xtdb-node) letter-id)]
           (do
             (xt-util/exec-tx-or-throw xtdb-node
               (concat
                 (tx-fns/set-values letter-id {:send-state :error
                                               :send-error error
                                               :send-state-changed (xt-util/now)})
-                (case-history/put-event {:event :bank-notification.letter-send-error
-                                         :case-id case-id
-                                         :bank-id bank-id
-                                         :letter-id letter-id
-                                         :send-error error})))
+                (if-let [case-id (:probate.notification-letter/case letter)]
+                  (case-history/put-event {:event :notification.letter-send-error
+                                           :case-id case-id
+                                           :letter-id letter-id
+                                           :send-error error})
+                  (log/warn "Unknown letter type: " letter-id))))
             (sftp-remove--ignore-not-found remote (str errors-dir "/" filename)))
           ; This can happen, as we share remote accounts among deployed
           ; environments. Therefore, just a warning.
@@ -107,12 +110,11 @@
     ; Process all letters that are in upload-state `:uploaded`.
     ; If they are not in root nor errored, mark them as `:sent`.
     (let [awaiting-ids (set (map :letter-id (concat awaiting-files errored-files)))
-          sent-letters (->> uploaded
+          sent-letters (->> (xt/q uploaded-db-snapshot letters-awaiting-send)
                          (map first)
                          (remove #(contains? awaiting-ids (:xt/id %))))]
       (doseq [{letter-id :xt/id
-               case-id :case-id
-               bank-id :bank-id} sent-letters]
+               :as letter} sent-letters]
         (try
           (xt-util/exec-tx-or-throw xtdb-node
             (concat
@@ -120,10 +122,11 @@
               (tx-fns/assert-nil letter-id [:send-state])
               (tx-fns/set-values letter-id {:send-state :sent
                                             :send-state-changed (xt-util/now)})
-              (case-history/put-event {:event :bank-notification.letter-sent
-                                       :case-id case-id
-                                       :bank-id bank-id
-                                       :letter-id letter-id})))
+              (if-let [case-id (:probate.notification-letter/case letter)]
+                (case-history/put-event {:event :notification.letter-sent
+                                         :case-id case-id
+                                         :letter-id letter-id})
+                (log/warn "Unknown letter type: " letter-id))))
           (catch Exception e
             (log/error e "Failed syncing sent letter" letter-id)))))))
 
@@ -135,7 +138,7 @@
     "000299.barclays-bank-plc.bank-notification.23b8b714-db7f-440b-8656-5d5c7ae68ea1")
   (xt/q (xt/db xtdb-node)
     '{:find [(pull letter [*])]
-      :where [[letter :type :probate.bank-notification-letter]
+      :where [[letter :type :probate.notification-letter]
               [letter :upload-state :uploaded]]})
 
   (keys xtdb-node)

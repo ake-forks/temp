@@ -25,12 +25,12 @@
      [mui/menu-item {:on-click #(do (close-menu!)
                                     (rf/dispatch [::model/generate-notification-letter
                                                   notification]))}
-      [mui/list-item-icon [letter/draft-icon]]
+      [mui/list-item-icon [letter-commons/icon-letter-draft]]
       [mui/list-item-text
        "create notification letter"]]
      [mui/menu-item {:on-click #(do (close-menu!)
                                     (rf/dispatch [::model/open-upload-received-letter true]))}
-      [mui/list-item-icon [received-letter/letter-icon]]
+      [mui/list-item-icon [letter-commons/icon-received-letter]]
       [mui/list-item-text
        "upload received letter"]]]))
 
@@ -57,12 +57,7 @@
                              :cursor :pointer}
                         :onClick #(rf/dispatch [::model/open-letter (:xt/id letter)])}
          [mui/list-item-icon {:sx {:color :unset}}
-          [letter/draft-icon]
-          #_[mui/badge {:badgeContent "\u2197"
-                        :color :primary
-                        :sx {"& .MuiBadge-badge" {:font-weight :bold
-                                                  :background-color :text.primary}}}
-             [ui/icon-mail-outlined]]]
+          [letter-commons/get-icon-outgoing-letter letter]]
          [mui/list-item-text
           {:primary "notification letter"
            :secondary (letter-commons/letter-state-caption letter)}]
@@ -75,12 +70,12 @@
                              :cursor :pointer}
                         :onClick #(rf/dispatch [::model/open-letter (:xt/id letter)])}
          [mui/list-item-icon {:sx {:color :unset}}
-          [received-letter/letter-icon]]
+          [letter-commons/icon-received-letter]]
          [mui/list-item-text
           {:primary "received letter"
            :secondary "received"}]
          [mui/list-item-text
-          {:secondary (date-util/show-date-local-numeric (:modified-at letter))
+          {:secondary (date-util/show-date-local-numeric (:uploaded-at letter))
            :sx {:flex-grow 0}}]]
 
         ; else

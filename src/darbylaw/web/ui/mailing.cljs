@@ -6,7 +6,9 @@
             [darbylaw.web.util.date :as date-util]
             [darbylaw.web.ui.app-settings :as app-settings]
             [darbylaw.api.bank-list :as banks]
-            [darbylaw.web.ui.mailing.letter-commons :as letter-commons]))
+            [darbylaw.api.buildsoc-list :as buildsocs]
+            [darbylaw.web.ui.mailing.letter-commons :as letter-commons]
+            [darbylaw.web.ui.bills.model :as bills-model]))
 
 (rf/reg-event-db ::load-success
   (fn [db [_ response]]
@@ -65,8 +67,7 @@
 (rf/reg-sub ::post-tasks
   (fn [db]
     (some->> (:post-tasks db)
-      (sort-by #(or (:created-at %)
-                    (:modified-at %)) >))))
+      (sort-by #(:modified-at %) >))))
 
 (defn manual-controls []
   (let [settings @(rf/subscribe [::app-settings/settings])]
@@ -88,7 +89,7 @@
                                         {:post-letters-disabled?
                                          (not (ui/event-target-checked %))}])}])
            :label
-           "Post real letters at 5 PM"}]]
+           "Enable sending real letters"}]]
         [mui/typography {:sx {:mt 2}}
          [:b "Fake"] " letters are sent and synced only on-demand."]
         [mui/stack {:direction :row
@@ -142,7 +143,9 @@
                   :src url}])]]))
 
 (defn panel []
-  (let [post-tasks @(rf/subscribe [::post-tasks])]
+  (let [post-tasks @(rf/subscribe [::post-tasks])
+        company-id->label @(rf/subscribe [::bills-model/company-id->label])
+        council-id->label @(rf/subscribe [::bills-model/council-id->label])]
     [mui/container {:max-width :md}
      [mui/stack {:direction :row
                  :spacing 2
@@ -163,9 +166,9 @@
         :else
         (for [{case-data :case
                new-case-data :probate.notification-letter/case
-               letter-type :type
-               :keys [bank-id bank-type utility-company
-                      review-by review-timestamp send-state-changed]
+               :keys [notification-type
+                      bank buildsoc utility-company council
+                      sent-by sent-at send-state-changed]
                :as letter} post-tasks]
           (let [case-data (or case-data new-case-data)]
             ^{:key (:xt/id letter)}
@@ -178,37 +181,48 @@
                [mui/box {:flexGrow 2}
                 [mui/stack {:direction :row :spacing 1}
                  [mui/typography [:strong "type"]]
-                 (let [pdf-url (case letter-type
-                                 :probate.bank-notification-letter
-                                 (str "/api/case/" (:id case-data) "/" (name bank-type) "/" (name bank-id) "/notification-pdf")
-                                 :probate.notification-letter
+                 (let [pdf-url (if (#{:bank :buildsoc} notification-type)
+                                 (str "/api/case/" (:id case-data)
+                                      "/" (name notification-type)
+                                      "/" (case notification-type
+                                            :bank (:bank letter)
+                                            :buildsoc (:buildsoc letter))
+                                      "/notification-pdf")
                                  (str "/api/case/" (:id case-data) "/notification-letter/" (:xt/id letter) "/pdf"))]
                    [:a {:on-click #(rf/dispatch [::show-mailing-dialog pdf-url])
                         :href "#"}
                     [mui/stack {:direction :row}
-                     [mui/typography
-                      (case letter-type
-                        :probate.bank-notification-letter "bank notification letter"
-                        :probate.notification-letter "notification letter")]
+                     [mui/typography "notification letter"]
                      [ui/icon-open-in-new {:sx {:font-size :small}}]]])]
                 [mui/tooltip {:title (str "case id: " (:id case-data))}
                  [mui/typography [:strong "case "] (:reference case-data)]]
                 (cond
-                  bank-id
-                  [mui/typography [:strong "bank "] (or (banks/bank-label bank-id)
-                                                        bank-id)]
+                  bank
+                  [mui/typography
+                   [:strong "bank "] (banks/bank-label bank)]
+
+                  buildsoc
+                  [mui/typography
+                   [:strong "building society "] (buildsocs/buildsoc-label buildsoc)]
+
                   utility-company
-                  [mui/typography [:strong "utility "] utility-company])]
+                  [mui/typography
+                   [:strong "utility "] (company-id->label utility-company)]
+
+                  council
+                  [mui/typography
+                   [:strong "council "] (council-id->label council)])]
+
                [mui/box
                 [mui/typography {:font-weight :bold
                                  :text-align :right}
                  (letter-commons/letter-state-caption letter)]
-                (when (or (some? review-by)
-                          (some? review-timestamp))
+                (when (or (some? sent-by)
+                          (some? sent-at))
                   [mui/typography {:variant :body2
                                    :text-align :right}
-                   "reviewed by " review-by
-                   " at "(date-util/show-local-numeric review-timestamp)])
+                   "sent by " sent-by
+                   " at "(date-util/show-local-numeric sent-at)])
 
                 (when send-state-changed
                   [mui/typography {:variant :body2

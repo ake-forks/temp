@@ -107,7 +107,7 @@
     (not (contains? asset-data :notification-letter))
     :edit
 
-    (not (some? (get-in asset-data [:notification-letter :review-timestamp])))
+    (not (some? (get-in asset-data [:notification-letter :sent-at])))
     :notify
 
     (or (not (every? #(contains? % :confirmed-value)
@@ -187,6 +187,7 @@
        (ui/build-http
          {:method :post
           :uri (str "/api/case/" case-id "/" (name type) "/" (name banking-id) "/generate-notification-letter")
+          :timeout 16000
           :on-success [::generate-notification-success case-id banking-id]
           :on-failure [::generate-notification-failure case-id banking-id]})})))
 

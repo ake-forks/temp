@@ -36,9 +36,8 @@
 
         ; Create some letters in DB
         test-case-id (random-uuid)
-        common-letter-data {:type :probate.bank-notification-letter
-                            :case-id test-case-id
-                            :bank-id :test-bank}
+        common-letter-data {:probate.notification-letter/case test-case-id
+                            :mail/send-action :send}
         _ (xt-util/exec-tx xtdb-node
             [[::xt/put (merge common-letter-data
                          {:xt/id (get letter-ids 1)
