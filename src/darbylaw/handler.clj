@@ -70,7 +70,7 @@
    [""
     {:middleware [[create-auth-middleware authenticated?]
                   add-user-info]}
-    ["/" {:get (fn [_req] (r/redirect "/app/landing"))}]
+    ["/" {:get spa}]
     ["/app" {:get (fn [_req] (r/redirect "/app/admin"))}]
     ["/app{*path}" {:get spa}]
     ["/api" {:middleware [wrap-xtdb-node]}
