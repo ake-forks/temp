@@ -23,7 +23,8 @@
    [mui/stack {:spacing 1}
     [mui/dialog-title
      [mui/stack {:spacing 1 :direction :row}
-      "identity checks"
+      [mui/typography {:variant :h4}
+       "identity checks"]
       [mui/box {:flex-grow 1}]
       [ui/icon-close {:style {:cursor :pointer}
                       :on-click #(rf/dispatch [::model/set-dialog-open])}]]]

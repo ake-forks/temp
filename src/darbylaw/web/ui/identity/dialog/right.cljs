@@ -76,6 +76,8 @@
     [mui/stack {:spacing 1
                 :width "50%"}
      [alert/dialog]
+     [mui/typography {:variant :h6}
+      "results"]
      [mui/stack {:direction :row
                  :spacing 2
                  :align-items :center}

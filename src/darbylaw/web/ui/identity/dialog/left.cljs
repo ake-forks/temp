@@ -63,12 +63,12 @@
       :initial-values {:note @(rf/subscribe [::model/note])}}
      (fn [{:keys [values handle-submit] :as fork-args}]
       [mui/stack {:spacing 1}
-       [mui/typography
+       [mui/typography {:variant :h6}
         "notes"]
        [form/text-field fork-args
         {:name :note
          :multiline true
-         :maxRows 4
+         :minRows 5
          :fullWidth true}]
        [mui/button {:variant :contained
                     :on-click handle-submit
