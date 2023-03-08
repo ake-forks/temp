@@ -39,19 +39,15 @@
                  :align-items :center}
       [mui/typography {:variant :h6 
                        :flex-grow 1}
-       "documents"]
-      [document-upload-button case-id]]
-     (if (empty? documents)
-       [mui/alert {:severity :info}
-        "No documents uploaded"]
-       [mui/paper {:sx {:max-height 200 :overflow :scroll}}
-        (let [documents @(rf/subscribe [::model/user-documents])]
-          (->> documents
-               (map (fn [document]
-                      ^{:key (:document-id document)}
-                      [document-item case-id document]))
-               (interpose [mui/divider])
-               (into [mui/stack])))])]))
+       "documents"]]
+     [mui/paper {:sx {:max-height 200 :overflow :scroll}}
+      (->> documents
+           (map (fn [document]
+                  ^{:key (:document-id document)}
+                  [document-item case-id document]))
+           (interpose [mui/divider])
+           (into [mui/stack]))]
+     [document-upload-button case-id]]))
 
 (defn note []
   (let [case-id @(rf/subscribe [::case-model/case-id])
@@ -67,6 +63,7 @@
         {:name :note
          :multiline true
          :minRows 5
+         :maxRows 5
          :fullWidth true}]
        [mui/button {:variant :contained
                     :on-click handle-submit

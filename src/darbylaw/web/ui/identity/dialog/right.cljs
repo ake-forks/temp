@@ -99,9 +99,6 @@
         [mui/icon-button {:on-click #(rf/dispatch [::model/set-override-result case-id nil])}
          [ui/icon-refresh]]]]
       [mui/box {:flex-grow 1}]
-      [mui/icon-button {:on-click #(rf/dispatch [::alert/set-alert-dialog-open {:case-id case-id}])
-                        :disabled @(rf/subscribe [::model/submitting?])}
-       [ui/icon-playlist-play]]
       (when @(rf/subscribe [::model/has-checks?])
         (let [{aml-report :report} @(rf/subscribe [::model/uk-aml])
               {smartdoc-report :report} @(rf/subscribe [::model/smartdoc])
@@ -117,18 +114,11 @@
              (if partial?
                "partial report"
                "full report")])))]
-     (if-not @(rf/subscribe [::model/has-checks?])
-       [mui/table-row
-        [mui/table-cell {:col-span 5}
-         [mui/alert {:severity :info}
-          [mui/alert-title "No checks run"]
-          (if-not @(rf/subscribe [::model/submitting?])
-           [mui/typography
-            "Click " 
-            [mui/link {:on-click #(rf/dispatch [::alert/set-alert-dialog-open {:case-id case-id}])
-                       :style {:cursor :pointer}}
-             "here"]
-            " to run the checks."]
-           [mui/typography
-            "Running checks..."])]]]
-       [check-table])]))
+     [mui/collapse {:in @(rf/subscribe [::model/has-checks?])}
+      [check-table]]
+     [mui/button {:variant :contained
+                  :on-click #(rf/dispatch [::alert/set-alert-dialog-open {:case-id case-id}])
+                  :disabled @(rf/subscribe [::model/submitting?])}
+      (if @(rf/subscribe [::model/has-checks?])
+        "re-run"
+        "run")]]))
