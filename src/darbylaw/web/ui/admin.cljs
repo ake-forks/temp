@@ -146,11 +146,22 @@
     :renderCell #(let [id (-> % :row :id)]
                    (r/as-element
                      [history-button id]))}
-   {:field :reference :headerName "Reference"}
-   {:field :fake
-    :valueGetter #(-> % :row :fake (or false))
-    :headerName "Fake?"}
-
+   {:field :reference
+    :width 140
+    :headerName "Reference"
+    :renderCell #(let [reference (-> % :row :reference)
+                       fake? (-> % :row :fake (or false))]
+                   (r/as-element
+                     [mui/stack {:spacing 1
+                                 :width "100%"
+                                 :direction :row
+                                 :align-items :center
+                                 :justify-content :space-between}
+                      [mui/box]
+                      (when fake?
+                        (case-commons/fake-case-chip fake?))
+                      [mui/typography {:variant :body2}
+                       reference]]))}
    {:field :pr-name
     :headerName "Name"
     :valueGetter #(-> % :row :personal-representative ->full-name)
