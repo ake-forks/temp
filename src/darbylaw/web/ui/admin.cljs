@@ -36,7 +36,9 @@
 
 (rf/reg-sub ::cases
   (fn [db _]
-    (:cases db)))
+    (->> (:cases db)
+         (sort-by :reference)
+         reverse)))
 
 (rf/reg-sub ::case-view
   (fn [db _]
