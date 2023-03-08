@@ -78,6 +78,10 @@
   :<- [::case-model/current-case]
   #(get-in % [:identity-check-note :note]))
 
+(rf/reg-sub ::user-documents
+  :<- [::case-model/current-case]
+  #(:identity-user-docs %))
+
 
 
 ;; >> Generic Submit Effects
@@ -158,3 +162,28 @@
         :params values
         :on-success [::note-submit-success case-id]
         :on-failure [::note-submit-failure "Error saving note"]})}))
+
+
+
+;; >> Document Upload Submit Effects
+
+(rf/reg-event-fx ::upload-document
+  (fn [_ [_ case-id document]]
+    {:http-xhrio
+     (ui/build-http
+       {:method :post
+        :uri (str "/api/case/" case-id "/identity/document")
+        :body (let [form-data (js/FormData.)]
+                (.append form-data "file" document)
+                form-data)
+        :on-success [::submit-success case-id]
+        :on-failure [::submit-failure "Error uploading user document"]})}))
+
+(rf/reg-event-fx ::delete-document
+  (fn [_ [_ case-id document-id]]
+    {:http-xhrio
+     (ui/build-http
+       {:method :delete
+        :uri (str "/api/case/" case-id "/identity/document/" document-id)
+        :on-success [::submit-success case-id]
+        :on-failure [::submit-failure "Error deleting user document"]})}))
