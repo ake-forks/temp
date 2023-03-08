@@ -342,7 +342,8 @@
                  :on-change (fn [_ value] (rf/dispatch [::set-case-view (keyword value)]))}
        [mui/tab {:label "List" :value :card}]
        [mui/tab {:label "Table" :value :data-grid}]
-       [mui/tab {:label "Mailing" :value :mail}]]]
+       [mui/tab {:label "Mailing" :value :mail
+                 :on-click #(rf/dispatch [::mailing/load])}]]]
      [mui/box {:margin-top 1}
       (case (or case-view :card)
         :card [card-list]
