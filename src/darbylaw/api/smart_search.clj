@@ -9,7 +9,7 @@
             [darbylaw.api.case-history :as case-history]
             [darbylaw.api.util.http :as http]
             [darbylaw.api.util.base64 :refer [decode-base64]]
-            [darbylaw.api.util.pdf :as pdf]
+            [pdfboxing.merge :as pdf-merge]
             [clojure.string :as str]))
 
 
@@ -219,7 +219,7 @@
       {:status http/status-200-ok
        :headers {"Content-Type" "application/pdf"}
        :body (with-open [out (java.io.ByteArrayOutputStream.)]
-               (pdf/merge-pdfs
+               (pdf-merge/merge-pdfs
                  :input (->> [aml-report smartdoc-report]
                              (remove nil?))
                  :output out)
