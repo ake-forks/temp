@@ -17,7 +17,7 @@
   (t/use-mount-states (into t/db-states)))
 
 (deftest test_syncing
-  (let [letter-ids (vec (for [i (range 6)]
+  (let [letter-ids (vec (for [i (range 8)]
                           (str "letter" i)))
 
         ; Create some letters in DB
@@ -31,37 +31,47 @@
             (xt/submit-tx xtdb-node
               (concat
                 [[::xt/put (merge common-letter-data
-                             {:xt/id (get letter-ids 4)
+                             {:xt/id (get letter-ids 1)
                               :upload-state :uploaded})]]
-                (mailing-watchdog/watch (get letter-ids 4))
+                (mailing-watchdog/watch (get letter-ids 1))
                 [[::xt/put (merge common-letter-data
-                             {:xt/id (get letter-ids 5)
+                             {:xt/id (get letter-ids 2)
                               :upload-state :uploaded})]]
-                (mailing-watchdog/watch (get letter-ids 5)))
+                (mailing-watchdog/watch (get letter-ids 2)))
               {::xt/tx-time #inst "2020"}))
 
         ; Create some letters sent now
         _ (xt-util/exec-tx xtdb-node
             (concat
               [[::xt/put (merge common-letter-data
-                           {:xt/id (get letter-ids 1)
-                            :upload-state :uploaded})]]
-              (mailing-watchdog/watch (get letter-ids 1))
-              [[::xt/put (merge common-letter-data
-                           {:xt/id (get letter-ids 2)
-                            :upload-state :uploaded})]]
-              (mailing-watchdog/watch (get letter-ids 2))
-              [[::xt/put (merge common-letter-data
                            {:xt/id (get letter-ids 3)
                             :upload-state :uploaded})]]
-              (mailing-watchdog/watch (get letter-ids 3))))
+              (mailing-watchdog/watch (get letter-ids 3))
+              [[::xt/put (merge common-letter-data
+                           {:xt/id (get letter-ids 4)
+                            :upload-state :uploaded})]]
+              (mailing-watchdog/watch (get letter-ids 4))
+              [[::xt/put (merge common-letter-data
+                           {:xt/id (get letter-ids 5)
+                            :upload-state :uploaded})]]
+              (mailing-watchdog/watch (get letter-ids 5))))
+
+        ; Create some letters to be sent
+        _ (xt-util/exec-tx xtdb-node
+            (concat
+              [[::xt/put (merge common-letter-data
+                           {:xt/id (get letter-ids 6)
+                            :send-action :send})]]
+              [[::xt/put (merge common-letter-data
+                           {:xt/id (get letter-ids 7)
+                            :send-action :send})]]))
 
         ;; As expected, there are 5 letters being watched
         _ (is (= 5 (count (mailing-watchdog/get-watches (xt/db xtdb-node)))))
 
         ;; Get letters to send
         letters-to-send (mailing-job/fetch-letters-to-send xtdb-node :real)
-        _ (is (empty? letters-to-send))
+        _ (is (= 2 (count letters-to-send)))
 
         ;; Check there are no duplicates
         _ (is (mailing-watchdog/assert-no-duplicates xtdb-node
@@ -74,12 +84,12 @@
         _ (xt-util/exec-tx xtdb-node
             (concat
               [[::xt/put (merge common-letter-data
-                           {:xt/id (get letter-ids 1)
+                           {:xt/id (get letter-ids 3)
                             :mail/send-action :send})]]))
 
         ;; Get letters to send
         letters-to-send (mailing-job/fetch-letters-to-send xtdb-node :real)
-        _ (is (= 1 (count letters-to-send)))
+        _ (is (= 3 (count letters-to-send)))
 
         ;; An exception is thrown as letters should not be sent twice
         _ (is (thrown? AssertionError 
