@@ -174,7 +174,9 @@
                 :size "large"
                 :full-width false
                 :start-icon (r/as-element [ui/icon-add-circle])}
-    (str "add another "
+    (str (if (= 0 (count (:accounts values)))
+           "add "
+           "add another ")
       (if-let [bank-name (model/asset-label :bank (keyword (:bank-id values)))]
         (str bank-name " account")
         "account"))]])
@@ -287,7 +289,9 @@
                 :size "large"
                 :full-width false
                 :start-icon (r/as-element [ui/icon-add-circle])}
-    (str "add another "
+    (str (if (= 0 (count (:accounts values)))
+           "add "
+           "add another ")
       (if-let [buildsoc-name (model/asset-label :buildsoc (keyword (:buildsoc-id values)))]
         (str buildsoc-name " account")
         "account"))]])
