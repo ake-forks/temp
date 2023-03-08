@@ -4,11 +4,17 @@
     [darbylaw.test.common :as t]
     [darbylaw.api.bank-notification :refer [blank-page]]
     [darbylaw.api.setup :as sample]
+    [darbylaw.api.util.files :refer [create-temp-file]]
     [clojure.string :as str]
     [clojure.data.json :as json]
     [clojure.java.io :as io]))
 
 (def smallest-pdf "JVBERi0xLg10cmFpbGVyPDwvUm9vdDw8L1BhZ2VzPDwvS2lkc1s8PC9NZWRpYUJveFswIDAgMyAzXT4+XT4+Pj4+Pg==")
+
+(defn test-temp-file [content]
+  (let [file (create-temp-file "test-file" ".txt")]
+    (spit file content)
+    file))
 
 (defn fake-handler [{:keys [url]} & _]
   (cond
@@ -79,6 +85,35 @@
             (is (= (get-in case-data [:identity-check-note :note])
                    note-1)))))
 
+      (testing "can add delete a user documents before checks are performed"
+        (let [upload-resp-1 (with-redefs [darbylaw.doc-store/store (fn [& _])]
+                              (t/run-request {:request-method :post
+                                              :uri (str "/api/case/" case-id "/identity/document")
+                                              :multipart-params {"file" {:filename "test.file"
+                                                                         :tempfile (test-temp-file "test 1")
+                                                                         :content-type "application/text"}}}))
+              _ (t/assert-success upload-resp-1)
+              upload-resp-2 (with-redefs [darbylaw.doc-store/store (fn [& _])]
+                              (t/run-request {:request-method :post
+                                              :uri (str "/api/case/" case-id "/identity/document")
+                                              :multipart-params {"file" {:filename "test.file"
+                                                                         :tempfile (test-temp-file "test 2")
+                                                                         :content-type "application/text"}}}))
+              _ (t/assert-success upload-resp-2)
+              delete-resp (with-redefs [darbylaw.doc-store/store (fn [& _])]
+                            (t/run-request {:request-method :delete
+                                            :uri (str "/api/case/"
+                                                      case-id 
+                                                      "/identity/document/"
+                                                      (get-in upload-resp-1 [:body :id]))}))]
+          (t/assert-success delete-resp)
+
+          ;; Get case and check it has the file
+          (let [{case-data :body} (t/run-request {:request-method :get
+                                                  :uri (str "/api/case/" case-id)})]
+            (is (contains? case-data :identity-user-docs))
+            (is (= 1 (count (:identity-user-docs case-data)))))))
+
       (testing "run checks"
         (let [check-resp (with-redefs [org.httpkit.client/request fake-handler
                                        darbylaw.doc-store/store (fn [& _])]
@@ -123,6 +158,41 @@
             (is (contains? case-data :identity-check-note))
             (is (= (get-in case-data [:identity-check-note :note])
                    note-2)))))
+
+      (testing "can add delete a user documents before checks are performed"
+        ;; Get case and check it has the file
+        (let [{case-data :body} (t/run-request {:request-method :get
+                                                :uri (str "/api/case/" case-id)})]
+          (is (contains? case-data :identity-user-docs))
+          (is (= 1 (count (:identity-user-docs case-data)))))
+
+        (let [upload-resp-1 (with-redefs [darbylaw.doc-store/store (fn [& _])]
+                              (t/run-request {:request-method :post
+                                              :uri (str "/api/case/" case-id "/identity/document")
+                                              :multipart-params {"file" {:filename "test.file"
+                                                                         :tempfile (test-temp-file "test 3")
+                                                                         :content-type "application/text"}}}))
+              _ (t/assert-success upload-resp-1)
+              upload-resp-2 (with-redefs [darbylaw.doc-store/store (fn [& _])]
+                              (t/run-request {:request-method :post
+                                              :uri (str "/api/case/" case-id "/identity/document")
+                                              :multipart-params {"file" {:filename "test.file"
+                                                                         :tempfile (test-temp-file "test 4")
+                                                                         :content-type "application/text"}}}))
+              _ (t/assert-success upload-resp-2)
+              delete-resp (with-redefs [darbylaw.doc-store/store (fn [& _])]
+                            (t/run-request {:request-method :delete
+                                            :uri (str "/api/case/"
+                                                      case-id 
+                                                      "/identity/document/"
+                                                      (get-in upload-resp-1 [:body :id]))}))]
+          (t/assert-success delete-resp)
+
+          ;; Get case and check it has the file
+          (let [{case-data :body} (t/run-request {:request-method :get
+                                                  :uri (str "/api/case/" case-id)})]
+            (is (contains? case-data :identity-user-docs))
+            (is (= 2 (count (:identity-user-docs case-data)))))))
 
       (testing "Override"
 
