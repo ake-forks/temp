@@ -11,8 +11,6 @@
     [mount.core :as mount])
   (:import (java.time LocalDate)))
 
-;Temp address data for all utility companies
-
 (defn generate-utility-address [company]
   (let [data (bill-data/get-company-info company)
         vector (vector
@@ -20,10 +18,15 @@
                  (:address-2 data)
                  (:town data)
                  (:county data)
-                 (:postcode data))]
-    {:org-name (:common-name data)
-     :org-address (str/join "\n"
-                    (remove str/blank? vector))}))
+                 (:postcode data))
+        address (str/join "\n"
+                  (remove str/blank? vector))]
+    (merge
+      {:org-name (:common-name data)}
+      (if (str/blank? address)
+        {:no-address "No address data found. Please download and edit letter before sending."}
+        {:org-address address}))))
+
 
 (defn utility-query [case-id utility-company property-id]
   [{:find '[(pull utility [*])]
@@ -97,10 +100,10 @@
 
 (comment
   (get-letter-data node/xtdb-node
-    :council-tax
-    #uuid"2bcee42c-df67-4aff-93e1-b91002239a38"
-    :darlington-borough
-    #uuid"ac93d4ab-9741-4925-af0e-f240c9d0dfbc"))
+    :utility
+    #uuid"6dc1ab3a-44a6-4600-bf3a-4255271c3421"
+    :swalec
+    #uuid"28e725a3-d7a5-477a-a1e3-4816eb9241b3"))
 
 (mount/defstate templates
   :start {:utility (stencil/prepare (io/resource "darbylaw/templates/utility-notification.docx"))
