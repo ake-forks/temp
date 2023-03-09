@@ -87,10 +87,13 @@
     :utility :probate.case.utilities
     :council-tax :probate.case.council-taxes))
 
+(defn institution-type [bill-type]
+  (case bill-type
+    :utility :utility-company
+    :council-tax :council))
+
 (defn fetch-institution-id [db bill-type bill-id]
-  (xt-util/fetch-property db bill-id (case bill-type
-                                       :utility :utility-company
-                                       :council-tax :council)))
+  (xt-util/fetch-property db bill-id (institution-type bill-type)))
 
 (defn delete-bill [{:keys [xtdb-node user path-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
@@ -109,7 +112,7 @@
                                   :user user
                                   :subject (event-subject bill-type)
                                   :op :deleted
-                                  :institution-type bill-type
+                                  :institution-type (institution-type bill-type)
                                   :institution institution-id
                                   bill-type bill-id}))))
   {:status http/status-204-no-content})
@@ -133,8 +136,8 @@
                                   :user user
                                   :subject (event-subject bill-type)
                                   :op :updated
-                                  :institution-type bill-type
-                                  :institution (:utility-company bill-data)
+                                  :institution-type (institution-type bill-type)
+                                  :institution (get bill-data (institution-type bill-type))
                                   bill-type bill-id})))
     {:status 200
      :body {:property property-id
@@ -203,7 +206,7 @@
            :op :uploaded
            :document-id filename
            asset-type asset-id
-           :institution-type asset-type
+           :institution-type (institution-type asset-type)
            :institution institution-id})))
     {:status 204}))
 
