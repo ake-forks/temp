@@ -19,6 +19,7 @@
     [darbylaw.web.ui.keydocs.dialog :as key-docs]
     [darbylaw.web.ui.identity.dialog :as identity-dialog]
     [re-frame.core :as rf]
+    [reagent.core :as r]
     [reagent.format :as format]
     [darbylaw.web.theme :as theme]
     [darbylaw.web.ui.case-commons :as case-commons]
@@ -62,11 +63,12 @@
   [mui/card-action-area {:on-click on-click
                          :sx {:padding-top 1}}
    [mui/stack {:direction :row
-               :spacing 2
-               :align-items :center}
-    [mui/typography {:variant :h5}
+               :spacing 0.5
+               :align-items :center
+               :style {:color theme/teal}}
+    [mui/typography {:style {:font-weight 500}}
      (or title "add")]
-    [ui/icon-add]]])
+    [ui/icon-add {:font-size :small}]]])
 
 (defn asset-card [{:keys [title _on-add]} & body]
   [mui/card
@@ -92,13 +94,9 @@
   options = a map of option labels and their on-click functions as key-value pairs"
   [anchor options]
   [:<>
-   [mui/card-action-area {:on-click (fn [e] (reset! anchor (.-target e)))
-                          :sx {:padding-top 1}}
-    [mui/stack {:direction :row
-                :spacing 2
-                :align-items :center}
-     [mui/typography {:variant :h5} "add"]
-     [ui/icon-add]]]
+   [asset-add-button 
+    {:title "add"
+     :on-click #(reset! anchor (.-target %))}]
    [mui/menu {:open (some? @anchor)
               :anchor-el @anchor
               :on-close #(reset! anchor nil)
@@ -164,13 +162,13 @@
          ;; TODO: Make right size
          :icon [mui/skeleton {:variant :circular
                               :width 25}]}])
-     (when-not account
+     (if account
        [asset-add-button
-        {:title "add funeral account"
-         :on-click #(rf/dispatch [::funeral-model/show-funeral-dialog :add-funeral-director])}])
-     [asset-add-button
-      {:title "add other expense"
-       :on-click #(rf/dispatch [::funeral-model/show-funeral-dialog :add-other])}]
+        {:title "add"
+         :on-click #(rf/dispatch [::funeral-model/show-funeral-dialog :add-other])}]
+       [menu-asset-add-button (r/atom nil)
+        {"add funeral account" #(rf/dispatch [::funeral-model/show-funeral-dialog :add-funeral-director])
+         "add other expense" #(rf/dispatch [::funeral-model/show-funeral-dialog :add-other])}])
      (when dialog-info
        [funeral-dialog/main-dialog])]))
 
@@ -196,7 +194,7 @@
                         :icon (str "/images/buildsoc-logos/" (banking-model/get-logo :buildsoc id))}]))
        (:buildsoc-accounts current-case))
      [asset-add-button
-      {:title "add building society"
+      {:title "add"
        :on-click #(rf/dispatch [::banking-model/show-add-dialog :buildsoc])}]]))
 
 (defn bills-card []
