@@ -1,6 +1,7 @@
 (ns darbylaw.api.received-letter
   (:require
     [clojure.string :as str]
+    [darbylaw.api.letter :as letter]
     [xtdb.api :as xt]
     [darbylaw.doc-store :as doc-store]
     [darbylaw.api.util.xtdb :as xt-util]
@@ -55,13 +56,16 @@
                              :uploaded-at (xt-util/now)
                              :notification-type notification-type}
                             specific-props)]]
-          (case-history/put-event2 (merge {:case-id case-id
-                                           :user user
-                                           :subject :probate.case.received-letter
-                                           :op :uploaded
-                                           :letter letter-id
-                                           :notification-type notification-type}
-                                          specific-props)))))
+          (case-history/put-event2
+            (merge {:case-id case-id
+                    :user user
+                    :subject :probate.case.received-letter
+                    :op :uploaded
+                    :letter letter-id
+                    :notification-type notification-type
+                    :institution-type (letter/get-institution-type notification-type)
+                    :institution (letter/get-institution-id notification-type specific-props)}
+                   specific-props)))))
     {:status http/status-204-no-content}))
 
 (comment

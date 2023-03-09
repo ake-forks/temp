@@ -1,6 +1,7 @@
 (ns darbylaw.api.notification-process
   (:require
     [darbylaw.api.case-history :as case-history]
+    [darbylaw.api.letter :as letter]
     [darbylaw.api.util.http :as http]
     [darbylaw.api.util.tx-fns :as tx-fns]
     [darbylaw.api.util.xtdb :as xt-util]
@@ -35,12 +36,15 @@
         [[::xt/put (merge {:xt/id id}
                           id)]]
         (tx-fns/set-value id [:ready-to-start] true)
-        (case-history/put-event2
-          (merge notification-props
-                 {:case-id case-id
-                  :user user
-                  :subject :probate.case.notification-process
-                  :op :set-ready-to-start}))))
+        (let [notification-type (:notification-type notification-props)]
+          (case-history/put-event2
+            (merge notification-props
+                   {:case-id case-id
+                    :user user
+                    :subject :probate.case.notification-process
+                    :op :set-ready-to-start
+                    :institution-type (letter/get-institution-type notification-type)
+                    :institution (letter/get-institution-id notification-type notification-props)})))))
     {:status http/status-204-no-content}))
 
 (comment

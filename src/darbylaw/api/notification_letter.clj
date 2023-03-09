@@ -9,7 +9,8 @@
     [darbylaw.api.util.http :as http]
     [darbylaw.api.util.files :as files-util :refer [with-delete]]
     [darbylaw.api.case-history :as case-history]
-    [darbylaw.api.bill.notification-template :as template]))
+    [darbylaw.api.bill.notification-template :as template]
+    [darbylaw.api.letter :as letter]))
 
 (defn convert-to-pdf-and-store [case-id letter-id docx]
   (with-delete [pdf (files-util/create-temp-file letter-id ".pdf")]
@@ -52,10 +53,7 @@
                            :utility (select-mandatory body-params [:utility-company
                                                                    :property])
                            :council-tax (select-mandatory body-params [:council
-                                                                       :property]))
-          institution-id (case notification-type
-                           :utility (:utility-company body-params)
-                           :council-tax (:council body-params))]
+                                                                       :property]))]
       (xt-util/exec-tx-or-throw xtdb-node
         (concat
           [[::xt/put (merge {:type :probate.notification-letter
@@ -66,14 +64,15 @@
                              :modified-at (xt-util/now)
                              :notification-type notification-type}
                             specific-props)]]
-          (case-history/put-event2 (merge {:case-id case-id
-                                           :user user
-                                           :subject :probate.case.notification-letter
-                                           :op :generated
-                                           :letter letter-id
-                                           :institution-type notification-type
-                                           :institution institution-id}
-                                          specific-props)))))
+          (case-history/put-event2
+            (merge {:case-id case-id
+                    :user user
+                    :subject :probate.case.notification-letter
+                    :op :generated
+                    :letter letter-id
+                    :institution-type (letter/get-institution-type notification-type)
+                    :institution (letter/get-institution-id notification-type specific-props)}
+                   specific-props)))))
     {:status http/status-204-no-content}))
 
 (comment
@@ -114,12 +113,16 @@
                  (tx-fns/set-value letter-id [:mail/send-action] send-action)
                  (tx-fns/set-value letter-id [:sent-by] (:username user))
                  (tx-fns/set-value letter-id [:sent-at] (xt-util/now))
-                 (case-history/put-event2
-                   {:case-id case-id
-                    :user user
-                    :subject :probate.case.notification-letter
-                    :op :sent
-                    :letter letter-id})))]
+                 (let [letter-data (xt/entity (xt/db xtdb-node) letter-id)
+                       notification-type (:notification-type letter-data)]
+                   (case-history/put-event2
+                     {:case-id case-id
+                      :user user
+                      :subject :probate.case.notification-letter
+                      :op send-action
+                      :institution-type (letter/get-institution-type notification-type)
+                      :institution (letter/get-institution-id notification-type letter-data)
+                      :letter letter-id}))))]
       (if (xt/tx-committed? xtdb-node tx)
         {:status http/status-204-no-content}
         {:status http/status-404-not-found}))))
@@ -140,12 +143,16 @@
               {:author username
                :by username
                :modified-at (xt-util/now)})
-            (case-history/put-event2
-              {:case-id case-id
-               :user user
-               :subject :probate-case.notification-letter
-               :op :replaced
-               :letter letter-id})))
+            (let [letter-data (xt/entity (xt/db xtdb-node) letter-id)
+                  notification-type (:notification-type letter-data)]
+              (case-history/put-event2
+                {:case-id case-id
+                 :user user
+                 :subject :probate-case.notification-letter
+                 :op :replaced
+                 :institution-type (letter/get-institution-type notification-type)
+                 :institution (letter/get-institution-id notification-type letter-data)
+                 :letter letter-id}))))
         {:status http/status-204-no-content}))))
 
 (defn routes []
