@@ -58,15 +58,16 @@
   (let [case-id (get-in req [:parameters :path :case-id])
         notification-props (get-notification-props body-params)
         resp (->> (xt/q (xt/db xtdb-node)
-                    {:find '[(pull letter [*]) modified-at]
+                    {:find '[(pull letter [*]) order-date]
                      :in '[case-id]
                      :where (into
-                              '[(or [letter :probate.notification-letter/case case-id]
-                                    [letter :probate.received-letter/case case-id])
-                                [letter :modified-at modified-at]]
+                              '[(or (and [letter :probate.notification-letter/case case-id]
+                                         [letter :modified-at order-date])
+                                    (and [letter :probate.received-letter/case case-id]
+                                         [letter :uploaded-at order-date]))]
                               (for [[k v] notification-props]
                                 ['letter k v]))
-                     :order-by [['modified-at :desc]]}
+                     :order-by [['order-date :desc]]}
                     case-id)
                (map first))]
     {:status http/status-200-ok
