@@ -2,5 +2,9 @@
   (:require [reagent-mui.components :as mui]))
 
 (defn fake-case-chip [fake?]
-  [mui/chip {:label (if fake? "FAKE" "REAL")
-             :variant :outlined}])
+  [mui/chip (merge {:variant :outlined}
+                   (if fake?
+                     {:label "FAKE"
+                      :color :secondary}
+                     {:label "REAL"
+                      :color :primary}))])
