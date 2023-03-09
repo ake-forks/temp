@@ -58,22 +58,15 @@
           (str "£"))]]]
      [mui/divider {:variant "middle"}]]))
 
-(defn add-bank []
-  [mui/card-action-area {:on-click #(rf/dispatch [::banking-model/show-add-dialog :bank]) :sx {:padding-top "0.5rem"}}
-   [mui/stack {:direction :row :spacing 2 :align-items :baseline}
-    [mui/typography {:variant :h5} "add bank account"]
+(defn asset-add-button [{:keys [title on-click]}]
+  [mui/card-action-area {:on-click on-click
+                         :sx {:padding-top 1}}
+   [mui/stack {:direction :row
+               :spacing 2
+               :align-items :center}
+    [mui/typography {:variant :h5}
+     (or title "add")]
     [ui/icon-add]]])
-
-(defn bank-card [current-case]
-  [mui/card
-   [mui/card-content
-    [mui/typography {:variant :h5 :sx {:font-weight 600}} "bank accounts"]
-    [mui/divider]
-    (for [bank (:bank-accounts current-case)]
-      ^{:key (:bank-id bank)}
-      [bank-item bank])
-    [add-bank]]
-   [bank-dialog/base-dialog]])
 
 (defn asset-card [{:keys [title _on-add]} & body]
   [mui/card
@@ -84,15 +77,15 @@
     [mui/divider]
     (into [:<>] body)]])
 
-(defn asset-add-button [{:keys [title on-click]}]
-  [mui/card-action-area {:on-click on-click
-                         :sx {:padding-top 1}}
-   [mui/stack {:direction :row
-               :spacing 2
-               :align-items :center}
-    [mui/typography {:variant :h5}
-     (or title "add")]
-    [ui/icon-add]]])
+(defn bank-card [current-case]
+  [asset-card {:title "bank accounts"}
+   [bank-dialog/base-dialog]
+   (for [bank (:bank-accounts current-case)]
+     ^{:key (:bank-id bank)}
+     [bank-item bank])
+   [asset-add-button
+    {:title "add"
+     :on-click #(rf/dispatch [::banking-model/show-add-dialog :bank])}]])
 
 (defn menu-asset-add-button
   "anchor = atom
