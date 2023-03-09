@@ -32,11 +32,12 @@
                     :uploaded-at (xt-util/now)
                     :original-filename original-filename}]]
         (tx-fns/append-unique case-id [:identity-user-docs] [document-id])
-        (case-history/put-event
-          {:event :identity.document-added
-           :case-id case-id
-           :document-id document-id
-           :user user})))
+        (case-history/put-event2
+          {:case-id case-id
+           :user user
+           :subject :probate.case.identity-check.document
+           :op :added
+           :document-id document-id})))
     {:status http/status-200-ok
      :body {:id document-id}}))
 
@@ -59,11 +60,12 @@
       (concat
         [[::xt/delete document-id]]
         (tx-fns/remove-unique case-id [:identity-user-docs] [document-id])
-        (case-history/put-event
-          {:event :identity.document-removed
-           :case-id case-id
-           :document-id document-id
-           :user user})))
+        (case-history/put-event2
+          {:case-id case-id
+           :user user
+           :subject :probate.case.identity-check.document
+           :op :deleted
+           :document-id document-id})))
     {:status http/status-204-no-content}))
 
 (defn routes []

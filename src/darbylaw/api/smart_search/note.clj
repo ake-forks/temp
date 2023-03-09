@@ -14,10 +14,11 @@
                            (merge note-id
                                   {:xt/id note-id
                                    :note note}))
-        (case-history/put-event
-          {:event :identity.note-updated
-           :case-id case-id
-           :user user})))
+        (case-history/put-event2
+          {:case-id case-id
+           :user user
+           :subject :probate.case.identity-check.note
+           :op :added})))
     {:status http/status-204-no-content}))
 
 (comment

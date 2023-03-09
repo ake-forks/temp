@@ -177,10 +177,11 @@
              ;; Convert to transactions
              (map #(apply check-tx case-id %))
              (apply concat))
-        (case-history/put-event
-          {:event :identity.checks-added
-           :case-id case-id
-           :user user})))
+        (case-history/put-event2
+          {:case-id case-id
+           :user user
+           :subject :probate.case.identity-checks
+           :op :added})))
     (if failed?
       {:status http/status-500-internal-server-error}
       {:status http/status-204-no-content})))
@@ -193,13 +194,14 @@
         (tx-fns/set-value case-id [:override-identity-check]
                           (when new-result
                             (keyword new-result)))
-        (case-history/put-event
+        (case-history/put-event2
           (merge
-            {:event (if new-result
-                      :identity.checks-overridden
-                      :identity.checks-override-reset)
-             :case-id case-id
-             :user user}
+            {:case-id case-id
+             :user user
+             :subject :probate.case.identity-checks-override
+             :op (if new-result
+                   :set
+                   :unset)}
             (when new-result
               {:result new-result})))))
     {:status http/status-204-no-content}))
