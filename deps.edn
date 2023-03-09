@@ -36,7 +36,8 @@
         ;; Documents
         org.jodconverter/jodconverter-local {:mvn/version "4.4.4"}
         io.github.erdos/stencil-core {:mvn/version "0.4.7"}
-        pdfboxing/pdfboxing {:mvn/version "0.1.14"}
+        ;pdfboxing/pdfboxing {:mvn/version "0.1.15.2-SNAPSHOT"}
+        io.github.dotemacs/pdfboxing {:git/sha "90be0ad951ac3fea07af6d58fb0cb81c9885cd61"}
         ;; Data
         camel-snake-kebab/camel-snake-kebab {:mvn/version "0.4.3"}
         org.clojure/data.json {:mvn/version "2.4.0"}
