@@ -24,7 +24,9 @@
           [:dispatch [::notification-model/open
                       {:notification-type :utility
                        :case-id case-id
-                       :utility-company (keyword (:utility-company values))
+                       :utility-company (keyword (or
+                                                   (:utility-company values)
+                                                   (:new-utility-company values)))
                        :property (:property response)}]]]}))
 
 (rf/reg-event-fx ::submit-failure
@@ -66,7 +68,7 @@
          [mui/typography {:variant :h6} "supplier"]
          (if (some? supplier-data)
            [mui/typography {:variant :h5} (:common-name supplier-data)]
-           [mui/typography {:variant :h5} (:new-utility-company temp-data)])]
+           [mui/typography {:variant :h5} (or (:new-utility-name temp-data) (:new-utility-company temp-data))])]
 
 
         [mui/divider]]
