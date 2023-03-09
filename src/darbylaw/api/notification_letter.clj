@@ -66,7 +66,7 @@
           (case-history/put-event (merge {:event :notification.letter-generated
                                           :case-id case-id
                                           :user user
-                                          :letter-id letter-id
+                                          :letter letter-id
                                           :notification-type notification-type}
                                          specific-props)))))
     {:status http/status-204-no-content}))
@@ -113,7 +113,7 @@
                    {:event :notification.letter-sent
                     :case-id case-id
                     :user user
-                    :letter-id letter-id})))]
+                    :letter letter-id})))]
       (if (xt/tx-committed? xtdb-node tx)
         {:status http/status-204-no-content}
         {:status http/status-404-not-found}))))
@@ -138,7 +138,7 @@
               {:event :notification.letter-replaced
                :case-id case-id
                :user user
-               :letter-id letter-id})))
+               :letter letter-id})))
         {:status http/status-204-no-content}))))
 
 (defn routes []

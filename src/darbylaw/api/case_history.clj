@@ -25,8 +25,28 @@
         (assert (string? (:username user)))
         {:by (:username user)}))))
 
+(defn put-event2 [{:keys [subject case-id user op] :as event-data}]
+  (assert (keyword? subject))
+  (assert (uuid? case-id))
+  (assert (keyword? op))
+  (put-with-tx-data
+    (merge
+      (dissoc event-data :case-id :user)
+      {:xt/id (random-uuid)
+       :type :event
+       :event/case case-id}
+      (when user
+        (assert (string? (:username user)))
+        {:by (:username user)}))))
+
 (comment
   (put-event {:event :testing-event
               :case-id (random-uuid)
-              :user {:username "me"}}))
+              :user {:username "me"}})
+
+  (xt/q (xt/db darbylaw.xtdb-node/xtdb-node)
+    '{:find [(pull ev [*]) t]
+      :where [[ev :event/case]
+              [ev :timestamp t]]
+      :order-by [[t :asc]]}))
 

@@ -23,7 +23,8 @@
 
           request' (assoc request
                           :xt-type :probate.funeral-account
-                          :event :updated.funeral-account
+                          :event-subject :probate.case.funeral-account
+                          :event-op :updated
                           :expense-id account-id
                           :expense-info account-info)]
       (handler request'))))
@@ -46,9 +47,10 @@
           request' (assoc request
                           :xt-type :probate.funeral-expense
                           :append-path [:funeral-expense]
-                          :event (case op
-                                   :add :added.other-expense
-                                   :update :updated.other-expense)
+                          :event-subject :probate.case.funeral-expense
+                          :event-op (case op
+                                      :add :added
+                                      :update :updated)
                           :expense-id expense-id
                           :expense-info expense-info)]
       (handler request'))))
@@ -61,7 +63,7 @@
   
   Arguments:
   xt-type      - The xt/type of the expense.
-  event        - The event to add to the case history.
+  event-subject, event-op - The event to add to the case history.
   expense-id   - The xt/id of the expense.
   expense-info - The expense info to insert/update.
   append-path  - (optional) The path to append the expense id to.
@@ -69,7 +71,7 @@
                  This is useful for funeral accounts which are singletons.
   file-uploads - See wrap-uploaded-files."
   [{:keys [xtdb-node user parameters file-uploads
-           xt-type event
+           xt-type event-subject event-op
            expense-id expense-info append-path]}]
   (let [case-id (get-in parameters [:path :case-id])
         file-tx
@@ -106,9 +108,11 @@
         file-tx
         (when append-path
           (tx-fns/append-unique case-id append-path [expense-id]))
-        (case-history/put-event {:event event
-                                 :case-id case-id
-                                 :user user})))
+        (case-history/put-event2 {:case-id case-id
+                                  :user user
+                                  :subject event-subject
+                                  :op event-op
+                                  :expense expense-id})))
     {:status 200
      :body {:id expense-id}}))
 

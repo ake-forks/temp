@@ -89,13 +89,14 @@
                                   :notification-type bank-type
                                   bank-type bank-id}]]
                       (tx-fns/set-value asset-id [:notification-letter] letter-id)
-                      (case-history/put-event
-                        {:event :notification.letter-generated
-                         :case-id case-id
+                      (case-history/put-event2
+                        {:case-id case-id
                          :user user
-                         :letter-id letter-id
-                         :notification-type bank-type
-                         bank-type bank-id})))]
+                         :subject :probate.case.notification-letter
+                         :op :generated
+                         :institution-type bank-type
+                         :institution bank-id
+                         :letter letter-id})))]
           (if (xt/tx-committed? xtdb-node tx2)
             {:status 204}
             {:status http/status-409-conflict
@@ -129,13 +130,14 @@
               {:author :generated
                :by (:username user)
                :modified-at (xt-util/now)})
-            (case-history/put-event
-              {:event :notification.letter-generated
-               :case-id case-id
+            (case-history/put-event2
+              {:case-id case-id
                :user user
-               :letter-id letter-id
-               :notification-type bank-type
-               bank-type bank-id})))
+               :subject :probate.case.notification-letter
+               :op :regenerated
+               :institution-type bank-type
+               :institution bank-id
+               :letter letter-id})))
         {:status http/status-204-no-content}))))
 
 (def docx-mime-type
@@ -164,12 +166,14 @@
               {:author username
                :by username
                :modified-at (xt-util/now)})
-            (case-history/put-event
-              {:event :notification.letter-replaced
-               :case-id case-id
+            (case-history/put-event2
+              {:case-id case-id
                :user user
-               :bank-id bank-id
-               :letter-id letter-id})))
+               :subject :probate.case.notification-letter
+               :op :replaced
+               :institution-type bank-type
+               :institution bank-id
+               :letter letter-id})))
         {:status http/status-204-no-content}))))
 
 (defn get-notification [doc-type {:keys [xtdb-node path-params bank-type]}]
@@ -203,14 +207,17 @@
                  (tx-fns/set-value letter-id [:sent-by] (:username user))
                  (tx-fns/set-value letter-id [:sent-at] (xt-util/now))
                  (tx-fns/set-value letter-id [:mail/send-action] send-action)
-                 (case-history/put-event
-                   {:event (if (#{:send :fake-send} send-action)
-                             :notification.letter-sent
-                             :notification.letter-not-sent)
-                    :case-id case-id
+                 (case-history/put-event2
+                   {:case-id case-id
                     :user user
-                    :bank-id bank-id
-                    :letter-id letter-id})))]
+                    :subject :probate.case.notification-letter
+                    :op (case send-action
+                          :send :sent
+                          :fake-send :sent-fake
+                          :do-not-send :not-sent)
+                    :institution-type bank-type
+                    :institution bank-id
+                    :letter letter-id})))]
       (if (xt/tx-committed? xtdb-node tx)
         {:status http/status-204-no-content}
         {:status http/status-404-not-found}))))
@@ -255,13 +262,14 @@
         ; This should be obsolete when we support multiple valuation letters:
         (tx-fns/set-value (build-asset-id bank-type case-id bank-id)
           [:valuation-letter] letter-id)
-        (case-history/put-event
-          {:event :notification.letter-received
+        (case-history/put-event2
+          {:case-id case-id
            :user user
-           :case-id case-id
-           :letter-id letter-id
-           :notification-type bank-type
-           bank-type bank-id})))
+           :subject :probate.case.received-letter
+           :op :added
+           :institution-type bank-type
+           :institution bank-id
+           :letter letter-id})))
     {:status 204}))
 
 (defn mark-values-confirmed [{:keys [xtdb-node user path-params bank-type]}]
@@ -274,10 +282,12 @@
           {:by (:username user)
            :timestamp (xt-util/now)})
         (case-history/put-event
-          {:event :bank-notification.values-confirmed
-           :case-id case-id
+          {:case-id case-id
            :user user
-           :bank-id bank-id})))
+           :subject :probate.case.bank-accounts
+           :op :values-confirmed
+           :institution-type bank-type
+           :institution bank-id})))
     {:status 204}))
 
 (defn wrap-bank-type [handler bank-type]

@@ -27,7 +27,7 @@
                         :probate.received-letter :received-letter.deleted)
                :case-id case-id
                :user user
-               :letter-id letter-id})))
+               :letter letter-id})))
 
         (case letter-type
           :probate.notification-letter

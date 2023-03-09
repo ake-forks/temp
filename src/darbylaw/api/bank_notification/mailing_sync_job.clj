@@ -97,7 +97,7 @@
                 (if-let [case-id (:probate.notification-letter/case letter)]
                   (case-history/put-event {:event :notification.letter-send-error
                                            :case-id case-id
-                                           :letter-id letter-id
+                                           :letter letter-id
                                            :send-error error})
                   (log/warn "Unknown letter type: " letter-id))))
             (sftp-remove--ignore-not-found remote (str errors-dir "/" filename)))
@@ -125,7 +125,7 @@
               (if-let [case-id (:probate.notification-letter/case letter)]
                 (case-history/put-event {:event :notification.letter-sent
                                          :case-id case-id
-                                         :letter-id letter-id})
+                                         :letter letter-id})
                 (log/warn "Unknown letter type: " letter-id))))
           (catch Exception e
             (log/error e "Failed syncing sent letter" letter-id)))))))

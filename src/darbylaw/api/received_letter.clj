@@ -58,7 +58,7 @@
           (case-history/put-event (merge {:event :notification.letter-received
                                           :case-id case-id
                                           :user user
-                                          :letter-id letter-id
+                                          :letter letter-id
                                           :notification-type notification-type}
                                          specific-props)))))
     {:status http/status-204-no-content}))

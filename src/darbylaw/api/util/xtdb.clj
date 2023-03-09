@@ -45,5 +45,9 @@
     (str "Expected one result, got " (count xt-results)))
   (first xt-results))
 
+(defn fetch-property [db eid k]
+  (some-> (xt/pull db [k] eid)
+    (get k)))
+
 (defn now []
   (Date.))
