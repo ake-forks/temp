@@ -1,5 +1,4 @@
-(ns darbylaw.api.smart-search.data
-  (:require [darbylaw.api.util.malli :as malli+]))
+(ns darbylaw.api.smart-search.data)
 
 (defn uk-aml->result
   [{:keys [result]}]

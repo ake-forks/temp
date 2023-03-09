@@ -34,7 +34,7 @@
   (digest/md5 (str public-key (today))))
 
 (defn auth-token []
-  (let [{:keys [body] :as resp}
+  (let [{:keys [body]}
         (base-client {:method :post
                       :path "/auth/token"
                       :body {:company_name company-name
@@ -53,9 +53,10 @@
 
 ;; There's technically a race condition here if two requests are being processed at the same time
 ;; This shouldn't be an issue though because we'll just update the token in place
-(defn wrap-auth [handler]
+(defn wrap-auth
   "Add an Authorization header to the request
   Possibly making a request to refresh the token"
+  [handler]
   (fn [request]
     (let [{:keys [status] :as response}
           (-> request add-token handler)]

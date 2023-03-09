@@ -47,6 +47,15 @@
                                             (into v coll)))
                                       (fnil [])))]]))))
 
+(defn remove-unique [eid ks coll]
+  (assert (sequential? ks))
+  (assert (sequential? coll))
+  (invoke ::remove [eid ks coll]
+    '(fn [ctx eid ks coll]
+       (let [e (xtdb.api/entity (xtdb.api/db ctx) eid)]
+         [[::xt/put (update-in e ks (-> #(->> % (remove (set coll)) vec)
+                                        (fnil [])))]]))))
+
 (defn put-unique [e]
   (assert (:xt/id e))
   (invoke ::put-unique [e]

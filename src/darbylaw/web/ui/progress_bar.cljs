@@ -3,7 +3,7 @@
     [reagent-mui.components :as mui]
     [reagent.core :as r]
     [re-frame.core :as rf]
-    [darbylaw.web.ui.identity.dialog :as identity-dialog]
+    [darbylaw.web.ui.identity.dialog.utils :refer [check-icon]]
     [darbylaw.web.ui.identity.model :as identity-model]))
 
 (rf/reg-sub ::current-case
@@ -58,7 +58,7 @@
                    :unknown "We're waiting on an admin to run the checks."
                    :pass "Identity checks have passed."
                    "Some manual intervention is required.")
-        :icon [identity-dialog/check-icon]}]
+        :icon [check-icon]}]
       (let [status (cond
                      (and (some? institutions)
                           (every? :notification-letter institutions))

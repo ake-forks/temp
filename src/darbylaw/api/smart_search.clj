@@ -6,6 +6,8 @@
             [darbylaw.api.util.xtdb :as xt-util]
             [darbylaw.api.util.tx-fns :as tx-fns]
             [darbylaw.api.smart-search.api :as ss-api]
+            [darbylaw.api.smart-search.note :as note]
+            [darbylaw.api.smart-search.documents :as documents]
             [darbylaw.api.case-history :as case-history]
             [darbylaw.api.util.http :as http]
             [darbylaw.api.util.base64 :refer [decode-base64]]
@@ -84,7 +86,7 @@
    :contacts {:mobile (:phone pr-info)}
    :address (let [{:keys [flat building
                           street1 street2
-                          town region postcode]}
+                          town postcode]}
                   pr-info]
               {:line_1 (->> [flat building] (remove nil?) (str/join ", "))
                :line_2 (->> [street1 street2] (remove nil?) (str/join ", "))
@@ -233,14 +235,17 @@
 ;; >> Routes
 
 (defn routes []
-  ["/case/:case-id/identity-checks"
-   ["/run"
-    {:post {:handler check
-            :parameters {:path [:map [:case-id :uuid]]}}}]
-   ["/override"
-    {:post {:handler override-checks
-            :parameters {:path [:map [:case-id :uuid]]
-                         :query [:map [:new-result {:optional true} :string]]}}}]
-   ["/download-pdf"
-    {:get {:handler download
-           :parameters {:path [:map [:case-id :uuid]]}}}]])
+  ["/case/:case-id/identity"
+   ["/checks"
+    ["/run"
+     {:post {:handler check
+             :parameters {:path [:map [:case-id :uuid]]}}}]
+    ["/override"
+     {:post {:handler override-checks
+             :parameters {:path [:map [:case-id :uuid]]
+                          :query [:map [:new-result {:optional true} :string]]}}}]
+    ["/download-pdf"
+     {:get {:handler download
+            :parameters {:path [:map [:case-id :uuid]]}}}]]
+   (note/routes)
+   (documents/routes)])
