@@ -75,7 +75,8 @@
           (let [status (status-fn stage)]
             ^{:key label}
             [mui/step {:completed (= status :completed)}
-             [mui/step-label {:icon (progress-bar/get-icon status)}
+             [mui/step-label {:icon (r/as-element
+                                      (progress-bar/get-icon status))}
               [mui/typography {:variant :body2
                                :style {:textTransform :uppercase}}
                label]]])))]]))
