@@ -35,7 +35,11 @@
 
 (rf/reg-sub ::case-history
   (fn [db [_ case-id]]
-    (get-in db [:case-history case-id])))
+    (get-in db [:case-history case-id :history])))
+
+(rf/reg-sub ::case-reference
+  (fn [db [_ case-id]]
+    (get-in db [:case-history case-id :reference])))
 
 (rf/reg-event-fx ::load-event-success
   (fn [{:keys [db]} [_ id response]]
@@ -64,13 +68,30 @@
 (comment
   (format-timestamp (js/Date.)))
 
-(defn row [{:keys [id timestamp event by]}]
+(defn strip-probate-case [s]
+  (let [[match tail] (re-matches #"probate\.case\.(.*)" s)]
+    (if match
+      tail
+      s)))
+
+(comment
+  (strip-probate-case (name :probate.case.bank-accounts))
+  (strip-probate-case (name :another.subject)))
+
+(defn row [{:keys [id by timestamp
+                   subject op
+                   institution-type institution]}]
   (r/with-let [open? (r/atom false)]
     [:<>
      [mui/table-row {:key (str id)}
       [mui/table-cell (format-timestamp timestamp)]
-      [mui/table-cell event]
       [mui/table-cell by]
+      [mui/table-cell (some-> subject name strip-probate-case)]
+      [mui/table-cell op]
+      [mui/table-cell (str (when institution-type
+                             (str (name institution-type) ": "))
+                           (when institution
+                             (name institution)))]
       [mui/table-cell
        [mui/icon-button {:onClick #(do
                                      (swap! open? not)
@@ -79,7 +100,7 @@
           [ui/icon-keyboard-arrow-up]
           [ui/icon-keyboard-arrow-down])]]]
      [mui/table-row {:key (str "data-" (str id))}
-      [mui/table-cell {:colSpan 3
+      [mui/table-cell {:colSpan 6
                        :sx {:pb 0 :pt 0}}
        [mui/collapse {:in @open?
                       :unmountOnExit true}
@@ -91,16 +112,17 @@
 
 (defn panel []
   (let [case-id @(rf/subscribe [::case-model/case-id])
+        reference @(rf/subscribe [::case-reference case-id])
         history @(rf/subscribe [::case-history case-id])]
-    [mui/container {:max-width :sm
+    [mui/container {:max-width :lg
                     :sx {:mt 4 :mb 4}}
      [mui/stack {:spacing 2}
       [mui/typography {:variant :h3}
-       (str "case history")]
-      [mui/typography {:variant :p}
-       "Case id: "
+       (str "case history " reference)]
+      [mui/typography {:variant :body2}
+       "case UUID: "
        [mui/box {:component :span
-                 :sx {:fontFamily :monospace}} "#" case-id]]
+                 :sx {:fontFamily :monospace}} case-id]]
       [mui/table-container ;{:sx {:width :max-content}}
        [mui/table
         [mui/table-body

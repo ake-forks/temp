@@ -44,12 +44,13 @@
                     :uploaded-at (xt-util/now)
                     :original-filename orig-filename}]]
         (tx-fns/set-value case-id [document-name] filename)
-        (case-history/put-event
-          {:event (if (document-present? xtdb-node case-id document-name)
-                    :document.replaced
-                    :document.uploaded)
-           :case-id case-id
+        (case-history/put-event2
+          {:case-id case-id
            :user user
+           :subject :probate.case.document
+           :op (if (document-present? xtdb-node case-id document-name)
+                 :replaced
+                 :uploaded)
            :document-name document-name
            :document-id filename})))
     {:status 204}))

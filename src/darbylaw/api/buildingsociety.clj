@@ -38,12 +38,14 @@
               {:accounts accounts
                :accounts-unknown accounts-unknown}))
           (tx-fns/append-unique case-id [:buildsoc-accounts] [asset-id])
-          (case-history/put-event {:event :updated.buildsoc-accounts
-                                   :case-id case-id
-                                   :user user
-                                   :op op
-                                   :buildsoc-id buildsoc-id
-                                   :accounts accounts}))))
+          (case-history/put-event2 {:case-id case-id
+                                    :user user
+                                    :subject :probate.case.buildsoc-accounts
+                                    :op (case op
+                                          :add :added
+                                          :update :updated)
+                                    :institution-type :buildsoc
+                                    :institution buildsoc-id}))))
     {:status http/status-204-no-content}))
 
 (def body-schema
