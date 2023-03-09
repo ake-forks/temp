@@ -49,9 +49,9 @@
                    :non-linear true
                    :style {:margin-top "2rem"
                            :margin-bottom "2rem"}}
-      [stepper-item
+      (stepper-item
        {:label "Case Created"
-        :icon (get-icon :completed)}]
+        :icon (get-icon :completed)})
       [stepper-item 
        {:label "Identity Check"
         :tooltip (case @(rf/subscribe [::identity-model/current-final-result])
