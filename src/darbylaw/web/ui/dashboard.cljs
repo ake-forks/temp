@@ -286,7 +286,8 @@
         (if (nil? current-case)
           [mui/skeleton {:width "5rem"}]
           (str "case " (:reference current-case :reference)))]
-       [case-commons/fake-case-chip (:fake current-case)]]]
+       (when (:fake current-case)
+         [case-commons/fake-case-chip (:fake current-case)])]]
      [progress-bar/progress-bar]]]])
 
 (defn content [current-case]
