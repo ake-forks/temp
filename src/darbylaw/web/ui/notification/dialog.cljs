@@ -32,9 +32,10 @@
                                              (:utility-company notification-db)
                                              (:property notification-db))))
         new-utility? (some? (:new-utility-name current-data))
-        utility-label (if new-utility?
-                        (:new-utility-name current-data)
-                        (<< ::bills-model/utility-company-label))]
+        utility-label (when (= :utility (<< ::model/notification-type))
+                        (if new-utility?
+                          (:new-utility-name current-data)
+                          (<< ::bills-model/utility-company-label)))]
     [mui/stack
      [dialog/title {:on-click-close #(rf/dispatch [::model/close-dialog])}
       (case (<< ::model/notification-type)
