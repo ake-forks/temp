@@ -12,6 +12,17 @@
     (catch Exception e
       (log/warn e "Could not delete file " letter-id))))
 
+(defn get-institution-type [notification-type]
+  (case notification-type
+    :utility :utility-company
+    :council-tax :council
+    (do (log/error "case not handled: " notification-type)
+        nil)))
+
+(defn get-institution-id [notification-type letter-data]
+  (when-let [k (get-institution-type notification-type)]
+    (get letter-data k)))
+
 (defn delete-letter [{:keys [xtdb-node user path-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
         letter-id (:letter-id path-params)]
@@ -30,10 +41,8 @@
                           :probate.notification-letter :probate.case.notification-letter
                           :probate.received-letter :probate.case.received-letter)
                :op :deleted
-               :institution-type notification-type
-               :institution (get letter-data (case notification-type
-                                               :utility :utility-company
-                                               :council-tax :council))
+               :institution-type (get-institution-type notification-type)
+               :institution (get-institution-id notification-type letter-data)
                :letter letter-id})))
 
         (case letter-type

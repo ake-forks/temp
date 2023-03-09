@@ -211,10 +211,7 @@
                    {:case-id case-id
                     :user user
                     :subject :probate.case.notification-letter
-                    :op (case send-action
-                          :send :sent
-                          :fake-send :sent-fake
-                          :do-not-send :not-sent)
+                    :op send-action
                     :institution-type bank-type
                     :institution bank-id
                     :letter letter-id})))]
