@@ -16,7 +16,7 @@
     [ui/icon-edit {:sx {:mr 1}}]
     "Sample data"]
 
-   [mui/container {:max-width :sm
+   [mui/container {:max-width :md
                    :sx {:mb 4}}
     [mui/stack {:spacing 4}
      [mui/stack

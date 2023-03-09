@@ -17,8 +17,8 @@
 
 (defn start! []
   (kf/start!
-    {:routes [["/app/about" :about]
-              ["/app/landing" :landing]
+    {:routes [["/" :landing]
+              ["/app/about" :about]
               ["/app/onboarding" :decision-tree]
               ["/app/admin" :admin]
               ["/app/create-case" :create-case]

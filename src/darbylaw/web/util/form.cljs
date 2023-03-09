@@ -78,9 +78,9 @@
   (assert name "Missing required arg :name")
   [mui/autocomplete
    (merge
-     (let [v (or (get values name) "")]
+     (let [v (get values name)]
        (if (:freeSolo config)
-         {:inputValue v
+         {:inputValue (or v "")
           :onInputChange (fn [_evt new-value]
                            (set-handle-change {:value new-value
                                                :path [name]}))}

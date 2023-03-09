@@ -19,6 +19,7 @@
     [darbylaw.web.ui.keydocs.dialog :as key-docs]
     [darbylaw.web.ui.identity.dialog :as identity-dialog]
     [re-frame.core :as rf]
+    [reagent.core :as r]
     [reagent.format :as format]
     [darbylaw.web.theme :as theme]
     [darbylaw.web.ui.case-commons :as case-commons]
@@ -58,22 +59,16 @@
           (str "£"))]]]
      [mui/divider {:variant "middle"}]]))
 
-(defn add-bank []
-  [mui/card-action-area {:on-click #(rf/dispatch [::banking-model/show-add-dialog :bank]) :sx {:padding-top "0.5rem"}}
-   [mui/stack {:direction :row :spacing 2 :align-items :baseline}
-    [mui/typography {:variant :h5} "add bank account"]
-    [ui/icon-add]]])
-
-(defn bank-card [current-case]
-  [mui/card
-   [mui/card-content
-    [mui/typography {:variant :h5 :sx {:font-weight 600}} "bank accounts"]
-    [mui/divider]
-    (for [bank (:bank-accounts current-case)]
-      ^{:key (:bank-id bank)}
-      [bank-item bank])
-    [add-bank]]
-   [bank-dialog/base-dialog]])
+(defn asset-add-button [{:keys [title on-click]}]
+  [mui/card-action-area {:on-click on-click
+                         :sx {:padding-top 1}}
+   [mui/stack {:direction :row
+               :spacing 0.5
+               :align-items :center
+               :style {:color theme/teal}}
+    [mui/typography {:style {:font-weight 500}}
+     (or title "add")]
+    [ui/icon-add {:font-size :small}]]])
 
 (defn asset-card [{:keys [title _on-add]} & body]
   [mui/card
@@ -84,28 +79,24 @@
     [mui/divider]
     (into [:<>] body)]])
 
-(defn asset-add-button [{:keys [title on-click]}]
-  [mui/card-action-area {:on-click on-click
-                         :sx {:padding-top 1}}
-   [mui/stack {:direction :row
-               :spacing 2
-               :align-items :center}
-    [mui/typography {:variant :h5}
-     (or title "add")]
-    [ui/icon-add]]])
+(defn bank-card [current-case]
+  [asset-card {:title "bank accounts"}
+   [bank-dialog/base-dialog]
+   (for [bank (:bank-accounts current-case)]
+     ^{:key (:bank-id bank)}
+     [bank-item bank])
+   [asset-add-button
+    {:title "add"
+     :on-click #(rf/dispatch [::banking-model/show-add-dialog :bank])}]])
 
 (defn menu-asset-add-button
   "anchor = atom
   options = a map of option labels and their on-click functions as key-value pairs"
   [anchor options]
   [:<>
-   [mui/card-action-area {:on-click (fn [e] (reset! anchor (.-target e)))
-                          :sx {:padding-top 1}}
-    [mui/stack {:direction :row
-                :spacing 2
-                :align-items :center}
-     [mui/typography {:variant :h5} "add"]
-     [ui/icon-add]]]
+   [asset-add-button 
+    {:title "add"
+     :on-click #(reset! anchor (.-target %))}]
    [mui/menu {:open (some? @anchor)
               :anchor-el @anchor
               :on-close #(reset! anchor nil)
@@ -171,13 +162,13 @@
          ;; TODO: Make right size
          :icon [mui/skeleton {:variant :circular
                               :width 25}]}])
-     (when-not account
+     (if account
        [asset-add-button
-        {:title "add funeral account"
-         :on-click #(rf/dispatch [::funeral-model/show-funeral-dialog :add-funeral-director])}])
-     [asset-add-button
-      {:title "add other expense"
-       :on-click #(rf/dispatch [::funeral-model/show-funeral-dialog :add-other])}]
+        {:title "add"
+         :on-click #(rf/dispatch [::funeral-model/show-funeral-dialog :add-other])}]
+       [menu-asset-add-button (r/atom nil)
+        {"add funeral account" #(rf/dispatch [::funeral-model/show-funeral-dialog :add-funeral-director])
+         "add other expense" #(rf/dispatch [::funeral-model/show-funeral-dialog :add-other])}])
      (when dialog-info
        [funeral-dialog/main-dialog])]))
 
@@ -203,7 +194,7 @@
                         :icon (str "/images/buildsoc-logos/" (banking-model/get-logo :buildsoc id))}]))
        (:buildsoc-accounts current-case))
      [asset-add-button
-      {:title "add building society"
+      {:title "add"
        :on-click #(rf/dispatch [::banking-model/show-add-dialog :buildsoc])}]]))
 
 (defn bills-card []
@@ -295,7 +286,8 @@
         (if (nil? current-case)
           [mui/skeleton {:width "5rem"}]
           (str "case " (:reference current-case :reference)))]
-       [case-commons/fake-case-chip (:fake current-case)]]]
+       (when (:fake current-case)
+         [case-commons/fake-case-chip (:fake current-case)])]]
      [progress-bar/progress-bar]]]])
 
 (defn content [current-case]

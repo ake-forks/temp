@@ -35,11 +35,12 @@
         [[::xt/put (merge {:xt/id id}
                           id)]]
         (tx-fns/set-value id [:ready-to-start] true)
-        (case-history/put-event
+        (case-history/put-event2
           (merge notification-props
-                 {:event :notification-process.ready-to-start
-                  :case-id case-id
-                  :user user}))))
+                 {:case-id case-id
+                  :user user
+                  :subject :probate.case.notification-process
+                  :op :set-ready-to-start}))))
     {:status http/status-204-no-content}))
 
 (comment
@@ -58,15 +59,16 @@
   (let [case-id (get-in req [:parameters :path :case-id])
         notification-props (get-notification-props body-params)
         resp (->> (xt/q (xt/db xtdb-node)
-                    {:find '[(pull letter [*]) modified-at]
+                    {:find '[(pull letter [*]) order-date]
                      :in '[case-id]
                      :where (into
-                              '[(or [letter :probate.notification-letter/case case-id]
-                                    [letter :probate.received-letter/case case-id])
-                                [letter :modified-at modified-at]]
+                              '[(or (and [letter :probate.notification-letter/case case-id]
+                                         [letter :modified-at order-date])
+                                    (and [letter :probate.received-letter/case case-id]
+                                         [letter :uploaded-at order-date]))]
                               (for [[k v] notification-props]
                                 ['letter k v]))
-                     :order-by [['modified-at :desc]]}
+                     :order-by [['order-date :desc]]}
                     case-id)
                (map first))]
     {:status http/status-200-ok
