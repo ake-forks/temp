@@ -40,10 +40,6 @@
         {:by (:username user)}))))
 
 (comment
-  (put-event {:event :testing-event
-              :case-id (random-uuid)
-              :user {:username "me"}})
-
   (xt/q (xt/db darbylaw.xtdb-node/xtdb-node)
     '{:find [(pull ev [*]) t]
       :where [[ev :event/case]

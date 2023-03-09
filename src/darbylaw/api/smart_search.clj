@@ -198,10 +198,10 @@
           (merge
             {:case-id case-id
              :user user
-             :subject :probate.case.identity-checks-override
+             :subject :probate.case.identity-checks
              :op (if new-result
-                   :set
-                   :unset)}
+                   :overridden
+                   :override-reset)}
             (when new-result
               {:result new-result})))))
     {:status http/status-204-no-content}))

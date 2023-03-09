@@ -105,13 +105,13 @@
 (defn deceased-details-form* [create|edit {:keys [dirty] :as fork-args}]
   [:form
    [mui/stack {:spacing 4}
-    [mui/stack {:spacing 2 :style {:padding-left "10%" :padding-right "10%"}}
+    [mui/stack {:spacing 2}
      [relationship-field fork-args]]
-    [mui/typography {:variant :p :style {:padding-left "10%" :padding-right "10%"}}
+    [mui/typography {:variant :p}
      "Please fill out the form below using the exact details as printed in the death certificate.
      We need an accurate duplication because the death certificate is a legal document, and ensuring that all
      fields are correct now will make the rest of the probate process smoother."]
-    [mui/typography {:variant :p :style {:padding-left "10%" :margin-top "1rem"}}
+    [mui/typography {:variant :p}
      "Hover over " [ui/icon-search] " to see where you will find each field on the death certificate."]
     [mui/divider {:style {:margin-top "0.5rem"}}]
     [mui/stack {:spacing 1 :style {:margin-top "1rem"}}

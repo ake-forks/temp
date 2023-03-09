@@ -17,16 +17,23 @@
         letter-id (:letter-id path-params)]
     (if-not letter-id
       {:status http/status-404-not-found}
-      (let [letter-type (:type (xt/pull (xt/db xtdb-node) [:type] letter-id))]
+      (let [letter-data (xt/entity (xt/db xtdb-node) letter-id)
+            letter-type (:type letter-data)
+            notification-type (:notification-type letter-data)]
         (xt-util/exec-tx xtdb-node
           (concat
             [[::xt/delete letter-id]]
-            (case-history/put-event
-              {:event (case letter-type
-                        :probate.notification-letter :notification-letter.deleted
-                        :probate.received-letter :received-letter.deleted)
-               :case-id case-id
+            (case-history/put-event2
+              {:case-id case-id
                :user user
+               :subject (case letter-type
+                          :probate.notification-letter :probate.case.notification-letter
+                          :probate.received-letter :probate.case.received-letter)
+               :op :deleted
+               :institution-type notification-type
+               :institution (get letter-data (case notification-type
+                                               :utility :utility-company
+                                               :council-tax :council))
                :letter letter-id})))
 
         (case letter-type

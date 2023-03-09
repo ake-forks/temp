@@ -68,10 +68,9 @@
               (xt-util/exec-tx-or-throw xtdb-node
                 (concat
                   (tx-fns/set-values check-id (assoc updated-data :report filename))
-                  (case-history/put-event2
-                    {:case-id case-id
-                     :subject :probate.case.identity-check
-                     :op :added}))))))
+                  (case-history/put-event2 {:case-id case-id
+                                            :subject :probate.case.identity-checks.smartdoc
+                                            :op :updated}))))))
         (catch Exception e
           (log/error e "Failed syncing check ssid:" ssid))))))
 
