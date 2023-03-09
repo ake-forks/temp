@@ -7,7 +7,7 @@
 
 (defn user-details-panel []
   (r/with-let [case-loaded? (case-model/await-load-case!)]
-    [mui/container {:max-width :sm}
+    [mui/container {:max-width :md}
      [mui/typography {:variant :h3
                       :sx {:pt 4 :pb 2}}
       "your details"]
