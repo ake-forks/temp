@@ -52,7 +52,10 @@
                            :utility (select-mandatory body-params [:utility-company
                                                                    :property])
                            :council-tax (select-mandatory body-params [:council
-                                                                       :property]))]
+                                                                       :property]))
+          institution-id (case notification-type
+                           :utility (:utility-company body-params)
+                           :council-tax (:council body-params))]
       (xt-util/exec-tx-or-throw xtdb-node
         (concat
           [[::xt/put (merge {:type :probate.notification-letter
@@ -63,12 +66,14 @@
                              :modified-at (xt-util/now)
                              :notification-type notification-type}
                             specific-props)]]
-          (case-history/put-event (merge {:event :notification.letter-generated
-                                          :case-id case-id
-                                          :user user
-                                          :letter letter-id
-                                          :notification-type notification-type}
-                                         specific-props)))))
+          (case-history/put-event2 (merge {:case-id case-id
+                                           :user user
+                                           :subject :probate.case.notification-letter
+                                           :op :generated
+                                           :letter letter-id
+                                           :institution-type notification-type
+                                           :institution institution-id}
+                                          specific-props)))))
     {:status http/status-204-no-content}))
 
 (comment
@@ -109,10 +114,11 @@
                  (tx-fns/set-value letter-id [:mail/send-action] send-action)
                  (tx-fns/set-value letter-id [:sent-by] (:username user))
                  (tx-fns/set-value letter-id [:sent-at] (xt-util/now))
-                 (case-history/put-event
-                   {:event :notification.letter-sent
-                    :case-id case-id
+                 (case-history/put-event2
+                   {:case-id case-id
                     :user user
+                    :subject :probate.case.notification-letter
+                    :op :sent
                     :letter letter-id})))]
       (if (xt/tx-committed? xtdb-node tx)
         {:status http/status-204-no-content}
@@ -134,10 +140,11 @@
               {:author username
                :by username
                :modified-at (xt-util/now)})
-            (case-history/put-event
-              {:event :notification.letter-replaced
-               :case-id case-id
+            (case-history/put-event2
+              {:case-id case-id
                :user user
+               :subject :probate-case.notification-letter
+               :op :replaced
                :letter letter-id})))
         {:status http/status-204-no-content}))))
 

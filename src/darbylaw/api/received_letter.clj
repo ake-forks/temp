@@ -55,12 +55,13 @@
                              :uploaded-at (xt-util/now)
                              :notification-type notification-type}
                             specific-props)]]
-          (case-history/put-event (merge {:event :notification.letter-received
-                                          :case-id case-id
-                                          :user user
-                                          :letter letter-id
-                                          :notification-type notification-type}
-                                         specific-props)))))
+          (case-history/put-event2 (merge {:case-id case-id
+                                           :user user
+                                           :subject :probate.case.received-letter
+                                           :op :uploaded
+                                           :letter letter-id
+                                           :notification-type notification-type}
+                                          specific-props)))))
     {:status http/status-204-no-content}))
 
 (comment

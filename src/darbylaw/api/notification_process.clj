@@ -35,11 +35,12 @@
         [[::xt/put (merge {:xt/id id}
                           id)]]
         (tx-fns/set-value id [:ready-to-start] true)
-        (case-history/put-event
+        (case-history/put-event2
           (merge notification-props
-                 {:event :notification-process.ready-to-start
-                  :case-id case-id
-                  :user user}))))
+                 {:case-id case-id
+                  :user user
+                  :subject :probate.case.notification-process
+                  :op :set-ready-to-start}))))
     {:status http/status-204-no-content}))
 
 (comment

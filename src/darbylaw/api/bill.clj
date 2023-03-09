@@ -87,11 +87,6 @@
     :utility :probate.case.utilities
     :council-tax :probate.case.council-taxes))
 
-(defn institution-type [bill-type]
-  (case bill-type
-    :utility :utility-company
-    :council-tax :council))
-
 (defn fetch-institution-id [db bill-type bill-id]
   (xt-util/fetch-property db bill-id (case bill-type
                                        :utility :utility-company

@@ -281,7 +281,7 @@
           [:values-confirmed]
           {:by (:username user)
            :timestamp (xt-util/now)})
-        (case-history/put-event
+        (case-history/put-event2
           {:case-id case-id
            :user user
            :subject :probate.case.bank-accounts
