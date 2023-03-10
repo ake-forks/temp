@@ -135,7 +135,13 @@
                                 (reset! filename "")
                                 (reset! model/file-uploading? true))
                    :hidden true
-                   :sx {:display :none}}]])))
+                   :sx {:display :none}
+                   :inputProps
+                   (case label
+                     "upload replacement" {:type :file
+                                           :accept ".doc, .docx, .dot, dotx"}
+                     "upload pdf" {:type :file
+                                   :accept ".pdf"})}]])))
 
 (defn submit-buttons [labels]
   [form/submit-buttons labels])

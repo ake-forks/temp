@@ -238,10 +238,10 @@
     {:dispatch [::case-model/load-case! case-id
                 {:on-success [::reset-file-uploading]}]}))
 
-(ui/reg-fx+event ::upload-failure
-  (fn [_]
-    (reset! file-uploading? false)
-    (reset! upload-error true)))
+(rf/reg-event-fx ::upload-failure
+  (fn [_ [_ response]]
+    {:dispatch [::reset-file-uploading]
+     ::ui/notify-user-http-error {:message "Error uploading. Check document file type."}}))
 
 (rf/reg-event-fx ::upload-file
   (fn [_ [_ type case-id banking-id file suffix]]
