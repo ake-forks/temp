@@ -116,7 +116,15 @@
         history @(rf/subscribe [::case-history case-id])]
     [mui/container {:max-width :lg
                     :sx {:mt 4 :mb 4}}
+
+     [mui/button {:variant :outlined
+                  :full-width false
+                  :sx {:mb 1}
+                  :startIcon (r/as-element [ui/icon-arrow-back-sharp])
+                  :href (kf/path-for [:admin])}
+      "Back to admin"]
      [mui/stack {:spacing 2}
+
       [mui/typography {:variant :h3}
        (str "case history " reference)]
       [mui/typography {:variant :body2}
