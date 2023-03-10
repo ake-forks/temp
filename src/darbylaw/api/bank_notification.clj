@@ -46,7 +46,7 @@
                      ;; To do this we insert a blank page when
                      ;; letter-pdf has an odd number of pages.
                      (when (odd? (pdf-info/page-number letter-pdf))
-                       (.toURI blank-page))
+                       (io/as-file blank-page))
                      (.getAbsolutePath death-cert-pdf)]
                     (remove nil?))
         :output (.getAbsolutePath final-pdf))
