@@ -6,6 +6,7 @@
     [darbylaw.web.theme :as theme]
     [darbylaw.web.ui.banking.model :as bank-model]
     [darbylaw.web.ui.funeral.model :as funeral-model]
+    [darbylaw.web.ui.bills.model :as bills-model]
     [clojure.string :as str]))
 
 (defn parse-float
@@ -19,7 +20,8 @@
         buildsoc-accounts @(rf/subscribe [::bank-model/building-societies])
         funeral-account @(rf/subscribe [::funeral-model/account])
         funeral-expenses @(rf/subscribe [::funeral-model/expense-list])
-        
+        utility-expenses @(rf/subscribe [::bills-model/current-utilities])
+        council-tax-expenses @(rf/subscribe [::bills-model/current-council-tax])
         banking (->> (concat bank-accounts buildsoc-accounts)
                      (mapcat :accounts)
                      (map #(if-let [confirmed-value (:confirmed-value %)]
@@ -30,12 +32,18 @@
                         (->> funeral-expenses
                              (map :value)
                              (map parse-float)))
-        
-        assets (concat banking funeral)]
+        utility (->> utility-expenses
+                  (map :valuation)
+                  (map parse-float))
+        council-tax (->> council-tax-expenses
+                      (map :valuation)
+                      (map parse-float))
+        assets (concat banking funeral utility council-tax)]
     (reduce + assets)))
 
 (defn overview-card []
   [mui/card {:style {:width "large" :background-color theme/off-white}}
+
    [mui/card-content
     [mui/typography {:variant :h5 :sx {:mb 1}}
      "estimated value"]
