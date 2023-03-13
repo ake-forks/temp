@@ -41,6 +41,7 @@
     [reagent-mui.icons.check]
     [reagent-mui.icons.close]
     [reagent-mui.icons.currency-pound]
+    [reagent-mui.icons.content-copy]
     [reagent-mui.components :as mui]
     [reagent-mui.lab.loading-button]
     [reagent.core :as r]
@@ -96,6 +97,8 @@
 
 (def icon-pound reagent-mui.icons.currency-pound/currency-pound)
 (def icon-close reagent-mui.icons.close/close)
+
+(def icon-copy reagent-mui.icons.content-copy/content-copy)
 (def loading-button reagent-mui.lab.loading-button/loading-button)
 
 (defn ???_TO_BE_DEFINED_??? [message]
