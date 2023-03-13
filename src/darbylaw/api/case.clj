@@ -93,10 +93,11 @@
         [[::xt/put (merge pr-data
                      {:type :probate.personal-representative
                       :xt/id pr-id})]]
-        (case-history/put-event {:event :created
-                                 :case-id case-id
-                                 :user user
-                                 :fake fake?})))
+        (case-history/put-event2 {:case-id case-id
+                                  :user user
+                                  :subject :probate.case
+                                  :op :created
+                                  :fake fake?})))
     {:status 200
      :body {:id case-id}}))
 
@@ -115,14 +116,15 @@
                     :type :probate.property
                     :probate.property/case case-id
                     :address (:address deceased-data)}]]
-        (case-history/put-event {:event :updated.deceased
-                                 :case-id case-id
-                                 :user user})
-        (case-history/put-event {:event :added.property
-                                 :case-id case-id
-                                 :user user
-                                 :op :add
-                                 :event/property new-property-id})))
+        (case-history/put-event2 {:case-id case-id
+                                  :user user
+                                  :subject :probate.case.deceased
+                                  :op :updated})
+        (case-history/put-event2 {:case-id case-id
+                                  :user user
+                                  :subject :probate.case.properties
+                                  :op :added
+                                  :property new-property-id})))
     {:status 200
      :body deceased-data}))
 
@@ -144,9 +146,10 @@
     (xt-util/exec-tx xtdb-node
       (concat
         (update-ref case-id :probate.case/personal-representative pr-info)
-        (case-history/put-event {:event :updated.personal-representative
-                                 :case-id case-id
-                                 :user user})))
+        (case-history/put-event2 {:case-id case-id
+                                  :user user
+                                  :subject :probate.case.personal-representative
+                                  :op :updated})))
     {:status 200
      :body pr-info}))
 
@@ -255,7 +258,15 @@
        {:as :smartdoc
         :cardinality :one})
     check-props}
-   :override-identity-check])
+   :override-identity-check
+   {'(:probate.identity-check.note/_case
+      {:as :identity-check-note
+       :cardinality :one})
+    [:note]}
+   {:identity-user-docs
+    ['(:xt/id {:as :document-id})
+     :original-filename
+     :uploaded-by]}])
 
 (defn enrich-case [c]
   (-> c
@@ -297,21 +308,22 @@
 
 (defn get-case-history [{:keys [xtdb-node path-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
-        results (xt/q (xt/db xtdb-node)
-                  '{:find [(pull event [(:xt/id {:as :id})
-                                        :timestamp
-                                        :event
-                                        :by])
-                           timestamp]
-                    :where [[event :type :event]
-                            [event :event/case case-id]
-                            [event :timestamp timestamp]]
-                    :order-by [[timestamp :asc]]
-                    :in [case-id]}
-                  case-id)]
-    (ring/response
-      (->> results
-        (map first)))))
+        db (xt/db xtdb-node)
+        case-reference (-> (xt/pull db [:reference] case-id)
+                         :reference)
+        history (->> (xt/q db
+                       '{:find [(pull event [(:xt/id {:as :id}) *])
+                                timestamp]
+                         :where [[event :type :event]
+                                 [event :event/case case-id]
+                                 [event :timestamp timestamp]]
+                         :order-by [[timestamp :desc]]
+                         :in [case-id]}
+                       case-id)
+                  (map first))]
+    {:status http/status-200-ok
+     :body {:reference case-reference
+            :history history}}))
 
 (defn get-event [{:keys [xtdb-node path-params]}]
   (let [event-id (parse-uuid (:event-id path-params))

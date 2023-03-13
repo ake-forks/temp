@@ -12,22 +12,38 @@
     (catch Exception e
       (log/warn e "Could not delete file " letter-id))))
 
+(defn get-institution-type [notification-type]
+  (case notification-type
+    :utility :utility-company
+    :council-tax :council
+    (do (log/error "case not handled: " notification-type)
+        nil)))
+
+(defn get-institution-id [notification-type letter-data]
+  (when-let [k (get-institution-type notification-type)]
+    (get letter-data k)))
+
 (defn delete-letter [{:keys [xtdb-node user path-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
         letter-id (:letter-id path-params)]
     (if-not letter-id
       {:status http/status-404-not-found}
-      (let [letter-type (:type (xt/pull (xt/db xtdb-node) [:type] letter-id))]
+      (let [letter-data (xt/entity (xt/db xtdb-node) letter-id)
+            letter-type (:type letter-data)
+            notification-type (:notification-type letter-data)]
         (xt-util/exec-tx xtdb-node
           (concat
             [[::xt/delete letter-id]]
-            (case-history/put-event
-              {:event (case letter-type
-                        :probate.notification-letter :notification-letter.deleted
-                        :probate.received-letter :received-letter.deleted)
-               :case-id case-id
+            (case-history/put-event2
+              {:case-id case-id
                :user user
-               :letter-id letter-id})))
+               :subject (case letter-type
+                          :probate.notification-letter :probate.case.notification-letter
+                          :probate.received-letter :probate.case.received-letter)
+               :op :deleted
+               :institution-type (get-institution-type notification-type)
+               :institution (get-institution-id notification-type letter-data)
+               :letter letter-id})))
 
         (case letter-type
           :probate.notification-letter

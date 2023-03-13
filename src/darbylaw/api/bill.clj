@@ -44,12 +44,12 @@
                                        :type :probate.property
                                        :probate.property/case case-id
                                        :address property}]]
-                           (case-history/put-event
-                             {:event :properties-updated
-                              :case-id case-id
+                           (case-history/put-event2
+                             {:case-id case-id
                               :user user
-                              :op :add
-                              :event/property new-property-id}))])
+                              :subject :probate.case.properties
+                              :op :added
+                              :property new-property-id}))])
       (uuid? property)
       [property (tx-fns/assert-exists property)]
 
@@ -62,7 +62,8 @@
         [property-id property-tx] (handle-property args)
         data (-> body-params
                (select-keys creation-props)
-               (assoc :property property-id))]
+               (assoc :property property-id))
+        utility-company (:utility-company data)]
     (xt-util/exec-tx-or-throw xtdb-node
       (concat
         property-tx
@@ -70,14 +71,29 @@
                           {:xt/id utility-id
                            :type :probate.utility
                            :probate.utility/case case-id})]]
-        (case-history/put-event {:event :utility-added
-                                 :case-id case-id
-                                 :user user
-                                 :op :add
-                                 :event/utility utility-id})))
+        (case-history/put-event2 {:case-id case-id
+                                  :user user
+                                  :subject :probate.case.utilities
+                                  :op :added
+                                  :utility utility-id
+                                  :institution-type :utility-company
+                                  :institution utility-company})))
     {:status 200
      :body {:property property-id
-            :utility-company (:utility-company data)}}))
+            :utility-company utility-company}}))
+
+(defn event-subject [bill-type]
+  (case bill-type
+    :utility :probate.case.utilities
+    :council-tax :probate.case.council-taxes))
+
+(defn institution-type [bill-type]
+  (case bill-type
+    :utility :utility-company
+    :council-tax :council))
+
+(defn fetch-institution-id [db bill-type bill-id]
+  (xt-util/fetch-property db bill-id (institution-type bill-type)))
 
 (defn delete-bill [{:keys [xtdb-node user path-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
@@ -87,15 +103,18 @@
                     :else (assert false))
         bill-id (case bill-type
                   :utility (parse-uuid (:utility-id path-params))
-                  :council-tax (parse-uuid (:council-tax-id path-params)))]
+                  :council-tax (parse-uuid (:council-tax-id path-params)))
+        institution-id (fetch-institution-id (xt/db xtdb-node) bill-type bill-id)]
     (xt-util/exec-tx-or-throw xtdb-node
       (concat
         [[::xt/delete bill-id]]
-        (case-history/put-event {:event (keyword (str bill-type "-deleted"))
-                                 :case-id case-id
-                                 :user user
-                                 :op :delete
-                                 (keyword (name :event) (name bill-type)) bill-id}))))
+        (case-history/put-event2 {:case-id case-id
+                                  :user user
+                                  :subject (event-subject bill-type)
+                                  :op :deleted
+                                  :institution-type (institution-type bill-type)
+                                  :institution institution-id
+                                  bill-type bill-id}))))
   {:status http/status-204-no-content})
 
 (defn update-bill [bill-type {:keys [xtdb-node user path-params body-params] :as args}]
@@ -113,11 +132,13 @@
       (concat
         property-tx
         (tx-fns/set-values bill-id bill-data)
-        (case-history/put-event {:event (keyword (str bill-type "-updated"))
-                                 :case-id case-id
-                                 :user user
-                                 :op :update
-                                 (keyword (name :event) (name bill-type)) bill-id})))
+        (case-history/put-event2 {:case-id case-id
+                                  :user user
+                                  :subject (event-subject bill-type)
+                                  :op :updated
+                                  :institution-type (institution-type bill-type)
+                                  :institution (get bill-data (institution-type bill-type))
+                                  bill-type bill-id})))
     {:status 200
      :body {:property property-id
             :utility-company (:utility-company bill-data)}}))
@@ -137,11 +158,13 @@
                       :type :probate.council-tax
                       :probate.council-tax/case case-id})]]
         (tx-fns/append case-id [:council-tax] [council-tax-id])
-        (case-history/put-event {:event :council-tax-added
-                                 :case-id case-id
-                                 :user user
-                                 :op :add
-                                 :event/council-tax council-tax-id})))
+        (case-history/put-event2 {:case-id case-id
+                                  :user user
+                                  :subject :probate.case.council-taxes
+                                  :op :added
+                                  :council-tax council-tax-id
+                                  :institution-type :council
+                                  :institution (:council council-tax-data)})))
     {:status 200
      :body {:property property-id
             :council (:council council-tax-data)
@@ -161,7 +184,8 @@
         document-type-str (name (case asset-type
                                   :utility :probate.utility-bill
                                   :council-tax :probate.council-tax-bill))
-        filename (str reference "." (name asset-type) "." document-id extension)]
+        filename (str reference "." (name asset-type) "." document-id extension)
+        institution-id (fetch-institution-id (xt/db xtdb-node) asset-type asset-id)]
     (assert (accepted-filetypes extension))
     (assert (not (str/blank? reference)))
     (with-delete [tempfile tempfile]
@@ -174,12 +198,16 @@
                     :uploaded-by (:username user)
                     :uploaded-at (xt-util/now)
                     :original-filename orig-filename}]]
-        (case-history/put-event
-          {:event (keyword (str document-type-str ".uploaded"))
-           :case-id case-id
-           :asset-id asset-id
+        (case-history/put-event2
+          {:case-id case-id
+           :user user
+           :subject (keyword (str (name (event-subject asset-type))
+                                  ".bills"))
+           :op :uploaded
            :document-id filename
-           :user user})))
+           asset-type asset-id
+           :institution-type (institution-type asset-type)
+           :institution institution-id})))
     {:status 204}))
 
 (defn get-document [{:keys [path-params]}]

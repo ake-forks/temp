@@ -37,12 +37,14 @@
               {:accounts accounts
                :accounts-unknown accounts-unknown}))
           (tx-fns/append-unique case-id [:bank-accounts] [asset-id])
-          (case-history/put-event {:event :updated.bank-accounts
-                                   :case-id case-id
-                                   :user user
-                                   :op op
-                                   :bank-id bank-id
-                                   :accounts accounts}))))
+          (case-history/put-event2 {:case-id case-id
+                                    :user user
+                                    :subject :probate.case.bank-accounts
+                                    :op (case op
+                                          :add :added
+                                          :update :updated)
+                                    :institution-type :bank
+                                    :institution bank-id}))))
     {:status http/status-204-no-content}))
 
 (def body-schema

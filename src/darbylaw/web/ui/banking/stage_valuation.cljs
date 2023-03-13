@@ -106,11 +106,20 @@
                                :right-disabled (not (and (accounts-valued? (:accounts values))
                                                       valuation-letter))}]]]]]]))
 
+(defn get-values [banking-type values]
+  (if (empty? (:accounts values))
+    (case banking-type
+      :buildsoc
+      (assoc values :accounts [{:roll-number "" :estimated-value ""}])
+      :bank
+      (assoc values :accounts [{:account-number "" :sort-code "" :estimated-value ""}]))
+    values))
+
 (defn panel []
   (let [case-id @(rf/subscribe [::case-model/case-id])
         type @(rf/subscribe [::model/current-banking-type])
         values @(rf/subscribe [::model/current-asset-data])]
-    [form/form layout values #(rf/dispatch [::submit! type case-id %])
+    [form/form layout (get-values type values) #(rf/dispatch [::submit! type case-id %])
      (case type
        :bank validation/value-bank-validation
        :buildsoc validation/value-buildsoc-validation)]))

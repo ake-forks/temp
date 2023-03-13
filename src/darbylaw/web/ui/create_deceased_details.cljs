@@ -16,9 +16,9 @@
     [ui/icon-edit {:sx {:mr 1}}]
     "Sample data"]
 
-   [mui/container {:max-width :lg
+   [mui/container {:max-width :md
                    :sx {:mb 4}}
     [mui/typography {:variant :h4
-                     :sx {:pt 4 :pb 2 :pl "10%"}}
+                     :sx {:pt 4 :pb 2}}
      "deceased's details"]
     [form/deceased-details-form :create {}]]])

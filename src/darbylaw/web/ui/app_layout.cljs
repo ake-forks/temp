@@ -20,8 +20,10 @@
      [mui/container {:max-width :xl}
       [mui/toolbar {:variant :dense}
        [mui/stack {:direction :row :spacing 2}
-        [mui/typography {:variant :h6
-                         :sx {:color theme/rich-black}}
+        [mui/link {:variant :h6
+                   :sx {:color theme/rich-black}
+                   :underline :none
+                   :href (kf/path-for [:dashboard {:case-id case-id}])}
          "probate-tree"]
         [mui/button {:variant :outlined
                      :startIcon (r/as-element [ui/icon-arrow-back-sharp])

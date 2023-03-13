@@ -18,10 +18,15 @@
                  (:address-2 data)
                  (:town data)
                  (:county data)
-                 (:postcode data))]
-    {:org-name (:common-name data)
-     :org-address (str/join "\n"
-                    (remove str/blank? vector))}))
+                 (:postcode data))
+        address (str/join "\n"
+                  (remove str/blank? vector))]
+    (merge
+      {:org-name (:common-name data)}
+      (if (str/blank? address)
+        {:no-address "No address data found. Please download and edit letter before sending."}
+        {:org-address address}))))
+
 
 (defn utility-query [case-id utility-company property-id]
   [{:find '[(pull utility [*])]

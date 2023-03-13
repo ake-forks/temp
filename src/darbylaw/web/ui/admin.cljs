@@ -36,7 +36,9 @@
 
 (rf/reg-sub ::cases
   (fn [db _]
-    (:cases db)))
+    (->> (:cases db)
+         (sort-by :reference)
+         reverse)))
 
 (rf/reg-sub ::case-view
   (fn [db _]
@@ -44,6 +46,11 @@
 
 
 ;; >> Cards
+
+(defn history-button [id]
+  [mui/tooltip {:title "Go to case history"}
+   [mui/icon-button {:href (kf/path-for [:case-history {:case-id id}])}
+    [ui/icon-history-edu]]])
 
 (defn case-item
   [{:keys [id reference fake loading?] :as _case
@@ -73,11 +80,7 @@
       [mui/box
        (when fake
          (case-commons/fake-case-chip fake))]
-      [mui/tooltip {:title "Go to case history"}
-       [mui/icon-button {:href (kf/path-for [:case-history {:case-id id}])}
-        [ui/icon-history-edu]]
-       #_[mui/link {:href (kf/path-for [:case-history {:case-id id}])}
-          "history"]]]]]])
+      [history-button id]]]]])
 
 (defn no-cases-found
   []
@@ -136,11 +139,29 @@
                    (r/as-element
                      [mui/icon-button {:href (kf/path-for [:dashboard {:case-id id}])}
                       [ui/icon-link]]))}
-   {:field :reference :headerName "Reference"}
-   {:field :fake
-    :valueGetter #(-> % :row :fake (or false))
-    :headerName "Fake?"}
-
+   {:field :history
+    :headerName ""
+    :width 0 ; Fit to button width
+    :hideable false
+    :renderCell #(let [id (-> % :row :id)]
+                   (r/as-element
+                     [history-button id]))}
+   {:field :reference
+    :width 140
+    :headerName "Reference"
+    :renderCell #(let [reference (-> % :row :reference)
+                       fake? (-> % :row :fake (or false))]
+                   (r/as-element
+                     [mui/stack {:spacing 1
+                                 :width "100%"
+                                 :direction :row
+                                 :align-items :center
+                                 :justify-content :space-between}
+                      [mui/box]
+                      (when fake?
+                        (case-commons/fake-case-chip fake?))
+                      [mui/typography {:variant :body2}
+                       reference]]))}
    {:field :pr-name
     :headerName "Name"
     :valueGetter #(-> % :row :personal-representative ->full-name)
@@ -321,7 +342,8 @@
                  :on-change (fn [_ value] (rf/dispatch [::set-case-view (keyword value)]))}
        [mui/tab {:label "List" :value :card}]
        [mui/tab {:label "Table" :value :data-grid}]
-       [mui/tab {:label "Mailing" :value :mail}]]]
+       [mui/tab {:label "Mailing" :value :mail
+                 :on-click #(rf/dispatch [::mailing/load])}]]]
      [mui/box {:margin-top 1}
       (case (or case-view :card)
         :card [card-list]

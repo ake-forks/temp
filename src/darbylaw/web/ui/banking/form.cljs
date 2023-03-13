@@ -16,7 +16,7 @@
   (model/asset-label :buildsoc (keyword buildsoc-id-str)))
 
 
-(defn bank-select [{:keys [values set-handle-change handle-blur touched errors]}]
+(defn bank-select [{:keys [values set-handle-change handle-blur]}]
   (let [used-bank-ids @(rf/subscribe [::model/used-bank-ids])]
     [mui/autocomplete
      {:options (model/all-institution-ids :bank)
@@ -37,7 +37,7 @@
                                         :onBlur handle-blur})])}]))
 
 
-(defn buildsoc-select [{:keys [values set-handle-change handle-blur touched errors]}]
+(defn buildsoc-select [{:keys [values set-handle-change handle-blur]}]
   (let [used-buildsoc-ids @(rf/subscribe [::model/used-buildsoc-ids])]
     [mui/autocomplete
      {:options (model/all-institution-ids :buildsoc)
@@ -59,7 +59,7 @@
 
 
 (defn bank-account-array
-  [{:keys [state stage errors values] :as props}
+  [{:keys [state stage errors values]}
    {:fieldarray/keys [fields
                       insert
                       remove
@@ -166,7 +166,7 @@
                    :control (r/as-element [mui/switch])}]]
                 [:<>])]]
             [mui/stack {:style {:align-items :center :justify-content :center}}
-             [mui/icon-button {:on-click #(remove idx)}
+             [mui/icon-button {:on-click #(remove idx) :disabled (and (= stage :valuation) (= idx 0))}
               [ui/icon-delete]]]]))))
    [mui/button {:on-click #(insert {:sort-code "" :account-number "" :estimated-value ""})
                 :style {:text-transform "none" :align-self "baseline" :font-size "1rem"}
@@ -184,7 +184,7 @@
 
 ;accounts can
 (defn buildsoc-account-array
-  [{:keys [state stage errors values] :as props}
+  [{:keys [state stage errors values]}
    {:fieldarray/keys [fields
                       insert
                       remove
@@ -281,7 +281,7 @@
                    :control (r/as-element [mui/switch])}]]
                 [:<>])]]
             [mui/stack {:style {:align-items :center :justify-content :center}}
-             [mui/icon-button {:on-click #(remove idx)}
+             [mui/icon-button {:on-click #(remove idx) :disabled (and (= stage :valuation) (= idx 0))}
               [ui/icon-delete]]]]))))
    [mui/button {:on-click #(insert {:roll-number "" :estimated-value ""})
                 :style {:text-transform "none" :align-self "baseline" :font-size "1rem"}

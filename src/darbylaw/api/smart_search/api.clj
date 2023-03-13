@@ -1,9 +1,6 @@
 (ns darbylaw.api.smart-search.api
   (:require [org.httpkit.client :as http]
-            [clojure.data.json :as json]
-            [clj-commons.digest :as digest]
             [clojure.tools.logging :as log]
-            [darbylaw.api.smart-search.data :as ss-data]
             [darbylaw.api.smart-search.client :refer [apply-middleware wrap-ensure-success base-client]]
             [darbylaw.api.smart-search.auth :refer [wrap-auth]]))
 

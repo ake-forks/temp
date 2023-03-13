@@ -1,6 +1,7 @@
 (ns darbylaw.api.notification-process
   (:require
     [darbylaw.api.case-history :as case-history]
+    [darbylaw.api.letter :as letter]
     [darbylaw.api.util.http :as http]
     [darbylaw.api.util.tx-fns :as tx-fns]
     [darbylaw.api.util.xtdb :as xt-util]
@@ -35,11 +36,15 @@
         [[::xt/put (merge {:xt/id id}
                           id)]]
         (tx-fns/set-value id [:ready-to-start] true)
-        (case-history/put-event
-          (merge notification-props
-                 {:event :notification-process.ready-to-start
-                  :case-id case-id
-                  :user user}))))
+        (let [notification-type (:notification-type notification-props)]
+          (case-history/put-event2
+            (merge notification-props
+                   {:case-id case-id
+                    :user user
+                    :subject :probate.case.notification-process
+                    :op :set-ready-to-start
+                    :institution-type (letter/get-institution-type notification-type)
+                    :institution (letter/get-institution-id notification-type notification-props)})))))
     {:status http/status-204-no-content}))
 
 (comment
@@ -58,15 +63,16 @@
   (let [case-id (get-in req [:parameters :path :case-id])
         notification-props (get-notification-props body-params)
         resp (->> (xt/q (xt/db xtdb-node)
-                    {:find '[(pull letter [*]) modified-at]
+                    {:find '[(pull letter [*]) order-date]
                      :in '[case-id]
                      :where (into
-                              '[(or [letter :probate.notification-letter/case case-id]
-                                    [letter :probate.received-letter/case case-id])
-                                [letter :modified-at modified-at]]
+                              '[(or (and [letter :probate.notification-letter/case case-id]
+                                         [letter :modified-at order-date])
+                                    (and [letter :probate.received-letter/case case-id]
+                                         [letter :uploaded-at order-date]))]
                               (for [[k v] notification-props]
                                 ['letter k v]))
-                     :order-by [['modified-at :desc]]}
+                     :order-by [['order-date :desc]]}
                     case-id)
                (map first))]
     {:status http/status-200-ok

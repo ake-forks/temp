@@ -1,5 +1,6 @@
 (ns darbylaw.web.ui.bills.model
   (:require
+    [clojure.string :as str]
     [darbylaw.api.util.data :as data-util]
     [darbylaw.web.ui :as ui :refer [<<]]
     [fork.re-frame :as fork]
@@ -106,6 +107,11 @@
     (string/lower-case)
     (keyword)))
 
+(defn capitalize-words [s]
+  (->> (str/split (str s) #"\b")
+    (map str/capitalize)
+    (str/join)))
+
 (defn values-to-submit [{:keys [values] :as _fork-params}]
   (cond-> values
     (:council values)
@@ -120,7 +126,7 @@
     ;An alternative would be to do :new-utility-company as :utility-company in the current-case query so they are consistent
     ;in the app-db even if they're not in xtdb
     (:new-utility-company values)
-    (assoc :new-utility-company? true)
+    (assoc :new-utility-name (capitalize-words (:new-utility-company values)))
 
     (:new-utility-company values)
     (assoc :utility-company (create-company-id (:new-utility-company values)))

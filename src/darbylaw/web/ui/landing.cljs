@@ -17,10 +17,9 @@
      (into [:<>] body)]]])
 
 (defn logo []
-  [mui/typography {:variant :h6 
-                   :sx {:color theme/rich-black}
-                   :on-click #(rf/dispatch [::ui/navigate [:landing]])}
-    "probate-tree"])
+  [:img {:src "/images/Probate-tree-narrow.png"
+         :style {:cursor :pointer}
+         :on-click #(rf/dispatch [::ui/navigate [:landing]])}])
 
 (defn menu-item [props & body]
   [mui/menu-item (merge (dissoc props :inner-props))
@@ -33,8 +32,7 @@
   [app-bar
    [mui/stack {:direction :row
                :spacing 2}
-    [:img {:src "/images/Probate-tree-narrow.png"}]
-    #_[logo]
+    [logo]
     [mui/stack {:direction :row}
      [menu-item {:on-click #(rf/dispatch [::ui/navigate [:about]])}
        "about"]
