@@ -16,8 +16,8 @@
     :org-name "Utility 1 Org",
     :address-street-no "",
     :address-house-name "",
-    :address-line-1 "PO Box 12233",
-    :address-line-2 "",
+    :address-1 "PO Box 12233",
+    :address-2 "",
     :address-line-3 "",
     :address-town "None",
     :address-postcode "CM99 2EE",
@@ -29,8 +29,8 @@
     :org-name "Utility 2 Org",
     :address-street-no "",
     :address-house-name "",
-    :address-line-1 "PO Box 12233",
-    :address-line-2 "",
+    :address-1 "PO Box 12233",
+    :address-2 "",
     :address-line-3 "",
     :address-town "None",
     :address-postcode "CM99 2EE",
@@ -39,85 +39,595 @@
     :logo nil}])
 
 (def energy-companies
-  [{:id :affect-energy, :common-name "Affect Energy"}
-   {:id :boost-energy, :common-name "Boost Energy"}
-   {:id :british-gas, :common-name "British Gas"}
-   {:id :bulb-energy, :common-name "Bulb Energy"}
-   {:id :cooperative-energy, :common-name "Co-Operative Energy"}
-   {:id :e, :common-name "E"}
-   {:id :eon, :common-name "E.ON"}
-   {:id :ebico, :common-name "EBICo"}
-   {:id :ecotricity, :common-name "Ecotricity"}
-   {:id :edf-energy, :common-name "EDF Energy"}
-   {:id :good-energy, :common-name "Good Energy"}
-   {:id :green-energy-uk, :common-name "Green Energy UK"}
-   {:id :ms-energy, :common-name "M&S Energy"}
-   {:id :octopus-energy, :common-name "Octopus Energy"}
-   {:id :outfox-the-market, :common-name "Outfox the Market"}
-   {:id :ovo-energy, :common-name "Ovo Energy"}
-   {:id :sainsburys-energy, :common-name "Sainsbury's Energy"}
-   {:id :scottish-power, :common-name "Scottish Power"}
-   {:id :shell-energy, :common-name "Shell Energy"}
-   {:id :so-energy, :common-name "So Energy"}
-   {:id :sse, :common-name "SSE"}
-   {:id :southern-electric, :common-name "Southern Electric"}
-   {:id :scottish-hydro, :common-name "Scottish Hydro"}
-   {:id :swalec, :common-name "Swalec"}
+  [{:id :affect-energy,
+    :common-name "Affect Energy",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :boost-energy,
+    :common-name "Boost Energy",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :british-gas,
+    :common-name "British Gas",
+    :address-1 "Millstream",
+    :address-2 "Maidenhead Road",
+    :town "Windsor",
+    :county "",
+    :postcode "SL4 5GD",
+    :logo ""}
+   {:id :bulb-energy,
+    :common-name "Bulb Energy",
+    :address-1 "The Zetland Building",
+    :address-2 "Unit B2.01-02 & B2.05-06",
+    :town "London ",
+    :county "",
+    :postcode "SE16 4DG",
+    :logo ""}
+   {:id :cooperative-energy,
+    :common-name "Co-Operative Energy",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :e,
+    :common-name "E",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :eon,
+    :common-name "E.ON",
+    :address-1 "Westwood Way",
+    :address-2 "Westwood Business Park",
+    :town " Coventry ",
+    :county "",
+    :postcode "CV4 8LG",
+    :logo ""}
+   {:id :ebico,
+    :common-name "EBICo",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :ecotricity,
+    :common-name "Ecotricity",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :edf-energy,
+    :common-name "EDF Energy",
+    :address-1 "90 Whitfield Street",
+    :address-2 "",
+    :town " London ",
+    :county "",
+    :postcode "W1T 4EZ",
+    :logo ""}
+   {:id :good-energy,
+    :common-name "Good Energy",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :green-energy-uk,
+    :common-name "Green Energy UK",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :ms-energy,
+    :common-name "M&S Energy",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :octopus-energy,
+    :common-name "Octopus Energy",
+    :address-1 "33 Holborn",
+    :address-2 "",
+    :town " London ",
+    :county "",
+    :postcode "EC1N 2HT",
+    :logo ""}
+   {:id :outfox-the-market,
+    :common-name "Outfox the Market",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :ovo-energy,
+    :common-name "Ovo Energy",
+    :address-1 "1 Rivergate",
+    :address-2 "Temple Quay",
+    :town "Bristol ",
+    :county "",
+    :postcode "BS1 6ED",
+    :logo ""}
+   {:id :sainsburys-energy,
+    :common-name "Sainsbury's Energy",
+    :address-1 "PO Box 227",
+    :address-2 "",
+    :town "Rotheram",
+    :county "",
+    :postcode "S98 1PD",
+    :logo ""}
+   {:id :scottish-power,
+    :common-name "Scottish Power",
+    :address-1 "320 St Vincent Street",
+    :address-2 "",
+    :town "Glasgow ",
+    :county "",
+    :postcode "G2 5AD",
+    :logo ""}
+   {:id :shell-energy,
+    :common-name "Shell Energy",
+    :address-1 "Shell Energy House",
+    :address-2 "Westwood Way",
+    :town "Westwood Business Park Coventry ",
+    :county "",
+    :postcode "CV4 8HS",
+    :logo ""}
+   {:id :so-energy,
+    :common-name "So Energy",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :sse,
+    :common-name "SSE",
+    :address-1 "",
+    :address-2 "",
+    :town "Inveralmond House, 200 Dunkeld Road Perth ",
+    :county "",
+    :postcode "PH1 3AQ",
+    :logo ""}
+   {:id :southern-electric,
+    :common-name "Southern Electric",
+    :address-1 "",
+    :address-2 "",
+    :town "PO Box 13     Havant ",
+    :county "",
+    :postcode "PO9 5JB",
+    :logo ""}
+   {:id :scottish-hydro,
+    :common-name "Scottish Hydro",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :swalec,
+    :common-name "Swalec",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
    {:id :telecom-utility-warehouse,
-    :common-name "Telecom Utility Warehouse"}
-   {:id :utilita-energy, :common-name "Utilita Energy"}])
+    :common-name "Telecom Utility Warehouse",
+    :address-1 "Network Hq 508 Edgware Road",
+    :address-2 "The Hyde",
+    :town "London ",
+    :county "",
+    :postcode "NW9 5AB",
+    :logo ""}
+   {:id :utilita-energy,
+    :common-name "Utilita Energy",
+    :address-1 "Hutwood Court",
+    :address-2 "Bournemouth Road",
+    :town "Chandler’s Ford ",
+    :county "Eastleigh",
+    :postcode "SO53 3QB",
+    :logo ""}])
+
 
 (def water-companies
-  [{:id :affinity-water, :common-name "Affinity Water"}
-   {:id :albion-water, :common-name "Albion Water"}
-   {:id :anglian-water-services, :common-name "Anglian Water Services"}
-   {:id :bristol-water-plc, :common-name "Bristol Water plc"}
-   {:id :cambridge-water-company, :common-name "Cambridge Water Company"}
-   {:id :icosa-water, :common-name "Icosa Water"}
+  [{:id :affinity-water,
+    :common-name "Affinity Water ",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :albion-water,
+    :common-name "Albion Water ",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :anglian-water,
+    :common-name "Anglian Water Services ",
+    :address-1 "Lancaster House Lancaster Way",
+    :address-2 " Ermine Business Park Huntingdon ",
+    :town "Huntingdon",
+    :county "",
+    :postcode "PE29 6XU",
+    :logo ""}
+   {:id :bristol-water,
+    :common-name "Bristol Water plc",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :cambridge-water-company,
+    :common-name "Cambridge Water Company ",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :icosa-water,
+    :common-name "Icosa Water",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
    {:id :hafren-dyfrdwy-severn-dee,
-    :common-name "Hafren Dyfrdwy (Severn Dee)"}
-   {:id :dr-cymru-welsh-water, :common-name "Dŵr Cymru Welsh Water"}
-   {:id :northern-ireland-water, :common-name "Northern Ireland Water"}
+    :common-name "Hafren Dyfrdwy (Severn Dee)",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :dr-cymru-welsh-water,
+    :common-name "Dŵr Cymru Welsh Water",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :northern-ireland-water,
+    :common-name "Northern Ireland Water",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
    {:id :independent-water-networks,
-    :common-name "Independent Water Networks"}
-   {:id :northumbrian-water, :common-name "Northumbrian Water"}
-   {:id :portsmouth-water, :common-name "Portsmouth Water"}
-   {:id :severn-trent-water, :common-name "Severn Trent Water"}
-   {:id :south-east-water, :common-name "South East Water"}
-   {:id :south-staffs-water, :common-name "South Staffs Water"}
-   {:id :south-west-water, :common-name "South West Water"}
-   {:id :southern-water-services, :common-name "Southern Water Services"}
+    :common-name "Independent Water Networks ",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :northumbrian-water,
+    :common-name "Northumbrian Water ",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :portsmouth-water,
+    :common-name "Portsmouth Water ",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :severn-trent-water,
+    :common-name "Severn Trent Water ",
+    :address-1 "Severn Trent Centre",
+    :address-2 " 2 St John’s Street  ",
+    :town "Coventry",
+    :county "",
+    :postcode "CV1 2LZ",
+    :logo ""}
+   {:id :south-east-water,
+    :common-name "South East Water ",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :south-staffs-water,
+    :common-name "South Staffs Water",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :south-west-water,
+    :common-name "South West Water ",
+    :address-1 "Peninsula House",
+    :address-2 " Rydon Lane ",
+    :town "Exeter",
+    :county "",
+    :postcode "EX2 7HR",
+    :logo ""}
+   {:id :pennon-group,
+    :common-name "Pennon Group plc",
+    :address-1 "Peninsula House",
+    :address-2 " Rydon Lane ",
+    :town "Exeter",
+    :county "",
+    :postcode "EX2 7HR",
+    :logo ""}
+   {:id :southern-water,
+    :common-name "Southern Water Services ",
+    :address-1 "Southern House",
+    :address-2 "Yeoman Road ",
+    :town "Worthing",
+    :county "",
+    :postcode " BN13 3NX",
+    :logo ""}
    {:id :sutton-and-east-surrey-water-ses,
-    :common-name "Sutton and East Surrey Water (SES)"}
-   {:id :thames-water-utilities, :common-name "Thames Water Utilities"}
-   {:id :united-utilities-water, :common-name "United Utilities Water"}
-   {:id :veolia-water-outsourcing, :common-name "Veolia Water Outsourcing"}
-   {:id :wessex-water-services, :common-name "Wessex Water Services"}
-   {:id :yorkshire-water-services, :common-name "Yorkshire Water Services"}
-   {:id :leep-utilities, :common-name "Leep Utilities"}
-   {:id :uisce-irish-water, :common-name "UISCE Irish Water"}
-   {:id :guernsey-water, :common-name "Guernsey Water"}
-   {:id :jersey-water, :common-name "Jersey Water"}
-   {:id :tideway, :common-name "Tideway"}])
+    :common-name "Sutton and East Surrey Water (SES)",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :thames-water-utilities,
+    :common-name "Thames Water Utilities ",
+    :address-1 "Clearwater Court",
+    :address-2 "Vastern Road ",
+    :town "Reading",
+    :county "",
+    :postcode "RG1 8DB",
+    :logo ""}
+   {:id :united-utilities-water,
+    :common-name "United Utilities Water ",
+    :address-1 "Haweswater House \nLingley Mere Business Park",
+    :address-2 " Lingley Green Avenue ",
+    :town "Great Sankey",
+    :county "Warrington",
+    :postcode "WA5 3LP",
+    :logo ""}
+   {:id :veolia-water-outsourcing,
+    :common-name "Veolia Water Outsourcing ",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :wessex-water,
+    :common-name "Wessex Water Services ",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :yorkshire-water,
+    :common-name "Yorkshire Water Services ",
+    :address-1 "Western House",
+    :address-2 "Halifax Road  ",
+    :town "Bradford",
+    :county "",
+    :postcode "BD6 2SZ",
+    :logo ""}
+   {:id :leep-utilities,
+    :common-name "Leep Utilities",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :uisce-irish-water,
+    :common-name "UISCE Irish Water",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :guernsey-water,
+    :common-name "Guernsey Water",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :jersey-water,
+    :common-name "Jersey Water",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :tideway,
+    :common-name "Tideway",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}])
 
 (def telecom-companies
-  [{:id :bt, :common-name "BT"}
-   {:id :sky, :common-name "Sky"}
-   {:id :talktalk, :common-name "TalkTalk"}
-   {:id :virgin-media, :common-name "Virgin Media"}
-   {:id :vodafone, :common-name "Vodafone"}
-   {:id :community-fibre, :common-name "Community Fibre"}
-   {:id :ee, :common-name "EE"}
-   {:id :g-network, :common-name "G Network"}
-   {:id :kcom, :common-name "KCOM"}
-   {:id :now-broadband, :common-name "Now Broadband"}
-   {:id :onestream, :common-name "Onestream"}
-   {:id :plusnet, :common-name "Plusnet"}
-   {:id :shell-energy-broadband, :common-name "Shell Energy Broadband"}
-   {:id :three, :common-name "Three"}
-   {:id :trooli, :common-name "Trooli"}
-   {:id :truespeed, :common-name "Truespeed"}
-   {:id :direct-save-telecom, :common-name "Direct Save Telecom"}])
+  [{:id :bt,
+    :common-name "BT",
+    :address-1 "BT Centre",
+    :address-2 "81 Newgate Street",
+    :town "London",
+    :county "",
+    :postcode "EC1A 7AJ",
+    :logo ""}
+   {:id :sky,
+    :common-name "Sky",
+    :address-1 "Grant Way  ",
+    :address-2 "",
+    :town "Isleworth",
+    :county "",
+    :postcode "TW7 5QD",
+    :logo ""}
+   {:id :talktalk,
+    :common-name "TalkTalk",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :virgin-media,
+    :common-name "Virgin Media",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :vodafone,
+    :common-name "Vodafone",
+    :address-1 "Vodafone House ",
+    :address-2 "The Connection",
+    :town "Newbury",
+    :county "Berkshire",
+    :postcode "RG14 2FN",
+    :logo ""}
+   {:id :community-fibre,
+    :common-name "Community Fibre",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :ee,
+    :common-name "EE",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :g-network,
+    :common-name "G Network",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :kcom,
+    :common-name "KCOM",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :now-broadband,
+    :common-name "Now Broadband",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :onestream,
+    :common-name "Onestream",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :plusnet,
+    :common-name "Plusnet",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :shell-energy-broadband,
+    :common-name "Shell Energy Broadband",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :three,
+    :common-name "Three",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :trooli,
+    :common-name "Trooli",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :truespeed,
+    :common-name "Truespeed",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :direct-save-telecom,
+    :common-name "Direct Save Telecom",
+    :address-1 "",
+    :address-2 "",
+    :town "",
+    :county "",
+    :postcode "",
+    :logo ""}
+   {:id :o2,
+    :common-name "O2",
+    :address-1 "260 Bath Road ",
+    :address-2 "",
+    :town "Slough",
+    :county "Berkshire",
+    :postcode "SL1 4DX",
+    :logo ""}])
 
 (def companies
   (concat energy-companies water-companies telecom-companies))
@@ -128,8 +638,8 @@
     :org-name "Council 1 Org",
     :address-street-no "",
     :address-house-name "",
-    :address-line-1 "PO Box 12233",
-    :address-line-2 "",
+    :address-1 "PO Box 12233",
+    :address-2 "",
     :address-line-3 "",
     :address-town "None",
     :address-postcode "CM99 2EE",
@@ -141,8 +651,8 @@
     :org-name "Council 2 Org",
     :address-street-no "",
     :address-house-name "",
-    :address-line-1 "PO Box 12233",
-    :address-line-2 "",
+    :address-1 "PO Box 12233",
+    :address-2 "",
     :address-line-3 "",
     :address-town "None",
     :address-postcode "CM99 2EE",

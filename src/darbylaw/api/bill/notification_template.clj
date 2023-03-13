@@ -4,14 +4,12 @@
     [clojure.string :as str]
     [stencil.api :as stencil]
     [clojure.java.io :as io]
+    [java-time.api :as jt]
     [darbylaw.api.util.data :as data-util]
     [xtdb.api :as xt]
     [darbylaw.api.util.xtdb :as xt-util]
     [darbylaw.xtdb-node :as node]
-    [mount.core :as mount])
-  (:import (java.time LocalDate)))
-
-;Temp address data for all utility companies
+    [mount.core :as mount]))
 
 (defn generate-utility-address [company]
   (let [data (bill-data/get-company-info company)
@@ -66,8 +64,6 @@
     :in '[case-id property-id]}
    case-id property-id])
 
-
-
 (defn get-letter-data [xtdb-node asset-type case-id institution property-id]
   (let [database (xt/db xtdb-node)
         [case-data property-data] (xt-util/fetch-one
@@ -81,7 +77,7 @@
     (data-util/keys-to-camel-case
       (merge
         (-> case-data
-          (assoc :date (.toString (LocalDate/now)))
+          (assoc :date (jt/format (jt/formatter "dd LLLL yyyy") (jt/local-date)))
           (assoc :property property-data))
         (case asset-type
           :utility
