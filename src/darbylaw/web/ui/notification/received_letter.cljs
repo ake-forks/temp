@@ -52,13 +52,14 @@
                       :m 1
                       :border-width 4
                       :border-style :dashed}}
-       [file-input-button {:button-props {:startIcon (r/as-element [ui/icon-description-outlined])
-                                          :disableRipple true
-                                          :disableFocusRipple true
-                                          :sx {:height 1 :width 1}}
-                           :accept http/pdf-mime-type
-                           :on-file-selected #(set-values {:file %})
-                           :on-load-data-url #(rf/dispatch [::set-file-data-url %])}
+       [file-input-button
+        {:button-props {:startIcon (r/as-element [ui/icon-description-outlined])
+                        :disableRipple true
+                        :disableFocusRipple true
+                        :sx {:height 1 :width 1}}
+         :accept http/pdf-mime-type
+         :on-selected #(do (set-values {:file %})
+                           (rf/dispatch [::set-file-data-url (js/URL.createObjectURL %)]))}
         "upload pdf scan..."]])))
 
 (defonce delete-confirmation-open? (r/atom false))
