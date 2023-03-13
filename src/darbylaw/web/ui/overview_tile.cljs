@@ -43,7 +43,6 @@
 
 (defn overview-card []
   [mui/card {:style {:width "large" :background-color theme/off-white}}
-
    [mui/card-content
     [mui/typography {:variant :h5 :sx {:mb 1}}
      "estimated value"]
