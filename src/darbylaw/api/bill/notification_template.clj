@@ -6,6 +6,7 @@
     [clojure.java.io :as io]
     [java-time.api :as jt]
     [darbylaw.api.util.data :as data-util]
+    [darbylaw.api.util.dates :as date-util]
     [xtdb.api :as xt]
     [darbylaw.api.util.xtdb :as xt-util]
     [darbylaw.xtdb-node :as node]
@@ -82,8 +83,11 @@
     (data-util/keys-to-camel-case
       (merge
         (-> case-data
-          (assoc :date (jt/format (jt/formatter "dd LLLL yyyy") (jt/local-date)))
-          (assoc :property property-data))
+          (assoc :date (date-util/long-date (jt/local-date) false))
+          (assoc :property property-data)
+          (assoc-in [:deceased :date-of-death] (date-util/long-date-from-string
+                                                 (:date-of-death (:deceased case-data))
+                                                 false)))
         (case asset-type
           :utility
           (merge
