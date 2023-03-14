@@ -4,6 +4,7 @@
     [mount.core :as mount]
     [clojure.tools.logging :as log]
     [darbylaw.config :as config]
+    [darbylaw.global :as global]
     [darbylaw.handler :as handler])
   (:gen-class))
 
@@ -14,7 +15,9 @@
   [http-port]
   (log/info (str "Server started on port " http-port))
   (reset! app-server-instance
-    (app-server/run-server handler/ring-handler {:port http-port})))
+    (app-server/run-server handler/ring-handler
+      {:port http-port
+       :max-body (+ global/max-request-size (* 1024 1024))})))
 
 (defn app-server-stop
   "Stops the backend server after waiting 100ms and logs the time of shutdown."
