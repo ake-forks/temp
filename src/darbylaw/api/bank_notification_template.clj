@@ -1,16 +1,15 @@
 (ns darbylaw.api.bank-notification-template
   (:require
     [clojure.string :as string]
-    [darbylaw.api.util.dates :as date-util]
     [darbylaw.api.util.xtdb :as xt-util]
-    [java-time.api :as jt]
     [mount.core :as mount]
     [xtdb.api :as xt]
     [darbylaw.api.util.data :as data-util]
     [darbylaw.api.bank-list :as banks]
     [darbylaw.api.buildsoc-list :as buildsocs]
     [stencil.api :as stencil]
-    [clojure.java.io :as io]))
+    [clojure.java.io :as io])
+  (:import (java.time LocalDate)))
 
 (defn generate-address-vector [type data]
   (case type
@@ -37,15 +36,11 @@
 (defn generate-mailing-address [type asset-id]
   (let [asset-data (case type :bank (banks/get-bank-info asset-id)
                               :buildsoc (buildsocs/get-buildsoc-info asset-id))
-        address-vector (generate-address-vector type asset-data)
-        address-string (string/join "\n"
-                         (remove string/blank? address-vector))]
-    (merge
-      {:org-name (case type :bank (:org-name asset-data)
-                            :buildsoc (:common-name asset-data))}
-      (if (string/blank? address-string)
-        {:no-address "No address data found. Please download and edit letter before sending."}
-        {:org-address address-string}))))
+        address-vector (generate-address-vector type asset-data)]
+    {:org-name (case type :bank (:org-name asset-data)
+                          :buildsoc (:common-name asset-data))
+     :org-address (string/join "\n"
+                    (remove string/blank? address-vector))}))
 
 (defn generate-account-info [accounts type]
   (if (= type :bank)
@@ -103,10 +98,8 @@
                               (assoc :name (banks/bank-label bank-id))
                               (assoc :accounts (:accounts bank-data))
                               (merge (generate-mailing-address bank-type bank-id))))
-          (assoc-in [:deceased :date-of-death] (date-util/long-date-from-string
-                                                 (:date-of-death (:deceased case-data))
-                                                 false))
-          (assoc :date (date-util/long-date (jt/local-date) false)))
+
+          (assoc :date (.toString (LocalDate/now))))
 
         (= bank-type :buildsoc)
         (-> case-data
@@ -114,10 +107,8 @@
                              (assoc :name (buildsocs/buildsoc-label bank-id))
                              (assoc :accounts (:accounts bank-data))
                              (merge (generate-mailing-address bank-type bank-id))))
-          (assoc-in [:deceased :date-of-death] (date-util/long-date-from-string
-                                                     (:date-of-death (:deceased case-data))
-                                                     false))
-          (assoc :date (date-util/long-date (jt/local-date) false)))))))
+
+          (assoc :date (.toString (LocalDate/now))))))))
 
 
 (mount/defstate templates
