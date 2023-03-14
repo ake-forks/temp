@@ -90,8 +90,8 @@
 ;; TODO: Fix so that it fits the screen size permanently
 ;;       Use javascript?
 (def points
-  ["tools similar to those used by lawyers, to manage the entire probate application at your own pace"
-   "automated letters to banks, councils, and utility companies on legal letterhead"
+  ["lawyer designed case management tools to help you manage the entire probate application at your own pace"
+   "automated letters to banks, councils, and utility companies"
    "24/7 access to the progress and next steps of the case via a personalised dashboard"])
 
 (defn probate-made-easy []
