@@ -46,6 +46,10 @@
                   :style {:backgroundColor rich-black
                           :color off-white}}
                  {:props {:variant :text}}]}
+    :MuiIconButton {:defaultProps {:color :primary}
+                    :variants
+                    [{:props {:variant :outlined}
+                      :style {:border (str "1px solid " teal)}}]}
     :MuiTextField {:defaultProps {:variant :filled}}
     :MuiSelect {:defaultProps {:variant :filled}}
     :MuiAppBar {:styleOverrides {:root {:background-color :white}}}}})

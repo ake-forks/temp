@@ -176,15 +176,18 @@
         [mui/stack {:direction :row :spacing 2 :align-items :center}
          (when ongoing?
            [mui/tooltip {:title "add valuation"}
-            [mui/icon-button {:on-click #(reset! valuation-visible (not @valuation-visible))}
+            [mui/icon-button {:on-click #(reset! valuation-visible (not @valuation-visible))
+                              :variant :outlined}
              [ui/icon-pound]]])
          [mui/tooltip {:title "edit"}
-          [mui/icon-button {:on-click #(rf/dispatch [::edit-utility data])}
+          [mui/icon-button {:on-click #(rf/dispatch [::edit-utility data])
+                            :variant :outlined}
            [ui/icon-edit]]]
          [mui/tooltip {:title "remove"}
           [mui/icon-button {:on-click #(reset! popover {:anchor (ui/event-currentTarget %)
                                                         :label services-str
-                                                        :asset-id id})}
+                                                        :asset-id id})
+                            :variant :outlined}
            [ui/icon-delete]]]]]
        (when (not (str/blank? account-number))
          [mui/typography {:variant :body1} (str "account number: " account-number)])
