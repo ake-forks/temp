@@ -1,8 +1,10 @@
 (ns darbylaw.web.ui.bills.common
   (:require
+    [clojure.string :as str]
     [darbylaw.web.ui :as ui]
     [darbylaw.web.util.form :as form-util]
     [darbylaw.web.ui.bills.model :as model]
+    [darbylaw.web.ui.case-model :as case-model]
     [re-frame.core :as rf]
     [reagent-mui.components :as mui]
     [clojure.edn :refer [read-string]]
@@ -48,19 +50,32 @@
       [mui/divider]
       [mui/menu-item {:value (pr-str :new-property)} "add new address"]]]))
 
-(defn new-property-input [{:keys [values] :as fork-args}]
-  (let [add-property? (= :new-property (get values :property))]
+(defn new-property-input [{:keys [values set-values] :as fork-args}]
+  (let [add-property? (= :new-property (get values :property))
+        deceased-address @(rf/subscribe [::case-model/deceased-address])]
     (if add-property?
-      [form-util/text-field fork-args
-       {:name :address-new
-        :hiddenLabel true
-        :placeholder "enter new address"
-        :multiline true
-        :minRows 3
-        :maxRows 5
-        :variant :outlined
-        :fullWidth true
-        :required true}])))
+      [mui/stack
+       [form-util/text-field fork-args
+        {:name :address-new
+         :hiddenLabel true
+         :placeholder "enter new address"
+         :multiline true
+         :minRows 3
+         :maxRows 5
+         :variant :outlined
+         :fullWidth true
+         :required true
+         :InputProps
+         (when (str/blank? (:address-new values))
+           {:endAdornment
+            (r/as-element
+              [mui/button {:variant :text
+                           :size :small
+                           :style {:font-weight :normal}
+                           :on-click #(set-values {:address-new deceased-address})
+                           :start-icon (r/as-element [ui/icon-copy])}
+               "copy from death certificate"])})}]])))
+
 
 (defn upload-button [_asset-type _case-id _asset-id _props _label]
   (r/with-let [_ (reset! model/file-uploading? false)
