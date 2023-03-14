@@ -1,5 +1,6 @@
 (ns darbylaw.web.ui.bills.common
   (:require
+    [clojure.string :as str]
     [darbylaw.web.ui :as ui]
     [darbylaw.web.util.form :as form-util]
     [darbylaw.web.ui.bills.model :as model]
@@ -64,14 +65,16 @@
          :variant :outlined
          :fullWidth true
          :required true
-         :InputProps {:endAdornment
-                      (r/as-element
-                        [mui/button {:variant :text
-                                     :size :small
-                                     :style {:font-weight :normal}
-                                     :on-click #(set-values {:address-new deceased-address})
-                                     :start-icon (r/as-element [ui/icon-copy])}
-                         "copy from death certificate"])}}]])))
+         :InputProps
+         (when (str/blank? (:address-new values))
+           {:endAdornment
+            (r/as-element
+              [mui/button {:variant :text
+                           :size :small
+                           :style {:font-weight :normal}
+                           :on-click #(set-values {:address-new deceased-address})
+                           :start-icon (r/as-element [ui/icon-copy])}
+               "copy from death certificate"])})}]])))
 
 
 (defn upload-button [_asset-type _case-id _asset-id _props _label]
