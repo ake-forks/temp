@@ -147,7 +147,8 @@
 (rf/reg-event-fx ::create-received-letter-failure
   (fn [{:keys [db]} [_ {:keys [path] :as _fork-params} error-result]]
     {:db (fork/set-submitting db path false)
-     ::ui/notify-user-http-error {:result error-result}}))
+     ::ui/notify-user-http-error {:message "Could not create letter"
+                                  :result error-result}}))
 
 (rf/reg-event-fx ::create-received-letter
   (fn [{:keys [db]} [_
