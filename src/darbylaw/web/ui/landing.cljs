@@ -92,7 +92,7 @@
 (def points
   ["lawyer designed case management tools to help you manage the entire probate application at your own pace"
    "automated letters to banks, councils, and utility companies"
-   "24/7 access to the progress and next steps of the case via a personalised dashboard"])
+   "24/7 access to the progress and next steps of your case via a personalised dashboard"])
 
 (defn probate-made-easy []
   [background "/images/home-trees-1920-1080.jpeg"
