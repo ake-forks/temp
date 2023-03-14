@@ -89,6 +89,11 @@
 
 ;; TODO: Fix so that it fits the screen size permanently
 ;;       Use javascript?
+(def points
+  ["tools similar to those used by lawyers, to manage the entire probate application at your own pace"
+   "automated letters to banks, councils, and utility companies on legal letterhead"
+   "24/7 access to the progress and next steps of the case via a personalised dashboard"])
+
 (defn probate-made-easy []
   [background "/images/home-trees-1920-1080.jpeg"
    [mui/container {:max-width :xl}
@@ -101,13 +106,19 @@
           [mui/typography {:variant :h4 :color :white}
             "probate made easy"]
           [mui/typography {:variant :text :color :white}
-           "Lorem ipsum dolor sit amet, consetetur sadipscing
-elitr, s ed diam nonumy eirmod tempor invidunt ut
-labore e t dolore magna aliquyam erat, sed diam volu
-ptua. At  vero eos et accusam et justo duo dolores et
-ea rebum . Stet clita kasd gubergren, no sea takimata
-sanctus  est Lorem."]
-          [mui/box {:sx {:pt 2}}
+           "Probate-Tree has been designed by qualified lawyers to guide you through the probate process.
+           Our software provides:"]
+          (for [line points]
+            ^{:key line}
+            [mui/list-item {:style {:margin-top 0}}
+             [mui/list-item-icon {:style {:color :white}}
+              [ui/icon-arrow-forwards]]
+             [mui/list-item-text {:style {:color :white}}
+              line]])
+          [mui/typography {:variant :text :color :white :style {:margin-top 0}}
+           "Our lawyer-led team is on-hand to answer your questions and complete the required legal paperwork when the time comes.
+           Answer a few questions at the link below to find out if you need probate…"]
+          [mui/box {:sx {:pt 2 :mt 0}}
            [mui/button {:variant :contained
                         :size :large
                         :style {:background-color theme/lime
@@ -128,23 +139,21 @@ sanctus  est Lorem."]
    [mui/typography {:variant :body1
                     :color theme/lime
                     :style {:font-size "1.2rem"}}
-
     "from"]
    [mui/typography {:variant :h2
                     :color theme/lime}
-    "£750"]
+    "£990"]
    [mui/typography {:variant :body1
                     :color theme/lime
                     :style {:font-size "1.2rem"}}
-
     "/ probate"]])
 
 (def price-lines
-  ["Lorem ipsum dolor sit amet, consetetur."
-   "Ipsum dolor sit amet orem."
-   "Dolor sit amet consetetu ametr."
-   "Lorem ipsum dolor sit amet."
-   "Sit amet consetetur lorem ipsum dolor."])
+  ["full access to your own case management system"
+   "automated notifications to banks and other institutions"
+   "Inheritance Tax calculations and form preparation"
+   "Probate Court application and final estate accounts"
+   "regular updates for beneficiaries and downloadable reports"])
 
 (defn price-text []
  [mui/stack {:spacing 3}
@@ -152,14 +161,18 @@ sanctus  est Lorem."]
                    :sx {:pb 1}}
    "price"]
   [big-price]
+  [mui/typography {:variant :body1
+                   :color theme/lime
+                   :style {:font-size "1rem"
+                           :margin-top 0}}
+   "(£825+VAT)"]
   [mui/typography {:variant :text}
-   "Lorem ipsum dolor sit amet, consetetur
-sadipscing elitr, sed diam nonumy eirmod
-tempor invidunt ut labore et dolore."]
+   "This fixed fee gives you full access and interaction with your own case, plus guidance and support from our in-house legal team.
+   A fee of £273 will also be payable to the Court when we submit your application for probate."]
   [mui/divider]
   [mui/stack {}
    [mui/typography {:variant :text}
-    "Includes:"]
+    "Our fixed fee includes:"]
    [mui/list
     (for [line price-lines]
       ^{:key line}
