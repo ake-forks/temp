@@ -4,12 +4,13 @@
     [clojure.string :as str]
     [stencil.api :as stencil]
     [clojure.java.io :as io]
+    [java-time.api :as jt]
     [darbylaw.api.util.data :as data-util]
+    [darbylaw.api.util.dates :as date-util]
     [xtdb.api :as xt]
     [darbylaw.api.util.xtdb :as xt-util]
     [darbylaw.xtdb-node :as node]
-    [mount.core :as mount])
-  (:import (java.time LocalDate)))
+    [mount.core :as mount]))
 
 (defn generate-utility-address [company]
   (let [data (bill-data/get-company-info company)
@@ -69,8 +70,6 @@
     :in '[case-id property-id]}
    case-id property-id])
 
-
-
 (defn get-letter-data [xtdb-node asset-type case-id institution property-id]
   (let [database (xt/db xtdb-node)
         [case-data property-data] (xt-util/fetch-one
@@ -84,8 +83,11 @@
     (data-util/keys-to-camel-case
       (merge
         (-> case-data
-          (assoc :date (.toString (LocalDate/now)))
-          (assoc :property property-data))
+          (assoc :date (date-util/long-date (jt/local-date) false))
+          (assoc :property property-data)
+          (assoc-in [:deceased :date-of-death] (date-util/long-date-from-string
+                                                 (:date-of-death (:deceased case-data))
+                                                 false)))
         (case asset-type
           :utility
           (merge
@@ -100,10 +102,10 @@
 
 (comment
   (get-letter-data node/xtdb-node
-    :utility
-    #uuid"6dc1ab3a-44a6-4600-bf3a-4255271c3421"
-    :swalec
-    #uuid"28e725a3-d7a5-477a-a1e3-4816eb9241b3"))
+    :council-tax
+    #uuid"2bcee42c-df67-4aff-93e1-b91002239a38"
+    :darlington-borough
+    #uuid"ac93d4ab-9741-4925-af0e-f240c9d0dfbc"))
 
 (mount/defstate templates
   :start {:utility (stencil/prepare (io/resource "darbylaw/templates/utility-notification.docx"))
