@@ -37,6 +37,7 @@
              [utility :property property-id]]
     :in '[case-id utility-company property-id]}
    case-id utility-company property-id])
+
 (defn generate-council-address [council]
   (let [data (bill-data/get-council-info council)
         vector (vector
@@ -91,7 +92,8 @@
         (case asset-type
           :utility
           (merge
-            {:account-number (mapv #(:account-number %) asset-data)}
+            {:accounts (mapv (fn [entry] {:account-number (:account-number entry)
+                                          :meter-reading (:meter-readings entry)}) asset-data)}
             (generate-utility-address (:utility-company (first asset-data))))
           :council-tax
           (merge
@@ -102,10 +104,20 @@
 
 (comment
   (get-letter-data node/xtdb-node
-    :council-tax
-    #uuid"2bcee42c-df67-4aff-93e1-b91002239a38"
-    :darlington-borough
-    #uuid"ac93d4ab-9741-4925-af0e-f240c9d0dfbc"))
+    :utility
+    #uuid"2546a9ef-b4fc-4056-b73e-3ac70c632a67"
+    :boost-energy
+    #uuid"e7bd1719-e757-4ea8-8237-1627cb4f80fa")
+
+  (mapv first (apply xt/q (xt/db node/xtdb-node)
+                (utility-query #uuid"2546a9ef-b4fc-4056-b73e-3ac70c632a67"
+                  :boost-energy #uuid"e7bd1719-e757-4ea8-8237-1627cb4f80fa")))
+
+
+  ())
+
+
+
 
 (mount/defstate templates
   :start {:utility (stencil/prepare (io/resource "darbylaw/templates/utility-notification.docx"))
