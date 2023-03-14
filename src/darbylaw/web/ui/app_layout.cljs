@@ -40,18 +40,17 @@
        #_(ui/???_TO_BE_DEFINED_??? "do we replace probate-tree with a logo img? black or colourful?")]]]))
 
 (def task-icon "/images/green.png")
+
 (defn task-item [{:keys [title body icon-path on-click href]}]
   [:<>
-   [mui/card-action-area {:on-click on-click :href href}
-    [mui/stack {:direction :row
-                :spacing 1
-                :style {:margin-top "0.25rem"
-                        :margin-bottom "0.5rem"}}
-     [mui/box {:style {:align-self :center :margin "0.5rem"}}
-      [:img {:src icon-path :width "30px" :height "30px"}]]
-     [mui/stack
-      [mui/typography {:variant :h6 :font-weight 600} title]
-      [mui/typography {:variant :body1} body]]]]
+   [mui/list-item (merge {:on-click on-click
+                          :href href
+                          :disableGutters true}
+                         (when (or on-click href)
+                           {:sx {:cursor :pointer}}))
+    [mui/list-item-icon [:img {:src icon-path :width "30px" :height "30px"}]]
+    [mui/list-item-text {:primary title
+                         :secondary body}]]
    [mui/divider]])
 
 (defn footer []
