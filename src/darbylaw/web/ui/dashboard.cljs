@@ -270,7 +270,7 @@
 
 (defn heading [current-case]
   [mui/box {:background-color theme/off-white
-            :padding-top (ui/theme-spacing 4)
+            :padding-top (ui/theme-spacing 3)
             :padding-bottom (ui/theme-spacing 2)}
    [mui/container {:maxWidth :xl}
     [mui/stack {:spacing 3}
@@ -300,7 +300,8 @@
    ; [mui/typography {:variant :h5} "estate details"]
    [mui/stack {:direction :row
                :spacing 1
-               :sx {:margin-top (ui/theme-spacing 2)}}
+               :sx {:margin-top (ui/theme-spacing 2)
+                    :margin-bottom (ui/theme-spacing 2)}}
     [mui-masonry/masonry {:columns 3}
      [bank-card current-case]
      [buildsoc-card]

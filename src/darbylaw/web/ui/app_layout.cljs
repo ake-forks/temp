@@ -2,7 +2,6 @@
   (:require
     [reagent-mui.components :as mui]
     [darbylaw.web.ui :as ui]
-    [darbylaw.web.styles :as styles]
     [reagent.core :as r]
     [re-frame.core :as rf]
     [kee-frame.core :as kf]
@@ -18,20 +17,24 @@
 (defn navbar []
   (let [case-id @(rf/subscribe [::case-model/case-id])
         nickname @(rf/subscribe [::case-model/nickname])]
-    [mui/app-bar {:sx {:zIndex bring-to-front}
-                  :class (styles/navbar)}
+    [mui/app-bar {:color :inherit
+                  :elevation 2
+                  :sx {:zIndex bring-to-front}}
      [mui/container {:max-width :xl}
-      [mui/toolbar {:variant :dense}
-       [mui/stack {:direction :row :spacing 2}
+      [mui/toolbar {:variant :dense
+                    :disableGutters true}
+       [mui/stack {:direction :row
+                   :spacing 2
+                   :align-items :center}
         [mui/link {:variant :h6
                    :sx {:color theme/rich-black}
                    :underline :none
                    :href (kf/path-for [:dashboard {:case-id case-id}])}
          "probate-tree"]
         [mui/button {:variant :outlined
-                     :startIcon (r/as-element [ui/icon-arrow-back-sharp])
+                     :startIcon (r/as-element [ui/icon-admin-panel-settings-outlined])
                      :href (kf/path-for [:admin])}
-         "Back to admin"]]
+         "admin"]]
        [mui/box {:style {:flex-grow 1}}]
        [mui/button {:start-icon (r/as-element [ui/icon-person-outline])
                     :style {:textTransform :none
@@ -59,17 +62,21 @@
 (defn footer []
   [:<>
    [mui/app-bar {:position :fixed
-                 :sx {:top "auto" :bottom 0
-                      :zIndex bring-to-front}
-                 :class (styles/footer)}
+                 :elevation 2
+                 :color :inherit
+                 :sx {:top "auto"
+                      :bottom 0
+                      :zIndex bring-to-front}}
     [mui/container {:max-width :xl}
      [mui/toolbar {:variant :dense}
-      [mui/typography {:variant :body1}
+      [mui/typography {:variant :body1
+                       :color :text.disabled}
        "2022 probate-tree. All rights reserved."]
       [mui/box {:style {:flex-grow 1}}]
       [mui/link {:variant :body2
-                 :underline :none}
+                 :underline :none
+                 :color :text.disabled}
        "terms and conditions"]]]]
    ;; Fixes footer obscuring content at the bottom of the page
    ;; See https://mui.com/material-ui/react-app-bar/#fixed-placement
-   [mui/toolbar]]) 
+   [mui/toolbar {:variant :dense}]])

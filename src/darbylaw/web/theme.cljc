@@ -16,7 +16,6 @@
 (def lilac "#B08BBF")
 (def rich-black "#121A20")
 (def off-white "#EEEEEE")
-(def pale-grey "#DADADA")
 
 (def lime "#8FBF2C")
 
@@ -51,5 +50,4 @@
                     [{:props {:variant :outlined}
                       :style {:border (str "1px solid " teal)}}]}
     :MuiTextField {:defaultProps {:variant :filled}}
-    :MuiSelect {:defaultProps {:variant :filled}}
-    :MuiAppBar {:styleOverrides {:root {:background-color :white}}}}})
+    :MuiSelect {:defaultProps {:variant :filled}}}})

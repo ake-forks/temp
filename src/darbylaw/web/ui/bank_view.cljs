@@ -3,7 +3,6 @@
             [reagent-mui.components :as mui]
             [darbylaw.web.routes :as routes]
             [darbylaw.web.ui.app-layout :as c]
-            [darbylaw.web.styles :as styles]
             [darbylaw.api.bank-list :as bank-list]
             [reagent.core :as r]
             [darbylaw.web.ui :as ui]
@@ -161,7 +160,7 @@
         current-user-bank (filter #(= (:id %) bank-id) all-user-banks)]
     (assert case-id)
     (rf/dispatch [::load! case-id])
-    [mui/container {:class (styles/main-content)}
+    [mui/container {:sx {:padding-top "4rem"}}
      [mui/stack {:spacing 1}
       [mui/stack {:direction :row :justify-content :space-between}
        [mui/typography {:variant :h3} (:common-name current-bank-static-data)]

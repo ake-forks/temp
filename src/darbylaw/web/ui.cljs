@@ -2,6 +2,7 @@
   (:require
     [reagent-mui.icons.account-balance]
     [reagent-mui.icons.add]
+    [reagent-mui.icons.admin-panel-settings-outlined]
     [reagent-mui.icons.directions-run]
     [reagent-mui.icons.playlist-play]
     [reagent-mui.icons.pending]
@@ -59,6 +60,7 @@
 (def icon-playlist-play reagent-mui.icons.playlist-play/playlist-play)
 (def icon-pending reagent-mui.icons.pending/pending)
 (def icon-add reagent-mui.icons.add/add)
+(def icon-admin-panel-settings-outlined reagent-mui.icons.admin-panel-settings-outlined/admin-panel-settings-outlined)
 (def icon-arrow-back-sharp reagent-mui.icons.arrow-back-sharp/arrow-back-sharp)
 (def icon-help-outline reagent-mui.icons.help-outline/help-outline)
 (def icon-cloud-sync reagent-mui.icons.cloud-sync/cloud-sync)
