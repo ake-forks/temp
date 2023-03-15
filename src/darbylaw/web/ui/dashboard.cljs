@@ -77,7 +77,9 @@
    [mui/divider]])
 
 (defn asset-card [{:keys [title _on-add]} & body]
-  [mui/card
+  [mui/card {:sx {:border-style :solid
+                  :border-width 1
+                  :border-color :divider}}
    [mui/card-content {:sx {"&:last-child" {:paddingBottom (ui/theme-spacing 1)}}}
     [asset-card-header title]
     (into [:<>] body)]])
