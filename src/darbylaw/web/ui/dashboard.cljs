@@ -4,7 +4,6 @@
     [reagent-mui.components :as mui]
     [darbylaw.web.ui.app-layout :as c]
     [darbylaw.web.ui :as ui]
-    [darbylaw.web.styles :as styles]
     [darbylaw.web.routes :as routes]
     [darbylaw.web.ui.funeral.model :as funeral-model]
     [darbylaw.web.ui.funeral.dialog :as funeral-dialog]
@@ -270,14 +269,14 @@
                                           :dialog :add}])}]]]))
 
 (defn heading [current-case]
-  [mui/box {:sx {:background-color theme/off-white :padding-bottom {:xs "2rem" :xl "4rem"}}}
-
-   [mui/container {:maxWidth :xl :class (styles/main-content)}
+  [mui/box {:background-color theme/off-white
+            :padding-top (ui/theme-spacing 4)
+            :padding-bottom (ui/theme-spacing 2)}
+   [mui/container {:maxWidth :xl}
     [mui/stack {:spacing 3}
      [mui/stack {:direction :row
                  :justify-content :space-between
-                 :align-items :baseline
-                 :sx {:padding-top {:xs "0.5rem" :xl "2rem"}}}
+                 :align-items :baseline}
       [mui/typography {:variant :h4}
        (if (nil? (:deceased current-case))
          (str "welcome")
@@ -297,26 +296,30 @@
 
 (defn content [current-case]
   [mui/container {:maxWidth :xl}
-   [mui/stack {:spacing 2 :sx {:pt "1rem" :pb "2rem"}}
-    ;[mui/typography {:variant :h5} "estate details"]
-    [mui/stack {:direction :row :spacing 1 :style {:margin-top "0.5rem"}}
-     [mui-masonry/masonry {:columns 3}
-      [bank-card current-case]
-      [buildsoc-card]
-      [bills-card]
-      [funeral-card current-case]]
-     [mui/stack {:spacing 2 :style {:width "30%"}}
-      [tasks/tasks-tile]
-      [key-docs/dash-button]
-      [key-docs/dialog]
-      [identity-dialog/dialog]
-      [overview/overview-card]]]]])
+   ;[mui/stack {:spacing 2 :sx {:pt "1rem" :pb "2rem"}}
+   ; [mui/typography {:variant :h5} "estate details"]
+   [mui/stack {:direction :row
+               :spacing 1
+               :sx {:margin-top (ui/theme-spacing 2)}}
+    [mui-masonry/masonry {:columns 3}
+     [bank-card current-case]
+     [buildsoc-card]
+     [bills-card]
+     [funeral-card current-case]]
+    [mui/stack {:spacing 2 :style {:width "30%"}}
+     [tasks/tasks-tile]
+     [key-docs/dash-button]
+     [key-docs/dialog]
+     [identity-dialog/dialog]
+     [overview/overview-card]]]])
 
 (defn panel* []
   (let [current-case @(rf/subscribe [::case-model/current-case])]
     [mui/box
      [c/navbar]
-     [heading current-case]
+     [mui/stack
+      [c/navbar-placeholder]
+      [heading current-case]]
      [content current-case]
      [c/footer]]))
 

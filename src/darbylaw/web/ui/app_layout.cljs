@@ -12,6 +12,9 @@
 (defn bring-to-front [theme]
   (inc (.. theme -zIndex -drawer)))
 
+(defn navbar-placeholder []
+  [mui/toolbar {:variant :dense}])
+
 (defn navbar []
   (let [case-id @(rf/subscribe [::case-model/case-id])
         nickname @(rf/subscribe [::case-model/nickname])]
