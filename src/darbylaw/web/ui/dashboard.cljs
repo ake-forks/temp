@@ -57,7 +57,7 @@
           (reduce +)
           (format/format "%.2f")
           (str "£"))]]]
-     [mui/divider {:variant "middle"}]]))
+     [mui/divider]]))
 
 (defn asset-add-button [{:keys [title on-click]}]
   [mui/button {:onClick on-click
