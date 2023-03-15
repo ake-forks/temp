@@ -13,7 +13,8 @@
             [darbylaw.web.ui.components.file-input-button :refer [file-input-button]]
             [darbylaw.web.util.form :as form-util]
             [vlad.core :as v]
-            [darbylaw.web.ui.mailing.letter-commons :as letter-commons]))
+            [darbylaw.web.ui.mailing.letter-commons :as letter-commons]
+            [darbylaw.global :as global]))
 
 (rf/reg-event-db ::set-file-data-url
   (fn [db [_ data-url]]
@@ -52,13 +53,18 @@
                       :m 1
                       :border-width 4
                       :border-style :dashed}}
-       [file-input-button {:button-props {:startIcon (r/as-element [ui/icon-description-outlined])
-                                          :disableRipple true
-                                          :disableFocusRipple true
-                                          :sx {:height 1 :width 1}}
-                           :accept http/pdf-mime-type
-                           :on-file-selected #(set-values {:file %})
-                           :on-load-data-url #(rf/dispatch [::set-file-data-url %])}
+       [file-input-button
+        {:button-props {:startIcon (r/as-element [ui/icon-description-outlined])
+                        :disableRipple true
+                        :disableFocusRipple true
+                        :sx {:height 1 :width 1}}
+         :accept http/pdf-mime-type
+         :on-selected (fn [f]
+                        (if (> (.-size f) global/max-request-size)
+                          (rf/dispatch [::ui/show-message {:severity :error
+                                                           :text "File is too big."}])
+                          (do (set-values {:file f})
+                              (rf/dispatch [::set-file-data-url (js/URL.createObjectURL f)]))))}
         "upload pdf scan..."]])))
 
 (defonce delete-confirmation-open? (r/atom false))
@@ -141,8 +147,8 @@
 (rf/reg-event-fx ::create-received-letter-failure
   (fn [{:keys [db]} [_ {:keys [path] :as _fork-params} error-result]]
     {:db (fork/set-submitting db path false)
-     ::close nil
-     ::ui/notify-user-http-error {:result error-result}}))
+     ::ui/notify-user-http-error {:message "Could not create letter"
+                                  :result error-result}}))
 
 (rf/reg-event-fx ::create-received-letter
   (fn [{:keys [db]} [_

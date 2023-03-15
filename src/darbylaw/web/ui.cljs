@@ -196,33 +196,35 @@
       (< 500 status 599) "Unexpected server error"
       (= 404 status) "Unexpected error"
       (= 400 status) "Rejected request. Please check entered data"
+      (= 413 status) "File is too big"
       :else "Unexpected error")))
 
-(rf/reg-event-db ::user-notification
+(rf/reg-event-db ::show-message
   (fn [db [_ args]]
-    (assoc db ::user-notification args)))
+    (assoc db ::user-message args)))
 
-(rf/reg-fx ::notify-user
+(rf/reg-fx ::show-message
   (fn [args]
-    (rf/dispatch [::user-notification args])))
+    (rf/dispatch [::show-message args])))
 
 (rf/reg-fx ::notify-user-http-error
   (fn [{:keys [message result]}]
-    (rf/dispatch [::user-notification {:severity :error
-                                       :text (let [err (http-error-user-message result)]
-                                               (if (some? message)
-                                                 (str message " (" err ")")
-                                                 err))}])))
+    (assert result (str ::notify-user-http-error " called without http result"))
+    (rf/dispatch [::show-message {:severity :error
+                                  :text (let [err (http-error-user-message result)]
+                                          (if (some? message)
+                                            (str message " (" err ")")
+                                            err))}])))
 
-(rf/reg-sub ::user-notification
+(rf/reg-sub ::user-message
   (fn [db]
-    (::user-notification db)))
+    (::user-message db)))
 
 (defn user-notification-snackbar []
-  (let [{:keys [severity text] :as notification} @(rf/subscribe [::user-notification])]
+  (let [{:keys [severity text] :as notification} @(rf/subscribe [::user-message])]
     [mui/snackbar {:open (some? notification)
                    :autoHideDuration 5000
-                   :on-close #(rf/dispatch [::user-notification nil])}
+                   :on-close #(rf/dispatch [::show-message nil])}
      [mui/alert {:severity (or severity :info)}
       (or text "")]]))
 
