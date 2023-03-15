@@ -71,7 +71,8 @@
 (defn asset-card-header [title]
   [:<>
    [mui/typography {:variant :h5
-                    :sx {:font-weight 600}}
+                    :sx {:font-weight 600
+                         :mb 1}}
     title]
    [mui/divider]])
 
