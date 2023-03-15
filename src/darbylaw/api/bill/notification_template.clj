@@ -9,7 +9,6 @@
     [darbylaw.api.util.dates :as date-util]
     [xtdb.api :as xt]
     [darbylaw.api.util.xtdb :as xt-util]
-    [darbylaw.xtdb-node :as node]
     [mount.core :as mount]))
 
 (defn generate-utility-address [company]
@@ -101,23 +100,6 @@
                                acc
                                "Unknown")}
             (generate-council-address (:council (first asset-data)))))))))
-
-(comment
-  (get-letter-data node/xtdb-node
-    :utility
-    #uuid"2546a9ef-b4fc-4056-b73e-3ac70c632a67"
-    :boost-energy
-    #uuid"e7bd1719-e757-4ea8-8237-1627cb4f80fa")
-
-  (mapv first (apply xt/q (xt/db node/xtdb-node)
-                (utility-query #uuid"2546a9ef-b4fc-4056-b73e-3ac70c632a67"
-                  :boost-energy #uuid"e7bd1719-e757-4ea8-8237-1627cb4f80fa")))
-
-
-  ())
-
-
-
 
 (mount/defstate templates
   :start {:utility (stencil/prepare (io/resource "darbylaw/templates/utility-notification.docx"))

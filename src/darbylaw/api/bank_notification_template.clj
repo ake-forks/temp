@@ -1,15 +1,16 @@
 (ns darbylaw.api.bank-notification-template
   (:require
     [clojure.string :as string]
+    [darbylaw.api.util.dates :as date-util]
     [darbylaw.api.util.xtdb :as xt-util]
+    [java-time.api :as jt]
     [mount.core :as mount]
     [xtdb.api :as xt]
     [darbylaw.api.util.data :as data-util]
     [darbylaw.api.bank-list :as banks]
     [darbylaw.api.buildsoc-list :as buildsocs]
     [stencil.api :as stencil]
-    [clojure.java.io :as io])
-  (:import (java.time LocalDate)))
+    [clojure.java.io :as io]))
 
 (defn generate-address-vector [type data]
   (case type
@@ -99,7 +100,10 @@
                               (assoc :accounts (:accounts bank-data))
                               (merge (generate-mailing-address bank-type bank-id))))
 
-          (assoc :date (.toString (LocalDate/now))))
+          (assoc :date (date-util/long-date (jt/local-date) false))
+          (assoc-in [:deceased :date-of-death] (date-util/long-date-from-string
+                                                 (:date-of-death (:deceased case-data))
+                                                 false)))
 
         (= bank-type :buildsoc)
         (-> case-data
@@ -108,7 +112,10 @@
                              (assoc :accounts (:accounts bank-data))
                              (merge (generate-mailing-address bank-type bank-id))))
 
-          (assoc :date (.toString (LocalDate/now))))))))
+          (assoc :date (date-util/long-date (jt/local-date) false))
+          (assoc-in [:deceased :date-of-death] (date-util/long-date-from-string
+                                                 (:date-of-death (:deceased case-data))
+                                                 false)))))))
 
 
 (mount/defstate templates
