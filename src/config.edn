@@ -18,7 +18,7 @@
                   :test :none}}
 
  :doc-store
- {:s3-bucket #profile {:default "darbylaw-docs-test"
+ {:s3-bucket #profile {:default "darbylaw-docs-dev"
                        #{:staging :production} #env DOC_STORE_BUCKET}}
 
  :mailing-service

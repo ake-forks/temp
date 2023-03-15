@@ -16,7 +16,7 @@ Suggested setup: Using [aws-vault](https://github.com/99designs/aws-vault), whic
     ```
     [profile juxtegg]
     credential_process = aws-vault exec juxtegg --json
-    region=us-east-1
+    region=eu-west-2
     ```
     Again, you may need the `--backend` option in the `credential_process` command line.
 - When running the server, you will need to specify the AWS profile to use through:
