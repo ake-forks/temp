@@ -298,7 +298,7 @@
 (defn content [current-case]
   [mui/container {:maxWidth :xl}
    [mui/stack {:spacing 2 :sx {:pt "1rem" :pb "2rem"}}
-    [mui/typography {:variant :h5} "estate details"]
+    ;[mui/typography {:variant :h5} "estate details"]
     [mui/stack {:direction :row :spacing 1 :style {:margin-top "0.5rem"}}
      [mui-masonry/masonry {:columns 3}
       [bank-card current-case]
