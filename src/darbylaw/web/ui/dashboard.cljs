@@ -4,7 +4,6 @@
     [reagent-mui.components :as mui]
     [darbylaw.web.ui.app-layout :as c]
     [darbylaw.web.ui :as ui]
-    [darbylaw.web.styles :as styles]
     [darbylaw.web.routes :as routes]
     [darbylaw.web.ui.funeral.model :as funeral-model]
     [darbylaw.web.ui.funeral.dialog :as funeral-dialog]
@@ -57,26 +56,31 @@
           (reduce +)
           (format/format "%.2f")
           (str "£"))]]]
-     [mui/divider {:variant "middle"}]]))
+     [mui/divider]]))
 
 (defn asset-add-button [{:keys [title on-click]}]
-  [mui/card-action-area {:on-click on-click
-                         :sx {:padding-top 1}}
-   [mui/stack {:direction :row
-               :spacing 0.5
-               :align-items :center
-               :style {:color theme/teal}}
-    [mui/typography {:style {:font-weight 500}}
-     (or title "add")]
-    [ui/icon-add {:font-size :small}]]])
+  [mui/button {:onClick on-click
+               :startIcon (r/as-element [ui/icon-add])
+               :size :large
+               :sx {:width 1
+                    :justify-content :flex-start
+                    :fontSize :body1.fontSize}}
+   (or title "add")])
+
+(defn asset-card-header [title]
+  [:<>
+   [mui/typography {:variant :h5
+                    :sx {:font-weight 600
+                         :mb 1}}
+    title]
+   [mui/divider]])
 
 (defn asset-card [{:keys [title _on-add]} & body]
-  [mui/card
-   [mui/card-content
-    [mui/typography {:variant :h5
-                     :sx {:font-weight 600}}
-     title]
-    [mui/divider]
+  [mui/card {:sx {:border-style :solid
+                  :border-width 1
+                  :border-color :divider}}
+   [mui/card-content {:sx {"&:last-child" {:paddingBottom (ui/theme-spacing 1)}}}
+    [asset-card-header title]
     (into [:<>] body)]])
 
 (defn bank-card [current-case]
@@ -96,7 +100,7 @@
   [:<>
    [asset-add-button 
     {:title "add"
-     :on-click #(reset! anchor (.-target %))}]
+     :on-click #(reset! anchor (ui/event-currentTarget %))}]
    [mui/menu {:open (some? @anchor)
               :anchor-el @anchor
               :on-close #(reset! anchor nil)
@@ -265,14 +269,14 @@
                                           :dialog :add}])}]]]))
 
 (defn heading [current-case]
-  [mui/box {:sx {:background-color theme/off-white :padding-bottom {:xs "2rem" :xl "4rem"}}}
-
-   [mui/container {:maxWidth :xl :class (styles/main-content)}
+  [mui/box {:background-color theme/off-white
+            :padding-top (ui/theme-spacing 3)
+            :padding-bottom (ui/theme-spacing 2)}
+   [mui/container {:maxWidth :xl}
     [mui/stack {:spacing 3}
      [mui/stack {:direction :row
                  :justify-content :space-between
-                 :align-items :baseline
-                 :sx {:padding-top {:xs "0.5rem" :xl "2rem"}}}
+                 :align-items :baseline}
       [mui/typography {:variant :h4}
        (if (nil? (:deceased current-case))
          (str "welcome")
@@ -292,26 +296,31 @@
 
 (defn content [current-case]
   [mui/container {:maxWidth :xl}
-   [mui/stack {:spacing 2 :sx {:pt "1rem" :pb "2rem"}}
-    [mui/typography {:variant :h5} "estate details"]
-    [mui/stack {:direction :row :spacing 1 :style {:margin-top "0.5rem"}}
-     [mui-masonry/masonry {:columns 3}
-      [bank-card current-case]
-      [buildsoc-card]
-      [bills-card]
-      [funeral-card current-case]]
-     [mui/stack {:spacing 2 :style {:width "30%"}}
-      [tasks/tasks-tile]
-      [key-docs/dash-button]
-      [key-docs/dialog]
-      [identity-dialog/dialog]
-      [overview/overview-card]]]]])
+   ;[mui/stack {:spacing 2 :sx {:pt "1rem" :pb "2rem"}}
+   ; [mui/typography {:variant :h5} "estate details"]
+   [mui/stack {:direction :row
+               :spacing 1
+               :sx {:margin-top (ui/theme-spacing 2)
+                    :margin-bottom (ui/theme-spacing 2)}}
+    [mui-masonry/masonry {:columns 3}
+     [bank-card current-case]
+     [buildsoc-card]
+     [bills-card]
+     [funeral-card current-case]]
+    [mui/stack {:spacing 2 :style {:width "30%"}}
+     [tasks/tasks-tile]
+     [key-docs/dash-button]
+     [key-docs/dialog]
+     [identity-dialog/dialog]
+     [overview/overview-card]]]])
 
 (defn panel* []
   (let [current-case @(rf/subscribe [::case-model/current-case])]
     [mui/box
      [c/navbar]
-     [heading current-case]
+     [mui/stack
+      [c/navbar-placeholder]
+      [heading current-case]]
      [content current-case]
      [c/footer]]))
 

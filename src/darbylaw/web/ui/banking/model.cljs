@@ -206,7 +206,8 @@
 
 (rf/reg-event-fx ::review-notification-letter--success
   (fn [{:keys [db]} [_ case-id banking-id]]
-    {:fx [[:dispatch [::case-model/load-case! case-id]]]}))
+    {:fx [[:dispatch [::case-model/load-case! case-id]]
+          [:dispatch [::hide-dialog]]]}))
 
 (rf/reg-event-fx ::review-notification-letter
   (fn [{:keys [db]} [_ type send-action case-id banking-id letter-id]]
