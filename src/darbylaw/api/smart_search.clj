@@ -105,7 +105,7 @@
                           check-id
                           {:xt/id check-id
                            :check-type check-type})]
-    (tx-fns/set-values check-id check-data)))
+    [[::xt/put check-data]]))
 
 (defn response->check-data [response]
   (-> (get-in response [:body :data :attributes])
