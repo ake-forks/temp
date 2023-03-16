@@ -30,7 +30,8 @@
     [medley.core :as medley]
     [darbylaw.api.util.data :as data-util]
     [darbylaw.web.ui.notification.dialog :as notification-dialog]
-    [darbylaw.web.ui.notification.model :as notification-model]))
+    [darbylaw.web.ui.notification.model :as notification-model]
+    [darbylaw.web.ui.properties.shared :as property]))
 
 (defn bank-item [bank]
   (let [bank-data (bank-list/bank-by-id (:bank-id bank))
@@ -58,99 +59,26 @@
           (str "£"))]]]
      [mui/divider]]))
 
-(defn asset-add-button [{:keys [title on-click]}]
-  [mui/button {:onClick on-click
-               :startIcon (r/as-element [ui/icon-add])
-               :size :large
-               :sx {:width 1
-                    :justify-content :flex-start
-                    :fontSize :body1.fontSize}}
-   (or title "add")])
 
-(defn asset-card-header [title]
-  [:<>
-   [mui/typography {:variant :h5
-                    :sx {:font-weight 600
-                         :mb 1}}
-    title]
-   [mui/divider]])
-
-(defn asset-card [{:keys [title _on-add]} & body]
-  [mui/card {:sx {:border-style :solid
-                  :border-width 1
-                  :border-color :divider}}
-   [mui/card-content {:sx {"&:last-child" {:paddingBottom (ui/theme-spacing 1)}}}
-    [asset-card-header title]
-    (into [:<>] body)]])
 
 (defn bank-card [current-case]
-  [asset-card {:title "bank accounts"}
+  [c/asset-card {:title "bank accounts"}
    [bank-dialog/base-dialog]
    (for [bank (:bank-accounts current-case)]
      ^{:key (:bank-id bank)}
      [bank-item bank])
-   [asset-add-button
+   [c/asset-add-button
     {:title "add"
      :on-click #(rf/dispatch [::banking-model/show-add-dialog :bank])}]])
-
-(defn menu-asset-add-button
-  "anchor = atom
-  options = a map of option labels and their on-click functions as key-value pairs"
-  [anchor options]
-  [:<>
-   [asset-add-button 
-    {:title "add"
-     :on-click #(reset! anchor (ui/event-currentTarget %))}]
-   [mui/menu {:open (some? @anchor)
-              :anchor-el @anchor
-              :on-close #(reset! anchor nil)
-              :anchor-origin {:vertical "bottom"
-                              :horizontal "left"}
-              :transform-origin {:vertical "top"
-                                 :horizontal "left"}}
-    (map (fn [[k v]]
-           ^{:key k}
-           [mui/menu-item {:on-click v} k])
-      options)]])
-
-(defn format-currency
-  [value]
-  (format/format "%.2f" value))
-
-(defn asset-item [{:keys [title value on-click icon indent no-divider]}]
-  [mui/box
-   [mui/card-action-area {:on-click on-click
-                          :sx {:padding-top 1 :padding-bottom 1}}
-    [mui/stack (merge
-                 {:direction :row
-                  :spacing 2
-                  :justify-content :space-between}
-                 (when indent
-                   {:sx {:pl (* indent 2)}}))
-     (if (string? icon)
-       [mui/box {:component :img
-                 :src icon
-                 :sx {:width 25 :mr 1}}]
-       icon)
-     [mui/typography {:variant :body1
-                      :noWrap true
-                      :sx {:width "100%"}}
-      title]
-     (when (number? value)
-       [mui/typography {:variant :body1
-                        :sx {:font-weight :bold}}
-        (str "£" (format-currency value))])]]
-   (when-not no-divider
-     [mui/divider])])
 
 ;I think we should move these cards to their respective asset areas (like we have for tasks)
 (defn funeral-card []
   (let [dialog-info @(rf/subscribe [::funeral-model/dialog-info])
         account @(rf/subscribe [::funeral-model/account])
         expenses @(rf/subscribe [::funeral-model/expense-list])]
-    [asset-card {:title "funeral expenses"}
+    [c/asset-card {:title "funeral expenses"}
      (when account
-       [asset-item
+       [c/asset-item
         {:title (:title account)
          :value (js/parseFloat (:value account))
          :on-click #(rf/dispatch [::funeral-model/show-funeral-dialog :edit-account])
@@ -159,7 +87,7 @@
                               :width 25}]}])
      (for [{:keys [expense-id value title]} expenses]
        ^{:key expense-id}
-       [asset-item
+       [c/asset-item
         {:title title
          :value (js/parseFloat value)
          :on-click #(rf/dispatch [::funeral-model/show-funeral-dialog expense-id])
@@ -167,10 +95,10 @@
          :icon [mui/skeleton {:variant :circular
                               :width 25}]}])
      (if account
-       [asset-add-button
+       [c/asset-add-button
         {:title "add"
          :on-click #(rf/dispatch [::funeral-model/show-funeral-dialog :add-other])}]
-       [menu-asset-add-button (r/atom nil)
+       [c/menu-asset-add-button (r/atom nil)
         {"add funeral account" #(rf/dispatch [::funeral-model/show-funeral-dialog :add-funeral-director])
          "add other expense" #(rf/dispatch [::funeral-model/show-funeral-dialog :add-other])}])
      (when dialog-info
@@ -178,26 +106,26 @@
 
 (defn buildsoc-card []
   (let [current-case @(rf/subscribe [::case-model/current-case])]
-    [asset-card {:title "building societies"}
+    [c/asset-card {:title "building societies"}
      [banking-dialog/dialog]
      (map
        (fn [buildsoc]
          (let [id (:buildsoc-id buildsoc)]
            ^{:key id}
-           [asset-item {:title (banking-model/asset-label :buildsoc id)
-                        :value (->> buildsoc
-                                 :accounts
-                                 (map #(if-let [confirmed-value (:confirmed-value %)]
-                                         confirmed-value
-                                         (:estimated-value %)))
-                                 (map #(if (str/blank? %)
-                                         0
-                                         (js/parseFloat %)))
-                                 (reduce +))
-                        :on-click #(rf/dispatch [::banking-model/show-process-dialog :buildsoc id])
-                        :icon (str "/images/buildsoc-logos/" (banking-model/get-logo :buildsoc id))}]))
+           [c/asset-item {:title (banking-model/asset-label :buildsoc id)
+                          :value (->> buildsoc
+                                   :accounts
+                                   (map #(if-let [confirmed-value (:confirmed-value %)]
+                                           confirmed-value
+                                           (:estimated-value %)))
+                                   (map #(if (str/blank? %)
+                                           0
+                                           (js/parseFloat %)))
+                                   (reduce +))
+                          :on-click #(rf/dispatch [::banking-model/show-process-dialog :buildsoc id])
+                          :icon (str "/images/buildsoc-logos/" (banking-model/get-logo :buildsoc id))}]))
        (:buildsoc-accounts current-case))
-     [asset-add-button
+     [c/asset-add-button
       {:title "add"
        :on-click #(rf/dispatch [::banking-model/show-add-dialog :buildsoc])}]]))
 
@@ -217,7 +145,7 @@
      [bills-dialog/dialog]
      [council-tax/panel]
      [notification-dialog/dialog]
-     [asset-card {:title "household bills"}
+     [c/asset-card {:title "household bills"}
       (for [property-id used-property-ids]
         [:<> {:key property-id}
          [mui/typography {:sx {:font-weight 600
@@ -231,34 +159,34 @@
                                  (remove nil?))]
 
            ^{:key utility-company}
-           [asset-item {:title (if (keyword? utility-company)
-                                 (company-id->label utility-company)
-                                 utility-company)
-                        :on-click #(rf/dispatch [::notification-model/open
-                                                 {:notification-type :utility
-                                                  :case-id (:id current-case)
-                                                  :utility-company utility-company
-                                                  :property property-id}])
-                        :indent 1
-                        :no-divider true}])
+           [c/asset-item {:title (if (keyword? utility-company)
+                                   (company-id->label utility-company)
+                                   utility-company)
+                          :on-click #(rf/dispatch [::notification-model/open
+                                                   {:notification-type :utility
+                                                    :case-id (:id current-case)
+                                                    :utility-company utility-company
+                                                    :property property-id}])
+                          :indent 1
+                          :no-divider true}])
 
          (for [council (->> (get council-tax-by-property-id property-id)
                          (map #(:council %))
                          (distinct)
                          (remove nil?))]
            ^{:key council}
-           [asset-item {:title (if (keyword? council)
-                                 (council-id->label council)
-                                 council)
-                        :on-click #(rf/dispatch [::notification-model/open
-                                                 {:notification-type :council-tax
-                                                  :case-id (:id current-case)
-                                                  :council council
-                                                  :property property-id}])
-                        :indent 1
-                        :no-divider true}])
+           [c/asset-item {:title (if (keyword? council)
+                                   (council-id->label council)
+                                   council)
+                          :on-click #(rf/dispatch [::notification-model/open
+                                                   {:notification-type :council-tax
+                                                    :case-id (:id current-case)
+                                                    :council council
+                                                    :property property-id}])
+                          :indent 1
+                          :no-divider true}])
          [mui/divider]])
-      [menu-asset-add-button bills-model/bills-dashboard-menu
+      [c/menu-asset-add-button bills-model/bills-dashboard-menu
        {"add utility" #(rf/dispatch [::bills-model/show-bills-dialog
                                      {:service :utility
                                       :id nil
@@ -306,7 +234,8 @@
      [bank-card current-case]
      [buildsoc-card]
      [bills-card]
-     [funeral-card current-case]]
+     [funeral-card current-case]
+     [property/properties-card]]
     [mui/stack {:spacing 2 :style {:width "30%"}}
      [tasks/tasks-tile]
      [key-docs/dash-button]
