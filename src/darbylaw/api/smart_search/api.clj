@@ -1,117 +1,121 @@
 (ns darbylaw.api.smart-search.api
-  (:require [org.httpkit.client :as http]
-            [clojure.tools.logging :as log]
+  (:require [clojure.tools.logging :as log]
             [darbylaw.api.smart-search.client :refer [apply-middleware wrap-ensure-success base-client]]
             [darbylaw.api.smart-search.auth :refer [wrap-auth]]))
 
 
 ;; >> Authenticated client
 
-(def client
+(defn client-for-env
   "An authenticated client"
+  [env]
   (apply-middleware
-    base-client
-    [wrap-auth
+    (base-client env)
+    [(partial wrap-auth env)
      wrap-ensure-success]))
-
-
 
 ;; >> API Calls
 
-(defn export-pdf-base64 [ssid]
-  (client {:method :get
-           :path (str "/export/" ssid "/pdf-base64")}))
+(defn export-pdf-base64-request [ssid]
+  {:method :get
+   :path (str "/export/" ssid "/pdf-base64")})
 
 (defn lookup-doccheck-supported-documents []
-  (client {:method :get
-           :path "/lookup/doccheck/supported-documents"
-           :body {:country "gbr"}}))
+  {:method :get
+   :path "/lookup/doccheck/supported-documents"
+   :body {:country "gbr"}})
 
-(defn doccheck [data]
-  (client {:method :post
-           :path "/doccheck"
-           :body data}))
+(defn doccheck-request [data]
+  {:method :post
+   :path "/doccheck"
+   :body data})
 
-(defn get-doccheck [ssid]
-  (client {:method :get
-           :path (str "/doccheck/" ssid)}))
+(defn get-doccheck-request [ssid]
+  {:method :get
+   :path (str "/doccheck/" ssid)})
 
-(defn aml [data]
-  (client {:method :post
-           :path "/aml"
-           :body data}))
+(defn aml-request [data]
+  {:method :post
+   :path "/aml"
+   :body data})
 
-(defn fraudcheck [check-type ssid data]
+(defn fraudcheck-request [check-type ssid data]
   (when-not (#{"aml" "doccheck"} check-type)
     (log/error "Invalid fraud check check-type")
     (throw (ex-info "Invalid fraud check type" {:check-type check-type})))
-  (client {:method :post
-           :path (str "/" check-type "/" ssid "/fraudcheck")
-           :body data}))
+  {:method :post
+   :path (str "/" check-type "/" ssid "/fraudcheck")
+   :body data})
 
 (comment
-  (lookup-doccheck-supported-documents)
+  (def client
+    (client-for-env :fake))
 
-  (doccheck
-    {:client_ref "oliver_test"
-     :sanction_region "gbr"
-     :name {:title "Mr"
-            :first "John"
-            :middle "I"
-            :last "Smith"}
-     :gender "male"
-     :date_of_birth "1950-05-26"
-     :address {:building "25"
-               :street-1 "High Street"
-               :town "WESTBURY"
-               :region "WILTSHIRE"
-               :postcode "BA13 3BN"
-               :country "GBR"}
-     :issuing_country "GBR"
-     :document_type "driving_licence"
-     :scan_type "basic_selfie"
-     :mobile_number "+447700900090"})
-  (get-doccheck "2912616")
+  (client (lookup-doccheck-supported-documents))
 
-  (aml
-    {:client_ref "oliver_test"
-     ;:cra "experian"
-     :risk_level "high"
-     :name {:title "Mr"
-            :first "John"
-            :middle "I"
-            :last "Smith"}
-     :date_of_birth "1950-05-26"
-     ;contacts {:telephone ""
-     ;          :mobile "+447700900090"
-     ;          :email ""}
-     ;:documents {}
-     ;:bank {}
-     :addresses [{:building "25"
-                  :street_1 "High Street"
-                  :town "WESTBURY"
-                  :region "WILTSHIRE"
-                  :postcode "BA13 3BN"
-                  :country "GBR"
-                  :duration 3}]})
+  (def doccheck-response
+    (client (doccheck-request
+              {:client_ref "oliver_test"
+               :sanction_region "gbr"
+               :name {:title "Mr"
+                      :first "John"
+                      :middle "I"
+                      :last "Smith"}
+               :gender "male"
+               :date_of_birth "1950-05-26"
+               :address {:building "25"
+                         :street-1 "High Street"
+                         :town "WESTBURY"
+                         :region "WILTSHIRE"
+                         :postcode "BA13 3BN"
+                         :country "GBR"}
+               :issuing_country "GBR"
+               :document_type "driving_licence"
+               :scan_type "basic_selfie"
+               :mobile_number "+447700900090"})))
+  (client (get-doccheck-request (get-in doccheck-response [:body :data :id])))
+  (-> doccheck-response :body :data :id)
+  (get-in doccheck-response [:body :data :links :self])
 
-  (fraudcheck "doccheck" "2912616"
-    {:client_ref "oliver_test"
-     :sanction_region "gbr"
-     :name {:title "Mr"
-            :first "John"
-            :middle "I"
-            :last "Smith"}
-     :date_of_birth "1950-05-26"
-     :contacts {:mobile "+447700900090"
-                :email ""}
-     :address {:line_1 (str "25" " " "High Street")
-               :city "WESTBURY"
-               :postcode "BA13 3BN"
-               :country "GBR"}})
+  (def aml-response
+    (client (aml-request
+              {:client_ref "oliver_test"
+               ;:cra "experian"
+               :risk_level "high"
+               :name {:title "Mr"
+                      :first "Ernesto"
+                      :middle ""
+                      :last "Garcia"}
+               :date_of_birth "1950-05-26"
+               ;contacts {:telephone ""
+               ;          :mobile "+447700900090"
+               ;          :email ""}
+               ;:documents {}
+               ;:bank {}
+               :addresses [{:building "25"
+                            :street_1 "High Street"
+                            :town "WESTBURY"
+                            :region "WILTSHIRE"
+                            :postcode "BA13 3BN"
+                            :country "GBR"
+                            :duration 3}]})))
 
-  ;; Test out async requests
-  (http/get
-    "http://localhost:8080/case/1/identity"
-    (fn [resp]
-      (println resp))))
+  (keys (get-in aml-response [:body :data :links]))
+  (get-in aml-response [:body :data :links :self])
+
+  (def fraudcheck-response
+    (client (fraudcheck-request "doccheck" "2912616"
+              {:client_ref "oliver_test"
+               :sanction_region "gbr"
+               :name {:title "Mr"
+                      :first "John"
+                      :middle "I"
+                      :last "Smith"}
+               :date_of_birth "1950-05-26"
+               :contacts {:mobile "+447700900090"
+                          :email ""}
+               :address {:line_1 (str "25" " " "High Street")
+                         :city "WESTBURY"
+                         :postcode "BA13 3BN"
+                         :country "GBR"}})))
+  (get-in fraudcheck-response [:body :data :links :self]))
