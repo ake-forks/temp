@@ -18,16 +18,15 @@
 ;; >> Handlers
 
 (defn get-case-data [xtdb-node case-id]
-  (let [{:keys [case-ref pr-info]}
-        (xt/pull (xt/db xtdb-node)
-          '[(:reference {:as :case-ref})
-            :fake
-            {(:probate.case/personal-representative 
-              {:as :pr-info})
-             [*]}]
-          case-id)]
-    {:case-ref case-ref
-     :pr-info pr-info}))
+  (xt/pull (xt/db xtdb-node)
+    '[(:reference {:as :case-ref})
+      :fake
+      {(:probate.case/personal-representative {:as :pr-info})
+       [*]}]
+    case-id))
+
+(comment
+  (get-case-data darbylaw.xtdb-node/xtdb-node #uuid"cd5ed701-9952-4c78-ad02-8bcf825b9980"))
 
 (defn case->aml-data [{:keys [case-ref pr-info]}]
   {:client_ref case-ref
@@ -116,6 +115,7 @@
   (let [case-id (get-in parameters [:path :case-id])
         {:keys [case-ref fake] :as case-data} (get-case-data xtdb-node case-id)
         ss-client (ss-api/client-for-env (if fake :fake :real))
+        _ (log/debug "Running identity checks in env" (if fake :fake :real))
 
         ;; We perform each of the checks in their own try catches as they can independently fail
         ;; But even if they do fail we still want to save their results in one transaction so that the history will be updated correctly

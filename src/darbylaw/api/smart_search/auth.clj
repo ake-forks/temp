@@ -39,7 +39,7 @@
   (get @token-by-env env))
 
 (defn refresh-token [env]
-  (log/debug "Refreshing token")
+  (log/debug "Refreshing token for env" env)
   (swap! token-by-env assoc env (auth-token env)))
 
 (defn add-token [env request]
