@@ -32,21 +32,24 @@
   #(when-let [uk-aml (:uk-aml %)]
      (assoc uk-aml
        :final-result (ss-data/uk-aml->result uk-aml)
-       :dashboard (ss-data/aml-dashboard-link uk-aml))))
+       :dashboard (ss-data/aml-dashboard-link uk-aml)
+       :sandbox? (ss-data/sandbox? uk-aml))))
 
 (rf/reg-sub ::fraudcheck
   :<- [::case-model/current-case]
   #(when-let [fraudcheck (:fraudcheck %)]
      (assoc fraudcheck
        :final-result (ss-data/fraudcheck->result fraudcheck)
-       :dashboard (ss-data/fraudcheck-dashboard-link fraudcheck))))
+       :dashboard (ss-data/fraudcheck-dashboard-link fraudcheck)
+       :sandbox? (ss-data/sandbox? fraudcheck))))
 
 (rf/reg-sub ::smartdoc
   :<- [::case-model/current-case]
   #(when-let [smartdoc (:smartdoc %)]
      (assoc smartdoc
        :final-result (ss-data/smartdoc->result smartdoc)
-       :dashboard (ss-data/smartdoc-dashboard-link smartdoc))))
+       :dashboard (ss-data/smartdoc-dashboard-link smartdoc)
+       :sandbox? (ss-data/sandbox? smartdoc))))
 
 (rf/reg-sub ::has-checks?
   :<- [::uk-aml]

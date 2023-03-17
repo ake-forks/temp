@@ -23,9 +23,9 @@
     (keyword result)
     :processing))
 
-(defn build-dashboard-base-url [link]
+(defn infer-dashboard-base-url [link]
   (cond
-    (nil? link)
+    (not (string? link))
     "https://smartsearchsecure.com"
 
     (str/starts-with? link "https://sandbox-api.smartsearchsecure.com")
@@ -38,16 +38,21 @@
     "https://smartsearchsecure.com"))
 
 (defn aml-dashboard-link [aml-data]
-  (str (build-dashboard-base-url (:links-self aml-data))
+  (str (infer-dashboard-base-url (:links-self aml-data))
        "/aml/results/"
        (:ssid aml-data)))
 
 (defn fraudcheck-dashboard-link [fraudcheck-data]
-  (str (build-dashboard-base-url (:links-self fraudcheck-data))
+  (str (infer-dashboard-base-url (:links-self fraudcheck-data))
        "/aml/results/"
        (:ssid fraudcheck-data)))
 
 (defn smartdoc-dashboard-link [smartdoc-data]
-  (str (build-dashboard-base-url (:links-self smartdoc-data))
+  (str (infer-dashboard-base-url (:links-self smartdoc-data))
        "/doccheck/results/"
        (:ssid smartdoc-data)))
+
+(defn sandbox? [check-data]
+  (let [link (:links-self check-data)]
+    (and (string? link)
+         (str/starts-with? link "https://sandbox"))))

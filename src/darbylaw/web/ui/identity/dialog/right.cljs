@@ -10,7 +10,7 @@
     [reagent.core :as r]))
 
 
-(defn check-row [title {:keys [ssid result status final-result dashboard]}]
+(defn check-row [title {:keys [ssid result status final-result dashboard sandbox?]}]
   [mui/table-row
    [mui/table-cell
     (when final-result
@@ -20,7 +20,11 @@
    [mui/table-cell
     title]
    [mui/table-cell
-    [mui/link {:href dashboard :target :_blank} ssid]]])
+    [mui/link {:href dashboard :target :_blank}
+     (str
+       ssid
+       (when sandbox?
+         " (sandbox)"))]]])
 
 (defn override-button [case-id]
   (r/with-let [open? (r/atom false)
