@@ -8,18 +8,13 @@
     [darbylaw.web.ui.case-model :as case-model]
     [darbylaw.web.theme :as theme]))
 
-(defn bring-to-front [theme]
-  (inc (.. theme -zIndex -drawer)))
-
 (defn navbar-placeholder []
   [mui/toolbar {:variant :dense}])
 
 (defn navbar []
   (let [case-id @(rf/subscribe [::case-model/case-id])
         nickname @(rf/subscribe [::case-model/nickname])]
-    [mui/app-bar {:color :inherit
-                  :elevation 2
-                  :sx {:zIndex bring-to-front}}
+    [mui/app-bar {:elevation 2}
      [mui/container {:max-width :xl}
       [mui/toolbar {:variant :dense
                     :disableGutters true}
@@ -63,10 +58,8 @@
   [:<>
    [mui/app-bar {:position :fixed
                  :elevation 2
-                 :color :inherit
                  :sx {:top "auto"
-                      :bottom 0
-                      :zIndex bring-to-front}}
+                      :bottom 0}}
     [mui/container {:max-width :xl}
      [mui/toolbar {:variant :dense}
       [mui/typography {:variant :body1

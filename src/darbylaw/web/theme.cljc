@@ -50,4 +50,5 @@
                     [{:props {:variant :outlined}
                       :style {:border (str "1px solid " teal)}}]}
     :MuiTextField {:defaultProps {:variant :filled}}
-    :MuiSelect {:defaultProps {:variant :filled}}}})
+    :MuiSelect {:defaultProps {:variant :filled}}
+    :MuiAppBar {:defaultProps {:color :inherit}}}})
