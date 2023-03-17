@@ -25,6 +25,9 @@
 
 (defn build-dashboard-base-url [link]
   (cond
+    (nil? link)
+    "https://smartsearchsecure.com"
+
     (str/starts-with? link "https://sandbox-api.smartsearchsecure.com")
     "https://sandbox.smartsearchsecure.com"
 
