@@ -79,7 +79,8 @@
   [mui/card {:sx {:border-style :solid
                   :border-width 1
                   :border-color :divider}}
-   [mui/card-content {:sx {"&:last-child" {:paddingBottom (ui/theme-spacing 1)}}}
+   [mui/card-content {:sx {:paddingTop (ui/theme-spacing 1.5)
+                           "&:last-child" {:paddingBottom (ui/theme-spacing 0.5)}}}
     [asset-card-header title]
     (into [:<>] body)]])
 

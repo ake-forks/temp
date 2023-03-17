@@ -30,24 +30,30 @@
 (rf/reg-sub ::uk-aml
   :<- [::case-model/current-case]
   #(when-let [uk-aml (:uk-aml %)]
-     (assoc uk-aml :final-result (ss-data/uk-aml->result uk-aml))))
+     (assoc uk-aml
+       :final-result (ss-data/uk-aml->result uk-aml)
+       :dashboard (ss-data/aml-dashboard-link uk-aml))))
 
 (rf/reg-sub ::fraudcheck
   :<- [::case-model/current-case]
   #(when-let [fraudcheck (:fraudcheck %)]
-     (assoc fraudcheck :final-result (ss-data/fraudcheck->result fraudcheck))))
+     (assoc fraudcheck
+       :final-result (ss-data/fraudcheck->result fraudcheck)
+       :dashboard (ss-data/fraudcheck-dashboard-link fraudcheck))))
 
 (rf/reg-sub ::smartdoc
   :<- [::case-model/current-case]
   #(when-let [smartdoc (:smartdoc %)]
-     (assoc smartdoc :final-result (ss-data/smartdoc->result smartdoc))))
+     (assoc smartdoc
+       :final-result (ss-data/smartdoc->result smartdoc)
+       :dashboard (ss-data/smartdoc-dashboard-link smartdoc))))
 
 (rf/reg-sub ::has-checks?
   :<- [::uk-aml]
   :<- [::fraudcheck]
   :<- [::smartdoc]
   (fn [[uk-aml fraudcheck smartdoc] _]
-    (or (seq uk-aml) (seq fraudcheck) (seq smartdoc))))
+    (boolean (or (seq uk-aml) (seq fraudcheck) (seq smartdoc)))))
 
 (rf/reg-sub ::override-result
   :<- [::case-model/current-case]

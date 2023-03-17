@@ -1,17 +1,8 @@
 (ns darbylaw.api.smart-search.client
   (:require [org.httpkit.client :as http]
-            [mount.core :as mount]
-            [darbylaw.config :refer [config]]
             [clojure.data.json :as json]
-            [clojure.tools.logging :as log]))
-
-
-;; >> Config
-
-(mount/defstate base-api-url
-  :start (-> config :smart-search :base-url :api))
-
-
+            [clojure.tools.logging :as log]
+            [darbylaw.api.smart-search.config :as ss-config]))
 
 ;; >> Middleware
 ;; Why use this?
@@ -51,8 +42,11 @@
     (let [{:keys [status body] :as response} (handler request)]
       (try
         (update response :body #(json/read-str % :key-fn keyword))
-        (catch Exception _e
-          (throw (ex-info "Failed to parse response" {:status status :body body})))))))
+        (catch Exception e
+          (throw (ex-info "Failed to parse response"
+                   {:status status
+                    :body body}
+                   e)))))))
 
 (defn wrap-request-body
   "If the request has a body then write it as a json string
@@ -68,12 +62,13 @@
 
 (defn wrap-base-url
   "If the user specifies a :path then add the base-url to the beginning at :url"
-  [handler]
+  [env handler]
   (fn [request]
     (if-let [path (:path request)]
       (-> request
           (dissoc :path)
-          (assoc :url (str base-api-url path))
+          (assoc :url (str (get (ss-config/get-config env) :api-base-url)
+                           path))
           handler)
       (handler request))))
 
@@ -93,11 +88,12 @@
   [r]
   @(http/request r))
 
-(def base-client
+(defn base-client
   "An un-authenticated client"
+  [env]
   (apply-middleware
     http-kit-client
-    [wrap-base-url
+    [(partial wrap-base-url env)
      wrap-base-headers
      wrap-response-body
      wrap-request-body]))
