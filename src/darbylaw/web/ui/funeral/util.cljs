@@ -3,13 +3,6 @@
     [reagent.core :as r]
     [darbylaw.web.ui :as ui]))
 
-(defn ->FormData
-  [values]
-  (let [form-data (js/FormData.)]
-    (doseq [[k v] values]
-      (.append form-data (name k) v))
-    form-data))
-
 (defn split-map
   [m ks]
   [(apply dissoc m ks)
