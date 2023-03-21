@@ -63,6 +63,8 @@
      ::ui/notify-user-http-error {:message "add-failure error"
                                   :result error-result}}))
 
+(def non-file-fields
+  [:file-count :address :valuation :joint-ownership? :joint-owner])
 
 (rf/reg-event-fx ::add-property
   (fn [{:keys [db]} [_ case-id {:keys [path values] :as fork-params}]]
@@ -76,8 +78,7 @@
                                      (select-keys [:address :valuation
                                                    :joint-ownership? :joint-owner])
                                      (update-vals pr-str))
-                                   (dissoc values :file-count :address :valuation :joint-ownership? :joint-owner)))
+                                   (apply dissoc values non-file-fields)))
         :timeout 16000
         :on-success [::add-success case-id fork-params]
         :on-failure [::add-failure fork-params]})}))
-

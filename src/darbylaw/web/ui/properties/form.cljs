@@ -3,7 +3,6 @@
     [darbylaw.web.util.form :as form-util]
     [darbylaw.web.ui.components.file-input-button :refer [file-input-button]]
     [fork.re-frame :as fork]
-    [re-frame.core :as rf]
     [reagent-mui.components :as mui]
     [darbylaw.web.ui.properties.model :as model]
     [reagent.core :as r]
@@ -48,31 +47,25 @@
      (r/as-element [mui/input-adornment
                     {:position :start} "£"])}}])
 
-(defn get-file-names [values]
-  (select-keys values
-    (filterv
-      (fn [k] (re-find #"-filename-" (name k)))
-      (keys values))))
-(defn remove-document [file-name-key {:keys [set-values reset values]}]
-  (let [fileno (-> file-name-key (name) (last) (js/parseInt))
-        new-vals (dissoc values
-                   (keyword (str "-file-" fileno))
-                   file-name-key)]
+(defn get-files [values]
+  (dissoc values model/non-file-fields))
+(defn remove-document [file-idx {:keys [reset values]}]
+  (let [new-vals (dissoc values file-idx)]
     (reset {:values new-vals})))
 
 (defn documents-field [{:keys [set-values values] :as fork-args}]
    [mui/stack {:spacing 0.5
                :align-items :flex-start
                :style {:width "50%"}}
-    (for [[filename-key filename] (get-file-names values)]
-      ^{:key filename-key}
+    (for [[idx file] (apply dissoc values model/non-file-fields)]
+      ^{:key idx}
       [mui/stack {:direction :row
                   :justify-content :space-between
                   :align-items :center
                   :style {:width "100%"}}
        [mui/link {:variant :body1
-                  :style {:text-decoration :none}} filename]
-       [mui/icon-button {:on-click #(remove-document filename-key fork-args)}
+                  :style {:text-decoration :none}} (.-name file)]
+       [mui/icon-button {:on-click #(remove-document idx fork-args)}
         [ui/icon-close]]])
     [file-input-button
      {:button-props {:variant :outlined}
@@ -80,15 +73,9 @@
       :on-selected (fn [f]
                      (let [fileno (+ 1 (:file-count values))]
                        (set-values {(keyword (str "file-" fileno)) f
-                                    :file-count fileno})
-                       (let [{:keys [tempfile content-type]} f]
-                         (print tempfile)
-                         (print content-type))))}
-     "add document"]
-    ;todo test button
-    [mui/button {:on-click #(print values)} "print"]])
+                                    :file-count fileno})))}
+     "add document"]])
 
-;(keyword (str "-filename-" fileno)) (.-name f)
 (defonce form-state (r/atom nil))
 (defn form [{:keys [layout submit-fn]}]
   (r/with-let []
