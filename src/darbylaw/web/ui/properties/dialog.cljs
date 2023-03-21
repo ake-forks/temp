@@ -3,6 +3,7 @@
     [darbylaw.api.util.data :as data-util]
     [re-frame.core :as rf]
     [reagent-mui.components :as mui]
+    [darbylaw.web.ui.case-model :as case-model]
     [darbylaw.web.ui.properties.model :as model]
     [darbylaw.web.ui.properties.form :as form]
     [darbylaw.web.ui :as ui :refer (<<)]))
@@ -33,7 +34,7 @@
      [mui/typography {:variant :h6} "valuation"]
      [form/value-field fork-args]
      [mui/typography {:variant :h6} "supporting documents"]
-     [form/documents-field]]]
+     [form/documents-field fork-args]]]
 
    [mui/dialog-actions
     [mui/button {:variant :outlined
@@ -44,8 +45,8 @@
   (let [dialog (<< ::model/dialog)
         default-props {:open (or (:open dialog) false)
                        :maxWidth false
-                       :scroll :paper}]
-
+                       :scroll :paper}
+        case-id (<< ::case-model/case-id)]
     (when (:open dialog)
      (case (:dialog-type dialog)
        :edit
@@ -53,7 +54,8 @@
         [edit (:id dialog)]]
        :add
        [mui/dialog default-props
-        [form/form {:layout add :submit-fn #(print %)}]]))))
+        [form/form {:layout add
+                    :submit-fn #(rf/dispatch [::model/add-property case-id %])}]]))))
 
 
 
