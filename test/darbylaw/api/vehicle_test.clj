@@ -24,9 +24,9 @@
       (testing "insert vehicle"
         (let [check-resp (t/run-request {:request-method :post
                                          :uri (str "/api/case/" case-id "/vehicle")
-                                         :form-params {:registration-number "AB12 CDE"
-                                                       :description "A car"
-                                                       :estimated-value "123.12"}})]
+                                         :multipart-params {:registration-number "AB12 CDE"
+                                                            :description "A car"
+                                                            :estimated-value "123.12"}})]
           (t/assert-success check-resp))
 
         ;; Get case and check it has the vehicle
@@ -42,9 +42,9 @@
       (testing "insert and edit second vehicle"
         (let [check-resp (t/run-request {:request-method :post
                                          :uri (str "/api/case/" case-id "/vehicle")
-                                         :form-params {:registration-number "CD34 EFG"
-                                                       :description "A better car"
-                                                       :estimated-value "234.56"}})
+                                         :multipart-params {:registration-number "CD34 EFG"
+                                                            :description "A better car"
+                                                            :estimated-value "234.56"}})
               vehicle-id (-> check-resp :body :id)]
           (t/assert-success check-resp)
 
@@ -62,9 +62,9 @@
           ;; Update the vehicle
           (let [check-resp (t/run-request {:request-method :post
                                            :uri (str "/api/case/" case-id "/vehicle/" vehicle-id)
-                                           :form-params {:registration-number "EF56 GHI"
-                                                         :description "A different car"
-                                                         :estimated-value "45.67"}})]
+                                           :multipart-params {:registration-number "EF56 GHI"
+                                                              :description "A different car"
+                                                              :estimated-value "45.67"}})]
             (t/assert-success check-resp))
 
           ;; Get case and check it has the updated vehicle

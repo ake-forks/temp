@@ -106,14 +106,14 @@
                           :access-control-allow-origin [#".*"]
                           :access-control-allow-methods [:get :put :post :delete :patch]]
                          parameters/parameters-middleware
-                         #_middleware-multipart/multipart-middleware
-                         ring-middleware-multipart/wrap-multipart-params
                          muuntaja/format-negotiate-middleware
                          muuntaja/format-response-middleware
                          coercion/coerce-exceptions-middleware
                          muuntaja/format-request-middleware
                          coercion/coerce-request-middleware
-                         coercion/coerce-response-middleware]}}))
+                         coercion/coerce-response-middleware
+                         ring-middleware-multipart/wrap-multipart-params
+                         middleware-multipart/multipart-middleware]}}))
 
 (comment
   (->> (reitit.core/match-by-path (make-router) "/api/case/1234/buildsoc/4321/generate-notification-letter")

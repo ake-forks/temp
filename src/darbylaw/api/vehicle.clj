@@ -13,7 +13,7 @@
   (let [{:keys [case-id vehicle-id]} (:path parameters)
         insert? (nil? vehicle-id)
         vehicle-id (if insert? (random-uuid) vehicle-id)
-        vehicle-data (:form parameters)]
+        vehicle-data (:multipart parameters)]
     (xt-util/exec-tx xtdb-node
       (concat
         [[::xt/put (merge {:xt/id vehicle-id
@@ -33,11 +33,11 @@
   (upsert
     {:xtdb-node darbylaw.xtdb-node/xtdb-node
      :user {:username "osm"}
-     :parameters {:path {:case-id (parse-uuid "7e985ac2-7774-428d-afcc-de0c203d7e0c")
+     :parameters {:path {:case-id (parse-uuid "c68c5adc-e4f1-4159-a9b1-0ab1de98c85c")
                          :vehicle-id (parse-uuid "41fa2bbf-5650-4d7b-b46b-fd140aafcc44")}
-                  :form {:registration-number "CUA 12345"
-                         :description "Silver Ford Fiesta"
-                         :estimated-value "123.12"}}}))
+                  :multipart {:registration-number "CUA 12345"
+                              :description "Silver Ford Fiesta"
+                              :estimated-value "123.12"}}}))
 
 
 
@@ -48,10 +48,10 @@
    ["/vehicle"
     {:post {:handler upsert
             :parameters {:path [:map [:case-id :uuid]]
-                         :form data/schema}}}]
+                         :multipart data/schema}}}]
    ["/vehicle/:vehicle-id"
     {:post {:handler upsert
             :parameters {:path [:map
                                 [:case-id :uuid]
                                 [:vehicle-id :uuid]]
-                         :form data/schema}}}]])
+                         :multipart data/schema}}}]])
