@@ -4,8 +4,10 @@
     [medley.core :as medley]
     [re-frame.core :as rf]
     [darbylaw.web.ui.case-model :as case-model]
-    [darbylaw.web.ui :as ui :refer (<<)]))
+    [darbylaw.web.ui :as ui :refer (<<)]
+    [reagent.core :as r]))
 
+(def edit-mode (r/atom false))
 (defn get-property [id]
   (let [all-props (<< ::case-model/properties)]
     (get (medley/index-by :id all-props) (uuid id))))
@@ -21,6 +23,7 @@
 (rf/reg-event-db
   ::hide-dialog
   (fn [db]
+    (reset! edit-mode false)
     (assoc-in db [:dialog/property] {:open false})))
 
 (rf/reg-sub ::dialog

@@ -77,14 +77,15 @@
      "add document"]])
 
 (defonce form-state (r/atom nil))
-(defn form [{:keys [layout submit-fn]}]
+(defn form [{:keys [layout submit-fn initial-values]}]
   (r/with-let []
       [fork/form
        {:state form-state
         :clean-on-unmount? true
         :on-submit submit-fn
         :keywordize-keys true
-        :prevent-default? true}
+        :prevent-default? true
+        :initial-values initial-values}
        (fn [fork-args]
          [layout (ui/mui-fork-args fork-args)])]
     (finally
