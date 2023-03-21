@@ -31,6 +31,7 @@
     [darbylaw.api.bank-notification :as bank-notification-api]
     [darbylaw.api.bank-notification.mailing-controls :as mailing]
     [darbylaw.api.smart-search :as smart-search-api]
+    [darbylaw.api.vehicle :as vehicle-api]
     [darbylaw.middleware.xtdb :refer [wrap-xtdb-node]]
     [darbylaw.middleware.auth :refer [create-auth-middleware add-user-info authenticated?]]))
 
@@ -87,7 +88,8 @@
      (received-letter-api/routes)
      (bank-notification-api/routes)
      (mailing/routes)
-     (smart-search-api/routes)]]])
+     (smart-search-api/routes)
+     (vehicle-api/routes)]]])
 
 (defn make-router []
   (ring/router
