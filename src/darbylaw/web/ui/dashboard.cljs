@@ -18,6 +18,7 @@
     [darbylaw.web.ui.tasks-tile :as tasks]
     [darbylaw.web.ui.keydocs.dialog :as key-docs]
     [darbylaw.web.ui.identity.dialog :as identity-dialog]
+    [darbylaw.web.ui.vehicle.card :as vehicle-card]
     [re-frame.core :as rf]
     [reagent.core :as r]
     [reagent.format :as format]
@@ -252,7 +253,8 @@
      [bank-card current-case]
      [buildsoc-card]
      [bills-card]
-     [funeral-card current-case]]
+     [funeral-card current-case]
+     [vehicle-card/card]]
     [mui/stack {:spacing 2 :style {:width "30%"}}
      [tasks/tasks-tile]
      [key-docs/dash-button]
