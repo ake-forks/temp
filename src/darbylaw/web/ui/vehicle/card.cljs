@@ -13,8 +13,8 @@
        ^{:key vehicle-id}
        [asset-item
         {:title registration-number
-         :value (js/parseFloat (or confirmed-value estimated-value))
          :on-click #(rf/dispatch [::model/select-vehicle vehicle-id])}])
+         :value (js/parseFloat (or confirmed-value estimated-value "0"))
      [asset-add-button
       {:title "add"
        :on-click #(rf/dispatch [::something])}]]))
