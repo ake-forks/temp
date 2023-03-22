@@ -40,6 +40,7 @@
    [mui/button {:variant :text
                 :start-icon (r/as-element [ui/icon-upload])
                 :style {:align-self :flex-start}} "upload"]])
+
 (defn edit [{:keys [handle-submit] :as fork-args}]
   (let [prop-id (:id (<< ::model/dialog))
         property (model/get-property prop-id)
@@ -69,8 +70,6 @@
              [form/value-field fork-args]
              [mui/typography {:variant :body1 :style {:white-space :pre}} "£" (:valuation property)])]
           [documents-panel documents]]
-
-
          (when (:joint-ownership? property)
            [mui/stack {:direction :row :spacing 1}
             [mui/stack {:spacing 0.5 :style {:width "100%"}}
@@ -78,8 +77,6 @@
              (if @edit-mode
                [form/joint-owner-field fork-args]
                [mui/typography {:variant :body1 :style {:white-space :pre}} (:joint-owner property)])]])]]]
-
-
 
      [mui/dialog-actions
       (if @edit-mode
@@ -89,10 +86,6 @@
         [mui/button {:variant :outlined
                      :on-click #(rf/dispatch [::model/hide-dialog])} "close"])]]))
 
-
-
-
-
 (defn add [{:keys [handle-submit] :as fork-args}]
   [:form {:on-submit handle-submit}
    [mui/dialog-content {:style {:width "40vw" :height "60vh"}}
@@ -101,7 +94,17 @@
      [mui/typography {:variant :h6} "details"]
      [form/address-field fork-args]
      [form/joint-owner-field fork-args]
+     [form/insured-field fork-args]
      [mui/typography {:variant :h6} "valuation"]
+     [mui/typography {:variant :body1}
+      "You can use "
+      [mui/link {:href "https://www.zoopla.co.uk/home-values/"
+                 :underline :hover
+                 :target :blank
+                 :rel "noopener noreferrer"} "this third-party tool "
+       [ui/icon-open-in-new]]
+      " to obtain an estimated value of the property and enter it as an 'estimate' below.
+      If you have received a professional valuation, please upload supporting documentation."]
      [form/value-field fork-args]
      [mui/typography {:variant :h6} "supporting documents"]
      [form/documents-field fork-args]]]
@@ -128,6 +131,3 @@
           [mui/dialog default-props
            [form/form {:layout add
                        :submit-fn #(rf/dispatch [::model/add-property case-id %])}]])))))
-
-
-

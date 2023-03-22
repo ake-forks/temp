@@ -238,6 +238,7 @@
      :valuation
      :joint-ownership?
      :joint-owner
+     :estimated-value?
      {'(:probate.property-doc/_property
          {:as :documents})
       ['(:xt/id {:as :filename})

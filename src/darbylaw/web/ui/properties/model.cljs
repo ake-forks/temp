@@ -67,7 +67,7 @@
                                   :result error-result}}))
 
 (def non-file-fields
-  [:file-count :address :valuation :joint-ownership? :joint-owner])
+  [:file-count :address :valuation :joint-ownership? :joint-owner :insured? :estimated-value?])
 
 (rf/reg-event-fx ::add-property
   (fn [{:keys [db]} [_ case-id {:keys [path values] :as fork-params}]]
@@ -79,6 +79,7 @@
         :body (ui/make-form-data (merge
                                    (-> values
                                      (select-keys [:address :valuation
+                                                   :insured? :estimated-value?
                                                    :joint-ownership? :joint-owner])
                                      (update-vals pr-str))
                                    (apply dissoc values non-file-fields)))

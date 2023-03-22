@@ -59,7 +59,7 @@
       files)))
 
 (def property-keys
-  [:address :valuation :joint-ownership? :joint-owner])
+  [:address :valuation :joint-ownership? :joint-owner :insured? :estimated-value?])
 
 (defn add-property [{:keys [xtdb-node user path-params multipart-params]}]
   (let [case-id (parse-uuid (:case-id path-params))

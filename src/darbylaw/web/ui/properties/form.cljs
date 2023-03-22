@@ -1,5 +1,6 @@
 (ns darbylaw.web.ui.properties.form
   (:require
+    [darbylaw.web.theme :as theme]
     [darbylaw.web.util.form :as form-util]
     [darbylaw.web.ui.components.file-input-button :refer [file-input-button]]
     [fork.re-frame :as fork]
@@ -18,34 +19,56 @@
     :required true}])
 
 (defn joint-owner-field [{:keys [values handle-change] :as fork-args}]
-  [mui/stack {:direction :row
-              :spacing 1
-              :align-items :flex-start
-              :sx {:height 1}}
-   [mui/form-control-label
-    {:control (r/as-element
-                [mui/switch
-                 {:name :joint-ownership?
-                  :checked (or (:joint-ownership? values) false)
-                  :label "estimated value"
-                  :on-change handle-change}])
-     :label-placement :end
-     :label (r/as-element [mui/typography {:style {:white-space :pre}} "joint ownership"])}]
-   (when (:joint-ownership? values)
-    [form-util/text-field fork-args
-     {:name :joint-owner
-      :full-width true
-      :label "name of other owner(s)"}])])
+  (let [joint? (or (:joint-ownership? values) false)]
+    [mui/stack {:spacing 0.5}
+     [mui/typography {:variant :body1} "Is the property under joint ownership?"]
+     [mui/stack {:direction :row :spacing 0.5 :align-items :center}
+      [mui/typography {:variant :body2
+                       :color (if joint? theme/off-white :grey)} "no"]
+      [mui/switch
+       {:name :joint-ownership?
+        :checked joint?
+        :on-change handle-change}]
+      [mui/typography {:variant :body2
+                       :color (if joint? theme/teal :grey)} "yes, joint owned"]]
+     (when joint?
+       [form-util/text-field fork-args
+        {:name :joint-owner
+         :full-width true
+         :label "name of other owner(s)"}])]))
 
-(defn value-field [fork-args]
-  [form-util/text-field fork-args
-   {:name :valuation
-    :label "value"
-    :fullWidth true
-    :InputProps
-    {:start-adornment
-     (r/as-element [mui/input-adornment
-                    {:position :start} "£"])}}])
+(defn value-field [{:keys [values handle-change] :as fork-args}]
+  [mui/stack {:direction :row :spacing 1 :align-items :center}
+   [form-util/text-field fork-args
+    {:name :valuation
+     :label "value"
+     :fullWidth true
+     :InputProps
+     {:start-adornment
+      (r/as-element [mui/input-adornment
+                     {:position :start} "£"])}}]
+   [mui/stack {:spacing 0.5}
+    [mui/typography {:variant :body2 :color (when (:estimated-value? values)
+                                              theme/teal)} "estimate"]
+    [mui/switch
+     {:name :estimated-value?
+      :label "estimate"
+      :checked (or (:estimated-value? values) false)
+      :on-change handle-change}]]])
+
+(defn insured-field [{:keys [values handle-change]}]
+  (let [insured? (or (:insured? values) false)]
+    [mui/stack {:spacing 0.5}
+     [mui/typography {:variant :body1} "Is the property insured?"]
+     [mui/stack {:direction :row :spacing 0.5 :align-items :center}
+      [mui/typography {:variant :body2
+                       :color (if insured? theme/off-white :grey)} "no"]
+      [mui/switch
+       {:name :insured?
+        :checked insured?
+        :on-change handle-change}]
+      [mui/typography {:variant :body2
+                       :color (if insured? theme/teal :grey)} "yes, currently insured"]]]))
 
 (defn get-files [values]
   (dissoc values model/non-file-fields))
