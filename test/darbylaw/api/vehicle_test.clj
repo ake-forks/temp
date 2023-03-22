@@ -2,10 +2,7 @@
   (:require
     [clojure.test :refer [deftest is testing use-fixtures]]
     [darbylaw.test.common :as t]
-    [darbylaw.api.setup :as sample]
-    [clojure.string :as str]
-    [clojure.data.json :as json]
-    [clojure.java.io :as io]))
+    [darbylaw.api.setup :as sample]))
 
 (use-fixtures :once
   (t/use-mount-states t/ring-handler-states))
