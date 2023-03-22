@@ -3,6 +3,11 @@
             [malli.core :as m]
             [malli.error :as me]))
 
+(defn validate-or-explain [schema value]
+  (if-let [e (m/explain schema value)]
+    (me/humanize e)
+    true))
+
 (defn exclusive-keys [keys]
   [:fn {:error/message (str "the following keys are mutually exclusive: "
                          (str/join ", " keys))}
