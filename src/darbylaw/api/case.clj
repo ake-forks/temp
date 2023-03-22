@@ -260,7 +260,11 @@
 
    {:vehicles
     (into
-      ['(:xt/id {:as :vehicle-id})]
+      ['(:xt/id {:as :vehicle-id})
+       {:documents
+        ['(:xt/id {:as :document-id})
+         :original-filename
+         :uploaded-by]}]
       vehicle-data/props)}])
 
 (defn get-cases [{:keys [xtdb-node]}]
