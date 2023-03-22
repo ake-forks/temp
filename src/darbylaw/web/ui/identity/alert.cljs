@@ -39,7 +39,11 @@
          (str "Ask " nickname " to submit a set of documents")]]
        (when @(rf/subscribe [::model/has-checks?])
          [mui/typography
-           "If you want to re-run a single check, use the SmartSearch UI by clicking on an SSID"])])]
+           "If you want to re-run a single check, use the SmartSearch UI by clicking on an SSID"])
+       (when @(rf/subscribe [::case-model/fake?])
+         [mui/alert {:severity :info
+                     :sx {:mt 2}}
+          "This is a fake case. Checks will run in a sandbox SmartSearch environment."])])]
    [mui/dialog-actions
     [mui/button {:variant :outlined
                  :full-width true

@@ -1,26 +1,11 @@
 (ns darbylaw.api.smart-search.auth
   (:require [clj-commons.digest :as digest]
-            [mount.core :as mount]
             [clojure.tools.logging :as log]
-            [darbylaw.config :refer [config]]
+            [darbylaw.api.smart-search.config :as ss-config]
             [darbylaw.api.util.http :as http]
             [darbylaw.api.smart-search.client :refer [base-client]])
   (:import [java.time.format DateTimeFormatter]
            [java.time LocalDateTime]))
-
-
-;; >> Config
-
-(mount/defstate company-name
-  :start (-> config :smart-search :company-name))
-
-(mount/defstate public-key
-  :start (-> config :smart-search :public-key))
-
-(mount/defstate user-email
-  :start (-> config :smart-search :service-user))
-
-
 
 ;; >> API
 
@@ -33,13 +18,14 @@
   [public-key]
   (digest/md5 (str public-key (today))))
 
-(defn auth-token []
-  (let [{:keys [body]}
-        (base-client {:method :post
-                      :path "/auth/token"
-                      :body {:company_name company-name
-                             :company_token (->company-token public-key)
-                             :user_email user-email}})]
+(defn auth-token [env]
+  (let [config (ss-config/get-config env)
+        {:keys [body]}
+        ((base-client env) {:method :post
+                             :path "/auth/token"
+                             :body {:company_name (:company-name config)
+                                    :company_token (->company-token (:public-key config))
+                                    :user_email (:service-user config)}})]
     (get-in body [:data :attributes :access_token])))
 
 
@@ -47,23 +33,30 @@
 ;; >> Middleware
 ;; All this needs to be in a separate namespace to avoid a circular dependency
 
-(def token (atom nil))
-(defn add-token [request]
-  (update request :headers merge {"Authorization" (str "Bearer " @token)}))
+(def token-by-env (atom {}))
+
+(defn get-token [env]
+  (get @token-by-env env))
+
+(defn refresh-token [env]
+  (log/debug "Refreshing token for env" env)
+  (swap! token-by-env assoc env (auth-token env)))
+
+(defn add-token [env request]
+  (update request :headers merge {"Authorization" (str "Bearer " (get-token env))}))
 
 ;; There's technically a race condition here if two requests are being processed at the same time
 ;; This shouldn't be an issue though because we'll just update the token in place
 (defn wrap-auth
   "Add an Authorization header to the request
   Possibly making a request to refresh the token"
-  [handler]
+  [env handler]
   (fn [request]
     (let [{:keys [status] :as response}
-          (-> request add-token handler)]
+          (handler (add-token env request))]
       (if (= status http/status-401-unauthorized)
         (do
-          (log/info "Refreshing token")
-          (reset! token (auth-token))
+          (refresh-token env)
           ;; We always return here, even if the response is a 401 to prevent loops
-          (-> request add-token handler))
+          (handler (add-token env request)))
         response))))

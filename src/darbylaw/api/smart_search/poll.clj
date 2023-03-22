@@ -2,6 +2,7 @@
   (:require
     [chime.core :as ch]
     [clojure.tools.logging :as log]
+    [darbylaw.api.smart-search.config :as ss-config]
     [xtdb.api :as xt]
     [darbylaw.api.util.tx-fns :as tx-fns]
     [darbylaw.api.util.xtdb :as xt-util]
@@ -39,11 +40,13 @@
   [xtdb-node]
   (let [checks (xt/q (xt/db xtdb-node) checks-to-sync)]
     (log/info "Syncing" (count checks) "checks")
-    (doseq [[{check-id :xt/id :keys [ssid]}
+    (doseq [[{check-id :xt/id :keys [ssid links-self]}
              {:keys [case-id reference]}]
             checks]
       (try
-        (let [smartdoc-resp (ss-api/get-doccheck ssid)
+        (let [env (ss-config/link->env links-self)
+              ss-client (ss-api/client-for-env env)
+              smartdoc-resp (ss-client (ss-api/get-doccheck-request ssid))
               updated-data (-> smartdoc-resp
                                (get-in [:body :data :attributes])
                                (select-keys [:status :result]))]
@@ -55,7 +58,7 @@
             ;; - Upload the report to the document store
             ;; - Update the state in the database
             ;; - Update the case history
-            (let [export-resp (ss-api/export-pdf-base64 ssid)
+            (let [export-resp (ss-client (ss-api/export-pdf-base64-request ssid))
                   base64 (get-in export-resp [:body :data :attributes :base64])
                   bytes (decode-base64 base64)
 
@@ -82,6 +85,9 @@
     (sync! xtdb-node)
     (finally
       (log/info "Finished syncing smart search job"))))
+
+(comment
+  (sync! xtdb-node/xtdb-node))
 
 (mount/defstate smart-search-sync-job
   :start (ch/chime-at

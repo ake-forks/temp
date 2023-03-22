@@ -1,5 +1,6 @@
 (ns darbylaw.web.ui.tasks-tile
   (:require
+    [darbylaw.web.ui :as ui]
     [reagent-mui.components :as mui]
     [re-frame.core :as rf]
     [kee-frame.core :as kf]
@@ -29,7 +30,7 @@
 
 (defn tasks-tile []
   [mui/card {:style {:height "350px" :background-color theme/off-white}}
-   [mui/card-content
+   [mui/card-content {:sx {:paddingTop (ui/theme-spacing 1.5)}}
     [mui/typography {:variant :h5 :sx {:mb 1}}
      "tasks"]
     [mui/divider]
