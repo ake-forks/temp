@@ -42,14 +42,18 @@
 
 (def task-icon "/images/green.png")
 
-(defn task-item [{:keys [title body icon-path on-click href]}]
+(defn task-item [{:keys [title body icon-path on-click href role]
+                  :or {role :personal-representative}}]
   [:<>
-   [mui/list-item (merge {:on-click on-click
-                          :href href
-                          :disableGutters true}
-                         (when (or on-click href)
-                           {:sx {:cursor :pointer}}))
-    [mui/list-item-icon [:img {:src icon-path :width "30px" :height "30px"}]]
+   [mui/list-item-button (merge {:on-click on-click
+                                 :href href
+                                 :disableGutters true}
+                                (when (or on-click href)
+                                  {:sx {:cursor :pointer}}))
+    [mui/list-item-icon {:sx {:min-width "46px"}}
+     (case role
+       :personal-representative [:img {:src icon-path :width "30px" :height "30px"}]
+       :laywer [ui/icon-admin-panel-settings-outlined {:fontSize "large"}])]
     [mui/list-item-text {:primary title
                          :secondary body}]]
    [mui/divider]])

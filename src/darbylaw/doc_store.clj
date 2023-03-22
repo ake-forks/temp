@@ -55,6 +55,9 @@
 (defn fetch [key]
   (-> key fetch-raw .getObjectContent))
 
+(defn s3-key [case-id doc-id]
+  (str case-id "/" doc-id))
+
 (defn fetch-case-file [case-id key]
   (fetch (str case-id "/" key)))
 
