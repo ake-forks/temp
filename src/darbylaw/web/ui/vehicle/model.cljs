@@ -3,6 +3,7 @@
     [fork.core :as fork]
     [re-frame.core :as rf]
     [darbylaw.web.ui.case-model :as case-model]
+    [darbylaw.api.vehicle.data :as data]
     [darbylaw.web.ui :as ui]
     [darbylaw.web.util.form :as form]
     [medley.core :as medley]))
@@ -46,6 +47,12 @@
   :<- [::vehicles-by-id]
   (fn [vehicles-by-id [_ vehicle-id]]
     (get vehicles-by-id vehicle-id)))
+
+(rf/reg-sub ::vehicle-form-details
+  :<- [::vehicles-by-id]
+  (fn [vehicles-by-id [_ vehicle-id]]
+    (-> (get vehicles-by-id vehicle-id)
+        (select-keys data/props))))
 
 
 

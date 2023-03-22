@@ -14,7 +14,7 @@
     (let [case-id (<< ::case-model/case-id)
           context (<< ::model/dialog-context)]
       [form/form
-       (if (= :add context) {} (<< ::model/vehicle context))
+       (if (= :add context) {} (<< ::model/vehicle-form-details context))
        #(let [context (<< ::model/dialog-context)]
           ;; NOTE: Pulling in dialog-context inside the function is required.
           ;;       If we pull it outside then it won't be updated and pressing
