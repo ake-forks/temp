@@ -93,6 +93,7 @@
     [mui/stack {:spacing 1}
      [mui/typography {:variant :h6} "details"]
      [form/address-field fork-args]
+     [mui/typography {:variant :body1} "Is the property under joint ownership?"]
      [form/joint-owner-field fork-args]
      [form/insured-field fork-args]
      [mui/typography {:variant :h6} "valuation"]
