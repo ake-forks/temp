@@ -1,22 +1,63 @@
 (ns darbylaw.web.ui.properties.form
   (:require
+    [clojure.string :as str]
     [darbylaw.web.theme :as theme]
     [darbylaw.web.util.form :as form-util]
     [darbylaw.web.ui.components.file-input-button :refer [file-input-button]]
     [fork.re-frame :as fork]
     [reagent-mui.components :as mui]
+    [darbylaw.web.ui.case-model :as case-model]
     [darbylaw.web.ui.properties.model :as model]
     [reagent.core :as r]
+    [clojure.edn :refer [read-string]]
     [darbylaw.web.ui :as ui :refer (<<)]))
 
-(defn address-field [fork-args]
-  [form-util/text-field fork-args
-   {:name :address
-    :label "address"
-    :multiline true
-    :minRows 3
-    :fullWidth true
-    :required true}])
+(defn address-field [{:keys [values set-handle-change set-values] :as fork-args}]
+  (let [non-owned (filter #(nil? (:owned? %)) (<< ::case-model/properties))
+        deceased-address (<< ::case-model/deceased-address)]
+    [mui/stack {:spacing 1}
+     [mui/form-control {:full-width true
+                        :variant :filled
+                        :required true}
+      [mui/input-label {:id :property} "property address"]
+      [mui/select
+       {:name :property
+        :label-id :property
+        :label "property address"
+        :value (if-let [p (get values :property)]
+                 (pr-str p)
+                 "")
+        :onChange (fn [evt]
+                    (set-handle-change
+                      {:value (read-string (ui/event-target-value evt))
+                       :path [:property]}))}
+       (interpose
+         [mui/divider]
+         (map (fn [property]
+                ^{:key (:id property)}
+                [mui/menu-item {:value (pr-str (:id property))}
+                 [mui/typography {:white-space :pre} (str (:address property))]])
+           non-owned))
+       [mui/divider]
+       [mui/menu-item {:value (pr-str :new-property)} "add new address"]]]
+     (when (= (:property values) :new-property)
+       [form-util/text-field fork-args
+        {:name :address
+         :label "address"
+         :multiline true
+         :minRows 3
+         :fullWidth true
+         :required true
+         :InputProps
+         (when (str/blank? (:address values))
+           {:endAdornment
+            (r/as-element
+              [mui/button {:variant :text
+                           :size :small
+                           :style {:font-weight :normal}
+                           :on-click #(set-values {:address deceased-address})
+                           :start-icon (r/as-element [ui/icon-copy])}
+               "copy from death certificate"])})}])]))
 
 (defn joint-owner-field [{:keys [values handle-change] :as fork-args}]
   (let [joint? (or (:joint-ownership? values) false)]

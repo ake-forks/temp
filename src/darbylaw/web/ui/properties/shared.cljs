@@ -9,7 +9,7 @@
     [darbylaw.web.ui.properties.dialog :as dialog]))
 
 (defn properties-card []
-  (let [properties (<< ::case-model/properties)]
+  (let [properties (filter #(true? (:owned? %)) (<< ::case-model/properties))]
     [:<>
      [dialog/dialog]
      [l/asset-card {:title "properties"}

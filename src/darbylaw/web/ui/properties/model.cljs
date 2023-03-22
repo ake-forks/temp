@@ -57,7 +57,9 @@
   (fn [{:keys [db]} [_ case-id {:keys [path] :as _fork-params}]]
     (print "success")
     {:db (fork/set-submitting db path false)
-     :dispatch [::case-model/load-case! case-id]}))
+     :fx [[:dispatch [::case-model/load-case! case-id]]
+          [:dispatch [::hide-dialog]]]}))
+
 
 (rf/reg-event-fx ::add-failure
   (fn [{:keys [db]} [_ {:keys [path] :as _fork-params} error-result]]
@@ -67,22 +69,34 @@
                                   :result error-result}}))
 
 (def non-file-fields
-  [:file-count :address :valuation :joint-ownership? :joint-owner :insured? :estimated-value?])
+  [:file-count :address :valuation :joint-ownership? :joint-owner :insured? :estimated-value? :property])
+
+(defn handle-address-value [values]
+  (if (= (:property values) :new-property)
+    values
+    (assoc values :address (->
+                             (filter #(= (:id %) (:property values)) (<< ::case-model/properties))
+                             (first)
+                             (:address)))))
 
 (rf/reg-event-fx ::add-property
   (fn [{:keys [db]} [_ case-id {:keys [path values] :as fork-params}]]
-    {:db (fork/set-submitting db path true)
-     :http-xhrio
-     (ui/build-http
-       {:method :post
-        :uri (str "/api/property/" case-id "/add-property")
-        :body (ui/make-form-data (merge
-                                   (-> values
-                                     (select-keys [:address :valuation
-                                                   :insured? :estimated-value?
-                                                   :joint-ownership? :joint-owner])
-                                     (update-vals pr-str))
-                                   (apply dissoc values non-file-fields)))
-        :timeout 16000
-        :on-success [::add-success case-id fork-params]
-        :on-failure [::add-failure fork-params]})}))
+    (let [new-property (= (:property values) :new-property)]
+      {:db (fork/set-submitting db path true)
+       :http-xhrio
+       (ui/build-http
+         {:method :post
+          :uri (if new-property
+                 (str "/api/property/" case-id "/add-property")
+                 (str "/api/property/" case-id "/" (:property values) "/update-property"))
+          :body (ui/make-form-data (merge
+                                     (-> values
+                                       (handle-address-value)
+                                       (select-keys [:address :valuation
+                                                     :insured? :estimated-value?
+                                                     :joint-ownership? :joint-owner])
+                                       (update-vals pr-str))
+                                     (apply dissoc values non-file-fields)))
+          :timeout 16000
+          :on-success [::add-success case-id fork-params]
+          :on-failure [::add-failure fork-params]})})))
