@@ -4,17 +4,11 @@
     [darbylaw.test.common :as t]
     [darbylaw.api.bank-notification :refer [blank-page]]
     [darbylaw.api.setup :as sample]
-    [darbylaw.api.util.files :refer [create-temp-file]]
     [clojure.string :as str]
     [clojure.data.json :as json]
     [clojure.java.io :as io]))
 
 (def smallest-pdf "JVBERi0xLg10cmFpbGVyPDwvUm9vdDw8L1BhZ2VzPDwvS2lkc1s8PC9NZWRpYUJveFswIDAgMyAzXT4+XT4+Pj4+Pg==")
-
-(defn test-temp-file [content]
-  (let [file (create-temp-file "test-file" ".txt")]
-    (spit file content)
-    file))
 
 (defn fake-handler [{:keys [url]} & _]
   (cond
@@ -90,14 +84,14 @@
                               (t/run-request {:request-method :post
                                               :uri (str "/api/case/" case-id "/identity/document")
                                               :multipart-params {"file" {:filename "test.file"
-                                                                         :tempfile (test-temp-file "test 1")
+                                                                         :tempfile (t/test-temp-file "test 1")
                                                                          :content-type "application/text"}}}))
               _ (t/assert-success upload-resp-1)
               upload-resp-2 (with-redefs [darbylaw.doc-store/store (fn [& _])]
                               (t/run-request {:request-method :post
                                               :uri (str "/api/case/" case-id "/identity/document")
                                               :multipart-params {"file" {:filename "test.file"
-                                                                         :tempfile (test-temp-file "test 2")
+                                                                         :tempfile (t/test-temp-file "test 2")
                                                                          :content-type "application/text"}}}))
               _ (t/assert-success upload-resp-2)
               delete-resp (with-redefs [darbylaw.doc-store/store (fn [& _])]
@@ -170,14 +164,14 @@
                               (t/run-request {:request-method :post
                                               :uri (str "/api/case/" case-id "/identity/document")
                                               :multipart-params {"file" {:filename "test.file"
-                                                                         :tempfile (test-temp-file "test 3")
+                                                                         :tempfile (t/test-temp-file "test 3")
                                                                          :content-type "application/text"}}}))
               _ (t/assert-success upload-resp-1)
               upload-resp-2 (with-redefs [darbylaw.doc-store/store (fn [& _])]
                               (t/run-request {:request-method :post
                                               :uri (str "/api/case/" case-id "/identity/document")
                                               :multipart-params {"file" {:filename "test.file"
-                                                                         :tempfile (test-temp-file "test 4")
+                                                                         :tempfile (t/test-temp-file "test 4")
                                                                          :content-type "application/text"}}}))
               _ (t/assert-success upload-resp-2)
               delete-resp (with-redefs [darbylaw.doc-store/store (fn [& _])]
