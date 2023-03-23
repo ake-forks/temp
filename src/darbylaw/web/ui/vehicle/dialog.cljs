@@ -28,7 +28,7 @@
 
 (defn dialog []
   [mui/dialog {:open (boolean (<< ::model/dialog-open?))
-               :max-width :md
+               :max-width :sm
                :full-width true}
    [mui/backdrop {:open (boolean (<< ::model/submitting?))}
     [mui/circular-progress]]

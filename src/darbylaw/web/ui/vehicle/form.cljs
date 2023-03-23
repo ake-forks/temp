@@ -81,7 +81,8 @@
     "save"]])
 
 (defn layout [{:keys [values handle-submit] :as fork-args}]
-  [:form {:on-submit handle-submit}
+  [:form {:on-submit handle-submit
+          :style {:width "100%"}}
     [mui/stack {:spacing 1}
      [registration-number fork-args]
      [description fork-args]
