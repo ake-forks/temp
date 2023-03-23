@@ -65,19 +65,25 @@
   [case-id file-name]
   (str "/api/case/" case-id "/funeral/account/" file-name))
 
-(defn receipt-field [fork-args]
+(defn receipt-field [{:keys [touched errors] :as fork-args}]
   (let [case-id @(rf/subscribe [::case-model/case-id])
         account @(rf/subscribe [::funeral-model/account])]
-    [mui/stack {:direction :row
-                :spacing 1
-                :justify-content :space-between}
-     [util/upload-button fork-args
-      {:name :receipt
-       :full-width true}]
-     [util/download-button
-      {:full-width true
-       :href (funeral-file-url case-id "receipt")
-       :disabled (not (contains? account :receipt))}]]))
+    [mui/stack {:spacing 1}
+     [mui/stack {:direction :row
+                 :spacing 1
+                 :justify-content :space-between}
+      [util/upload-button fork-args
+       {:name :receipt
+        :full-width true}]
+      [util/download-button
+       {:full-width true
+        :href (funeral-file-url case-id "receipt")
+        :disabled (not (contains? account :receipt))}]]
+     (when (and (touched :receipt)
+                (get errors [:receipt]))
+       [mui/alert {:severity :error}
+        [mui/alert-title "validation error"]
+        "receipt is required"])]))
 
 (defn invoice-field [fork-args]
   (let [case-id @(rf/subscribe [::case-model/case-id])

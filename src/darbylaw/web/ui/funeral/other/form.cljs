@@ -65,21 +65,27 @@
   [case-id expense-id]
   (str "/api/case/" case-id "/funeral/other/" expense-id "/receipt"))
 
-(defn receipt-field [fork-args]
+(defn receipt-field [{:keys [touched errors] :as fork-args}]
   (let [case-id @(rf/subscribe [::case-model/case-id])
         expense-id @(rf/subscribe [::funeral-model/dialog-info])]
-    [mui/stack {:direction :row
-                :spacing 1
-                :justify-content :space-between}
-     [util/upload-button fork-args
-      {:name :receipt
-       :full-width true}]
-     [util/download-button
-      {:full-width true
-       :href (funeral-file-url case-id expense-id)
-       :disabled (and (not (nil? expense-id))
-                      (let [expense @(rf/subscribe [::funeral-model/expense expense-id])]
-                        (not (contains? expense :receipt))))}]]))
+    [mui/stack {:spacing 1}
+     [mui/stack {:direction :row
+                 :spacing 1
+                 :justify-content :space-between}
+      [util/upload-button fork-args
+       {:name :receipt
+        :full-width true}]
+      [util/download-button
+       {:full-width true
+        :href (funeral-file-url case-id expense-id)
+        :disabled (and (not (nil? expense-id))
+                       (let [expense @(rf/subscribe [::funeral-model/expense expense-id])]
+                         (not (contains? expense :receipt))))}]]
+     (when (and (touched :receipt)
+                (get errors [:receipt]))
+       [mui/alert {:severity :error}
+        [mui/alert-title "validation error"]
+        "receipt is required"])]))
 
 (defn paid-by-field [fork-args]
   [form/text-field fork-args
