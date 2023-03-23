@@ -11,7 +11,8 @@
     [darbylaw.web.ui.deceased-details-form :as dd-form]
     [darbylaw.web.ui.banking.tasks :as banking-tasks]
     [darbylaw.web.ui.keydocs.tasks :refer [keydocs-tasks]]
-    [darbylaw.web.ui.identity.tasks :refer [identity-tasks]]))
+    [darbylaw.web.ui.identity.tasks :refer [identity-tasks]]
+    [darbylaw.web.ui.vehicle.tasks :refer [vehicle-tasks]]))
 
 (defn valid? [validations data]
   (->> data
@@ -39,6 +40,7 @@
      [case-tasks @(rf/subscribe [::case-model/current-case])]
      [keydocs-tasks]
      [banking-tasks/banks]
-     [banking-tasks/buildsocs]]]])
+     [banking-tasks/buildsocs]
+     [vehicle-tasks]]]])
 
 
