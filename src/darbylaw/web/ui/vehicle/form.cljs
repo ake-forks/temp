@@ -1,7 +1,10 @@
 (ns darbylaw.web.ui.vehicle.form
   (:require [reagent-mui.components :as mui]
+            [darbylaw.web.ui.case-model :as case-model]
             [darbylaw.web.ui.vehicle.model :as model]
             [darbylaw.web.util.form :as form]
+            [darbylaw.web.ui :as ui :refer [<<]]
+            [clojure.string :as str]
             [reagent.core :as r]
             [re-frame.core :as rf]
             [vlad.core :as v]
@@ -67,7 +70,7 @@
     :full-width true
     :required true}])
 
-(defn submit-buttons [{:keys [submitting?]}]
+(defn submit-buttons [_fork-args]
   [mui/stack {:spacing 1
               :direction :row}
    [mui/button {:variant :contained
@@ -77,8 +80,82 @@
    [mui/button {:type :submit
                 :variant :contained
                 :full-width true
-                :disabled submitting?}
+                :disabled (<< ::model/submitting?)}
     "save"]])
+
+(defn document-item [{:keys [filename download-link delete-fn]}]
+  [mui/stack {:spacing 1
+              :direction :row
+              :align-items :center}
+   [mui/button {:variant :text
+                :href download-link
+                :target :_blank}
+    filename]
+   [mui/box {:flex-grow 1}]
+   [mui/tooltip {:title "Delete"}
+    [ui/icon-delete {:style {:cursor :pointer}
+                     :on-click delete-fn}]]])
+
+(defn document-title [{:keys [title store-fn]}]
+  [mui/stack {:direction :row}
+   [mui/typography {:variant :h6
+                    :flex-grow 1}
+    title]
+   [mui/tooltip {:title "Upload new document"}
+    [ui/loading-button {:component :label
+                        :startIcon (r/as-element
+                                     [ui/icon-upload])}
+     "upload"
+     [:input {:type :file
+              :hidden true
+              :on-change store-fn}]]]])
+
+(defn existing-documents [vehicle-id]
+  (let [case-id (<< ::case-model/case-id)
+        existing-files (:documents (<< ::model/vehicle vehicle-id))]
+    [:<>
+     [document-title
+      {:title "Uploaded documents"
+       :store-fn #(let [file (-> % .-target .-files first)]
+                    (rf/dispatch [::model/upload-document case-id vehicle-id file]))}]
+     (if (empty? existing-files)
+       [mui/alert {:severity :info}
+        [mui/alert-title "No documents uploaded"]]
+       (->> existing-files
+            (map (fn [{:keys [document-id original-filename]}]
+                   ^{:key document-id}
+                   [document-item 
+                    {:filename original-filename
+                     :download-link (str "/api/case/" case-id "/vehicle/" vehicle-id "/document/" document-id)
+                     :delete-fn #(rf/dispatch [::model/delete-document case-id vehicle-id document-id])}]))
+            (interpose [mui/divider])
+            (into [mui/stack])))]))
+
+(defn form-documents [{:keys [values reset set-values]}]
+  (r/with-let [file-count (r/atom 0)]
+    [:<>
+     [document-title
+      {:title "Upload documents"
+       :store-fn #(let [file (-> % .-target .-files first)
+                        file-id (swap! file-count inc)
+                        file-key (keyword (str "-file-" file-id))]
+                    (set-values {file-key file}))}]
+     (let [files (->> values
+                      (filter (fn [[k _v]]
+                                (str/starts-with? (name k) "-file-"))))]
+       (if (empty? files)
+         [mui/alert {:severity :info}
+          [mui/alert-title "No documents selected"]]
+         (->> files
+              (map (fn [[key file]]
+                     ^{:key key}
+                     [document-item 
+                      {:filename (.-name file)
+                       :download-link (js/URL.createObjectURL file)
+                       :delete-fn #(let [new-values (dissoc values key)]
+                                     (reset {:values new-values}))}]))
+              (interpose [mui/divider])
+              (into [mui/stack]))))]))
 
 (defn layout [{:keys [values handle-submit] :as fork-args}]
   [:form {:on-submit handle-submit
@@ -92,6 +169,11 @@
       [:<>
        [sold-by fork-args]
        [confirmed-value fork-args]])
+    (let [vehicle-id (<< ::model/dialog-context)]
+      (if (and (not (nil? vehicle-id))
+               (not (= :add vehicle-id)))
+        [existing-documents vehicle-id]
+        [form-documents fork-args]))
     [submit-buttons fork-args]]])
 
 (def data-validation

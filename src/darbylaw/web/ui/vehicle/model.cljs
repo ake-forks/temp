@@ -95,3 +95,34 @@
         :on-failure [::submit-failure (if-not vehicle-id
                                         "Error adding vehicle"
                                         "Error updating vehicle")]})}))
+
+
+
+;; >> Upload Submit Effects
+
+(rf/reg-event-fx ::upload-document
+  (fn [_ [_ case-id vehicle-id document]]
+    {:http-xhrio
+     (ui/build-http
+       {:method :post
+        :uri (str "/api/case/" case-id
+                  "/vehicle/" vehicle-id
+                  "/document")
+        :body (form/->FormData {:-file-1 document})
+        :on-success [::submit-success case-id]
+        :on-failure [::submit-failure "Error uploading vehicle document"]})}))
+
+
+
+;; >> Delete Submit Effects
+
+(rf/reg-event-fx ::delete-document
+  (fn [_ [_ case-id vehicle-id document-id]]
+    {:http-xhrio
+     (ui/build-http
+       {:method :delete
+        :uri (str "/api/case/" case-id
+                  "/vehicle/" vehicle-id
+                  "/document/" document-id)
+        :on-success [::submit-success case-id]
+        :on-failure [::submit-failure "Error deleting vehicle document"]})}))
