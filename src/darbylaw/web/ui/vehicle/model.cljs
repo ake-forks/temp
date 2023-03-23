@@ -56,30 +56,34 @@
 
 
 
-;; >> Submit Effects
+;; >> Generic Submit Effects
 
 (rf/reg-event-fx ::submit-success
-  (fn [{:keys [db]} [_ path case-id {vehicle-id :id}]]
-    {:db (-> db 
-             (fork/set-submitting path false)
-             (assoc ::submitting? false))
-     :fx [[:dispatch [::case-model/load-case! case-id]]
-          [:dispatch [::set-dialog-open vehicle-id]]]}))
+  (fn [{:keys [db]} [_ case-id]]
+    {:db (assoc db ::submitting? false)
+     :fx [[:dispatch [::case-model/load-case! case-id]]]}))
 
 (rf/reg-event-fx ::submit-failure
-  (fn [{:keys [db]} [_ path message error-result]]
-    {:db (-> db
-             (fork/set-submitting path false)
-             (assoc ::submitting? false))
+  (fn [{:keys [db]} [_ message error-result]]
+    {:db (assoc db ::submitting? false)
      ::ui/notify-user-http-error {:message message
                                   :result error-result}}))
 
+
+
+;; >> Upsert Submit Effects
+
+(rf/reg-event-fx ::upsert-submit-success
+  (fn [{:keys [db]} [_ {:keys [reset values]} case-id {vehicle-id :id}]]
+    ;; NOTE: Prevents form-files from being re-uploaded
+    (reset {:values (select-keys values data/props)})
+    {:db (assoc db ::submitting? false)
+     :fx [[:dispatch [::case-model/load-case! case-id]]
+          [:dispatch [::set-dialog-open vehicle-id]]]}))
+
 (rf/reg-event-fx ::upsert-vehicle
-  (fn [{:keys [db]} [_ {:keys [case-id vehicle-id]} {:keys [path values]}]]
-    (println "upsert-vehicle" vehicle-id)
-    {:db (-> db
-             (fork/set-submitting path true)
-             (assoc ::submitting? true))
+  (fn [{:keys [db]} [_ {:keys [case-id vehicle-id]} {:keys [values] :as fork-args}]]
+    {:db (assoc db ::submitting? true)
      :http-xhrio
      (ui/build-http
        {:method :post
@@ -87,7 +91,7 @@
         :uri (str "/api/case/" case-id "/vehicle"
                   (when vehicle-id (str "/" vehicle-id)))
         :body (form/->FormData values)
-        :on-success [::submit-success path case-id]
-        :on-failure [::submit-failure path (if-not vehicle-id
-                                             "Error adding vehicle"
-                                             "Error updating vehicle")]})}))
+        :on-success [::upsert-submit-success fork-args case-id]
+        :on-failure [::submit-failure (if-not vehicle-id
+                                        "Error adding vehicle"
+                                        "Error updating vehicle")]})}))
