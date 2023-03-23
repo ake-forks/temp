@@ -58,10 +58,11 @@
         :checked (:sold values false)
         :on-change #(handle-change %)}])}])
 
-(defn sold-by [fork-args]
-  [form/text-field fork-args
-   {:name :sold-by
-    :label "sold by"}])
+(defn sold-at [fork-args]
+  [form/date-picker fork-args
+   {:name :sold-at
+    :inner-config {:label "sold at"
+                   :required true}}])
 
 (defn confirmed-value [fork-args]
   [currency-field fork-args
@@ -167,7 +168,7 @@
     (if-not (:sold values)
       [estimated-value fork-args]
       [:<>
-       [sold-by fork-args]
+       [sold-at fork-args]
        [confirmed-value fork-args]])
     (let [vehicle-id (<< ::model/dialog-context)]
       (if (and (not (nil? vehicle-id))
@@ -181,11 +182,14 @@
     (v/attr [:registration-number] (v/present))
     (v-util/v-when #(:estimated-value %)
       (v/attr [:estimated-value] (v-util/currency?)))
-    (v-util/v-when #(:confirmed-value %)
-      (v/attr [:confirmed-value] (v/chain
-                                   (v-util/v-when #(:sold %)
-                                     (v/present))
-                                   (v-util/currency?))))))
+    (v-util/v-when #(true? (:sold %))
+      (v/join
+        (v/attr [:sold-at] (v/chain
+                             (v-util/not-nil)
+                             (v-util/valid-dayjs-date)))
+        (v/attr [:confirmed-value] (v/chain
+                                     (v/present)
+                                     (v-util/currency?)))))))
 
 (defn form [values on-submit]
   [form/form {:validation #(v/field-errors data-validation %)
