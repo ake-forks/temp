@@ -189,7 +189,8 @@
       (v/attr [:estimated-value] (v-util/currency?)))
     (v-util/v-when #(true? (:sold %))
       (v/join
-        (v-util/min-one-files? {:fake-selector [:file-errors]})
+        (v-util/v-when #(= :add (<< ::model/dialog-context))
+          (v-util/min-one-files? {:fake-selector [:file-errors]}))
         (v/attr [:sold-at] (v/chain
                              (v-util/not-nil)
                              (v-util/valid-dayjs-date)))
