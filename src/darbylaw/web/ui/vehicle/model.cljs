@@ -3,7 +3,7 @@
     [re-frame.core :as rf]
     [darbylaw.web.ui.case-model :as case-model]
     [darbylaw.api.vehicle.data :as data]
-    [darbylaw.web.ui :as ui]
+    [darbylaw.web.ui :as ui :refer [<<]]
     [darbylaw.web.util.form :as form]
     [medley.core :as medley]))
 
@@ -117,11 +117,14 @@
 
 (rf/reg-event-fx ::delete-document
   (fn [_ [_ case-id vehicle-id document-id]]
-    {:http-xhrio
-     (ui/build-http
-       {:method :delete
-        :uri (str "/api/case/" case-id
-                  "/vehicle/" vehicle-id
-                  "/document/" document-id)
-        :on-success [::submit-success case-id]
-        :on-failure [::submit-failure "Error deleting vehicle document"]})}))
+    (if (= 1 (->> (<< ::vehicle vehicle-id) :documents count))
+      {:dispatch [::ui/show-message {:severity :error
+                                     :text "A minimum of one document is required"}]}
+      {:http-xhrio
+       (ui/build-http
+         {:method :delete
+          :uri (str "/api/case/" case-id
+                    "/vehicle/" vehicle-id
+                    "/document/" document-id)
+          :on-success [::submit-success case-id]
+          :on-failure [::submit-failure "Error deleting vehicle document"]})})))
