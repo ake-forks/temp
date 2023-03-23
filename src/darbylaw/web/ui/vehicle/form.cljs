@@ -132,7 +132,7 @@
             (interpose [mui/divider])
             (into [mui/stack])))]))
 
-(defn form-documents [{:keys [values reset set-values]}]
+(defn form-documents [{:keys [values errors attempted-submissions reset set-values]}]
   (r/with-let [file-count (r/atom 0)]
     [:<>
      [document-title
@@ -141,12 +141,17 @@
                         file-id (swap! file-count inc)
                         file-key (keyword (str "-file-" file-id))]
                     (set-values {file-key file}))}]
-     (let [files (->> values
-                      (filter (fn [[k _v]]
-                                (str/starts-with? (name k) "-file-"))))]
+     (let [files (v-util/find-files values)
+           sold (true? (:sold values))]
        (if (empty? files)
-         [mui/alert {:severity :info}
-          [mui/alert-title "No documents selected"]]
+         [mui/alert {:severity (if sold
+                                 (if (and (get errors [:file-errors])
+                                          (>= attempted-submissions 1))
+                                   :error
+                                   :warning)
+                                 :info)}
+          [mui/alert-title "No documents selected"]
+          (when sold "Minimum of one required")]
          (->> files
               (map (fn [[key file]]
                      ^{:key key}
@@ -184,6 +189,7 @@
       (v/attr [:estimated-value] (v-util/currency?)))
     (v-util/v-when #(true? (:sold %))
       (v/join
+        (v-util/min-one-files? {:fake-selector [:file-errors]})
         (v/attr [:sold-at] (v/chain
                              (v-util/not-nil)
                              (v-util/valid-dayjs-date)))
