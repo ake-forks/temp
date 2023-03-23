@@ -7,7 +7,7 @@
             [medley.core :as medley]
             [xtdb.api :as xt])
   (:import (com.amazonaws.services.textract AmazonTextract AmazonTextractClientBuilder)
-           (com.amazonaws.services.textract.model AnalyzeDocumentRequest Document S3Object)))
+           (com.amazonaws.services.textract.model AnalyzeDocumentRequest Document QueriesConfig Query S3Object)))
 
 (mount/defstate ^AmazonTextract textract
   :start (AmazonTextractClientBuilder/defaultClient))
@@ -24,39 +24,71 @@
   (->> block
     :relationships
     (map bean)
-    (medley/index-by :type)))
+    (medley/index-by :type)
+    (medley/map-keys keyword)
+    (medley/map-vals :ids)))
 
-(defn convenient-blocks [analyze-result]
+(defn digest-blocks-by-id [analyze-result]
   (->> analyze-result
     bean
     :blocks
     (map bean)
-    (map #(assoc % :relationships-map (relationships-map %)))))
+    (map #(assoc % :relationships-map (relationships-map %)))
+    (medley/index-by :id)))
 
-(defn get-words [id->block block]
+(defn get-words [blocks-by-id block]
   (-> block
-    :relationships-map (get "CHILD") :ids
+    :relationships-map :CHILD
     (->>
-      (map id->block)
+      (map blocks-by-id)
       (filter (comp #{"WORD"} :blockType))
       (mapv :text))))
 
-(defn get-value-block [id->block block]
-  (-> block :relationships-map (get "VALUE") :ids first id->block))
+(defn get-value-block [blocks-by-id block]
+  (-> block :relationships-map :VALUE first blocks-by-id))
 
-(defn gather-key-value-words [id->block blocks]
-  (->> blocks
+(defn gather-key-value-words [blocks-by-id]
+  (->> (vals blocks-by-id)
     (filter key-block?)
     (map (fn [block]
            (assoc block
-             :key-words (get-words id->block block)
-             :value-words (get-words id->block (get-value-block id->block block)))))))
+             :key-words (get-words blocks-by-id block)
+             :value-words (get-words blocks-by-id (get-value-block blocks-by-id block)))))))
 
-(def result-filename "textract_analyze_doc_result.serialized")
-(def result-loaded
-  (with-open [is (java.io.ObjectInputStream.
-                   (clojure.java.io/input-stream result-filename))]
-    (.readObject is)))
+(defn process-form [blocks-by-id]
+  (let [kv-words (gather-key-value-words blocks-by-id)]
+    (->> kv-words
+      (map #(select-keys % [:key-words
+                            :value-words
+                            :confidence])))))
+
+(defn process-queries [blocks-by-id]
+    (->> (vals blocks-by-id)
+      (filter #(= "QUERY" (:blockType %)))
+      (map (fn [query-block]
+             (let [answer-block (-> query-block
+                                  :relationships-map
+                                  :ANSWER
+                                  first
+                                  blocks-by-id)
+                   query (bean (:query query-block))]
+               (assoc query-block
+                 :answer-text (:text answer-block)
+                 :answer-confidence (:confidence answer-block)
+                 :query-text (:text query)
+                 :query-alias (keyword (:alias query))))))
+      (map #(select-keys % [:answer-text
+                            :answer-confidence
+                            :query-text
+                            :query-alias]))))
+
+(defn process-lines [blocks-by-id]
+  (->> (vals blocks-by-id)
+    (filter #(= (:blockType %) "LINE"))
+    (map #(select-keys % [:text
+                          :confidence]))))
+
+; Cache
 
 (defn get-etag [s3-key]
   (some-> doc-store/s3
@@ -71,96 +103,88 @@
 
 (defn from-cache [etag]
   (-> (xt/entity (xt/db xtdb-node/xtdb-node)
-         {:textract-cache/etag etag})
+        {:textract-cache/etag etag})
     :result))
 
-(defn process-analyze-result [result]
-  (let [blocks (convenient-blocks result)
-        id->block (medley/index-by :id blocks)
-        kv-words (gather-key-value-words id->block blocks)]
-    (->> kv-words
-      (map #(select-keys % [:key-words
-                            :value-words
-                            :confidence])))))
+(def my-queries
+  {:occupation "What is the occupation?"
+   :address "What is the address in the occupation and usual address box?"
+   :certified-by "Who certified the death?"})
 
-(defn request-analyze [s3-key]
+(defn request-analyze [s3-key queries]
   (.analyzeDocument textract
     (doto (AnalyzeDocumentRequest.)
-      (.setFeatureTypes ["FORMS"])
+      (.setFeatureTypes ["FORMS"
+                         "QUERIES"])
       (.setDocument (doto (Document.)
                       (.setS3Object (doto (S3Object.)
                                       (.setBucket bucket-name)
-                                      (.setName s3-key))))))))
+                                      (.setName s3-key)))))
+      (.setQueriesConfig (doto (QueriesConfig.)
+                           (.setQueries
+                             (for [[alias text] queries]
+                               (doto (Query.)
+                                 (.setAlias (name alias))
+                                 (.setText text)))))))))
 
 (defn analyze [s3-key]
   (let [etag (get-etag s3-key)]
-    (if-let [cached (from-cache etag)]
-      {:key-values cached
-       :cache true}
-      (let [result (request-analyze s3-key)
-            key-values (process-analyze-result result)]
+    (if-let [result (from-cache etag)]
+      (-> result
+        (assoc :cache true))
+      (let [analyze-result (request-analyze s3-key my-queries)
+            blocks-by-id (digest-blocks-by-id analyze-result)
+            result {:key-values (process-form blocks-by-id)
+                    :queries (process-queries blocks-by-id)
+                    :lines (process-lines blocks-by-id)}]
         (xt-util/exec-tx-or-throw xtdb-node/xtdb-node
-          (cache-tx etag key-values))
-        {:key-values key-values
-         :cache false}))))
+          (cache-tx etag result))
+        (-> result
+          (assoc :cache false))))))
 
 (comment
-  (def object-name
+  (def s3-key
     (str "5d994979-d002-402e-af70-8e7c454311c5"
          "/"
          "000100.death-certificate.ccdbf519-360b-4070-803f-159430fbacd9.pdf"))
 
-  (xt/q (xt/db xtdb-node/xtdb-node) '{:find [(pull e [*])]
+  (xt/q (xt/db xtdb-node/xtdb-node) '{:find [e]
                                       :where [[e :type :textract-cache]]})
-  (from-cache object-name)
-  (analyze object-name)
-  (get-etag object-name)
-  (xt/submit-tx xtdb-node/xtdb-node
-    (cache-tx (get-etag object-name) (process-analyze-result result-loaded)))
 
-  (analyze (str "5d994979-d002-402e-af70-8e7c454311c5"
-                "/"
-                "000100.death-certificate.ccdbf519-360b-4070-803f-159430fbacd9.pdf"))
-
-  (.analyzeDocument textract
-    (doto (AnalyzeDocumentRequest.)
-      (.setFeatureTypes ["FORMS"])
-      (.setDocument (doto (Document.)
-                      (.setS3Object (doto (S3Object.)
-                                      (.setBucket bucket-name)
-                                      (.setName object-name)))))))
-
-  (def result *1)
-
-  result
-
+  (def analyze-result (request-analyze s3-key my-queries))
   (def result-filename "textract_analyze_doc_result.serialized")
 
   (with-open [os (java.io.ObjectOutputStream.
                    (clojure.java.io/output-stream result-filename))]
-    (.writeObject os result))
+    (.writeObject os analyze-result))
 
-  (def result-loaded
+  (def analyze-result
     (with-open [is (java.io.ObjectInputStream.
                      (clojure.java.io/input-stream result-filename))]
       (.readObject is)))
 
+  (def blocks-by-id (digest-blocks-by-id analyze-result))
+  (process-form blocks-by-id)
+  (process-queries blocks-by-id)
+  (process-lines blocks-by-id)
 
-  (def blocks (convenient-blocks result-loaded))
+  (->> (vals blocks-by-id)
+    (map :blockType)
+    (distinct))
 
-  (def id->block
-    (medley/index-by :id blocks))
+  (count blocks-by-id)
 
-  (-> blocks
-    (->> (filter key-block?)
-      (map (fn [block]
-             (assoc block
-               :key-words (get-words id->block block)
-               :value-words (get-words id->block (get-value-block id->block block)))))
-      (filter (fn [block]
-                (= (first (:key-words block)) "1.")))
-      first
-      (get-value-block id->block))
-    :relationships-map (get "CHILD") :ids
-    (->> (map id->block)
-      (map #(select-keys % [:blockType :text])))))
+  (->> (vals blocks-by-id)
+    (filter #(= (:blockType %) "WORD"))))
+
+(defn delete-cache []
+  (let [xt-node xtdb-node/xtdb-node
+        ids (xt/q (xt/db xt-node)
+              '{:find [e]
+                :where [[e :type :textract-cache]]})]
+    (xt-util/exec-tx-or-throw xt-node
+      (for [[id] ids]
+        [::xt/delete id]))))
+
+(comment
+  (delete-cache))
