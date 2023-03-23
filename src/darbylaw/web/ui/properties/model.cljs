@@ -11,6 +11,9 @@
 (def edit-mode (r/atom false))
 
 (def file-uploading? (r/atom false))
+
+(def popover (r/atom {}))
+
 (defn get-property [id]
   (let [all-props (<< ::case-model/properties)]
     (get (medley/index-by :id all-props) (uuid id))))
@@ -39,11 +42,13 @@
 
 (rf/reg-event-fx ::upload-success
   (fn [_ [_ case-id]]
+    (reset! popover {})
     {:dispatch [::case-model/load-case! case-id]}))
 (rf/reg-event-fx ::upload-failure
   (fn [_ [_ response]]
+    (reset! popover {})
     {:dispatch [::reset-file-uploading]
-     ::ui/notify-user-http-error {:message "Error uploading."
+     ::ui/notify-user-http-error {:message "Error: "
                                   :result response}}))
 
 (rf/reg-event-fx ::upload-file
@@ -61,7 +66,6 @@
 (rf/reg-event-fx
   ::remove-file
   (fn [_ [_ case-id property-id filename]]
-    property-id
     {:http-xhrio
      (ui/build-http
        {:method :post
@@ -80,7 +84,6 @@
     {:db (fork/set-submitting db path false)
      :fx [[:dispatch [::case-model/load-case! case-id]]
           [:dispatch [::hide-dialog]]]}))
-
 
 (rf/reg-event-fx ::add-failure
   (fn [{:keys [db]} [_ {:keys [path] :as _fork-params} error-result]]
@@ -111,6 +114,28 @@
         :on-success [::edit-success case-id fork-params]
         :on-failure [::add-failure fork-params]})}))
 
+(rf/reg-event-fx ::remove-success
+  (fn [_ [_ case-id]]
+    (reset! edit-mode false)
+    (reset! popover {})
+    {:fx [[:dispatch [::case-model/load-case! case-id]]
+          [:dispatch [::hide-dialog]]]}))
+
+(rf/reg-event-fx ::remove-failure
+  (fn [_ [_ error-result]]
+    (reset! popover {})
+    {::ui/notify-user-http-error {:message "remove error"
+                                  :result error-result}}))
+
+(rf/reg-event-fx
+  ::remove-property
+  (fn [_ [_ case-id property-id]]
+    {:http-xhrio
+     (ui/build-http
+       {:method :post
+        :uri (str "/api/property/" case-id "/remove-property/" property-id)
+        :on-success [::remove-success case-id]
+        :on-failure [::remove-failure]})}))
 
 (def non-file-fields
   [:file-count :address :valuation :joint-ownership? :joint-owner :insured? :estimated-value? :property])

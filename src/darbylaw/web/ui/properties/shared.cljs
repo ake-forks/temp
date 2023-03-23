@@ -1,23 +1,30 @@
 (ns darbylaw.web.ui.properties.shared
   (:require
-    [darbylaw.api.util.data :as data-util]
     [re-frame.core :as rf]
     [darbylaw.web.ui :refer (<<)]
-    [darbylaw.web.ui.app-layout :as l]
     [darbylaw.web.ui.case-model :as case-model]
     [darbylaw.web.ui.properties.model :as model]
-    [darbylaw.web.ui.properties.dialog :as dialog]))
+    [reagent-mui.components :as mui]))
 
-(defn properties-card []
-  (let [properties (filter #(true? (:owned? %)) (<< ::case-model/properties))]
-    [:<>
-     [dialog/dialog]
-     [l/asset-card {:title "properties"}
-      (for [{:keys [address id]} properties]
-        ^{:key id}
-        [l/asset-item
-         {:title (data-util/first-line address)
-          :on-click #(rf/dispatch [::model/show-dialog id :edit])}])
-      [l/asset-add-button
-       {:title "add"
-        :on-click #(rf/dispatch [::model/show-dialog nil :add])}]]]))
+
+(defn confirmation-popover []
+  (let [case-id (<< ::case-model/case-id)
+        popover model/popover]
+    [mui/popover {:open (not (empty? @popover))
+                  :anchor-el (get @popover :anchor)
+                  :on-close #(reset! popover nil)
+                  :anchor-origin {:vertical "bottom" :horizontal "right"}
+                  :transform-origin {:vertical "top" :horizontal "right"}}
+     [mui/stack {:sx {:p 1.5}}
+      [mui/typography "Are you sure?"]
+      [mui/button {:variant :text
+                   :color :error
+                   :full-width true
+                   :on-click #(case (get @popover :label)
+                                "document" (rf/dispatch [::model/remove-file case-id
+                                                         (get @popover :property-id)
+                                                         (get @popover :filename)])
+                                "property" (rf/dispatch [::model/remove-property
+                                                         case-id
+                                                         (get @popover :property-id)]))}
+       "yes, remove " (get @popover :label)]]]))

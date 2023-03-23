@@ -31,7 +31,7 @@
     [darbylaw.api.util.data :as data-util]
     [darbylaw.web.ui.notification.dialog :as notification-dialog]
     [darbylaw.web.ui.notification.model :as notification-model]
-    [darbylaw.web.ui.properties.shared :as property]))
+    [darbylaw.web.ui.properties.dashboard :as property]))
 
 (defn bank-item [bank]
   (let [bank-data (bank-list/bank-by-id (:bank-id bank))

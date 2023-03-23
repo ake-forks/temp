@@ -56,7 +56,7 @@
        :filename (first filenames)})
     {:status 204}))
 
-(defn get-document [{:keys [xtdb-node path-params]}]
+(defn get-document [{:keys [path-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
         filename (:filename path-params)
         input-stream (doc-store/fetch
@@ -68,7 +68,6 @@
   (let [case-id (parse-uuid (:case-id path-params))
         filename (:filename path-params)
         property-id (parse-uuid (:property-id body-params))]
-    (logger/info property-id)
     (xt-util/exec-tx xtdb-node
       (concat
         (tx-fns/set-values filename
@@ -124,7 +123,18 @@
                                   :op :updated}))))
   {:status 204})
 
-
+(defn remove-property [{:keys [xtdb-node user path-params]}]
+  (let [case-id (parse-uuid (:case-id path-params))
+        property-id (parse-uuid (:property-id path-params))]
+    (xt-util/exec-tx-or-throw xtdb-node
+      (concat
+        [[::xt/delete property-id]]
+        (case-history/put-event2 {:case-id case-id
+                                  :property-id property-id
+                                  :user user
+                                  :subject :probate.property
+                                  :op :deleted})))
+    {:status 204}))
 
 (defn routes []
   ["/property/:case-id"
@@ -134,6 +144,8 @@
     {:post {:handler (partial add-property :edit)}}]
    ["/edit-property/:property-id"
     {:post {:handler edit-property}}]
+   ["/remove-property/:property-id"
+    {:post {:handler remove-property}}]
    ["/post-document/:property-id"
      {:post {:handler upload-document}}]
    ["/get-document/:filename"

@@ -7,6 +7,7 @@
     [darbylaw.web.ui.case-model :as case-model]
     [darbylaw.web.ui.properties.model :as model]
     [darbylaw.web.ui.properties.form :as form]
+    [darbylaw.web.ui.properties.shared :as shared]
     [darbylaw.web.ui :as ui :refer (<<)]
     [reagent.core :as r]))
 
@@ -25,12 +26,11 @@
       [mui/stack {:spacing 1}
        [mui/typography {:variant :h6
                         :style {:color (if edit-mode :grey)}} "valuation documents"]
-
-       [mui/card-content {:style {:height "10rem" :overflow-y :auto :overflow-x :auto :padding 0}}
+       [mui/card-content {:style {:min-height "7rem" :max-height "10rem" :overflow-y :auto :overflow-x :auto :padding 0}}
         (if (some? documents)
           (map
-            (fn [document]
-              ^{:key (:filename document)}
+            (fn [{:keys [filename original-filename]}]
+              ^{:key filename}
               [mui/stack {:direction :row
                           :justify-content :space-between
                           :align-items :center}
@@ -38,22 +38,27 @@
                           :style {:text-decoration :none
                                   :max-width "75%"
                                   :overflow :wrap
-                                  :color (if edit-mode :grey)}} (:original-filename document)]
+                                  :color (if edit-mode :grey)}} original-filename]
                [mui/stack {:direction :row :spacing 2}
                 [mui/tooltip {:title "open"}
-                 [mui/icon-button {:on-click #(rf/dispatch [::model/open-document case-id (:filename document)])
+                 [mui/icon-button {:on-click #(rf/dispatch [::model/open-document case-id filename])
                                    :disabled edit-mode}
                   [ui/icon-open-in-new]]]
                 [mui/tooltip {:title "remove"}
-                 [mui/icon-button {:on-click #(rf/dispatch [::model/remove-file case-id property-id (:filename document)])
+                 [mui/icon-button {:on-click #(reset! model/popover {:anchor (ui/event-currentTarget %)
+                                                                     :property-id property-id
+                                                                     :filename filename
+                                                                     :label "document"})
                                    :disabled edit-mode}
                   [ui/icon-delete]]]]])
             documents)
-          [mui/typography {:variant :body1} "no documents uploaded"])]
+          [mui/typography {:variant :body1 :color theme/orange} "no documents uploaded"])]
        (if edit-mode
          [mui/button {:disabled true
                       :end-icon (r/as-element [ui/icon-upload])} "upload"]
-         [form/upload-button case-id id "upload" {:disabled edit-mode}])]]))
+         [form/upload-button case-id id "upload" {:disabled edit-mode}])]
+     [shared/confirmation-popover]]))
+
 
 (defn edit [{:keys [handle-submit] :as fork-args}]
   (let [prop-id (:id (<< ::model/dialog))
@@ -64,30 +69,42 @@
       [mui/stack {:spacing 1}
        [dialog-header (data-util/first-line (:address property))]
        (if @edit-mode
-         [mui/button {:on-click #(reset! edit-mode (not @edit-mode))
-                      :end-icon (r/as-element [ui/icon-close])
-                      :style {:align-self :flex-start}} "cancel"]
+         [mui/stack {:direction :row :spacing 3}
+          [mui/button {:on-click #(reset! edit-mode (not @edit-mode))
+                       :end-icon (r/as-element [ui/icon-close])
+                       :style {:align-self :flex-start}} "cancel"]
+          [mui/button {:variant :text
+                       :on-click #(reset! model/popover {:anchor (ui/event-currentTarget %)
+                                                         :property-id prop-id
+                                                         :label "property"})
+                       :end-icon (r/as-element [ui/icon-delete])
+                       :style {:align-self :flex-start :color :red}} "remove property"]]
          [mui/button {:variant :outlined
                       :on-click #(reset! edit-mode (not @edit-mode))
                       :end-icon (r/as-element [ui/icon-edit])
                       :style {:align-self :flex-start}} "edit property details"])
+
        [mui/stack {:spacing 2}
         [mui/grid {:container true
                    :direction :row
-                   :spacing 1
+                   :column-spacing 1
+                   :row-spacing 2
                    :align-items :stretch}
          [mui/grid {:item true :xs 6}
-          [mui/typography {:variant :h6} "address"]
-          (if @edit-mode
-            [form/edit-address fork-args]
-            [mui/typography {:variant :body1  :sx {:mt 1} :style {:white-space :pre}} (:address property)])
-          [mui/typography {:variant :h6 :sx {:mt 2}} "valuation"]
-          (if @edit-mode
-            [form/value-field fork-args]
-            [:<>
-             [mui/typography {:variant :body1 :style {:white-space :pre}} "£" (:valuation property)]
-             (when (:estimated-value? property)
-               [mui/typography {:variant :body1 :color theme/teal} "estimated"])])]
+          [mui/stack {:spacing 2}
+           [mui/box
+            [mui/typography {:variant :h6} "address"]
+            (if @edit-mode
+              [form/edit-address fork-args]
+              [mui/typography {:variant :body1 :style {:white-space :pre}} (:address property)])]
+           [mui/box
+            [mui/typography {:variant :h6} "valuation"]
+            (if @edit-mode
+              [form/value-field fork-args]
+              [:<>
+               [mui/typography {:variant :body1 :style {:white-space :pre}} "£" (:valuation property)]
+               (when (:estimated-value? property)
+                 [mui/typography {:variant :body1 :color theme/teal} "estimated"])])]]]
 
 
          [mui/grid {:item true :xs 6 :style {:max-height "50%"}}
