@@ -142,6 +142,12 @@
             (interpose [mui/divider])
             (into [mui/stack])))]))
 
+(defn find-files [values]
+  (->> values
+       (filter (fn [[k _v]]
+                 (str/starts-with? (name k) "-file-")))
+       (into {})))
+
 (defn form-documents [{:keys [values reset set-values] :as fork-args}]
   (r/with-let [file-count (r/atom 0)]
     [:<>
@@ -151,7 +157,7 @@
                         file-id (swap! file-count inc)
                         file-key (keyword (str "-file-" file-id))]
                     (set-values {file-key file}))}]
-     (let [files (v-util/find-files values)]
+     (let [files (find-files values)]
        (if (empty? files)
          [no-doc-alert fork-args]
          (->> files
@@ -184,6 +190,21 @@
         [form-documents fork-args]))
     [submit-buttons fork-args]]])
 
+(defn min-one-files? [{:keys [fake-selector]}]
+  (v/predicate (fn [data]
+                 (let [context (<< ::model/dialog-context)
+                       files (if (and (not= :add context)
+                                      (not (nil? context)))
+                               (:documents (<< ::model/vehicle context))
+                               (vals (find-files data)))]
+                   (< (count files) 1)))
+               {:type ::min-one-files?
+                :selector fake-selector}))
+
+(defmethod v/english-translation ::min-one-files?
+  [_]
+  (str "Must have more than one files."))
+
 (def data-validation
   (v/join
     (v/attr [:registration-number] (v/present))
@@ -191,8 +212,7 @@
       (v/attr [:estimated-value] (v-util/currency?)))
     (v-util/v-when #(true? (:sold %))
       (v/join
-        (v-util/v-when #(= :add (<< ::model/dialog-context))
-          (v-util/min-one-files? {:fake-selector [:file-errors]}))
+        (min-one-files? {:fake-selector [:file-errors]})
         (v/attr [:sold-at] (v/chain
                              (v-util/not-nil)
                              (v-util/valid-dayjs-date)))

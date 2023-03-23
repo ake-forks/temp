@@ -147,21 +147,3 @@
        (when (pred data)
          (v/validate validation data))
        error-data))))
-
-(defn find-files [values]
-  (->> values
-       (filter (fn [[k _v]]
-                 (str/starts-with? (name k) "-file-")))
-       (into {})))
-
-(defn min-one-files? [{:keys [fake-selector]}]
-  (v/predicate (fn [data]
-                 (let [files (find-files data)]
-                   (< (count (vals files))
-                      1)))
-               {:type ::min-one-files?
-                :selector fake-selector}))
-
-(defmethod v/english-translation ::min-one-files?
-  [_]
-  (str "Must have more than one files."))
