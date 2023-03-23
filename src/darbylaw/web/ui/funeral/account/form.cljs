@@ -38,6 +38,7 @@
    [form/text-field fork-args
     {:name :value
      :label "amount"
+     :on-change #(set-values {:value (-> % fork/retrieve-event-value form/ensure-negative)})
      :full-width true
      :required true
      :InputProps
