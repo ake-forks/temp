@@ -83,16 +83,16 @@
 (defn layout [{:keys [values handle-submit] :as fork-args}]
   [:form {:on-submit handle-submit
           :style {:width "100%"}}
-    [mui/stack {:spacing 1}
-     [registration-number fork-args]
-     [description fork-args]
-     [sold fork-args]
-     (if-not (:sold values)
-       [estimated-value fork-args]
-       [:<>
-        [sold-by fork-args]
-        [confirmed-value fork-args]])
-     [submit-buttons fork-args]]])
+   [mui/stack {:spacing 1}
+    [registration-number fork-args]
+    [description fork-args]
+    [sold fork-args]
+    (if-not (:sold values)
+      [estimated-value fork-args]
+      [:<>
+       [sold-by fork-args]
+       [confirmed-value fork-args]])
+    [submit-buttons fork-args]]])
 
 (def data-validation
   (v/join
