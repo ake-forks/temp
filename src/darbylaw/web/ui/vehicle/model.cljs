@@ -1,6 +1,5 @@
 (ns darbylaw.web.ui.vehicle.model
   (:require
-    [fork.core :as fork]
     [re-frame.core :as rf]
     [darbylaw.web.ui.case-model :as case-model]
     [darbylaw.api.vehicle.data :as data]
