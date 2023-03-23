@@ -112,7 +112,9 @@
     (v/attr [:value] (v/chain
                        (v/present)
                        (v-util/currency?)
-                       (v-util/string-negative?)))))
+                       (v-util/string-negative?)))
+    (v-util/v-when #(true? (:paid %))
+      (v/attr [:receipt] (v-util/not-nil)))))
 
 (def default-values
   {:value "-"})
