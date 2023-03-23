@@ -5,6 +5,7 @@
     [darbylaw.api.vehicle.data :as data]
     [darbylaw.web.ui :as ui :refer [<<]]
     [darbylaw.web.util.form :as form]
+    [darbylaw.web.util.dayjs :as dayjs]
     [medley.core :as medley]))
 
 
@@ -51,7 +52,8 @@
   :<- [::vehicles-by-id]
   (fn [vehicles-by-id [_ vehicle-id]]
     (-> (get vehicles-by-id vehicle-id)
-        (select-keys data/props))))
+        (select-keys data/props)
+        (update :sold-at dayjs/maybe-read))))
 
 
 
