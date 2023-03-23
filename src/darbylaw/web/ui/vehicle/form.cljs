@@ -111,7 +111,18 @@
               :hidden true
               :on-change store-fn}]]]])
 
-(defn existing-documents [vehicle-id]
+(defn no-doc-alert [{:keys [errors values attempted-submissions]}]
+  (let [sold (:sold values)]
+    [mui/alert {:severity (if sold
+                            (if (and (get errors [:file-errors])
+                                     (>= attempted-submissions 1))
+                              :error
+                              :warning)
+                            :info)}
+     [mui/alert-title "No documents selected"]
+     (when sold "Minimum of one required")]))
+
+(defn existing-documents [vehicle-id fork-args]
   (let [case-id (<< ::case-model/case-id)
         existing-files (:documents (<< ::model/vehicle vehicle-id))]
     [:<>
@@ -120,8 +131,7 @@
        :store-fn #(let [file (-> % .-target .-files first)]
                     (rf/dispatch [::model/upload-document case-id vehicle-id file]))}]
      (if (empty? existing-files)
-       [mui/alert {:severity :info}
-        [mui/alert-title "No documents uploaded"]]
+       [no-doc-alert fork-args]
        (->> existing-files
             (map (fn [{:keys [document-id original-filename]}]
                    ^{:key document-id}
@@ -132,7 +142,7 @@
             (interpose [mui/divider])
             (into [mui/stack])))]))
 
-(defn form-documents [{:keys [values errors attempted-submissions reset set-values]}]
+(defn form-documents [{:keys [values reset set-values] :as fork-args}]
   (r/with-let [file-count (r/atom 0)]
     [:<>
      [document-title
@@ -141,17 +151,9 @@
                         file-id (swap! file-count inc)
                         file-key (keyword (str "-file-" file-id))]
                     (set-values {file-key file}))}]
-     (let [files (v-util/find-files values)
-           sold (true? (:sold values))]
+     (let [files (v-util/find-files values)]
        (if (empty? files)
-         [mui/alert {:severity (if sold
-                                 (if (and (get errors [:file-errors])
-                                          (>= attempted-submissions 1))
-                                   :error
-                                   :warning)
-                                 :info)}
-          [mui/alert-title "No documents selected"]
-          (when sold "Minimum of one required")]
+         [no-doc-alert fork-args]
          (->> files
               (map (fn [[key file]]
                      ^{:key key}
@@ -178,7 +180,7 @@
     (let [vehicle-id (<< ::model/dialog-context)]
       (if (and (not (nil? vehicle-id))
                (not (= :add vehicle-id)))
-        [existing-documents vehicle-id]
+        [existing-documents vehicle-id fork-args]
         [form-documents fork-args]))
     [submit-buttons fork-args]]])
 
