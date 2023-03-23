@@ -5,6 +5,7 @@
     [darbylaw.web.util.form :as form-util]
     [darbylaw.web.ui.components.file-input-button :refer [file-input-button]]
     [fork.re-frame :as fork]
+    [re-frame.core :as rf]
     [reagent-mui.components :as mui]
     [darbylaw.web.ui.case-model :as case-model]
     [darbylaw.web.ui.properties.model :as model]
@@ -12,6 +13,25 @@
     [clojure.edn :refer [read-string]]
     [darbylaw.web.ui :as ui :refer (<<)]))
 
+(defn upload-button [_case-id _property-id _label props]
+  (r/with-let [_ (reset! model/file-uploading? false)
+               filename (r/atom "")]
+    (fn [case-id property-id label]
+      [ui/loading-button
+       (merge props
+         {:component "label"
+          :loading @model/file-uploading?
+          :startIcon (r/as-element [ui/icon-upload])})
+       label
+       [mui/input {:value @filename
+                   :onChange #(let [selected-file (-> % .-target .-files first)]
+                                (rf/dispatch [::model/upload-file case-id property-id selected-file])
+                                (reset! filename "")
+                                (reset! model/file-uploading? true))
+                   :hidden true
+                   :sx {:display :none}
+                   :inputProps {:type :file
+                                :accept ".pdf, .png, .jpeg, .jpg, .gif"}}]])))
 (defn address-field [{:keys [values set-handle-change set-values] :as fork-args}]
   (let [non-owned (filter #(nil? (:owned? %)) (<< ::case-model/properties))
         deceased-address (<< ::case-model/deceased-address)]
@@ -58,6 +78,16 @@
                            :on-click #(set-values {:address deceased-address})
                            :start-icon (r/as-element [ui/icon-copy])}
                "copy from death certificate"])})}])]))
+
+(defn edit-address [fork-args]
+  [form-util/text-field fork-args
+   {:name :address
+    :label "address"
+    :multiline true
+    :minRows 3
+    :fullWidth true
+    :required true}])
+
 
 (defn joint-owner-field [{:keys [values handle-change] :as fork-args}]
   (let [joint? (or (:joint-ownership? values) false)]

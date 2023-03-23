@@ -1,8 +1,11 @@
 (ns darbylaw.api.properties
   (:require
     [clojure.edn :as edn]
+    [clojure.tools.logging :as logger]
     [darbylaw.api.case-history :as case-history]
     [darbylaw.api.util.data :as data-util]
+    [darbylaw.api.util.tx-fns :as tx-fns]
+
     [xtdb.api :as xt]
     [darbylaw.api.util.model :as model]
     [darbylaw.api.util.xtdb :as xt-util]
@@ -35,8 +38,51 @@
                   :user user
                   :subject :probate.property.property-doc
                   :op :uploaded
-                  :filename filename})))))
+                  :filename filename})))
+          filename))
       files)))
+
+(defn upload-document [{:keys [xtdb-node user path-params multipart-params]}]
+  (let [case-id (parse-uuid (:case-id path-params))
+        property-id (parse-uuid (:property-id path-params))
+        filenames (add-documents xtdb-node user case-id property-id multipart-params)]
+    (logger/info (first filenames))
+    (case-history/put-event2
+      {:case-id case-id
+       :property-id property-id
+       :user user
+       :subject :probate.property.property-doc
+       :op :uploaded
+       :filename (first filenames)})
+    {:status 204}))
+
+(defn get-document [{:keys [xtdb-node path-params]}]
+  (let [case-id (parse-uuid (:case-id path-params))
+        filename (:filename path-params)
+        input-stream (doc-store/fetch
+                       (str case-id "/" filename))]
+    {:status 200
+     :body input-stream}))
+
+(defn remove-document [{:keys [xtdb-node user path-params body-params]}]
+  (let [case-id (parse-uuid (:case-id path-params))
+        filename (:filename path-params)
+        property-id (parse-uuid (:property-id body-params))]
+    (logger/info property-id)
+    (xt-util/exec-tx xtdb-node
+      (concat
+        (tx-fns/set-values filename
+          {:probate.property-doc/property ""
+           :probate.property-doc-removed/property property-id})
+        (case-history/put-event2
+          {:case-id case-id
+           :property-id property-id
+           :user user
+           :subject :probate.property.property-doc
+           :op :deleted
+           :filename filename})))
+    {:status 204}))
+
 
 (defn add-property [op {:keys [xtdb-node user path-params multipart-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
@@ -68,5 +114,11 @@
   ["/property/:case-id"
    ["/add-property"
     {:post {:handler (partial add-property :new)}}]
-   ["/:property-id/update-property"
-    {:post {:handler (partial add-property :update)}}]])
+   ["/update-property/:property-id"
+     {:post {:handler (partial add-property :update)}}]
+   ["/post-document/:property-id"
+     {:post {:handler upload-document}}]
+   ["/get-document/:filename"
+    {:get {:handler get-document}}]
+   ["/remove-document/:filename"
+    {:post {:handler remove-document}}]])

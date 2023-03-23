@@ -8,6 +8,8 @@
     [reagent.core :as r]))
 
 (def edit-mode (r/atom false))
+
+(def file-uploading? (r/atom false))
 (defn get-property [id]
   (let [all-props (<< ::case-model/properties)]
     (get (medley/index-by :id all-props) (uuid id))))
@@ -30,6 +32,10 @@
   (fn [db]
     (:dialog/property db)))
 
+(ui/reg-fx+event ::reset-file-uploading
+  (fn [_]
+    (reset! file-uploading? false)))
+
 (rf/reg-event-fx ::upload-success
   (fn [_ [_ case-id]]
     {:dispatch [::case-model/load-case! case-id]}))
@@ -40,18 +46,32 @@
                                   :result response}}))
 
 (rf/reg-event-fx ::upload-file
-  (fn [_ [_ case-id file]]
+  (fn [_ [_ case-id property-id file]]
     {:http-xhrio
      (ui/build-http
        {:method :post
-        :uri (str "/api/property/" case-id "/document")
+        :uri (str "/api/property/" case-id "/post-document/" property-id)
         :body (doto (js/FormData.)
-                (.append "file" file)
-                (.append "filename" (.-name file))
-                (.append "postcode" "sw14"))
+                (.append "file" file))
         :format nil
         :on-success [::upload-success case-id]
         :on-failure [::upload-failure]})}))
+
+(rf/reg-event-fx
+  ::remove-file
+  (fn [_ [_ case-id property-id filename]]
+    #spy/d property-id
+    {:http-xhrio
+     (ui/build-http
+       {:method :post
+        :uri (str "/api/property/" case-id "/remove-document/" filename)
+        :params {:property-id property-id}
+        :on-success [::upload-success case-id]
+        :on-failure [::upload-failure]})}))
+(rf/reg-event-fx ::open-document
+  (fn [_ [_ case-id filename]]
+    (js/window.open
+      (str "/api/property/" case-id "/get-document/" filename))))
 
 (rf/reg-event-fx ::add-success
   (fn [{:keys [db]} [_ case-id {:keys [path] :as _fork-params}]]

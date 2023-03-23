@@ -16,35 +16,39 @@
    [mui/icon-button {:on-click #(rf/dispatch [::model/hide-dialog])}
     [ui/icon-close]]])
 
-(defn documents-panel [documents]
-  [mui/stack {:spacing 1 :style {:width "50%"}}
-   [mui/typography {:variant :h6} "valuation documents"]
-   (if (some? documents)
-     (map
-       (fn [document]
-         ^{:key (:filename document)}
-         [mui/stack {:direction :row
-                     :justify-content :space-between
-                     :align-items :center}
-          [mui/link {:variant :body1
-                     :style {:text-decoration :none}} (:original-filename document)]
-          [mui/stack {:direction :row :spacing 2}
-           [mui/tooltip {:title "open"}
-            [mui/icon-button {:on-click #(print (:filename document))}
-             [ui/icon-open-in-new]]]
-           [mui/tooltip {:title "remove"}
-            [mui/icon-button {:on-click #(print (:filename document))}
-             [ui/icon-delete]]]]])
-       documents)
-     [mui/typography {:variant :body1} "no documents uploaded"])
-   [mui/button {:variant :text
-                :start-icon (r/as-element [ui/icon-upload])
-                :style {:align-self :flex-start}} "upload"]])
+(defn documents-panel [{:keys [documents id]}]
+  (let [case-id (<< ::case-model/case-id)
+        property-id (:id (<< ::model/dialog))
+        edit-mode @model/edit-mode]
+    [mui/stack {:spacing 1 :style {:width "50%"}}
+     [mui/typography {:variant :h6
+                      :style {:color (if edit-mode :grey)}} "valuation documents"]
+     (if (some? documents)
+       (map
+         (fn [document]
+           ^{:key (:filename document)}
+           [mui/stack {:direction :row
+                       :justify-content :space-between
+                       :align-items :center}
+            [mui/link {:variant :body1
+                       :style {:text-decoration :none
+                               :color (if edit-mode :grey)}} (:original-filename document)]
+            [mui/stack {:direction :row :spacing 2}
+             [mui/tooltip {:title "open"}
+              [mui/icon-button {:on-click #(rf/dispatch [::model/open-document case-id (:filename document)])
+                                :disabled edit-mode}
+               [ui/icon-open-in-new]]]
+             [mui/tooltip {:title "remove"}
+              [mui/icon-button {:on-click #(rf/dispatch [::model/remove-file case-id property-id (:filename document)])
+                                :disabled edit-mode}
+               [ui/icon-delete]]]]])
+         documents)
+       [mui/typography {:variant :body1} "no documents uploaded"])
+     [form/upload-button case-id id "upload" {:disabled edit-mode}]]))
 
 (defn edit [{:keys [handle-submit] :as fork-args}]
   (let [prop-id (:id (<< ::model/dialog))
         property (model/get-property prop-id)
-        documents (:documents property)
         edit-mode model/edit-mode]
     [:form {:on-submit handle-submit}
      [mui/dialog-content {:style {:width "40vw"}}
@@ -63,13 +67,13 @@
           [mui/stack {:spacing 1 :style {:width "50%"}}
            [mui/typography {:variant :h6} "address"]
            (if @edit-mode
-             [form/address-field fork-args]
+             [form/edit-address fork-args]
              [mui/typography {:variant :body1 :style {:white-space :pre}} (:address property)])
            [mui/typography {:variant :h6} "valuation"]
            (if @edit-mode
              [form/value-field fork-args]
              [mui/typography {:variant :body1 :style {:white-space :pre}} "£" (:valuation property)])]
-          [documents-panel documents]]
+          [documents-panel property]]
          (when (:joint-ownership? property)
            [mui/stack {:direction :row :spacing 1}
             [mui/stack {:spacing 0.5 :style {:width "100%"}}
