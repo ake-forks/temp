@@ -1,6 +1,7 @@
 (ns darbylaw.web.ui.properties.dialog
   (:require
     [darbylaw.api.util.data :as data-util]
+    [darbylaw.web.theme :as theme]
     [re-frame.core :as rf]
     [reagent-mui.components :as mui]
     [darbylaw.web.ui.case-model :as case-model]
@@ -20,38 +21,46 @@
   (let [case-id (<< ::case-model/case-id)
         property-id (:id (<< ::model/dialog))
         edit-mode @model/edit-mode]
-    [mui/stack {:spacing 1 :style {:width "50%"}}
-     [mui/typography {:variant :h6
-                      :style {:color (if edit-mode :grey)}} "valuation documents"]
-     (if (some? documents)
-       (map
-         (fn [document]
-           ^{:key (:filename document)}
-           [mui/stack {:direction :row
-                       :justify-content :space-between
-                       :align-items :center}
-            [mui/link {:variant :body1
-                       :style {:text-decoration :none
-                               :color (if edit-mode :grey)}} (:original-filename document)]
-            [mui/stack {:direction :row :spacing 2}
-             [mui/tooltip {:title "open"}
-              [mui/icon-button {:on-click #(rf/dispatch [::model/open-document case-id (:filename document)])
-                                :disabled edit-mode}
-               [ui/icon-open-in-new]]]
-             [mui/tooltip {:title "remove"}
-              [mui/icon-button {:on-click #(rf/dispatch [::model/remove-file case-id property-id (:filename document)])
-                                :disabled edit-mode}
-               [ui/icon-delete]]]]])
-         documents)
-       [mui/typography {:variant :body1} "no documents uploaded"])
-     [form/upload-button case-id id "upload" {:disabled edit-mode}]]))
+    [mui/paper {:sx {:p 2}}
+      [mui/stack {:spacing 1}
+       [mui/typography {:variant :h6
+                        :style {:color (if edit-mode :grey)}} "valuation documents"]
+
+       [mui/card-content {:style {:height "10rem" :overflow-y :auto :overflow-x :auto :padding 0}}
+        (if (some? documents)
+          (map
+            (fn [document]
+              ^{:key (:filename document)}
+              [mui/stack {:direction :row
+                          :justify-content :space-between
+                          :align-items :center}
+               [mui/link {:variant :body1
+                          :style {:text-decoration :none
+                                  :max-width "75%"
+                                  :overflow :wrap
+                                  :color (if edit-mode :grey)}} (:original-filename document)]
+               [mui/stack {:direction :row :spacing 2}
+                [mui/tooltip {:title "open"}
+                 [mui/icon-button {:on-click #(rf/dispatch [::model/open-document case-id (:filename document)])
+                                   :disabled edit-mode}
+                  [ui/icon-open-in-new]]]
+                [mui/tooltip {:title "remove"}
+                 [mui/icon-button {:on-click #(rf/dispatch [::model/remove-file case-id property-id (:filename document)])
+                                   :disabled edit-mode}
+                  [ui/icon-delete]]]]])
+            documents)
+          [mui/typography {:variant :body1} "no documents uploaded"])]
+       (if edit-mode
+         [mui/button {:disabled true
+                      :end-icon (r/as-element [ui/icon-upload])} "upload"]
+         [form/upload-button case-id id "upload" {:disabled edit-mode}])]]))
 
 (defn edit [{:keys [handle-submit] :as fork-args}]
   (let [prop-id (:id (<< ::model/dialog))
         property (model/get-property prop-id)
         edit-mode model/edit-mode]
     [:form {:on-submit handle-submit}
-     [mui/dialog-content {:style {:width "40vw"}}
+     [mui/dialog-content {:style {:width "50vw"}}
       [mui/stack {:spacing 1}
        [dialog-header (data-util/first-line (:address property))]
        (if @edit-mode
@@ -63,24 +72,47 @@
                       :end-icon (r/as-element [ui/icon-edit])
                       :style {:align-self :flex-start}} "edit property details"])
        [mui/stack {:spacing 2}
-         [mui/stack {:direction :row :spacing 1}
-          [mui/stack {:spacing 1 :style {:width "50%"}}
-           [mui/typography {:variant :h6} "address"]
-           (if @edit-mode
-             [form/edit-address fork-args]
-             [mui/typography {:variant :body1 :style {:white-space :pre}} (:address property)])
-           [mui/typography {:variant :h6} "valuation"]
-           (if @edit-mode
-             [form/value-field fork-args]
-             [mui/typography {:variant :body1 :style {:white-space :pre}} "£" (:valuation property)])]
+        [mui/grid {:container true
+                   :direction :row
+                   :spacing 1
+                   :align-items :stretch}
+         [mui/grid {:item true :xs 6}
+          [mui/typography {:variant :h6} "address"]
+          (if @edit-mode
+            [form/edit-address fork-args]
+            [mui/typography {:variant :body1  :sx {:mt 1} :style {:white-space :pre}} (:address property)])
+          [mui/typography {:variant :h6 :sx {:mt 2}} "valuation"]
+          (if @edit-mode
+            [form/value-field fork-args]
+            [:<>
+             [mui/typography {:variant :body1 :style {:white-space :pre}} "£" (:valuation property)]
+             (when (:estimated-value? property)
+               [mui/typography {:variant :body1 :color theme/teal} "estimated"])])]
+
+
+         [mui/grid {:item true :xs 6 :style {:max-height "50%"}}
           [documents-panel property]]
-         (when (:joint-ownership? property)
-           [mui/stack {:direction :row :spacing 1}
-            [mui/stack {:spacing 0.5 :style {:width "100%"}}
-             [mui/typography {:variant :h6} "co-owner"]
-             (if @edit-mode
-               [form/joint-owner-field fork-args]
-               [mui/typography {:variant :body1 :style {:white-space :pre}} (:joint-owner property)])]])]]]
+         [mui/grid {:item true :xs 6}
+          (if @edit-mode
+            [:<>
+             [mui/typography {:variant :h6} "joint ownership"]
+             [form/joint-owner-field fork-args]]
+            (when (:joint-ownership? property)
+              [:<>
+               [mui/typography {:variant :h6} "joint ownership"]
+               [mui/typography {:variant :body1 :style {:white-space :pre}} (or (:joint-owner property) "please provide details for the other owner(s)")]]))]
+         [mui/grid {:item true :xs 6}
+          [mui/typography {:variant :h6} "insurance details"]
+          (if @edit-mode
+            [form/insured-field fork-args]
+            (if (:insured? property)
+              [mui/stack {:direction :row :spacing 2}
+               [ui/icon-check-base {:style {:color theme/teal}}]
+               [mui/typography {:variant :body1 :color theme/teal} "property is insured"]]
+              [mui/stack {:direction :row :spacing 2}
+               [ui/icon-close {:style {:color theme/orange}}]
+               [mui/typography {:color theme/orange} "property is not insured"]]))]]]]]
+
 
      [mui/dialog-actions
       (if @edit-mode
@@ -97,7 +129,6 @@
     [mui/stack {:spacing 1}
      [mui/typography {:variant :h6} "details"]
      [form/address-field fork-args]
-     [mui/typography {:variant :body1} "Is the property under joint ownership?"]
      [form/joint-owner-field fork-args]
      [form/insured-field fork-args]
      [mui/typography {:variant :h6} "valuation"]
@@ -126,11 +157,12 @@
         case-id (<< ::case-model/case-id)]
     (when (:open dialog)
       (let [property (model/get-property (:id dialog))]
+        property
         (case (:dialog-type dialog)
           :edit
           [mui/dialog default-props
            [form/form {:layout edit
-                       :submit-fn #(print %)
+                       :submit-fn #(rf/dispatch [::model/edit-property case-id (:id dialog) %])
                        :initial-values property}]]
           :add
           [mui/dialog default-props

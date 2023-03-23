@@ -88,10 +88,10 @@
     :fullWidth true
     :required true}])
 
-
 (defn joint-owner-field [{:keys [values handle-change] :as fork-args}]
   (let [joint? (or (:joint-ownership? values) false)]
     [mui/stack {:spacing 0.5}
+     [mui/typography {:variant :body1} "Is the property under joint ownership?"]
      [mui/stack {:direction :row :spacing 0.5 :align-items :center}
       [mui/typography {:variant :body2
                        :color (if joint? theme/off-white :grey)} "no"]

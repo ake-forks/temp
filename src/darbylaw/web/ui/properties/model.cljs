@@ -1,5 +1,6 @@
 (ns darbylaw.web.ui.properties.model
   (:require
+    [clojure.string :as string]
     [fork.re-frame :as fork]
     [medley.core :as medley]
     [re-frame.core :as rf]
@@ -60,7 +61,7 @@
 (rf/reg-event-fx
   ::remove-file
   (fn [_ [_ case-id property-id filename]]
-    #spy/d property-id
+    property-id
     {:http-xhrio
      (ui/build-http
        {:method :post
@@ -88,6 +89,29 @@
      ::ui/notify-user-http-error {:message "add-failure error"
                                   :result error-result}}))
 
+(rf/reg-event-fx ::edit-success
+  (fn [{:keys [db]} [_ case-id {:keys [path] :as _fork-params}]]
+    (reset! edit-mode false)
+    {:db (fork/set-submitting db path false)
+     :fx [[:dispatch [::case-model/load-case! case-id]]]}))
+
+(rf/reg-event-fx ::edit-property
+  (fn [{:keys [db]} [_ case-id property-id {:keys [path values] :as fork-params}]]
+    {:db (fork/set-submitting db path true)
+     :http-xhrio
+     (ui/build-http
+       {:method :post
+        :uri (str "/api/property/" case-id "/edit-property/" property-id)
+        :params (-> values
+                  (select-keys [:address :valuation
+                                :insured? :estimated-value?
+                                :joint-ownership? :joint-owner])
+                  (assoc :address (string/trim (:address values))))
+        :timeout 16000
+        :on-success [::edit-success case-id fork-params]
+        :on-failure [::add-failure fork-params]})}))
+
+
 (def non-file-fields
   [:file-count :address :valuation :joint-ownership? :joint-owner :insured? :estimated-value? :property])
 
@@ -108,7 +132,7 @@
          {:method :post
           :uri (if new-property
                  (str "/api/property/" case-id "/add-property")
-                 (str "/api/property/" case-id "/" (:property values) "/update-property"))
+                 (str "/api/property/" case-id "/update-property/" (:property values)))
           :body (ui/make-form-data (merge
                                      (-> values
                                        (handle-address-value)

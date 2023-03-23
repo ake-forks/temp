@@ -110,12 +110,30 @@
     (add-documents xtdb-node user case-id property-id file-data)
     {:status 204}))
 
+(defn edit-property [{:keys [xtdb-node user path-params body-params]}]
+  (let [case-id (parse-uuid (:case-id path-params))
+        property-id (parse-uuid (:property-id path-params))
+        property-data body-params]
+    (xt-util/exec-tx-or-throw xtdb-node
+      (concat
+        (tx-fns/set-values property-id property-data)
+        (case-history/put-event2 {:case-id case-id
+                                  :property-id property-id
+                                  :user user
+                                  :subject :probate.property
+                                  :op :updated}))))
+  {:status 204})
+
+
+
 (defn routes []
   ["/property/:case-id"
    ["/add-property"
     {:post {:handler (partial add-property :new)}}]
    ["/update-property/:property-id"
-     {:post {:handler (partial add-property :update)}}]
+    {:post {:handler (partial add-property :edit)}}]
+   ["/edit-property/:property-id"
+    {:post {:handler edit-property}}]
    ["/post-document/:property-id"
      {:post {:handler upload-document}}]
    ["/get-document/:filename"
