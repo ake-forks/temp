@@ -86,6 +86,7 @@
    [mui/card-content {:sx {"&:last-child" {:paddingBottom (ui/theme-spacing 1)}}}
     [asset-card-header title]
     (into [:<>] body)]])
+
 (defn menu-asset-add-button
   "anchor = atom
   options = a map of option labels and their on-click functions as key-value pairs"
