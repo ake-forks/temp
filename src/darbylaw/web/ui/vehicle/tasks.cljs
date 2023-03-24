@@ -20,7 +20,7 @@
          ^{:key vehicle-id}
          [layout/task-item
           {:title (str "complete the sale of " registration-number)
-           :body (str "once " registration-number " has been sold, please update our information")
+           :body "once this vehicle has been sold, please update our information"
            :icon-path layout/task-icon
            :on-click #(rf/dispatch [::model/set-dialog-open vehicle-id])}]
 
