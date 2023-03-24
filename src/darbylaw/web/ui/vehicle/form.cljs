@@ -111,18 +111,12 @@
               :hidden true
               :on-change store-fn}]]]])
 
-(defn no-doc-alert [{:keys [errors values attempted-submissions]}]
-  (let [sold (:sold values)]
-    [mui/alert {:severity (if sold
-                            (if (and (get errors [:file-errors])
-                                     (>= attempted-submissions 1))
-                              :error
-                              :warning)
-                            :info)}
-     [mui/alert-title "No documents selected"]
-     (when sold "Minimum of one required")]))
+(defn no-doc-alert []
+  [mui/alert {:severity :info}
+   [mui/alert-title "No documents uploaded"]
+   "We recommend uploading either a receipt from the dealer or a V5 transfer"])
 
-(defn existing-documents [vehicle-id fork-args]
+(defn existing-documents [vehicle-id]
   (let [case-id (<< ::case-model/case-id)
         existing-files (:documents (<< ::model/vehicle vehicle-id))]
     [:<>
@@ -131,7 +125,7 @@
        :store-fn #(let [file (-> % .-target .-files first)]
                     (rf/dispatch [::model/upload-document case-id vehicle-id file]))}]
      (if (empty? existing-files)
-       [no-doc-alert fork-args]
+       [no-doc-alert]
        (->> existing-files
             (map (fn [{:keys [document-id original-filename]}]
                    ^{:key document-id}
@@ -148,7 +142,7 @@
                  (str/starts-with? (name k) "-file-")))
        (into {})))
 
-(defn form-documents [{:keys [values reset set-values] :as fork-args}]
+(defn form-documents [{:keys [values reset set-values]}]
   (r/with-let [file-count (r/atom 0)]
     [:<>
      [document-title
@@ -159,7 +153,7 @@
                     (set-values {file-key file}))}]
      (let [files (find-files values)]
        (if (empty? files)
-         [no-doc-alert fork-args]
+         [no-doc-alert]
          (->> files
               (map (fn [[key file]]
                      ^{:key key}
@@ -186,24 +180,9 @@
     (let [vehicle-id (<< ::model/dialog-context)]
       (if (and (not (nil? vehicle-id))
                (not (= :add vehicle-id)))
-        [existing-documents vehicle-id fork-args]
-        [form-documents fork-args]))
+        [existing-documents vehicle-id]
+        [form-documents]))
     [submit-buttons fork-args]]])
-
-(defn min-one-files? [{:keys [fake-selector]}]
-  (v/predicate (fn [data]
-                 (let [context (<< ::model/dialog-context)
-                       files (if (and (not= :add context)
-                                      (not (nil? context)))
-                               (:documents (<< ::model/vehicle context))
-                               (vals (find-files data)))]
-                   (< (count files) 1)))
-               {:type ::min-one-files?
-                :selector fake-selector}))
-
-(defmethod v/english-translation ::min-one-files?
-  [_]
-  (str "Must have more than one files."))
 
 (def data-validation
   (v/join
@@ -212,7 +191,6 @@
       (v/attr [:estimated-value] (v-util/currency?)))
     (v-util/v-when #(true? (:sold %))
       (v/join
-        (min-one-files? {:fake-selector [:file-errors]})
         (v/attr [:sold-at] (v/chain
                              (v-util/not-nil)
                              (v-util/valid-dayjs-date)))
