@@ -13,12 +13,21 @@
          :body "if there are any vehicles that are part of the estate, please add them"
          :icon-path layout/task-icon
          :on-click #(rf/dispatch [::model/set-dialog-open :add])}])
-     (for [{:keys [vehicle-id registration-number sold]}
+     (for [{:keys [vehicle-id registration-number sold documents]}
            vehicles]
-       (when (not sold)
+       (cond
+         (not sold)
          ^{:key vehicle-id}
          [layout/task-item
           {:title (str "complete the sale of " registration-number)
            :body (str "once " registration-number " has been sold, please update our information")
+           :icon-path layout/task-icon
+           :on-click #(rf/dispatch [::model/set-dialog-open vehicle-id])}]
+
+         (and sold (< (count documents) 1))
+         ^{:key vehicle-id}
+         [layout/task-item
+          {:title (str "upload receipt for " registration-number)
+           :body "we need a copy of the receipt for this vehicle"
            :icon-path layout/task-icon
            :on-click #(rf/dispatch [::model/set-dialog-open vehicle-id])}]))]))
