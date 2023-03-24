@@ -141,7 +141,7 @@
    ["/add-property"
     {:post {:handler (partial add-property :new)}}]
    ["/update-property/:property-id"
-    {:post {:handler (partial add-property :edit)}}]
+    {:post {:handler (partial add-property :update)}}]
    ["/edit-property/:property-id"
     {:post {:handler edit-property}}]
    ["/remove-property/:property-id"
