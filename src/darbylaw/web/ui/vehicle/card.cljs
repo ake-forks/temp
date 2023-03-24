@@ -1,7 +1,7 @@
 (ns darbylaw.web.ui.vehicle.card
   (:require
     [re-frame.core :as rf]
-    [darbylaw.web.util.dashboard :refer [asset-add-button asset-card asset-item]]
+    [darbylaw.web.ui.app-layout :refer [asset-add-button asset-card asset-item]]
     [darbylaw.web.ui.vehicle.model :as model]
     [darbylaw.web.ui.vehicle.dialog :as dialog]))
 

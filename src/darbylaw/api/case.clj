@@ -234,7 +234,19 @@
 
    {'(:probate.property/_case {:as :properties})
     ['(:xt/id {:as :id})
-     :address]}
+     :address
+     :valuation
+     :joint-ownership?
+     :joint-owner
+     :estimated-value?
+     :owned?
+     :insured?
+     {'(:probate.property-doc/_property
+         {:as :documents})
+      ['(:xt/id {:as :filename})
+       :original-filename
+       :uploaded-at
+       :uploaded-by]}]}
 
    {'(:probate.identity-check.uk-aml/_case
        {:as :uk-aml
