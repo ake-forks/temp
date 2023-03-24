@@ -38,6 +38,7 @@
    [form/text-field fork-args
     {:name :value
      :label "amount"
+     :on-change #(set-values {:value (-> % fork/retrieve-event-value form/ensure-negative)})
      :full-width true
      :required true
      :InputProps
@@ -47,8 +48,7 @@
    [mui/form-control-label
     {:label "debt?"
      :checked (-> values :value (or "") (form/starts-with? "-"))
-     :on-click #(set-values {:value (-> values :value form/toggle-negative)})
-     :control (r/as-element [mui/switch])}]])
+     :control (r/as-element [mui/switch {:disabled true}])}]])
 
 (defn paid-field [{:keys [values handle-change] :as fork-args}]
   [mui/form-control-label

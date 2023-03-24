@@ -16,6 +16,11 @@
     (subs s 1)
     (str "-" s)))
 
+(defn ensure-negative [s]
+  (if (starts-with? s "-")
+    s
+    (str "-" s)))
+
 (defn get-error [k {:keys [touched errors attempted-submissions] :as _fork-args}]
   (and (pos? attempted-submissions)
        (touched k)
