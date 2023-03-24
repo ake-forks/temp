@@ -5,6 +5,7 @@
     [re-frame.core :as rf]
     [darbylaw.web.ui.funeral.model :as funeral-model]
     [darbylaw.web.ui.funeral.util :as util]
+    [darbylaw.web.util.form :as form]
     [darbylaw.web.ui.case-model :as case-model]
     [darbylaw.web.ui :as ui]
     [darbylaw.web.ui.funeral.account.form :as account-form]))
@@ -21,7 +22,7 @@
          {:method :put
           :uri (str "/api/case/" case-id "/funeral/account")
           :url-params query-values
-          :body (util/->FormData files)
+          :body (form/->FormData files)
           ;; TODO:
           :on-success [::submit-success case-id fork-params]
           :on-failure [::submit-failure case-id fork-params]})})))

@@ -8,7 +8,8 @@
             [darbylaw.api.case-history :as case-history]
             [darbylaw.api.util.xtdb :as xt-util]
             [darbylaw.api.util.tx-fns :as tx-fns]
-            [darbylaw.api.bill.data :as bill-data]))
+            [darbylaw.api.bill.data :as bill-data]
+            [darbylaw.api.vehicle.data :as vehicle-data]))
 
 (def date--schema
   [:re #"^\d{4}-\d{2}-\d{2}$"])
@@ -267,7 +268,16 @@
    {:identity-user-docs
     ['(:xt/id {:as :document-id})
      :original-filename
-     :uploaded-by]}])
+     :uploaded-by]}
+
+   {:vehicles
+    (into
+      ['(:xt/id {:as :vehicle-id})
+       {:documents
+        ['(:xt/id {:as :document-id})
+         :original-filename
+         :uploaded-by]}]
+      vehicle-data/props)}])
 
 (defn get-cases [{:keys [xtdb-node]}]
   (ring/response

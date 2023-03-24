@@ -17,6 +17,7 @@
     [darbylaw.web.ui.tasks-tile :as tasks]
     [darbylaw.web.ui.keydocs.dialog :as key-docs]
     [darbylaw.web.ui.identity.dialog :as identity-dialog]
+    [darbylaw.web.ui.vehicle.card :as vehicle-card]
     [re-frame.core :as rf]
     [reagent.core :as r]
     [reagent.format :as format]
@@ -58,8 +59,6 @@
           (format/format "%.2f")
           (str "£"))]]]
      [mui/divider]]))
-
-
 
 (defn bank-card [current-case]
   [c/asset-card {:title "bank accounts"}
@@ -235,6 +234,7 @@
      [buildsoc-card]
      [bills-card]
      [funeral-card current-case]
+     [vehicle-card/card]
      [property/properties-card]]
     [mui/stack {:spacing 2 :style {:width "30%"}}
      [tasks/tasks-tile]

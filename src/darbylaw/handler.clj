@@ -31,6 +31,7 @@
     [darbylaw.api.bank-notification :as bank-notification-api]
     [darbylaw.api.bank-notification.mailing-controls :as mailing]
     [darbylaw.api.smart-search :as smart-search-api]
+    [darbylaw.api.vehicle :as vehicle-api]
     [darbylaw.api.properties :as properties-api]
     [darbylaw.middleware.xtdb :refer [wrap-xtdb-node]]
     [darbylaw.middleware.auth :refer [create-auth-middleware add-user-info authenticated?]]))
@@ -89,6 +90,7 @@
      (bank-notification-api/routes)
      (mailing/routes)
      (smart-search-api/routes)
+     (vehicle-api/routes)
      (properties-api/routes)]]])
 
 (defn make-router []
@@ -106,14 +108,14 @@
                           :access-control-allow-origin [#".*"]
                           :access-control-allow-methods [:get :put :post :delete :patch]]
                          parameters/parameters-middleware
-                         #_middleware-multipart/multipart-middleware
-                         ring-middleware-multipart/wrap-multipart-params
                          muuntaja/format-negotiate-middleware
                          muuntaja/format-response-middleware
                          coercion/coerce-exceptions-middleware
                          muuntaja/format-request-middleware
                          coercion/coerce-request-middleware
-                         coercion/coerce-response-middleware]}}))
+                         coercion/coerce-response-middleware
+                         ring-middleware-multipart/wrap-multipart-params
+                         middleware-multipart/multipart-middleware]}}))
 
 (comment
   (->> (reitit.core/match-by-path (make-router) "/api/case/1234/buildsoc/4321/generate-notification-letter")

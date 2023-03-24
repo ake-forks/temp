@@ -50,6 +50,13 @@
 (defn common-text-field-props [k fork-args]
   (common-input-field-props k fork-args {:error-icon? true}))
 
+(defn ->FormData
+  [values]
+  (let [form-data (js/FormData.)]
+    (doseq [[k v] values]
+      (.append form-data (name k) v))
+    form-data))
+
 
 
 ;; >> Wrapped MUI Fields
