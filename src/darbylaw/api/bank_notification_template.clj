@@ -10,7 +10,8 @@
     [darbylaw.api.bank-list :as banks]
     [darbylaw.api.buildsoc-list :as buildsocs]
     [stencil.api :as stencil]
-    [clojure.java.io :as io]))
+    [clojure.java.io :as io])
+  (:import (java.time LocalDate)))
 
 (defn generate-address-vector [type data]
   (case type
@@ -101,8 +102,8 @@
                               (merge (generate-mailing-address bank-type bank-id))))
 
           (assoc :date (date-util/long-date (jt/local-date) false))
-          (assoc-in [:deceased :date-of-death] (date-util/long-date-from-string
-                                                 (:date-of-death (:deceased case-data))
+          (assoc-in [:deceased :date-of-death] (date-util/long-date
+                                                 (LocalDate/parse (:date-of-death (:deceased case-data)))
                                                  false)))
 
         (= bank-type :buildsoc)
@@ -113,10 +114,10 @@
                              (merge (generate-mailing-address bank-type bank-id))))
 
           (assoc :date (date-util/long-date (jt/local-date) false))
-          (assoc-in [:deceased :date-of-death] (date-util/long-date-from-string
-                                                 (:date-of-death (:deceased case-data))
+          (assoc-in [:deceased :date-of-death] (date-util/long-date
+                                                 (LocalDate/parse
+                                                   (:date-of-death (:deceased case-data)))
                                                  false)))))))
-
 
 (mount/defstate templates
   :start {:bank (stencil/prepare (io/resource "darbylaw/templates/bank-notification.docx"))

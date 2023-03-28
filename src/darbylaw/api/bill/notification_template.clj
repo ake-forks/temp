@@ -9,7 +9,8 @@
     [darbylaw.api.util.dates :as date-util]
     [xtdb.api :as xt]
     [darbylaw.api.util.xtdb :as xt-util]
-    [mount.core :as mount]))
+    [mount.core :as mount])
+  (:import (java.time LocalDate)))
 
 (defn generate-utility-address [company]
   (let [data (bill-data/get-company-info company)
@@ -85,8 +86,9 @@
         (-> case-data
           (assoc :date (date-util/long-date (jt/local-date) false))
           (assoc :property property-data)
-          (assoc-in [:deceased :date-of-death] (date-util/long-date-from-string
-                                                 (:date-of-death (:deceased case-data))
+          (assoc-in [:deceased :date-of-death] (date-util/long-date
+                                                 (LocalDate/parse
+                                                   (:date-of-death (:deceased case-data)))
                                                  false)))
         (case asset-type
           :utility
