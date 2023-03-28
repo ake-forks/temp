@@ -16,6 +16,11 @@
     (subs s 1)
     (str "-" s)))
 
+(defn ensure-negative [s]
+  (if (starts-with? s "-")
+    s
+    (str "-" s)))
+
 (defn get-error [k {:keys [touched errors attempted-submissions] :as _fork-args}]
   (and (pos? attempted-submissions)
        (touched k)
@@ -49,6 +54,13 @@
 
 (defn common-text-field-props [k fork-args]
   (common-input-field-props k fork-args {:error-icon? true}))
+
+(defn ->FormData
+  [values]
+  (let [form-data (js/FormData.)]
+    (doseq [[k v] values]
+      (.append form-data (name k) v))
+    form-data))
 
 
 

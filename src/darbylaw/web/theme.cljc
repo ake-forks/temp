@@ -16,7 +16,6 @@
 (def lilac "#B08BBF")
 (def rich-black "#121A20")
 (def off-white "#EEEEEE")
-(def pale-grey "#DADADA")
 
 (def lime "#8FBF2C")
 
@@ -33,8 +32,8 @@
     :h2 {:font-weight 700}
     :h3 {:font-weight 700}
     :h4 {:font-weight 700}
-    :h5 {:font-weight 700}
-    :h6 {:font-weight 700}
+    :h5 {:font-weight 600}
+    :h6 {:font-weight 600}
     :button {:font-weight 600}}
 
    :components
@@ -46,6 +45,10 @@
                   :style {:backgroundColor rich-black
                           :color off-white}}
                  {:props {:variant :text}}]}
+    :MuiIconButton {:defaultProps {:color :primary}
+                    :variants
+                    [{:props {:variant :outlined}
+                      :style {:border (str "1px solid " teal)}}]}
     :MuiTextField {:defaultProps {:variant :filled}}
     :MuiSelect {:defaultProps {:variant :filled}}
-    :MuiAppBar {:styleOverrides {:root {:background-color :white}}}}})
+    :MuiAppBar {:defaultProps {:color :inherit}}}})

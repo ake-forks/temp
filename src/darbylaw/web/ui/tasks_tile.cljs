@@ -1,5 +1,6 @@
 (ns darbylaw.web.ui.tasks-tile
   (:require
+    [darbylaw.web.ui :as ui]
     [reagent-mui.components :as mui]
     [re-frame.core :as rf]
     [kee-frame.core :as kf]
@@ -10,7 +11,8 @@
     [darbylaw.web.ui.deceased-details-form :as dd-form]
     [darbylaw.web.ui.banking.tasks :as banking-tasks]
     [darbylaw.web.ui.keydocs.tasks :refer [keydocs-tasks]]
-    [darbylaw.web.ui.identity.tasks :refer [identity-tasks]]))
+    [darbylaw.web.ui.identity.tasks :refer [identity-tasks]]
+    [darbylaw.web.ui.vehicle.tasks :refer [vehicle-tasks]]))
 
 (defn valid? [validations data]
   (->> data
@@ -29,7 +31,7 @@
 
 (defn tasks-tile []
   [mui/card {:style {:height "350px" :background-color theme/off-white}}
-   [mui/card-content
+   [mui/card-content {:sx {:paddingTop (ui/theme-spacing 1.5)}}
     [mui/typography {:variant :h5 :sx {:mb 1}}
      "tasks"]
     [mui/divider]
@@ -38,6 +40,7 @@
      [case-tasks @(rf/subscribe [::case-model/current-case])]
      [keydocs-tasks]
      [banking-tasks/banks]
-     [banking-tasks/buildsocs]]]])
+     [banking-tasks/buildsocs]
+     [vehicle-tasks]]]])
 
 

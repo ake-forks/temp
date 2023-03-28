@@ -8,6 +8,7 @@
             [darbylaw.api.bank-notification :refer [blank-page]]
             [darbylaw.api.bank-notification-template :refer [templates]]
             [darbylaw.api.death-cert-verif-template :refer [death-certificate-verification-form-template]]
+            [darbylaw.api.util.files :refer [create-temp-file]]
             [xtdb.api :as xt]
             [cognitect.transit :as transit]
             [clojure.string :as str]))
@@ -71,3 +72,8 @@
   (assert (<= 200 (:status resp) 299)
     (str "Expected success, but received HTTP status " (:status resp)))
   resp)
+
+(defn test-temp-file [content]
+  (let [file (create-temp-file "test-file" ".txt")]
+    (spit file content)
+    file))

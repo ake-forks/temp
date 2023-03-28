@@ -206,7 +206,8 @@
 
 (rf/reg-event-fx ::review-notification-letter--success
   (fn [{:keys [db]} [_ case-id banking-id]]
-    {:fx [[:dispatch [::case-model/load-case! case-id]]]}))
+    {:fx [[:dispatch [::case-model/load-case! case-id]]
+          [:dispatch [::hide-dialog]]]}))
 
 (rf/reg-event-fx ::review-notification-letter
   (fn [{:keys [db]} [_ type send-action case-id banking-id letter-id]]
@@ -239,9 +240,10 @@
                 {:on-success [::reset-file-uploading]}]}))
 
 (rf/reg-event-fx ::upload-failure
-  (fn [_ [_ response]]
+  (fn [_ [_ error-result]]
     {:dispatch [::reset-file-uploading]
-     ::ui/notify-user-http-error {:message "Error uploading. Check document file type."}}))
+     ::ui/notify-user-http-error {:message "Error uploading."
+                                  :result error-result}}))
 
 (rf/reg-event-fx ::upload-file
   (fn [_ [_ type case-id banking-id file suffix]]

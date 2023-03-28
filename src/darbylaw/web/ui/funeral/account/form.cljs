@@ -38,6 +38,7 @@
    [form/text-field fork-args
     {:name :value
      :label "amount"
+     :on-change #(set-values {:value (-> % fork/retrieve-event-value form/ensure-negative)})
      :full-width true
      :required true
      :InputProps
@@ -47,8 +48,7 @@
    [mui/form-control-label
     {:label "debt?"
      :checked (-> values :value (or "") (form/starts-with? "-"))
-     :on-click #(set-values {:value (-> values :value form/toggle-negative)})
-     :control (r/as-element [mui/switch])}]])
+     :control (r/as-element [mui/switch {:disabled true}])}]])
 
 (defn paid-field [{:keys [values handle-change] :as fork-args}]
   [mui/form-control-label
@@ -65,19 +65,25 @@
   [case-id file-name]
   (str "/api/case/" case-id "/funeral/account/" file-name))
 
-(defn receipt-field [fork-args]
+(defn receipt-field [{:keys [touched errors] :as fork-args}]
   (let [case-id @(rf/subscribe [::case-model/case-id])
         account @(rf/subscribe [::funeral-model/account])]
-    [mui/stack {:direction :row
-                :spacing 1
-                :justify-content :space-between}
-     [util/upload-button fork-args
-      {:name :receipt
-       :full-width true}]
-     [util/download-button
-      {:full-width true
-       :href (funeral-file-url case-id "receipt")
-       :disabled (not (contains? account :receipt))}]]))
+    [mui/stack {:spacing 1}
+     [mui/stack {:direction :row
+                 :spacing 1
+                 :justify-content :space-between}
+      [util/upload-button fork-args
+       {:name :receipt
+        :full-width true}]
+      [util/download-button
+       {:full-width true
+        :href (funeral-file-url case-id "receipt")
+        :disabled (not (contains? account :receipt))}]]
+     (when (and (touched :receipt)
+                (get errors [:receipt]))
+       [mui/alert {:severity :error}
+        [mui/alert-title "validation error"]
+        "receipt is required"])]))
 
 (defn invoice-field [fork-args]
   (let [case-id @(rf/subscribe [::case-model/case-id])
@@ -128,7 +134,9 @@
     (v/attr [:value] (v/chain
                        (v/present)
                        (v-util/currency?)
-                       (v-util/string-negative?)))))
+                       (v-util/string-negative?)))
+    (v-util/v-when #(true? (:paid %))
+      (v/attr [:receipt] (v-util/not-nil)))))
 
 (def default-values
   {:value "-"})

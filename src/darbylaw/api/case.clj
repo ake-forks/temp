@@ -9,7 +9,7 @@
             [darbylaw.api.util.xtdb :as xt-util]
             [darbylaw.api.util.tx-fns :as tx-fns]
             [darbylaw.api.bill.data :as bill-data]
-            [darbylaw.api.smart-search.utils :as ss-utils]))
+            [darbylaw.api.vehicle.data :as vehicle-data]))
 
 (def date--schema
   [:re #"^\d{4}-\d{2}-\d{2}$"])
@@ -169,7 +169,7 @@
    :status
    :result
    :report
-   :dashboard])
+   :links-self])
 
 (def common-case-eql
   ['(:xt/id {:as :id})
@@ -234,7 +234,19 @@
 
    {'(:probate.property/_case {:as :properties})
     ['(:xt/id {:as :id})
-     :address]}
+     :address
+     :valuation
+     :joint-ownership?
+     :joint-owner
+     :estimated-value?
+     :owned?
+     :insured?
+     {'(:probate.property-doc/_property
+         {:as :documents})
+      ['(:xt/id {:as :filename})
+       :original-filename
+       :uploaded-at
+       :uploaded-by]}]}
 
    {'(:probate.identity-check.uk-aml/_case
        {:as :uk-aml
@@ -256,21 +268,23 @@
    {:identity-user-docs
     ['(:xt/id {:as :document-id})
      :original-filename
-     :uploaded-by]}])
+     :uploaded-by]}
 
-(defn enrich-case [c]
-  (-> c
-      (m/update-existing :uk-aml (partial ss-utils/add-dashboard-link "/aml/results/"))
-      (m/update-existing :fraudcheck (partial ss-utils/add-dashboard-link "/aml/results/"))
-      (m/update-existing :smartdoc (partial ss-utils/add-dashboard-link "/doccheck/results/"))))
+   {:vehicles
+    (into
+      ['(:xt/id {:as :vehicle-id})
+       {:documents
+        ['(:xt/id {:as :document-id})
+         :original-filename
+         :uploaded-by]}]
+      vehicle-data/props)}])
 
 (defn get-cases [{:keys [xtdb-node]}]
   (ring/response
     (->> (xt/q (xt/db xtdb-node)
            {:find [(list 'pull 'case common-case-eql)]
             :where '[[case :type :probate.case]]})
-         (map first)
-         (map enrich-case))))
+         (map first))))
 
 (def get-case__query
   {:find [(list 'pull 'case common-case-eql)]
@@ -293,7 +307,6 @@
         (assert (= 1 (count results)))
         (-> results
             ffirst
-            enrich-case
             ring/response)))))
 
 (defn get-case-history [{:keys [xtdb-node path-params]}]

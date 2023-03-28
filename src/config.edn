@@ -18,7 +18,7 @@
                   :test :none}}
 
  :doc-store
- {:s3-bucket #profile {:default "darbylaw-docs-test"
+ {:s3-bucket #profile {:default "darbylaw-docs-dev"
                        #{:staging :production} #env DOC_STORE_BUCKET}}
 
  :mailing-service
@@ -41,9 +41,9 @@
                                           :test true
                                           :dev true}
                       :port 2222}}
- :smart-search #profile {#{:production :staging} #edn #env SMART_SEARCH_CONFIG
-                         :default {:company-name "Darby & Darby"
-                                   :public-key "2dd0e593557d73fe4753aed4caa7a0b8"
-                                   :service-user "osm@juxt.pro"
-                                   :base-url {:api "https://sandbox-api.smartsearchsecure.com"
-                                              :dashboard "https://sandbox.smartsearchsecure.com"}}}}
+ :smart-search {:fake {:company-name "Darby & Darby"
+                       :public-key "2dd0e593557d73fe4753aed4caa7a0b8"
+                       :service-user "osm@juxt.pro"
+                       :api-base-url "https://sandbox-api.smartsearchsecure.com"}
+                :real #profile {#{:production :staging} #edn #env SMART_SEARCH_CONFIG
+                                :default #ref [:smart-search :fake]}}}

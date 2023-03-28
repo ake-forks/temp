@@ -21,7 +21,7 @@
   (v/attr [:roll-number] (v/present)))
 
 (def currency-amount
-  (v/matches #"-?[1-9][0-9]*(\.[0-9]{2})?"))
+  (v/matches #"-?[0-9]*(\.[0-9]{2})?"))
 
 (def est-value-validation
   (v/attr [:estimated-value] currency-amount))

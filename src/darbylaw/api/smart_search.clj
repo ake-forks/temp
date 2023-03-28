@@ -17,18 +17,18 @@
 
 ;; >> Handlers
 
-(defn get-check-data [xtdb-node case-id]
-  (let [{:keys [case-ref pr-info]}
-        (xt/pull (xt/db xtdb-node)
-          '[(:reference {:as :case-ref})
-            {(:probate.case/personal-representative 
-              {:as :pr-info})
-             [*]}]
-          case-id)]
-    {:case-ref case-ref
-     :pr-info pr-info}))
+(defn get-case-data [xtdb-node case-id]
+  (xt/pull (xt/db xtdb-node)
+    '[(:reference {:as :case-ref})
+      :fake
+      {(:probate.case/personal-representative {:as :pr-info})
+       [*]}]
+    case-id))
 
-(defn ->aml-data [{:keys [case-ref pr-info]}]
+(comment
+  (get-case-data darbylaw.xtdb-node/xtdb-node #uuid"cd5ed701-9952-4c78-ad02-8bcf825b9980"))
+
+(defn case->aml-data [{:keys [case-ref pr-info]}]
   {:client_ref case-ref
    :risk_level "high"
    :name {:title (:title pr-info)
@@ -48,7 +48,7 @@
                         (when street2 {:street_2 street2})
                         (when region {:region region})))]})
 
-(defn ->doccheck-data [{:keys [case-ref pr-info]}]
+(defn case->doccheck-data [{:keys [case-ref pr-info]}]
   {:client_ref case-ref
    :sanction_region "gbr"
    :name {:title (:title pr-info)
@@ -76,7 +76,7 @@
                 "basic_selfie")
    :mobile_number (:phone pr-info)})
 
-(defn ->fraudcheck-data [{:keys [case-ref pr-info]}]
+(defn case->fraudcheck-data [{:keys [case-ref pr-info]}]
   {:client_ref case-ref
    :sanction_region "gbr"
    :name {:title (:title pr-info)
@@ -104,61 +104,67 @@
                           check-id
                           {:xt/id check-id
                            :check-type check-type})]
-    (tx-fns/set-values check-id check-data)))
+    [[::xt/put check-data]]))
 
 (defn response->check-data [response]
-  (-> response
-      (get-in [:body :data :attributes])
-      (select-keys [:result :status :ssid])))
+  (-> (get-in response [:body :data :attributes])
+    (select-keys [:result :status :ssid])
+    (assoc :links-self (get-in response [:body :data :links :self]))))
 
 (defn check [{:keys [xtdb-node user parameters]}]
   (let [case-id (get-in parameters [:path :case-id])
-        {:keys [case-ref] :as check-data} (get-check-data xtdb-node case-id)
+        {:keys [case-ref fake] :as case-data} (get-case-data xtdb-node case-id)
+        ss-client (ss-api/client-for-env (if fake :fake :real))
+        _ (log/debug "Running identity checks in env" (if fake :fake :real))
 
         ;; We perform each of the checks in their own try catches as they can independently fail
         ;; But even if they do fail we still want to save their results in one transaction so that the history will be updated correctly
         aml-data
         (try
-          (-> check-data
-              ->aml-data
-              ss-api/aml
-              response->check-data)
+          (-> case-data
+            case->aml-data
+            ss-api/aml-request
+            ss-client
+            response->check-data)
           (catch Exception e
             (log/error e "Failed UK AML API Call")
             nil))
         fraudcheck-data
         (try
           (when-let [aml-ssid (:ssid aml-data)]
-            (-> check-data
-                ->fraudcheck-data
-                (->> (ss-api/fraudcheck "aml" aml-ssid))
-                response->check-data))
+            (-> case-data
+              case->fraudcheck-data
+              (->> (ss-api/fraudcheck-request "aml" aml-ssid))
+              ss-client
+              response->check-data))
           (catch Exception e
             (log/error e "Failed Fraudcheck API Call")
             nil))
         smartdoc-data
         (try
-          (-> check-data
-              ->doccheck-data
-              ss-api/doccheck
-              response->check-data)
+          (-> case-data
+            case->doccheck-data
+            ss-api/doccheck-request
+            ss-client
+            response->check-data)
           (catch Exception e
             (log/error e "Failed SmartDoc API Call")
             nil))
 
         aml-filename
         (try
-          (let [export-resp (ss-api/export-pdf-base64 (:ssid aml-data))
-                base64 (get-in export-resp [:body :data :attributes :base64])
-                bytes (decode-base64 base64)
+          (when-let [aml-ssid (:ssid aml-data)]
+            (let [export-resp (ss-client (ss-api/export-pdf-base64-request aml-ssid))
+                  base64 (get-in export-resp [:body :data :attributes :base64])
+                  bytes (decode-base64 base64)
 
-                document-id (random-uuid)
-                filename (str case-ref ".identity.aml-report." document-id ".pdf")]
-            (doc-store/store
-              (str case-id "/" filename)
-              bytes
-              {:content-type "application/pdf"})
-            filename)
+                  document-id (random-uuid)
+                  filename (str case-ref ".identity.aml-report." document-id ".pdf")]
+              (doc-store/store
+                (str case-id "/" filename)
+                bytes
+                {:content-type "application/pdf"})
+              filename))
           (catch Exception e
             (log/error e "Failed to store AML report")
             nil))
@@ -169,14 +175,13 @@
                     (nil? aml-filename))]
     (xt-util/exec-tx xtdb-node
       (concat
-        (->> [[:uk-aml (assoc aml-data :report aml-filename)]
-              [:fraudcheck fraudcheck-data]
-              [:smartdoc smartdoc-data]]
-             ;; Remove failed checks
-             (filter second)
-             ;; Convert to transactions
-             (map #(apply check-tx case-id %))
-             (apply concat))
+        (when aml-data
+          (check-tx case-id :uk-aml (assoc aml-data
+                                      :report aml-filename)))
+        (when fraudcheck-data
+          (check-tx case-id :fraudcheck fraudcheck-data))
+        (when smartdoc-data
+          (check-tx case-id :smartdoc smartdoc-data))
         (case-history/put-event2
           {:case-id case-id
            :user user

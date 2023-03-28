@@ -2,33 +2,35 @@
   (:require
     [reagent-mui.components :as mui]
     [darbylaw.web.ui :as ui]
-    [darbylaw.web.styles :as styles]
     [reagent.core :as r]
     [re-frame.core :as rf]
     [kee-frame.core :as kf]
     [darbylaw.web.ui.case-model :as case-model]
-    [darbylaw.web.theme :as theme]))
+    [darbylaw.web.theme :as theme]
+    [reagent.format :as format]))
 
-(defn bring-to-front [theme]
-  (inc (.. theme -zIndex -drawer)))
+(defn navbar-placeholder []
+  [mui/toolbar {:variant :dense}])
 
 (defn navbar []
   (let [case-id @(rf/subscribe [::case-model/case-id])
         nickname @(rf/subscribe [::case-model/nickname])]
-    [mui/app-bar {:sx {:zIndex bring-to-front}
-                  :class (styles/navbar)}
+    [mui/app-bar {:elevation 2}
      [mui/container {:max-width :xl}
-      [mui/toolbar {:variant :dense}
-       [mui/stack {:direction :row :spacing 2}
+      [mui/toolbar {:variant :dense
+                    :disableGutters true}
+       [mui/stack {:direction :row
+                   :spacing 2
+                   :align-items :center}
         [mui/link {:variant :h6
                    :sx {:color theme/rich-black}
                    :underline :none
                    :href (kf/path-for [:dashboard {:case-id case-id}])}
          "probate-tree"]
         [mui/button {:variant :outlined
-                     :startIcon (r/as-element [ui/icon-arrow-back-sharp])
+                     :startIcon (r/as-element [ui/icon-admin-panel-settings-outlined])
                      :href (kf/path-for [:admin])}
-         "Back to admin"]]
+         "admin"]]
        [mui/box {:style {:flex-grow 1}}]
        [mui/button {:start-icon (r/as-element [ui/icon-person-outline])
                     :style {:textTransform :none
@@ -39,35 +41,113 @@
          nickname]]
        #_(ui/???_TO_BE_DEFINED_??? "do we replace probate-tree with a logo img? black or colourful?")]]]))
 
-(def task-icon "/images/green.png")
-(defn task-item [{:keys [title body icon-path on-click href]}]
-  [:<>
-   [mui/card-action-area {:on-click on-click :href href}
-    [mui/stack {:direction :row
-                :spacing 1
-                :style {:margin-top "0.25rem"
-                        :margin-bottom "0.5rem"}}
-     [mui/box {:style {:align-self :center :margin "0.5rem"}}
-      [:img {:src icon-path :width "30px" :height "30px"}]]
-     [mui/stack
-      [mui/typography {:variant :h6 :font-weight 600} title]
-      [mui/typography {:variant :body1} body]]]]
-   [mui/divider]])
-
 (defn footer []
   [:<>
    [mui/app-bar {:position :fixed
-                 :sx {:top "auto" :bottom 0
-                      :zIndex bring-to-front}
-                 :class (styles/footer)}
+                 :elevation 2
+                 :sx {:top "auto"
+                      :bottom 0}}
     [mui/container {:max-width :xl}
      [mui/toolbar {:variant :dense}
-      [mui/typography {:variant :body1}
+      [mui/typography {:variant :body1
+                       :color :text.disabled}
        "2022 probate-tree. All rights reserved."]
       [mui/box {:style {:flex-grow 1}}]
       [mui/link {:variant :body2
-                 :underline :none}
+                 :underline :none
+                 :color :text.disabled}
        "terms and conditions"]]]]
    ;; Fixes footer obscuring content at the bottom of the page
    ;; See https://mui.com/material-ui/react-app-bar/#fixed-placement
-   [mui/toolbar]]) 
+   [mui/toolbar {:variant :dense}]])
+
+;Dashboard cards
+(defn asset-add-button [{:keys [title on-click]}]
+  [mui/button {:onClick on-click
+               :startIcon (r/as-element [ui/icon-add])
+               :size :large
+               :sx {:width 1
+                    :justify-content :flex-start
+                    :fontSize :body1.fontSize}}
+   (or title "add")])
+
+(defn asset-card-header [title]
+  [:<>
+   [mui/typography {:variant :h5
+                    :sx {:font-weight 600
+                         :mb 1}}
+    title]
+   [mui/divider]])
+
+(defn asset-card [{:keys [title _on-add]} & body]
+  [mui/card {:sx {:border-style :solid
+                  :border-width 1
+                  :border-color :divider}}
+   [mui/card-content {:sx {"&:last-child" {:paddingBottom (ui/theme-spacing 1)}}}
+    [asset-card-header title]
+    (into [:<>] body)]])
+
+(defn menu-asset-add-button
+  "anchor = atom
+  options = a map of option labels and their on-click functions as key-value pairs"
+  [anchor options]
+  [:<>
+   [asset-add-button
+    {:title "add"
+     :on-click #(reset! anchor (ui/event-currentTarget %))}]
+   [mui/menu {:open (some? @anchor)
+              :anchor-el @anchor
+              :on-close #(reset! anchor nil)
+              :anchor-origin {:vertical "bottom"
+                              :horizontal "left"}
+              :transform-origin {:vertical "top"
+                                 :horizontal "left"}}
+    (map (fn [[k v]]
+           ^{:key k}
+           [mui/menu-item {:on-click v} k])
+      options)]])
+
+;This function here or a 'utils' ns?
+(defn format-currency
+  [value]
+  (format/format "%.2f" value))
+(defn asset-item [{:keys [title value on-click icon indent no-divider]}]
+  [mui/box
+   [mui/card-action-area {:on-click on-click
+                          :sx {:padding-top 1 :padding-bottom 1}}
+    [mui/stack (merge
+                 {:direction :row
+                  :spacing 2
+                  :justify-content :space-between}
+                 (when indent
+                   {:sx {:pl (* indent 2)}}))
+     (if (string? icon)
+       [mui/box {:component :img
+                 :src icon
+                 :sx {:width 25 :mr 1}}]
+       icon)
+     [mui/typography {:variant :body1
+                      :noWrap true
+                      :sx {:width "100%"}}
+      title]
+     (when (number? value)
+       [mui/typography {:variant :body1
+                        :sx {:font-weight :bold}}
+        (str "£" (format-currency value))])]]
+   (when-not no-divider
+     [mui/divider])])
+
+;Tasks
+(def task-icon "/images/green.png")
+
+(defn task-item [{:keys [title body icon-path on-click href]}]
+  [:<>
+   [mui/list-item (merge {:on-click on-click
+                          :href href
+                          :disableGutters true}
+                         (when (or on-click href)
+                           {:sx {:cursor :pointer}}))
+    [mui/list-item-icon [:img {:src icon-path :width "30px" :height "30px"}]]
+    [mui/list-item-text {:primary title
+                         :secondary body}]]
+   [mui/divider]])

@@ -2,6 +2,7 @@
   (:require
     [reagent-mui.icons.account-balance]
     [reagent-mui.icons.add]
+    [reagent-mui.icons.admin-panel-settings-outlined]
     [reagent-mui.icons.directions-run]
     [reagent-mui.icons.playlist-play]
     [reagent-mui.icons.pending]
@@ -42,6 +43,7 @@
     [reagent-mui.icons.close]
     [reagent-mui.icons.currency-pound]
     [reagent-mui.icons.content-copy]
+    [reagent-mui.icons.north-east]
     [reagent-mui.components :as mui]
     [reagent-mui.lab.loading-button]
     [reagent.core :as r]
@@ -59,6 +61,7 @@
 (def icon-playlist-play reagent-mui.icons.playlist-play/playlist-play)
 (def icon-pending reagent-mui.icons.pending/pending)
 (def icon-add reagent-mui.icons.add/add)
+(def icon-admin-panel-settings-outlined reagent-mui.icons.admin-panel-settings-outlined/admin-panel-settings-outlined)
 (def icon-arrow-back-sharp reagent-mui.icons.arrow-back-sharp/arrow-back-sharp)
 (def icon-help-outline reagent-mui.icons.help-outline/help-outline)
 (def icon-cloud-sync reagent-mui.icons.cloud-sync/cloud-sync)
@@ -99,6 +102,8 @@
 (def icon-close reagent-mui.icons.close/close)
 
 (def icon-copy reagent-mui.icons.content-copy/content-copy)
+
+(def icon-arrow-out reagent-mui.icons.north-east/north-east)
 (def loading-button reagent-mui.lab.loading-button/loading-button)
 
 (defn ???_TO_BE_DEFINED_??? [message]
@@ -196,33 +201,35 @@
       (< 500 status 599) "Unexpected server error"
       (= 404 status) "Unexpected error"
       (= 400 status) "Rejected request. Please check entered data"
+      (= 413 status) "File is too big"
       :else "Unexpected error")))
 
-(rf/reg-event-db ::user-notification
+(rf/reg-event-db ::show-message
   (fn [db [_ args]]
-    (assoc db ::user-notification args)))
+    (assoc db ::user-message args)))
 
-(rf/reg-fx ::notify-user
+(rf/reg-fx ::show-message
   (fn [args]
-    (rf/dispatch [::user-notification args])))
+    (rf/dispatch [::show-message args])))
 
 (rf/reg-fx ::notify-user-http-error
   (fn [{:keys [message result]}]
-    (rf/dispatch [::user-notification {:severity :error
-                                       :text (let [err (http-error-user-message result)]
-                                               (if (some? message)
-                                                 (str message " (" err ")")
-                                                 err))}])))
+    (assert result (str ::notify-user-http-error " called without http result"))
+    (rf/dispatch [::show-message {:severity :error
+                                  :text (let [err (http-error-user-message result)]
+                                          (if (some? message)
+                                            (str message " (" err ")")
+                                            err))}])))
 
-(rf/reg-sub ::user-notification
+(rf/reg-sub ::user-message
   (fn [db]
-    (::user-notification db)))
+    (::user-message db)))
 
 (defn user-notification-snackbar []
-  (let [{:keys [severity text] :as notification} @(rf/subscribe [::user-notification])]
+  (let [{:keys [severity text] :as notification} @(rf/subscribe [::user-message])]
     [mui/snackbar {:open (some? notification)
                    :autoHideDuration 5000
-                   :on-close #(rf/dispatch [::user-notification nil])}
+                   :on-close #(rf/dispatch [::show-message nil])}
      [mui/alert {:severity (or severity :info)}
       (or text "")]]))
 

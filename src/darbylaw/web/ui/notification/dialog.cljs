@@ -18,8 +18,9 @@
 
 (defn at-address []
   [mui/stack {:align-items :flex-start}
-   [mui/typography "at address:"
-    (bills-common/address-box false (<< ::bills-model/address))]])
+   [mui/typography "at address:"]
+   (bills-common/address-box false
+     [mui/typography (<< ::bills-model/address)])])
 
 (defn right-panel []
   (let [notification-db (<< ::model/notification)

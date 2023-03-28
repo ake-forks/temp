@@ -6,6 +6,7 @@
     [darbylaw.web.ui.funeral.model :as funeral-model]
     [darbylaw.web.ui.funeral.util :as util]
     [darbylaw.web.ui.case-model :as case-model]
+    [darbylaw.web.util.form :as form]
     [darbylaw.web.ui :as ui]
     [darbylaw.web.ui.funeral.other.form :as other-form]))
 
@@ -21,7 +22,7 @@
          {:method :post
           :uri (str "/api/case/" case-id "/funeral/other")
           :url-params query-values
-          :body (util/->FormData files)
+          :body (form/->FormData files)
           ;; TODO:
           :on-success [::submit-success case-id fork-params]
           :on-failure [::submit-failure case-id fork-params]})})))
@@ -50,7 +51,7 @@
          {:method :put
           :uri (str "/api/case/" case-id "/funeral/other/" expense-id)
           :url-params query-values
-          :body (util/->FormData files) 
+          :body (form/->FormData files) 
           ;; TODO:
           :on-success [::submit-success case-id fork-params]
           :on-failure [::submit-failure case-id fork-params]})})))
