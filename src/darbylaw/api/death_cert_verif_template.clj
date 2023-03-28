@@ -36,12 +36,6 @@
               (get-in case-data [:deceased.info :date-of-birth])) false))
         data-util/keys-to-camel-case)))
 
-(comment
-  (assoc-in [:deceased.info :date-of-death]
-    (date-util/long-date (get-in case-data [:deceased-info :date-of-death]) false))
-  (assoc :date-of-death (date-util/long-date (java.time.LocalDate/parse (:date-of-death "case-data")) false)))
-
-
 (mount/defstate death-certificate-verification-form-template
   :start
   (stencil/prepare
