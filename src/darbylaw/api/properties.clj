@@ -123,17 +123,33 @@
                                   :op :updated}))))
   {:status 204})
 
-(defn remove-property [{:keys [xtdb-node user path-params]}]
+(defn remove-property [op {:keys [xtdb-node user path-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
         property-id (parse-uuid (:property-id path-params))]
-    (xt-util/exec-tx-or-throw xtdb-node
-      (concat
-        [[::xt/delete property-id]]
-        (case-history/put-event2 {:case-id case-id
-                                  :property-id property-id
-                                  :user user
-                                  :subject :probate.property
-                                  :op :deleted})))
+    (case op
+      :remove
+      (xt-util/exec-tx-or-throw xtdb-node
+        (concat
+          [[::xt/delete property-id]]
+          (case-history/put-event2 {:case-id case-id
+                                    :property-id property-id
+                                    :user user
+                                    :subject :probate.property
+                                    :op :deleted})))
+      ;disown reduces the property entity to the same keys as a non-owned property (like when added via household bills)
+      ;currently documents aren't deleted/detached from the property when it is disowned
+      :disown
+      (let [new-values (select-keys
+                         (xt/entity (xt/db xtdb-node) property-id)
+                         [:type :probate.property/case :address :xt/id])]
+        (xt-util/exec-tx-or-throw xtdb-node
+          (concat
+            [[::xt/put new-values]]
+            (case-history/put-event2 {:case-id case-id
+                                      :property-id property-id
+                                      :user user
+                                      :subject :probate.property
+                                      :op :updated})))))
     {:status 204}))
 
 (defn routes []
@@ -145,7 +161,9 @@
    ["/edit-property/:property-id"
     {:post {:handler edit-property}}]
    ["/remove-property/:property-id"
-    {:post {:handler remove-property}}]
+    {:post {:handler (partial remove-property :remove)}}]
+   ["/remove-owned/:property-id"
+    {:post {:handler (partial remove-property :disown)}}]
    ["/post-document/:property-id"
      {:post {:handler upload-document}}]
    ["/get-document/:filename"

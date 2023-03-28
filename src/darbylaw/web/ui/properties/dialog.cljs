@@ -5,6 +5,7 @@
     [re-frame.core :as rf]
     [reagent-mui.components :as mui]
     [darbylaw.web.ui.case-model :as case-model]
+    [darbylaw.web.ui.bills.model :as bills-model]
     [darbylaw.web.ui.properties.model :as model]
     [darbylaw.web.ui.properties.form :as form]
     [darbylaw.web.ui.properties.shared :as shared]
@@ -59,10 +60,37 @@
          [form/upload-button case-id id "upload" {:disabled edit-mode}])]
      [shared/confirmation-popover]]))
 
+(defn remove-button [property-id]
+  (let [councils-by-prop (group-by :property (<< ::bills-model/current-council-tax))
+        utilities-by-prop (group-by :property (<< ::bills-model/current-utilities))
+        utility-ids-required (->> (parse-uuid property-id)
+                               (get utilities-by-prop)
+                               (map #(:utility-company %))
+                               (distinct))
+        council-ids-required (->> (parse-uuid property-id)
+                               (get councils-by-prop)
+                               (map #(:council %))
+                               (distinct))
+        company-id->label @(rf/subscribe [::bills-model/company-id->label])
+        council-id->label @(rf/subscribe [::bills-model/council-id->label])
+        required-by (clojure.string/join ", "
+                      (flatten (concat (map (fn [id] (council-id->label id)) council-ids-required)
+                                 (map (fn [id] (company-id->label id)) utility-ids-required))))]
+    [mui/button {:variant :text
+                 :on-click #(if (clojure.string/blank? required-by)
+                              (reset! model/popover {:anchor (ui/event-currentTarget %)
+                                                     :property-id property-id
+                                                     :label "property"})
+                              (reset! model/popover {:anchor (ui/event-currentTarget %)
+                                                     :required-by (str required-by ".")
+                                                     :property-id property-id}))
+
+                 :end-icon (r/as-element [ui/icon-delete])
+                 :style {:align-self :flex-start :color :red}} "remove property"]))
 
 (defn edit [{:keys [handle-submit] :as fork-args}]
-  (let [prop-id (:id (<< ::model/dialog))
-        property (model/get-property prop-id)
+  (let [property-id (:id (<< ::model/dialog))
+        property (model/get-property property-id)
         edit-mode model/edit-mode]
     [:form {:on-submit handle-submit}
      [mui/dialog-content {:style {:width "50vw"}}
@@ -73,12 +101,7 @@
           [mui/button {:on-click #(reset! edit-mode (not @edit-mode))
                        :end-icon (r/as-element [ui/icon-close])
                        :style {:align-self :flex-start}} "cancel"]
-          [mui/button {:variant :text
-                       :on-click #(reset! model/popover {:anchor (ui/event-currentTarget %)
-                                                         :property-id prop-id
-                                                         :label "property"})
-                       :end-icon (r/as-element [ui/icon-delete])
-                       :style {:align-self :flex-start :color :red}} "remove property"]]
+          [remove-button property-id]]
          [mui/button {:variant :outlined
                       :on-click #(reset! edit-mode (not @edit-mode))
                       :end-icon (r/as-element [ui/icon-edit])
@@ -105,19 +128,8 @@
                [mui/typography {:variant :body1 :style {:white-space :pre}} "£" (:valuation property)]
                (when (:estimated-value? property)
                  [mui/typography {:variant :body1 :color theme/teal} "estimated"])])]]]
-
-
          [mui/grid {:item true :xs 6 :style {:max-height "50%"}}
           [documents-panel property]]
-         [mui/grid {:item true :xs 6}
-          (if @edit-mode
-            [:<>
-             [mui/typography {:variant :h6} "joint ownership"]
-             [form/joint-owner-field fork-args]]
-            (when (:joint-ownership? property)
-              [:<>
-               [mui/typography {:variant :h6} "joint ownership"]
-               [mui/typography {:variant :body1 :style {:white-space :pre}} (or (:joint-owner property) "please provide details for the other owner(s)")]]))]
          [mui/grid {:item true :xs 6}
           [mui/typography {:variant :h6} "insurance details"]
           (if @edit-mode
@@ -128,16 +140,24 @@
                [mui/typography {:variant :body1 :color theme/teal} "property is insured"]]
               [mui/stack {:direction :row :spacing 2}
                [ui/icon-close {:style {:color theme/orange}}]
-               [mui/typography {:color theme/orange} "property is not insured"]]))]]]]]
-
-
+               [mui/typography {:color theme/orange} "property is not insured"]]))]
+         [mui/grid {:item true :xs 6}
+          (if @edit-mode
+            [:<>
+             [mui/typography {:variant :h6} "joint ownership"]
+             [form/joint-owner-field fork-args]]
+            (when (:joint-ownership? property)
+              [:<>
+               [mui/typography {:variant :h6} "joint ownership"]
+               [mui/typography {:variant :body1 :style {:white-space :pre}} (or (:joint-owner property) "please provide details for the other owner(s)")]]))]]]]]
      [mui/dialog-actions
       (if @edit-mode
         [mui/stack {:direction :row :spacing 2}
          [mui/button {:on-click #(reset! edit-mode (not @edit-mode)) :variant :outline} "cancel"]
          [mui/button {:type :submit :variant :contained} "save"]]
         [mui/button {:variant :outlined
-                     :on-click #(rf/dispatch [::model/hide-dialog])} "close"])]]))
+                     :on-click #(rf/dispatch [::model/hide-dialog])} "close"])]
+     [shared/cant-delete-popover]]))
 
 (defn add [{:keys [handle-submit] :as fork-args}]
   [:form {:on-submit handle-submit}
