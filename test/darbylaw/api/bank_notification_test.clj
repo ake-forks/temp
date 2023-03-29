@@ -26,7 +26,7 @@
 (defn test-notifications [bank-type]
   (let [new-case-resp (t/assert-success (t/run-request (setup/create-case)))
         case-id (-> new-case-resp :body :id)
-
+        _ (t/assert-success (t/run-request (setup/update-deceased case-id)))
         {bank-id :id
          bank-name :common-name}
         (first (case bank-type

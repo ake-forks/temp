@@ -1,7 +1,9 @@
 (ns darbylaw.api.bank-notification-template
   (:require
     [clojure.string :as string]
+    [darbylaw.api.util.dates :as date-util]
     [darbylaw.api.util.xtdb :as xt-util]
+    [java-time.api :as jt]
     [mount.core :as mount]
     [xtdb.api :as xt]
     [darbylaw.api.util.data :as data-util]
@@ -99,7 +101,10 @@
                               (assoc :accounts (:accounts bank-data))
                               (merge (generate-mailing-address bank-type bank-id))))
 
-          (assoc :date (.toString (LocalDate/now))))
+          (assoc :date (date-util/long-date (jt/local-date) false))
+          (assoc-in [:deceased :date-of-death] (date-util/long-date
+                                                 (LocalDate/parse (:date-of-death (:deceased case-data)))
+                                                 false)))
 
         (= bank-type :buildsoc)
         (-> case-data
@@ -108,8 +113,11 @@
                              (assoc :accounts (:accounts bank-data))
                              (merge (generate-mailing-address bank-type bank-id))))
 
-          (assoc :date (.toString (LocalDate/now))))))))
-
+          (assoc :date (date-util/long-date (jt/local-date) false))
+          (assoc-in [:deceased :date-of-death] (date-util/long-date
+                                                 (LocalDate/parse
+                                                   (:date-of-death (:deceased case-data)))
+                                                 false)))))))
 
 (mount/defstate templates
   :start {:bank (stencil/prepare (io/resource "darbylaw/templates/bank-notification.docx"))

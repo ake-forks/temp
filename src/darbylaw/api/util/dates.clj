@@ -1,25 +1,27 @@
 (ns darbylaw.api.util.dates
   (:require
-    [clojure.string :as str])
-  (:import (java.time LocalDate LocalDateTime)))
+    [clojure.string :as str]
+    [clojure.spec.alpha :as spec])
+  (:import (java.time LocalDateTime)))
 
 (defn instant->localtime [instant zone-id]
   (-> (LocalDateTime/ofInstant instant zone-id)
     (.toLocalTime)))
 
+(defn get-ordinal [day-of-month]
+  (if (spec/int-in-range? 10 20 day-of-month)
+    "th"
+    (case (rem day-of-month 10)
+      1 "st"
+      2 "nd"
+      3 "rd"
+      "th")))
+
 (defn long-date [local-date with-day?]
   (let [day-name (str/capitalize
                    (str (.getDayOfWeek local-date) " "))
         day-date (.getDayOfMonth local-date)
-        ordinal (case (rem day-date 10)
-                  1 "st"
-                  2 "nd"
-                  3 "rd"
-                  "th")
+
         month (str/capitalize (str (.getMonth local-date)))
         year (.getYear local-date)]
-    (str (when with-day? day-name) day-date ordinal " " month " " year)))
-
-(defn long-date-from-string [date-string with-day?]
-  (let [local-date (LocalDate/parse date-string)]
-    (long-date local-date with-day?)))
+    (str (when with-day? day-name) day-date " " month " " year)))
