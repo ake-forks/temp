@@ -30,7 +30,7 @@
         (case pension-type
           :private (str "/api/case/" case-id "/pension/add-private")
           "")
-        :params values
+        :params (assoc values :provider (keyword (:provider values)))
         :on-success [::add-success case-id fork-params]
         :on-failure [::add-failure fork-params]})}))
 

@@ -2,10 +2,13 @@
   (:require
     [re-frame.core :as rf]
     [reagent.core :as r]
-    [darbylaw.web.ui.case-model :as case-model]))
+    [darbylaw.web.ui.case-model :as case-model]
+    [darbylaw.web.ui :refer (<<)]))
 
 ;dashboard and dialog controls
 (def anchor (r/atom nil))
+
+(def edit-mode (r/atom false))
 
 (rf/reg-event-db
   ::show-dialog
@@ -61,3 +64,10 @@
   :<- [::case-model/current-case]
   (fn [case]
     (:pensions case)))
+
+(defn current-pension [provider]
+  (first (filter #(= provider (:provider %)) (<< ::pensions))))
+
+(defn get-label [provider]
+  (-> (into {} (map (juxt :id :common-name) (<< ::providers)))
+    (get provider)))

@@ -27,7 +27,7 @@
 
 (def private-schema
   [:map
-   [:provider :string]
+   [:provider :keyword]
    [:ni-number :string]
    [:reference {:optional true} :string]])
 
