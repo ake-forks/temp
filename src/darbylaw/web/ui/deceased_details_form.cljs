@@ -256,7 +256,7 @@
         :required true
         :full-width true
         :multiline true
-        :rows 2}
+        :rows 6}
        "cause.png"
        fork-args)
      (textfield-with-tooltip

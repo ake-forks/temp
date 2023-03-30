@@ -84,9 +84,15 @@
 
 (defn process-lines [blocks-by-id]
   (->> (vals blocks-by-id)
-    (filter #(= (:blockType %) "LINE"))
-    (map #(select-keys % [:text
-                          :confidence]))))
+    (filter #(= (:blockType %) "PAGE"))
+    (sort-by :page)
+    (mapcat (fn [page-block]
+              (->> page-block
+                :relationships-map :CHILD
+                (map blocks-by-id)
+                (filter #(= (:blockType %) "LINE"))
+                (map #(select-keys % [:text
+                                      :confidence])))))))
 
 ; Cache
 
@@ -175,7 +181,15 @@
   (count blocks-by-id)
 
   (->> (vals blocks-by-id)
-    (filter #(= (:blockType %) "WORD"))))
+    (filter #(= (:blockType %) "PAGE"))
+    (sort-by :page)
+    (mapcat (fn [page-block]
+              (->> page-block
+                :relationships-map :CHILD
+                (map blocks-by-id)
+                (filter #(= (:blockType %) "LINE"))
+                (map #(select-keys % [:text
+                                      :confidence])))))))
 
 (defn delete-cache []
   (let [xt-node xtdb-node/xtdb-node

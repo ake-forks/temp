@@ -3,9 +3,8 @@
             [darbylaw.web.ui :as ui]
             [medley.core :as medley]
             [re-frame.core :as rf]
-            ["chrono-node" :as chrono]
-            [darbylaw.web.util.dayjs :as dayjs]
-            ["fuzzball" :as fuzz]))
+            [darbylaw.web.ui.util.fuzzy-match :as fuzzy-match]
+            [darbylaw.web.ui.util.written-dates :as written-dates]))
 
 (def header-search-strings
   {:entry-number "Entry No"
@@ -16,29 +15,28 @@
    :maiden-name "4. Maiden surname of woman who has married"
    :date-and-place-of-birth "5. Date and place of birth"
    :name-of-informant "7.(a) Name and surname of informant"
-   :cause-of-death "8. Cause of death"
    :name-of-registrar "11. Signature of registrar"})
 
 (defn best-match [key-values search-string]
   (apply max-key :score
     (for [{:keys [key-words value-words]} key-values]
       (let [key-str (str/join " " key-words)]
-        {:score (.ratio fuzz search-string key-str)
+        {:score (fuzzy-match/ratio search-string key-str)
          :key key-str
          :value-words value-words}))))
 
-(defn find-headers [key-values]
+(defn find-relevant-kvs [ks]
   (into {}
     (for [[header search-string] header-search-strings]
       [header
-       (let [match (best-match key-values search-string)]
+       (let [match (best-match ks search-string)]
          (when (>= (:score match) 85)
            match))])))
 
 (comment
-  (.ratio fuzz "Entry No" "Entry No.")
-  (.ratio fuzz "Entry No" "Entry N1.")
-  (.ratio fuzz "Entry Nooooooooooooooooo" "Entry Noooooooooooooooo1."))
+  (fuzzy-match/ratio "Entry No" "Entry No.")
+  (fuzzy-match/ratio "Entry No" "Entry N1.")
+  (fuzzy-match/ratio "Entry Nooooooooooooooooo" "Entry Noooooooooooooooo1."))
 
 (defn extract-certificate-number [key-values]
   (->> key-values
@@ -48,24 +46,8 @@
               (str (first key-words) " " (first value-words)))))
     first))
 
-(defn chrono-parse [free-text]
-  (when-let [result-js (first (chrono/parse free-text))]
-    (let [result (-> result-js
-                   js/JSON.stringify js/JSON.parse
-                   (js->clj :keywordize-keys true))
-          date-fields (some-> result :start :knownValues
-                        ((juxt :year :month :day)))]
-      (when (and (some? date-fields)
-                 (every? integer? date-fields))
-        {:date (dayjs/read (str/join "-" date-fields))
-         :rest (str/trim (subs free-text (+ (:index result)
-                                           (count (:text result)))))}))))
-
-(comment
-  (chrono-parse "Fifth January 2008 Duncote Hall Nursing Home, Duncote, Towcester"))
-
 (defn extract-date-and-place-of-death [value-words]
-  (let [{:keys [date rest]} (chrono-parse (str/join " " value-words))]
+  (let [{:keys [date rest]} (written-dates/parse-date-leading (str/join " " value-words))]
     {:date-of-death date
      :place-of-death rest}))
 
@@ -85,14 +67,38 @@
   (extract-name-and-surname ["Doris", "SHERRINGTON"]))
 
 (defn extract-date-and-place-of-birth [value-words]
-  (let [{:keys [date rest]} (chrono-parse (str/join " " value-words))]
+  (let [{:keys [date rest]} (written-dates/parse-date-leading (str/join " " value-words))]
     {:date-of-birth date
      :place-of-birth rest}))
 
-(defn extract-values [{:keys [key-values] :as response}]
-  (let [known-header-values (find-headers key-values)
-        words (fn [header]
-                (get-in known-header-values [header :value-words]))
+(defn strip-leading-number [s]
+  (let [[_full-match text] (re-matches #"[0-9]?(.*)" s)]
+    text))
+
+(comment
+  (strip-leading-number "8 and rest")
+  (strip-leading-number "only-rest"))
+
+(defn extract-cause-of-death [lines]
+  (let [result-lines
+        (->> lines
+          (map #(-> % :text strip-leading-number))
+          (drop-while #(let [ratio (fuzzy-match/ratio "Cause of death" %)]
+                         (< ratio 85)))
+          (drop 1)
+          (take-while #(let [ratio (fuzzy-match/partial-ratio "Certified by" %)]
+                         (< ratio 85))))]
+    (when (<= (count result-lines) 6)
+      (str/join "\n" result-lines))))
+
+(comment
+  (fuzzy-match/ratio "Cause of death" "8. Causx of death")
+  (fuzzy-match/partial-ratio "Certified by" "Certified bx A.D. Odwell M.B."))
+
+(defn extract-values [{:keys [key-values lines] :as response}]
+  (let [relevant-kvs (find-relevant-kvs key-values)
+        kv-words (fn [k]
+                   (get-in relevant-kvs [k :value-words]))
         queries (->> response
                   :queries
                   (medley/index-by :query-alias))
@@ -102,24 +108,24 @@
                          (:answer-text q))))]
     (merge
       {:certificate-number (extract-certificate-number key-values)
-       :entry-number (first (words :entry-number))
-       :registration-district (str/join " " (words :registration-district))}
-      (extract-date-and-place-of-death (words :date-and-place-of-death))
-      (extract-name-and-surname (words :name-and-surname))
-      {:sex (some-> (first (words :sex))
+       :entry-number (first (kv-words :entry-number))
+       :registration-district (str/join " " (kv-words :registration-district))}
+      (extract-date-and-place-of-death (kv-words :date-and-place-of-death))
+      (extract-name-and-surname (kv-words :name-and-surname))
+      {:sex (some-> (first (kv-words :sex))
               str/lower-case
               #{"female" "male"})
-       :maiden-name (->> (words :maiden-name)
+       :maiden-name (->> (kv-words :maiden-name)
                       (map str/lower-case)
                       (map str/capitalize)
                       not-empty)}
-      (extract-date-and-place-of-birth (words :date-and-place-of-birth))
+      (extract-date-and-place-of-birth (kv-words :date-and-place-of-birth))
       {:occupation (from-query :occupation 50)
        :address (from-query :address 50)
-       :name-of-informant (str/join " " (words :name-of-informant))
+       :name-of-informant (str/join " " (kv-words :name-of-informant))
        :name-of-doctor-certifying (from-query :certified-by 50)
-       :cause-of-death (str/join " " (words :cause-of-death))
-       :name-of-registrar (->> (words :name-of-registrar)
+       :cause-of-death (extract-cause-of-death lines)
+       :name-of-registrar (->> (kv-words :name-of-registrar)
                             ; Don't remove the "registrar" title at the end
                             ;(remove #(= "registrar" (str/lower-case %)))
                             (str/join " "))})))
@@ -129,7 +135,7 @@
 
 (rf/reg-fx ::change-fields
   (fn [{:keys [set-handle-change response]}]
-    (def last-response response)
+    ; (def last-response response) ; for dev purposes
     (set-handle-change
       (keep identity
         (for [[field value] (extract-values response)]
