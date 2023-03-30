@@ -105,7 +105,7 @@
 
 (defn autofill-button [{:keys [set-handle-change] :as _fork-args}]
   (let [case-id (<< ::case-model/case-id)]
-    [mui/button {:onClick #(rf/dispatch [::textract/autofill case-id set-handle-change])
+    [mui/button {:onClick #(rf/dispatch [::textract/autofill case-id set-handle-change form-state])
                  :variant :contained
                  :startIcon (r/as-element [ui/icon-manage-search])
                  :sx {:mb 1

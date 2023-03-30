@@ -134,17 +134,22 @@
   #{"female" "male"} "female")
 
 (rf/reg-fx ::change-fields
-  (fn [{:keys [set-handle-change response]}]
+  (fn [{:keys [set-handle-change form-state-atom response]}]
     ; (def last-response response) ; for dev purposes
-    (set-handle-change
-      (keep identity
-        (for [[field value] (extract-values response)]
-          {:path [field]
-           :value value})))))
+    (let [current-values (:values @form-state-atom)]
+      (set-handle-change
+        (keep identity
+          (for [[field value] (extract-values response)]
+            (when (and (some? value)
+                       (or (nil? (get current-values field))
+                           (str/blank? (get current-values field))))
+              {:path [field]
+               :value value})))))))
 
 (rf/reg-event-fx ::autofill-success
-  (fn [_ [_ set-handle-change response]]
+  (fn [_ [_ set-handle-change form-state-atom response]]
     {::change-fields {:set-handle-change set-handle-change
+                      :form-state-atom form-state-atom
                       :response response}}))
 
 (rf/reg-event-fx ::autofill-failure
@@ -153,10 +158,10 @@
                                   :result result}}))
 
 (rf/reg-event-fx ::autofill
-  (fn [_ [_ case-id set-handle-change]]
+  (fn [_ [_ case-id set-handle-change form-state-atom]]
     {:http-xhrio
      (ui/build-http
        {:method :get
         :uri (str "/api/case/" case-id "/document/death-certificate/analyze")
-        :on-success [::autofill-success set-handle-change]
+        :on-success [::autofill-success set-handle-change form-state-atom]
         :on-failure [::autofill-failure]})}))
