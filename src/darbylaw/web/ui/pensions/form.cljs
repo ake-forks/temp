@@ -1,16 +1,13 @@
 (ns darbylaw.web.ui.pensions.form
   (:require
-    [darbylaw.web.ui.pensions.shared :as shared]
     [darbylaw.web.ui.pensions.model :as model]
     [darbylaw.web.util.form :as form-util]
-    [reagent-mui.components :as mui]
     [reagent.core :as r]
-    [re-frame.core :as rf]
     [fork.re-frame :as fork]
     [darbylaw.web.ui :as ui :refer (<<)]
     [darbylaw.web.ui.case-model :as case-model]))
 
-(defn company-select [{:keys [values set-handle-change handle-blur] :as fork-args}]
+(defn company-select [{:keys [values] :as fork-args}]
   [form-util/autocomplete-field fork-args
    {:name :provider
     :full-width true
@@ -20,12 +17,16 @@
     :getOptionLabel (<< ::model/provider-id->label)
     :inner-config {:required true}}])
 
-(defn ni-field [{:keys [values] :as fork-args}]
-  (let [deceased (:deceased (<< ::case-model/current-case))]
+(defn ni-field [fork-args]
     [form-util/text-field fork-args
      {:name :ni-number
-      :label "National Insurance number"
-      :required true}]))
+      :label "national insurance number"
+      :required true}])
+
+(defn ref-field [fork-args]
+  [form-util/text-field fork-args
+   {:name :reference
+    :label "reference number"}])
 
 
 

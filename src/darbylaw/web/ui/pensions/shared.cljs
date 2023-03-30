@@ -7,7 +7,8 @@
 
 (defn dialog-header [title]
   [mui/stack {:direction :row
-              :justify-content :space-between}
+              :justify-content :space-between
+              :sx {:mb 1}}
    [mui/typography {:variant :h5} title]
    [mui/icon-button {:on-click #(rf/dispatch [::model/hide-dialog])}
     [ui/icon-close]]])

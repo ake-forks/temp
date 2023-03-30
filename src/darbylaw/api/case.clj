@@ -248,6 +248,13 @@
        :uploaded-at
        :uploaded-by]}]}
 
+   {'(:probate.pension/_case {:as :pensions})
+    ['(:xt/id {:as :id})
+     :provider
+     :ni-number
+     :reference
+     :pension-type]}
+
    {'(:probate.identity-check.uk-aml/_case
        {:as :uk-aml
         :cardinality :one})

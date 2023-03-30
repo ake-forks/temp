@@ -1,7 +1,8 @@
 (ns darbylaw.web.ui.pensions.model
   (:require
     [re-frame.core :as rf]
-    [reagent.core :as r]))
+    [reagent.core :as r]
+    [darbylaw.web.ui.case-model :as case-model]))
 
 ;dashboard and dialog controls
 (def anchor (r/atom nil))
@@ -9,6 +10,7 @@
 (rf/reg-event-db
   ::show-dialog
   (fn [db [_ id pension-type dialog-type]]
+    (reset! anchor nil)
     (assoc-in db [:dialog/pensions]
       {:open true
        :id (str id)
@@ -33,7 +35,9 @@
    {:id :standard-life
     :common-name "Standard Life"}
    {:id :hargreaves-lansdown
-    :common-name "Hargreaves Lansdown"}])
+    :common-name "Hargreaves Lansdown"}
+   {:id :other
+    :common-name "Provider Not Listed"}])
 (rf/reg-sub ::providers
   (fn [_]
     provider-options))
@@ -52,3 +56,8 @@
   :<- [::providers]
   (fn [providers]
     (id->label-fn providers)))
+
+(rf/reg-sub ::pensions
+  :<- [::case-model/current-case]
+  (fn [case]
+    (:pensions case)))
