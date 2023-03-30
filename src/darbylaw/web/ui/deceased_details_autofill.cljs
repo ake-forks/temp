@@ -120,7 +120,8 @@
        :name-of-doctor-certifying (from-query :certified-by 50)
        :cause-of-death (str/join " " (words :cause-of-death))
        :name-of-registrar (->> (words :name-of-registrar)
-                            (remove #(= "registrar" (str/lower-case %)))
+                            ; Don't remove the "registrar" title at the end
+                            ;(remove #(= "registrar" (str/lower-case %)))
                             (str/join " "))})))
 
 (comment
