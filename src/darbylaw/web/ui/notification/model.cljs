@@ -26,7 +26,8 @@
                 (let [select-relevant #(select-keys % [:notification-type
                                                        :utility-company
                                                        :council
-                                                       :property])]
+                                                       :property
+                                                       :provider])]
                   (= (select-relevant current-notification)
                      (select-relevant notification)))))
       first)))

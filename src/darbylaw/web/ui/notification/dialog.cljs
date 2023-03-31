@@ -35,7 +35,7 @@
              :council-tax (bills-model/current-council-data
                             (:utility-company notification-db)
                             (:property notification-db))
-             :pension (pensions-model/current-pension (:provider notification-db))))))
+             :pension (pensions-model/get-pension (:provider notification-db))))))
 
 (defn get-label [current-data]
   (let [notification-db (<< ::model/notification)]

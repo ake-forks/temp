@@ -3,7 +3,7 @@
     [re-frame.core :as rf]
     [reagent.core :as r]
     [darbylaw.web.ui.case-model :as case-model]
-    [darbylaw.web.ui :refer (<<)]))
+    [darbylaw.web.ui :refer (<<) :as ui]))
 
 ;dashboard and dialog controls
 (def anchor (r/atom nil))
@@ -65,9 +65,33 @@
   (fn [case]
     (:pensions case)))
 
-(defn current-pension [provider]
+(defn get-pension [provider]
   (first (filter #(= provider (:provider %)) (<< ::pensions))))
 
 (defn get-label [provider]
   (-> (into {} (map (juxt :id :common-name) (<< ::providers)))
     (get provider)))
+
+;edit
+(rf/reg-event-fx ::edit-success
+  (fn [{:keys [db]} [_  case-id]]
+    (reset! edit-mode false)
+    {:fx [[:dispatch [::case-model/load-case! case-id]]]}))
+
+(rf/reg-event-fx ::edit-failure
+  (fn [{:keys [db]} [_ response]]
+    (reset! edit-mode false)
+    {:dispatch [::ui/notify-user-http-error "edit failed" response]}))
+
+(rf/reg-event-fx ::edit-pension
+  (fn [{:keys [db]} [_ pension-type case-id pension-id {:keys [values]}]]
+    {:http-xhrio
+     (ui/build-http
+       {:method :post
+        :uri
+        (case pension-type
+          :private (str "/api/case/" case-id "/pension/edit-private/" pension-id)
+          "")
+        :params values
+        :on-success [::edit-success case-id]
+        :on-failure [::edit-failure]})}))
