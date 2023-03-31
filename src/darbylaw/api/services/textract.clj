@@ -1,13 +1,17 @@
 (ns darbylaw.api.services.textract
-  (:require [darbylaw.api.util.xtdb :as xt-util]
+  (:require [clojure.string :as str]
+            [clojure.tools.logging :as log]
             [darbylaw.config :as config]
             [darbylaw.doc-store :as doc-store]
             [darbylaw.xtdb-node :as xtdb-node]
             [mount.core :as mount]
             [medley.core :as medley]
-            [xtdb.api :as xt])
+            [xtdb.api :as xt]
+            [jsonista.core :as json]
+            [darbylaw.api.util.files :refer [with-delete create-temp-file]])
   (:import (com.amazonaws.services.textract AmazonTextract AmazonTextractClientBuilder)
-           (com.amazonaws.services.textract.model AnalyzeDocumentRequest Document QueriesConfig Query S3Object)))
+           (com.amazonaws.services.textract.model AnalyzeDocumentRequest AnalyzeDocumentResult Document QueriesConfig Query S3Object)
+           (com.fasterxml.jackson.databind ObjectMapper)))
 
 (mount/defstate ^AmazonTextract textract
   :start (AmazonTextractClientBuilder/defaultClient))
@@ -101,16 +105,34 @@
     (.getObjectMetadata bucket-name s3-key)
     (.getETag)))
 
-(defn cache-tx [etag result]
-  [[::xt/put {:xt/id {:textract-cache/etag etag}
-              :type :textract-cache
-              :result result
-              :modified-at (xt-util/now)}]])
+(defn cache-s3-key [etag]
+  (str/join "/" ["textract-cache"
+                 "v1"
+                 (str etag ".AnalyzeDocumentResult.json")]))
 
-(defn from-cache [etag]
-  (-> (xt/entity (xt/db xtdb-node/xtdb-node)
-        {:textract-cache/etag etag})
-    :result))
+(def jackson-object-mapper (ObjectMapper.))
+
+(defn to-cache [etag ^AnalyzeDocumentResult result]
+  (with-delete [temp-file (create-temp-file "textract" ".json")]
+    ; clear fields which classes can't be extracted from JSON
+    (doto result
+      (.setSdkResponseMetadata nil)
+      (.setSdkHttpMetadata nil))
+    (json/write-value temp-file result jackson-object-mapper)
+    (doc-store/store (cache-s3-key etag) temp-file)))
+
+(defn from-cache ^AnalyzeDocumentResult [etag]
+  (try
+    (let [cached (doc-store/fetch (cache-s3-key etag))]
+      (.readValue jackson-object-mapper cached AnalyzeDocumentResult))
+    (catch Exception e
+      (when-not (= (-> e ex-data :error) ::doc-store/not-found)
+        (log/debug e "Exception on getting object from cache"))
+      nil)))
+
+(comment
+  (to-cache "test" (AnalyzeDocumentResult.))
+  (from-cache "test"))
 
 (def my-queries
   {:occupation "What is the occupation?"
@@ -134,25 +156,26 @@
                                  (.setText text)))))))))
 
 (defn analyze [s3-key]
-  (let [etag (get-etag s3-key)]
-    (if-let [result (from-cache etag)]
-      (-> result
-        (assoc :cache true))
-      (let [analyze-result (request-analyze s3-key my-queries)
-            blocks-by-id (digest-blocks-by-id analyze-result)
-            result {:key-values (process-form blocks-by-id)
-                    :queries (process-queries blocks-by-id)
-                    :lines (process-lines blocks-by-id)}]
-        (xt-util/exec-tx-or-throw xtdb-node/xtdb-node
-          (cache-tx etag result))
-        (-> result
-          (assoc :cache false))))))
+  (let [etag (get-etag s3-key)
+        cached-analyze-result (from-cache etag)
+        analyze-result (or cached-analyze-result
+                           (let [r (request-analyze s3-key my-queries)]
+                             (to-cache etag r)
+                             r))
+        blocks-by-id (digest-blocks-by-id analyze-result)
+        result {:key-values (process-form blocks-by-id)
+                :queries (process-queries blocks-by-id)
+                :lines (process-lines blocks-by-id)}]
+    (-> result
+      (assoc :cache (some? cached-analyze-result)))))
 
 (comment
   (def s3-key
     (str "5d994979-d002-402e-af70-8e7c454311c5"
          "/"
          "000100.death-certificate.ccdbf519-360b-4070-803f-159430fbacd9.pdf"))
+
+  (from-cache (get-etag s3-key))
 
   (xt/q (xt/db xtdb-node/xtdb-node) '{:find [e]
                                       :where [[e :type :textract-cache]]})
@@ -169,6 +192,12 @@
                      (clojure.java.io/input-stream result-filename))]
       (.readObject is)))
 
+  (json/write-value-as-string analyze-result jackson-object-mapper)
+
+  (to-cache "test" analyze-result)
+  (def analyze-result2 (from-cache "test"))
+  (= analyze-result analyze-result2)
+
   (def blocks-by-id (digest-blocks-by-id analyze-result))
   (process-form blocks-by-id)
   (process-queries blocks-by-id)
@@ -178,27 +207,4 @@
     (map :blockType)
     (distinct))
 
-  (count blocks-by-id)
-
-  (->> (vals blocks-by-id)
-    (filter #(= (:blockType %) "PAGE"))
-    (sort-by :page)
-    (mapcat (fn [page-block]
-              (->> page-block
-                :relationships-map :CHILD
-                (map blocks-by-id)
-                (filter #(= (:blockType %) "LINE"))
-                (map #(select-keys % [:text
-                                      :confidence])))))))
-
-(defn delete-cache []
-  (let [xt-node xtdb-node/xtdb-node
-        ids (xt/q (xt/db xt-node)
-              '{:find [e]
-                :where [[e :type :textract-cache]]})]
-    (xt-util/exec-tx-or-throw xt-node
-      (for [[id] ids]
-        [::xt/delete id]))))
-
-(comment
-  (delete-cache))
+  (count blocks-by-id))
