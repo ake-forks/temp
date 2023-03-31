@@ -38,13 +38,17 @@
   (fuzzy-match/ratio "Entry No" "Entry N1.")
   (fuzzy-match/ratio "Entry Nooooooooooooooooo" "Entry Noooooooooooooooo1."))
 
-(defn extract-certificate-number [key-values]
-  (->> key-values
-    (keep (fn [{:keys [key-words value-words]}]
-            (when (and (= 1 (count key-words))
-                       (re-matches #"[A-Z]{3}" (first key-words)))
-              (str (first key-words) " " (first value-words)))))
+(defn extract-certificate-number [lines]
+  (->> lines
+    (map :text)
+    (keep #(re-find #"[A-Z]{3} [0-9]{6}" %))
     first))
+
+(comment
+  (extract-certificate-number [{:text "no match"}
+                               {:text "  BAQ 901246"}])
+  (extract-certificate-number [{:text "no match"}
+                               {:text "  BAQ 90124X"}]))
 
 (defn extract-date-and-place-of-death [value-words]
   (let [{:keys [date rest]} (written-dates/parse-date-leading (str/join " " value-words))]
@@ -107,7 +111,7 @@
                        (when (>= (:answer-confidence q) confidence)
                          (:answer-text q))))]
     (merge
-      {:certificate-number (extract-certificate-number key-values)
+      {:certificate-number (extract-certificate-number lines)
        :entry-number (first (kv-words :entry-number))
        :registration-district (str/join " " (kv-words :registration-district))}
       (extract-date-and-place-of-death (kv-words :date-and-place-of-death))
