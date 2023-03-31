@@ -22,7 +22,7 @@
          [mui/typography {:sx {:font-weight 600 :pt 1}} "private"]
          (for [{:keys [id provider]} private]
            ^{:key id}
-           [l/asset-item {:title provider
+           [l/asset-item {:title (model/get-label provider)
                           :on-click #(rf/dispatch [::notification-model/open
                                                    {:notification-type :pension
                                                     :case-id case-id
