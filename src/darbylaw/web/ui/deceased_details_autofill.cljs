@@ -151,21 +151,28 @@
                :value value})))))))
 
 (rf/reg-event-fx ::autofill-success
-  (fn [_ [_ set-handle-change form-state-atom response]]
-    {::change-fields {:set-handle-change set-handle-change
+  (fn [{:keys [db]} [_ set-handle-change form-state-atom response]]
+    {:db (assoc db ::loading? false)
+     ::change-fields {:set-handle-change set-handle-change
                       :form-state-atom form-state-atom
                       :response response}}))
 
 (rf/reg-event-fx ::autofill-failure
-  (fn [_ [_ result]]
-    {::ui/notify-user-http-error {:message "Could not extract text from document"
+  (fn [{:keys [db]} [_ result]]
+    {:db (assoc db ::loading? false)
+     ::ui/notify-user-http-error {:message "Could not extract text from document"
                                   :result result}}))
 
 (rf/reg-event-fx ::autofill
-  (fn [_ [_ case-id set-handle-change form-state-atom]]
-    {:http-xhrio
+  (fn [{:keys [db]} [_ case-id set-handle-change form-state-atom]]
+    {:db (assoc db ::loading? true)
+     :http-xhrio
      (ui/build-http
        {:method :get
         :uri (str "/api/case/" case-id "/document/death-certificate/analyze")
         :on-success [::autofill-success set-handle-change form-state-atom]
         :on-failure [::autofill-failure]})}))
+
+(rf/reg-sub ::loading?
+  (fn [db]
+    (boolean (::loading? db))))
