@@ -44,7 +44,8 @@
       :utility (if (some? (:new-utility-name current-data))
                  (:new-utility-name current-data)
                  (<< ::bills-model/utility-company-label))
-      :pension (pensions-model/get-label (:provider notification-db))
+      :pension
+      (pensions-model/get-label (:provider notification-db))
       "label default")))
 
 (defn get-copy [label]
@@ -67,7 +68,7 @@
   (let [current-data (get-data)
         label (get-label current-data)]
     [mui/stack
-     [dialog/title {:on-click-close #(rf/dispatch [::model/close-dialog])}
+     [dialog/title {:on-click-close #(do (reset! pensions-model/edit-mode false) (rf/dispatch [::model/close-dialog]))}
       (case (<< ::model/notification-type)
         :utility
         [mui/stack

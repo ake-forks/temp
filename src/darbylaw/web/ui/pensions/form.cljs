@@ -26,9 +26,17 @@
 (defn ref-field [fork-args]
   [form-util/text-field fork-args
    {:name :reference
-    :label "reference number"}])
+    :label "reference/policy number if known"}])
 
+(defn tell-us-once-field [fork-args]
+  [form-util/text-field fork-args
+   {:name :tell-us-once
+    :label "tell us once reference"}])
 
+(defn start-date-field [fork-args]
+  [form-util/text-field fork-args
+   {:name :start-date
+    :label "pension start date"}])
 
 (defonce form-state (r/atom nil))
 (defn form [{:keys [layout submit-fn initial-values]}]
@@ -40,10 +48,7 @@
         :on-submit submit-fn
         :keywordize-keys true
         :prevent-default? true
-        :initial-values
-        (if (:ni-number deceased)
-          (merge initial-values {:ni-number (:ni-number deceased)})
-          initial-values)}
+        :initial-values (merge initial-values (select-keys deceased [:ni-number :tell-us-once]))}
        (fn [fork-args]
          [layout (ui/mui-fork-args fork-args)])]
       (finally

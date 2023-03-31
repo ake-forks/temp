@@ -66,32 +66,38 @@
     (:pensions case)))
 
 (defn get-pension [provider]
-  (first (filter #(= provider (:provider %)) (<< ::pensions))))
+  (if (= :state provider)
+    (first (filter #(= :state (:pension-type %)) (<< ::pensions)))
+    (first (filter #(= provider (:provider %)) (<< ::pensions)))))
 
 (defn get-label [provider]
-  (-> (into {} (map (juxt :id :common-name) (<< ::providers)))
-    (get provider)))
+  (if (= :state provider)
+    "state pension"
+    (-> (into {} (map (juxt :id :common-name) (<< ::providers)))
+      (get provider))))
 
 ;edit
 (rf/reg-event-fx ::edit-success
-  (fn [{:keys [db]} [_  case-id]]
+  (fn [_ [_  case-id]]
     (reset! edit-mode false)
     {:fx [[:dispatch [::case-model/load-case! case-id]]]}))
 
 (rf/reg-event-fx ::edit-failure
-  (fn [{:keys [db]} [_ response]]
+  (fn [_ [_ response]]
     (reset! edit-mode false)
     {:dispatch [::ui/notify-user-http-error "edit failed" response]}))
 
 (rf/reg-event-fx ::edit-pension
-  (fn [{:keys [db]} [_ pension-type case-id pension-id {:keys [values]}]]
+  (fn [_ [_ pension-type case-id pension-id {:keys [values]}]]
     {:http-xhrio
      (ui/build-http
        {:method :post
         :uri
         (case pension-type
           :private (str "/api/case/" case-id "/pension/edit-private/" pension-id)
-          "")
-        :params values
+          :state (str "/api/case/" case-id "/pension/edit-state/" pension-id))
+        :params (case pension-type
+                  :private (select-keys values [:reference :provider])
+                  :state (select-keys values [:reference :start-date]))
         :on-success [::edit-success case-id]
         :on-failure [::edit-failure]})}))

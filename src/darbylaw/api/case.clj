@@ -253,7 +253,9 @@
      :provider
      :ni-number
      :reference
-     :pension-type]}
+     :pension-type
+     :start-date
+     :tell-us-once]}
 
    {'(:probate.identity-check.uk-aml/_case
        {:as :uk-aml

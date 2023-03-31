@@ -20,22 +20,31 @@
       (when (some? private)
         [:<>
          [mui/typography {:sx {:font-weight 600 :pt 1}} "private"]
-         (for [{:keys [id provider]} private]
-           ^{:key id}
-           [l/asset-item {:title (model/get-label provider)
-                          :on-click #(rf/dispatch [::notification-model/open
-                                                   {:notification-type :pension
-                                                    :case-id case-id
-                                                    :provider provider
-                                                    :pension-type :private}])
-                          :indent 1}])])
+         (doall
+           (for [{:keys [id provider]} private]
+             ^{:key id}
+             [l/asset-item {:title (model/get-label provider)
+                            :on-click #(rf/dispatch [::notification-model/open
+                                                     {:notification-type :pension
+                                                      :case-id case-id
+                                                      :provider provider
+                                                      :pension-type :private}])
+                            :indent 1}]))])
       (when (some? state)
         [:<>
          [mui/typography {:sx {:font-weight 600 :pt 1}} "state"]
          (for [{:keys [id]} state]
            ^{:key id}
-           [l/asset-item {:title "DWP" :indent 1}])])
+           [l/asset-item {:title "DWP"
+                          :on-click #(rf/dispatch [::notification-model/open
+                                                   {:notification-type :pension
+                                                    :case-id case-id
+                                                    :provider :state
+                                                    :pension-type :state}])
+                          :indent 1}])])
       [l/menu-asset-add-button
        model/anchor
-       {"add private pension" #(rf/dispatch [::model/show-dialog nil :private :add])
-        "add state pension" #(print "state")}]]]))
+       (merge
+         {"add private pension" #(rf/dispatch [::model/show-dialog nil :private :add])}
+         (when (empty? (filter #(= :state (:pension-type %)) (<< ::model/pensions)))
+           {"add state pension" #(rf/dispatch [::model/show-dialog nil :state :add])}))]]]))
