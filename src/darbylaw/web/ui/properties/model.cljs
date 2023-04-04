@@ -137,6 +137,16 @@
         :on-success [::remove-success case-id]
         :on-failure [::remove-failure]})}))
 
+(rf/reg-event-fx
+  ::remove-owned
+  (fn [_ [_ case-id property-id]]
+    {:http-xhrio
+     (ui/build-http
+       {:method :post
+        :uri (str "/api/property/" case-id "/remove-owned/" property-id)
+        :on-success [::remove-success case-id]
+        :on-failure [::remove-failure]})}))
+
 (def non-file-fields
   [:file-count :address :valuation :joint-ownership? :joint-owner :insured? :estimated-value? :property])
 
