@@ -86,10 +86,13 @@
                                                    (:date-of-death (:deceased case-data)))
                                                  false)))
         {:pension (select-keys pension-data [:reference :ni-number])}
-        {:org-name (name (:provider pension-data))
+        ;TODO what is the provider name for state pensions?
+        ;TODO update provider common-name once we have pension data
+        {:org-name (name (or (:provider pension-data) "DWP"))
          :no-address "No address data found. Please download and edit letter before sending."}))))
 (mount/defstate templates
-  :start {:private (stencil/prepare (io/resource "darbylaw/templates/private-pension-notification.docx"))})
+  :start {:private (stencil/prepare (io/resource "darbylaw/templates/private-pension-notification.docx"))
+          :state (stencil/prepare (io/resource "darbylaw/templates/state-pension-notification.docx"))})
 
 (defn render-docx [bill-type template-data file]
   (stencil/render!

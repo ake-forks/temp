@@ -42,7 +42,7 @@
                                                     :case-id case-id
                                                     :provider :state
                                                     :pension-type :state
-                                                    :asset-id id}])
+                                                    :asset-id (str id)}])
                           :indent 1}])])
       [l/menu-asset-add-button
        model/anchor

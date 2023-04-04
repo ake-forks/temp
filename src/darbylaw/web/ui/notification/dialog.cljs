@@ -74,9 +74,13 @@
         [mui/stack
          label
          [at-address]]
+        :council-tax
+        [mui/stack
+         label
+         [at-address]]
         :pension
         [mui/stack label]
-       "default")]
+       "default title")]
      [mui/dialog-content {:sx {:pt 0
                                :width 540}}
       [asset-data]
