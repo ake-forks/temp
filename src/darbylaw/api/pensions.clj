@@ -1,9 +1,16 @@
 (ns darbylaw.api.pensions
   (:require
+    [clojure.java.io :as io]
     [darbylaw.api.case-history :as case-history]
+    [darbylaw.api.util.data :as data-util]
+    [darbylaw.api.util.dates :as date-util]
     [darbylaw.api.util.tx-fns :as tx-fns]
     [darbylaw.api.util.xtdb :as xt-util]
-    [xtdb.api :as xt]))
+    [java-time.api :as jt]
+    [mount.core :as mount]
+    [stencil.api :as stencil]
+    [xtdb.api :as xt])
+  (:import (java.time LocalDate)))
 
 (defn edit-pension [op {:keys [xtdb-node user path-params body-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
@@ -44,6 +51,52 @@
                                    (when (= op :private)
                                      {:institution provider})))))
     {:status 204}))
+
+(defn letter-query [case-id]
+  [{:find '[(pull case [:reference
+                        :deceased {(:probate.deceased/_case {:as :deceased
+                                                             :cardinality :one})
+                                   [:forename :surname :date-of-death]}])]
+    :where '[[case :type :probate.case]
+             [case :xt/id case-id]]
+    :in '[case-id]}
+   case-id])
+
+(defn pension-query [pension-id]
+  [{:find '[(pull pension [:reference :ni-number :provider])]
+    :where '[[pension :type :probate.pension]
+             [pension :xt/id pension-id]]
+    :in '[pension-id]}
+   pension-id])
+
+(defn get-letter-data [xtdb-node case-id pension-id]
+  (let [database (xt/db xtdb-node)
+        [case-data] (xt-util/fetch-one
+                       (apply xt/q database
+                         (letter-query case-id)))
+        [pension-data] (xt-util/fetch-one
+                          (apply xt/q database
+                            (pension-query pension-id)))]
+    (data-util/keys-to-camel-case
+      (merge
+        (-> case-data
+          (assoc :date (date-util/long-date (jt/local-date) false))
+          (assoc-in [:deceased :date-of-death] (date-util/long-date
+                                                 (LocalDate/parse
+                                                   (:date-of-death (:deceased case-data)))
+                                                 false)))
+        {:pension (select-keys pension-data [:reference :ni-number])}
+        {:org-name (name (:provider pension-data))
+         :no-address "No address data found. Please download and edit letter before sending."}))))
+(mount/defstate templates
+  :start {:private (stencil/prepare (io/resource "darbylaw/templates/private-pension-notification.docx"))})
+
+(defn render-docx [bill-type template-data file]
+  (stencil/render!
+    (get templates bill-type)
+    template-data
+    :output file
+    :overwrite? true))
 
 (def private-schema
   [:map

@@ -16,6 +16,7 @@
   (case notification-type
     :utility :utility-company
     :council-tax :council
+    :pension :provider
     (do (log/error "case not handled: " notification-type)
         nil)))
 

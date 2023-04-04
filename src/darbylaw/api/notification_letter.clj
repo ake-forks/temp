@@ -10,7 +10,8 @@
     [darbylaw.api.util.files :as files-util :refer [with-delete]]
     [darbylaw.api.case-history :as case-history]
     [darbylaw.api.bill.notification-template :as template]
-    [darbylaw.api.letter :as letter]))
+    [darbylaw.api.letter :as letter]
+    [darbylaw.api.pensions :as pensions]))
 
 (defn convert-to-pdf-and-store [case-id letter-id docx]
   (with-delete [pdf (files-util/create-temp-file letter-id ".pdf")]
@@ -30,11 +31,13 @@
         property-id (:property body-params)
         institution (case notification-type
                       :utility (:utility-company body-params)
-                      :council-tax (:council body-params))
-        asset-id (:asset-id body-params)
+                      :council-tax (:council body-params)
+                      :pension (:provider body-params))
+        asset-id (parse-uuid (:asset-id body-params))
         template-data (case notification-type
                         :utility (template/get-letter-data xtdb-node :utility case-id institution property-id)
-                        :council-tax (template/get-letter-data xtdb-node :council-tax case-id institution property-id))
+                        :council-tax (template/get-letter-data xtdb-node :council-tax case-id institution property-id)
+                        :pension (pensions/get-letter-data xtdb-node case-id asset-id))
         _ (assert (:reference template-data))
         letter-id (str/join "."
                     [(:reference template-data)
@@ -42,18 +45,22 @@
                      (name notification-type)
                      (case notification-type
                        :utility (name (:utility-company body-params))
-                       :council-tax (name (:council body-params)))
+                       :council-tax (name (:council body-params))
+                       :pension (name (:provider body-params)))
                      (random-uuid)])]
+
     (with-delete [docx (files-util/create-temp-file letter-id ".docx")]
       (case notification-type
         :utility (template/render-docx :utility template-data docx)
-        :council-tax (template/render-docx :council-tax template-data docx))
+        :council-tax (template/render-docx :council-tax template-data docx)
+        :pension (pensions/render-docx :private template-data docx))
       (convert-to-pdf-and-store case-id letter-id docx))
     (let [specific-props (case notification-type
                            :utility (select-mandatory body-params [:utility-company
                                                                    :property])
                            :council-tax (select-mandatory body-params [:council
-                                                                       :property]))]
+                                                                       :property])
+                           :pension (select-mandatory body-params [:provider :pension-type]))]
       (xt-util/exec-tx-or-throw xtdb-node
         (concat
           [[::xt/put (merge {:type :probate.notification-letter

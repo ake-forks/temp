@@ -28,7 +28,8 @@
                                                      {:notification-type :pension
                                                       :case-id case-id
                                                       :provider provider
-                                                      :pension-type :private}])
+                                                      :pension-type :private
+                                                      :asset-id (str id)}])
                             :indent 1}]))])
       (when (some? state)
         [:<>
@@ -40,7 +41,8 @@
                                                    {:notification-type :pension
                                                     :case-id case-id
                                                     :provider :state
-                                                    :pension-type :state}])
+                                                    :pension-type :state
+                                                    :asset-id id}])
                           :indent 1}])])
       [l/menu-asset-add-button
        model/anchor
