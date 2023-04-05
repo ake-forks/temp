@@ -33,6 +33,7 @@
     [darbylaw.api.smart-search :as smart-search-api]
     [darbylaw.api.vehicle :as vehicle-api]
     [darbylaw.api.properties :as properties-api]
+    [darbylaw.api.pensions :as pensions-api]
     [darbylaw.middleware.xtdb :refer [wrap-xtdb-node]]
     [darbylaw.middleware.auth :refer [create-auth-middleware add-user-info authenticated?]]))
 
@@ -91,7 +92,8 @@
      (mailing/routes)
      (smart-search-api/routes)
      (vehicle-api/routes)
-     (properties-api/routes)]]])
+     (properties-api/routes)
+     (pensions-api/routes)]]])
 
 (defn make-router []
   (ring/router

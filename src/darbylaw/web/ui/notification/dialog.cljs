@@ -8,13 +8,16 @@
             [darbylaw.web.ui.notification.conversation :as conversation]
             [darbylaw.web.ui.bills.account-info :as account-info]
             [darbylaw.api.bill.data :as bill-data]
+            [darbylaw.web.ui.pensions.model :as pensions-model]
+            [darbylaw.web.ui.pensions.shared :as pensions-shared]
             [darbylaw.web.ui.components.dialog :as dialog]
             [darbylaw.web.ui.bills.common :as bills-common]))
 
 (defn asset-data []
   (case (<< ::model/notification-type)
     :utility [account-info/utility-info]
-    :council-tax [account-info/council-tax-info]))
+    :council-tax [account-info/council-tax-info]
+    :pension [pensions-shared/account-info (:provider (<< ::model/notification))]))
 
 (defn at-address []
   [mui/stack {:align-items :flex-start}
@@ -22,34 +25,58 @@
    (bills-common/address-box false
      [mui/typography (<< ::bills-model/address)])])
 
+(defn get-data []
+  (let [notification-db (<< ::model/notification)]
+    (first (case (<< ::model/notification-type)
+             :utility (bills-model/current-utility-data
+                        (:utility-company notification-db)
+                        (:property notification-db))
+             :council-tax (bills-model/current-council-data
+                            (:utility-company notification-db)
+                            (:property notification-db))
+             :pension (pensions-model/get-pension (:provider notification-db))))))
+
+(defn get-label [current-data]
+  (let [notification-db (<< ::model/notification)]
+    (case (<< ::model/notification-type)
+      :council-tax (bill-data/get-council-label (:council notification-db))
+      :utility (if (some? (:new-utility-name current-data))
+                 (:new-utility-name current-data)
+                 (<< ::bills-model/utility-company-label))
+      :pension
+      (pensions-model/get-label (:provider notification-db)))))
+
+(defn get-copy [label]
+  (let [notification-type (<< ::model/notification-type)]
+    (case notification-type
+      :utility (str
+                 "Let us know when you have provided all accounts at this address"
+                 " for " label ". At that point,"
+                 " we will notify the company about the decease"
+                 " and ask for confirmation of the data entered.")
+      :council-tax (str
+                     "Once you are happy that the information provided is correct,"
+                     " we will notify " label ".")
+      :pension (str
+                 "Once you are happy that the information provided is correct,"
+                 " we will notify " label "."))))
+
 (defn right-panel []
-  (let [notification-db (<< ::model/notification)
-        council-label (bill-data/get-council-label (:council notification-db))
-        current-data (first (case (<< ::model/notification-type)
-                              :utility (bills-model/current-utility-data
-                                         (:utility-company notification-db)
-                                         (:property notification-db))
-                              :council-tax (bills-model/current-council-data
-                                             (:utility-company notification-db)
-                                             (:property notification-db))))
-        new-utility? (some? (:new-utility-name current-data))
-        utility-label (when (= :utility (<< ::model/notification-type))
-                        (if new-utility?
-                          (:new-utility-name current-data)
-                          (<< ::bills-model/utility-company-label)))]
+  (let [current-data (get-data)
+        label (get-label current-data)]
     [mui/stack
      [dialog/title {:on-click-close #(rf/dispatch [::model/close-dialog])}
       (case (<< ::model/notification-type)
-       :utility
-       [mui/stack
-        utility-label
-        [at-address]]
-
-       :council-tax
-       [mui/stack
-        council-label
-        [at-address]])]
-
+        :utility
+        [mui/stack
+         label
+         [at-address]]
+        :council-tax
+        [mui/stack
+         label
+         [at-address]]
+        :pension
+        [mui/stack label])]
      [mui/dialog-content {:sx {:pt 0
                                :width 540}}
       [asset-data]
@@ -58,15 +85,7 @@
          [mui/typography {:sx {:font-weight 600}}
           "Finished?"]
          [mui/typography
-          (case (<< ::model/notification-type)
-            :utility (str
-                       "Let us know when you have provided all accounts at this address"
-                       " for " utility-label ". At that point,"
-                       " we will notify the company about the decease"
-                       " and ask for confirmation of the data entered.")
-            :council-tax (str
-                           "Once you are happy that the information provided is correct,"
-                           " we will notify " council-label "."))]
+          (get-copy label)]
          [mui/form-control-label
           {:label "All data is completed."
            :control
@@ -82,7 +101,8 @@
                     :sx {:visibility (if (<< ::model/data-completed?) :visible :hidden)}}
         (case (<< ::model/notification-type)
           :utility "Notify company"
-          :council-tax "Notify council")]]
+          :council-tax "Notify council"
+          :pension "Notify Provider")]]
       [mui/button {:variant :outlined
                    :onClick #(rf/dispatch [::model/close-dialog])}
        "Close"]]]))

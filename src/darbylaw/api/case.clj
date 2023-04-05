@@ -1,6 +1,5 @@
 (ns darbylaw.api.case
   (:require [xtdb.api :as xt]
-            [medley.core :as m]
             [reitit.coercion]
             [reitit.coercion.malli]
             [ring.util.response :as ring]
@@ -247,6 +246,16 @@
        :original-filename
        :uploaded-at
        :uploaded-by]}]}
+
+   {'(:probate.pension/_case {:as :pensions})
+    ['(:xt/id {:as :id})
+     :provider
+     :ni-number
+     :reference
+     :pension-type
+     :start-date
+     :tell-us-once
+     :valuation]}
 
    {'(:probate.identity-check.uk-aml/_case
        {:as :uk-aml

@@ -89,7 +89,8 @@
 
 (defn menu-asset-add-button
   "anchor = atom
-  options = a map of option labels and their on-click functions as key-value pairs"
+  options = a map of option labels and their on-click functions as key-value pairs
+  eg {\"add utility\" #(rf/dispatch...)}"
   [anchor options]
   [:<>
    [asset-add-button
