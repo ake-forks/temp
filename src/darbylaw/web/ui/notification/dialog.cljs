@@ -68,7 +68,7 @@
   (let [current-data (get-data)
         label (get-label current-data)]
     [mui/stack
-     [dialog/title {:on-click-close #(do (reset! pensions-model/edit-mode false) (rf/dispatch [::model/close-dialog]))}
+     [dialog/title {:on-click-close #(do (pensions-model/close-modal) (rf/dispatch [::model/close-dialog]))}
       (case (<< ::model/notification-type)
         :utility
         [mui/stack

@@ -18,9 +18,11 @@
     (xt-util/exec-tx-or-throw xtdb-node
       (concat
         (tx-fns/set-values pension-id (case op
-                                        :private {:reference (:reference body-params)}
+                                        :private {:reference (:reference body-params)
+                                                  :valuation (:valuation body-params)}
                                         :state {:reference (:reference body-params)
-                                                :start-date (:start-date body-params)}))
+                                                :start-date (:start-date body-params)
+                                                :valuation (:valuation body-params)}))
         (case-history/put-event2 (merge {:case-id case-id
                                          :user user
                                          :subject :probate.case.pensions
@@ -124,9 +126,11 @@
                                        :parameters {:body
                                                     [:map
                                                      [:provider :keyword]
-                                                     [:reference {:optional true} :string]]}}}]
+                                                     [:reference {:optional true} :string]
+                                                     [:valuation {:optional true} :string]]}}}]
    ["edit-state/:pension-id" {:post {:handler (partial edit-pension :state)
                                      :parameters {:body
                                                   [:map
                                                    [:reference {:optional true} :string]
-                                                   [:start-date {:optional true} :string]]}}}]])
+                                                   [:start-date {:optional true} :string]
+                                                   [:valuation {:optional true} :string]]}}}]])

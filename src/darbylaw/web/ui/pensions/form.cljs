@@ -1,7 +1,9 @@
 (ns darbylaw.web.ui.pensions.form
   (:require
+    [clojure.string :as string]
     [darbylaw.web.ui.pensions.model :as model]
     [darbylaw.web.util.form :as form-util]
+    [reagent-mui.components :as mui]
     [reagent.core :as r]
     [fork.re-frame :as fork]
     [darbylaw.web.ui :as ui :refer (<<)]
@@ -37,6 +39,30 @@
   [form-util/text-field fork-args
    {:name :start-date
     :label "pension start date"}])
+
+(defn toggle-negative [s]
+  (if (string/starts-with? s "-")
+    (subs s 1)
+    (str "-" s)))
+
+(defn value-field [{:keys [state values] :as fork-args}]
+  [mui/stack {:direction :row :spacing 0.5}
+   [form-util/text-field fork-args {:name :valuation
+                                    :label "account value"
+                                    :required true
+                                    :style {:width "50%"}
+                                    :InputProps
+                                    {:start-adornment
+                                     (r/as-element
+                                       [mui/input-adornment {:position :start} "£"])}}]
+   [mui/stack {:direction :row
+               :align-items :center
+               :spacing 0.5
+               :style {:width "50%"}}
+    [mui/typography {:variant :body2} "owed to estate"]
+    [mui/switch {:checked (string/starts-with? (or (:valuation values) " ") "-")
+                 :on-click #(swap! state update-in [:values :valuation] toggle-negative)}]
+    [mui/typography {:variant :body2} "in debt"]]])
 
 (defonce form-state (r/atom nil))
 (defn form [{:keys [layout submit-fn initial-values]}]

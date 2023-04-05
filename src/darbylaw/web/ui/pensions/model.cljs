@@ -10,6 +10,12 @@
 
 (def edit-mode (r/atom false))
 
+(def value-mode (r/atom false))
+
+(defn close-modal []
+  (reset! edit-mode false)
+  (reset! value-mode false))
+
 (rf/reg-event-db
   ::show-dialog
   (fn [db [_ id pension-type dialog-type]]
@@ -79,12 +85,12 @@
 ;edit
 (rf/reg-event-fx ::edit-success
   (fn [_ [_  case-id]]
-    (reset! edit-mode false)
+    (close-modal)
     {:fx [[:dispatch [::case-model/load-case! case-id]]]}))
 
 (rf/reg-event-fx ::edit-failure
   (fn [_ [_ response]]
-    (reset! edit-mode false)
+    (close-modal)
     {:dispatch [::ui/notify-user-http-error "edit failed" response]}))
 
 (rf/reg-event-fx ::edit-pension
@@ -97,7 +103,7 @@
           :private (str "/api/case/" case-id "/pension/edit-private/" pension-id)
           :state (str "/api/case/" case-id "/pension/edit-state/" pension-id))
         :params (case pension-type
-                  :private (select-keys values [:reference :provider])
-                  :state (select-keys values [:reference :start-date]))
+                  :private (select-keys values [:reference :provider :valuation])
+                  :state (select-keys values [:reference :start-date :valuation]))
         :on-success [::edit-success case-id]
         :on-failure [::edit-failure]})}))
