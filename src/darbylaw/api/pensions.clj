@@ -12,28 +12,23 @@
     [xtdb.api :as xt])
   (:import (java.time LocalDate)))
 
-(defn edit-pension [op {:keys [xtdb-node user path-params body-params]}]
+(defn edit-pension [pension-type {:keys [xtdb-node user path-params body-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
         pension-id (parse-uuid (:pension-id path-params))]
     (xt-util/exec-tx-or-throw xtdb-node
       (concat
-        (tx-fns/set-values pension-id (case op
-                                        :private {:reference (:reference body-params)
-                                                  :valuation (:valuation body-params)}
-                                        :state {:reference (:reference body-params)
-                                                :start-date (:start-date body-params)
-                                                :valuation (:valuation body-params)}))
+        (tx-fns/set-values pension-id body-params)
         (case-history/put-event2 (merge {:case-id case-id
                                          :user user
                                          :subject :probate.case.pensions
                                          :op :updated
                                          :pension pension-id
-                                         :pension-type op}
-                                   (when (= op :private)
+                                         :pension-type pension-type}
+                                   (when (= pension-type :private)
                                      {:institution (:provider body-params)})))))
     {:status 204}))
 
-(defn add-pension [op {:keys [xtdb-node user path-params body-params]}]
+(defn add-pension [pension-type {:keys [xtdb-node user path-params body-params]}]
   (let [case-id (parse-uuid (:case-id path-params))
         pension-id (random-uuid)
         provider (:provider body-params)]
@@ -43,14 +38,14 @@
                      {:xt/id pension-id
                       :type :probate.pension
                       :probate.pension/case case-id
-                      :pension-type op})]]
+                      :pension-type pension-type})]]
         (case-history/put-event2 (merge {:case-id case-id
                                          :user user
                                          :subject :probate.case.pensions
                                          :op :added
                                          :pension pension-id
-                                         :pension-type op}
-                                   (when (= op :private)
+                                         :pension-type pension-type}
+                                   (when (= pension-type :private)
                                      {:institution provider})))))
     {:status 204}))
 

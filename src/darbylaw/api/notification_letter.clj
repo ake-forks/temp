@@ -21,34 +21,33 @@
 (mount/defstate blank-page
   :start (io/resource "darbylaw/templates/blank-page.pdf"))
 (defn convert-to-pdf-and-store [institution xtdb-node case-id letter-id docx]
-  (if (= institution :state)
-    (with-delete [pdf (files-util/create-temp-file letter-id ".pdf")
-                  death-cert-docx (files-util/create-temp-file (str letter-id "-death-cert") ".docx")
-                  death-cert-pdf (files-util/create-temp-file (str letter-id "-death-cert") ".pdf")]
-      (let [;; Don't clean up final-pdf as we need to return it
-            final-pdf (files-util/create-temp-file letter-id ".pdf")
-            template-data (death-cert-template/get-letter-template-data
-                            xtdb-node case-id)]
-        (pdf/convert-file docx pdf)
-        (death-cert-template/render-docx template-data death-cert-docx)
-        (pdf/convert-file death-cert-docx death-cert-pdf)
-        (pdf-merge/merge-pdfs
-          :input (->> [(.getAbsolutePath pdf)
-                       ;; We want death-cert-pdf to be on an odd numbered
-                       ;; page so that when the final-pdf is printed
-                       ;; double sided it's on it's own page.
-                       ;; To do this we insert a blank page when
-                       ;; letter-pdf has an odd number of pages.
-                       (when (odd? (pdf-info/page-number pdf))
-                         (io/as-file blank-page))
-                       (.getAbsolutePath death-cert-pdf)]
-                     (remove nil?))
-          :output (.getAbsolutePath final-pdf))
-        (doc-store/store-case-file case-id (str letter-id ".pdf") final-pdf)))
+  ;state pensions need death cert verification form inserted, other letter types do not
+  (with-delete [pdf (files-util/create-temp-file letter-id ".pdf")]
+    (pdf/convert-file docx pdf)
+    (doc-store/store-case-file case-id (str letter-id ".docx") docx)
 
-    (with-delete [pdf (files-util/create-temp-file letter-id ".pdf")]
-      (pdf/convert-file docx pdf)
-      (doc-store/store-case-file case-id (str letter-id ".docx") docx)
+    (if (= institution :state)
+      (with-delete [death-cert-docx (files-util/create-temp-file (str letter-id "-death-cert") ".docx")
+                    death-cert-pdf (files-util/create-temp-file (str letter-id "-death-cert") ".pdf")]
+        (let [final-pdf (files-util/create-temp-file letter-id ".pdf")
+              template-data (death-cert-template/get-letter-template-data
+                              xtdb-node case-id)]
+          (death-cert-template/render-docx template-data death-cert-docx)
+          (pdf/convert-file death-cert-docx death-cert-pdf)
+          (pdf-merge/merge-pdfs
+            :input (->> [(.getAbsolutePath pdf)
+                         ;; We want death-cert-pdf to be on an odd numbered
+                         ;; page so that when the final-pdf is printed
+                         ;; double sided it's on it's own page.
+                         ;; To do this we insert a blank page when
+                         ;; letter-pdf has an odd number of pages.
+                         (when (odd? (pdf-info/page-number pdf))
+                           (io/as-file blank-page))
+                         (.getAbsolutePath death-cert-pdf)]
+                     (remove nil?))
+            :output (.getAbsolutePath final-pdf))
+          (doc-store/store-case-file case-id (str letter-id ".pdf") final-pdf)))
+
       (doc-store/store-case-file case-id (str letter-id ".pdf") pdf))))
 
 (defn select-mandatory [m ks]

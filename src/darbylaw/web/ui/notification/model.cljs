@@ -1,5 +1,6 @@
 (ns darbylaw.web.ui.notification.model
   (:require [darbylaw.web.ui :as ui]
+            [darbylaw.web.ui.pensions.model :as pensions-model]
             [medley.core :as medley]
             [re-frame.core :as rf]
             [darbylaw.web.ui.case-model :as case-model]))
@@ -246,6 +247,7 @@
 
 (rf/reg-event-db ::close-dialog
   (fn [db _]
+    (pensions-model/close-modal)
     (assoc-in db [::context :dialog-open?] false)))
 
 (rf/reg-event-db ::set-data-completed

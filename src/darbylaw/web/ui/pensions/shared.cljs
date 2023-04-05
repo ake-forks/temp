@@ -17,7 +17,7 @@
    [mui/icon-button {:on-click #(rf/dispatch [::model/hide-dialog])}
     [ui/icon-close]]])
 
-(def dialog-size {:height "50vh" :width "40vw"})
+(def dialog-size {:width "40vw"})
 
 (defn my-form
   [{:keys [values handle-change handle-blur]}]
@@ -34,7 +34,6 @@
               {"input" "hello"}}
    my-form])
 
-;{:provider :aviva, :ni-number "1", :reference "99", :pension-type :private, :id #uuid "21aef85b-240c-4bf1-8f61-9cc6cbdd96e3"}
 (defn account-info [provider]
   (let [{:keys [reference id pension-type start-date] :as data} (model/get-pension provider)
         case-id (<< ::case-model/case-id)
@@ -43,7 +42,7 @@
                 :prevent-default? true
                 :clean-on-unmount? true
                 :keywordize-keys true
-                :initial-values (merge {:valuation ""} data)}
+                :initial-values (merge (when ongoing? {:valuation ""}) data)}
      (fn [{:keys [handle-submit] :as fork-args}]
        [:form {:on-submit handle-submit}
         [mui/card

@@ -17,8 +17,7 @@
   (case (<< ::model/notification-type)
     :utility [account-info/utility-info]
     :council-tax [account-info/council-tax-info]
-    :pension [pensions-shared/account-info (:provider (<< ::model/notification))]
-    "data default"))
+    :pension [pensions-shared/account-info (:provider (<< ::model/notification))]))
 
 (defn at-address []
   [mui/stack {:align-items :flex-start}
@@ -45,8 +44,7 @@
                  (:new-utility-name current-data)
                  (<< ::bills-model/utility-company-label))
       :pension
-      (pensions-model/get-label (:provider notification-db))
-      "label default")))
+      (pensions-model/get-label (:provider notification-db)))))
 
 (defn get-copy [label]
   (let [notification-type (<< ::model/notification-type)]
@@ -61,14 +59,13 @@
                      " we will notify " label ".")
       :pension (str
                  "Once you are happy that the information provided is correct,"
-                 " we will notify " label ".")
-      "copy default")))
+                 " we will notify " label "."))))
 
 (defn right-panel []
   (let [current-data (get-data)
         label (get-label current-data)]
     [mui/stack
-     [dialog/title {:on-click-close #(do (pensions-model/close-modal) (rf/dispatch [::model/close-dialog]))}
+     [dialog/title {:on-click-close #(rf/dispatch [::model/close-dialog])}
       (case (<< ::model/notification-type)
         :utility
         [mui/stack
@@ -79,8 +76,7 @@
          label
          [at-address]]
         :pension
-        [mui/stack label]
-       "default title")]
+        [mui/stack label])]
      [mui/dialog-content {:sx {:pt 0
                                :width 540}}
       [asset-data]
