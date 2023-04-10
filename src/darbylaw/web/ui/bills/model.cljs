@@ -25,8 +25,11 @@
 (defn id->label-fn [coll]
   (let [label-by-id (into {} (map (juxt :id :common-name) coll))]
     (fn [id]
-      (or (get label-by-id (keyword id))
-          (name id)))))
+      (if id
+        (or (get label-by-id (keyword id))
+            (name id))
+        (do (js/console.error "id is nil")
+            nil)))))
 
 (rf/reg-sub ::company-id->label
   :<- [::companies]
