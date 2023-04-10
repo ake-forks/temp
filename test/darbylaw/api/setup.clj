@@ -52,6 +52,11 @@
    :uri "/api/case"
    :body-params {:personal-representative pr-info1}})
 
+(defn update-deceased [case-id]
+  {:request-method :put
+   :uri (str "/api/case/" case-id "/deceased")
+   :body-params deceased})
+
 (defn add-bank-accounts [{:keys [case-id bank-id accounts]
                           :or {bank-id :my-bank-id
                                accounts bank-accounts1}}]

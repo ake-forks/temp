@@ -1,6 +1,5 @@
 (ns darbylaw.api.case
   (:require [xtdb.api :as xt]
-            [medley.core :as m]
             [reitit.coercion]
             [reitit.coercion.malli]
             [ring.util.response :as ring]
@@ -8,7 +7,8 @@
             [darbylaw.api.case-history :as case-history]
             [darbylaw.api.util.xtdb :as xt-util]
             [darbylaw.api.util.tx-fns :as tx-fns]
-            [darbylaw.api.bill.data :as bill-data]))
+            [darbylaw.api.bill.data :as bill-data]
+            [darbylaw.api.vehicle.data :as vehicle-data]))
 
 (def date--schema
   [:re #"^\d{4}-\d{2}-\d{2}$"])
@@ -233,7 +233,29 @@
 
    {'(:probate.property/_case {:as :properties})
     ['(:xt/id {:as :id})
-     :address]}
+     :address
+     :valuation
+     :joint-ownership?
+     :joint-owner
+     :estimated-value?
+     :owned?
+     :insured?
+     {'(:probate.property-doc/_property
+         {:as :documents})
+      ['(:xt/id {:as :filename})
+       :original-filename
+       :uploaded-at
+       :uploaded-by]}]}
+
+   {'(:probate.pension/_case {:as :pensions})
+    ['(:xt/id {:as :id})
+     :provider
+     :ni-number
+     :reference
+     :pension-type
+     :start-date
+     :tell-us-once
+     :valuation]}
 
    {'(:probate.identity-check.uk-aml/_case
        {:as :uk-aml
@@ -255,7 +277,16 @@
    {:identity-user-docs
     ['(:xt/id {:as :document-id})
      :original-filename
-     :uploaded-by]}])
+     :uploaded-by]}
+
+   {:vehicles
+    (into
+      ['(:xt/id {:as :vehicle-id})
+       {:documents
+        ['(:xt/id {:as :document-id})
+         :original-filename
+         :uploaded-by]}]
+      vehicle-data/props)}])
 
 (defn get-cases [{:keys [xtdb-node]}]
   (ring/response

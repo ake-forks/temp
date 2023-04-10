@@ -22,6 +22,12 @@
 (mount/defstate ^String bucket-name
   :start (get-in config/config [:doc-store :s3-bucket]))
 
+(comment
+  ; Dummy implemenatation for dev tests
+  (defn store [_key f]
+    (println "stored " f)
+    (Thread/sleep 1000)))
+
 (defn store
   ([^String key ^File f]
    (when-not (.doesBucketExistV2 s3 bucket-name)
@@ -34,12 +40,6 @@
      (let [metadata (doto (ObjectMetadata.)
                       (.setContentType content-type))]
        (.putObject s3 bucket-name key fs metadata)))))
-
-(comment
-  ; Dummy implemenatation for dev tests
-  (defn store [_key f]
-    (println "stored " f)
-    (Thread/sleep 1000)))
 
 (defn store-case-file [case-id ^String key ^File f]
   (store (str case-id "/" key) f))

@@ -24,7 +24,10 @@
                                        :property])
     :council-tax (select-mandatory params [:notification-type
                                            :council
-                                           :property])))
+                                           :property])
+    :pension (select-mandatory params [:notification-type
+                                       :provider
+                                       :pension-type])))
 
 (defn start-notification-process [{:keys [xtdb-node body-params user] :as req}]
   (let [case-id (get-in req [:parameters :path :case-id])

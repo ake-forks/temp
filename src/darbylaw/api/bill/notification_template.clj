@@ -9,8 +9,8 @@
     [darbylaw.api.util.dates :as date-util]
     [xtdb.api :as xt]
     [darbylaw.api.util.xtdb :as xt-util]
-    [darbylaw.xtdb-node :as node]
-    [mount.core :as mount]))
+    [mount.core :as mount])
+  (:import (java.time LocalDate)))
 
 (defn generate-utility-address [company]
   (let [data (bill-data/get-company-info company)
@@ -37,6 +37,7 @@
              [utility :property property-id]]
     :in '[case-id utility-company property-id]}
    case-id utility-company property-id])
+
 (defn generate-council-address [council]
   (let [data (bill-data/get-council-info council)
         vector (vector
@@ -85,13 +86,15 @@
         (-> case-data
           (assoc :date (date-util/long-date (jt/local-date) false))
           (assoc :property property-data)
-          (assoc-in [:deceased :date-of-death] (date-util/long-date-from-string
-                                                 (:date-of-death (:deceased case-data))
+          (assoc-in [:deceased :date-of-death] (date-util/long-date
+                                                 (LocalDate/parse
+                                                   (:date-of-death (:deceased case-data)))
                                                  false)))
         (case asset-type
           :utility
           (merge
-            {:account-number (mapv #(:account-number %) asset-data)}
+            {:accounts (mapv (fn [entry] {:account-number (:account-number entry)
+                                          :meter-reading (:meter-readings entry)}) asset-data)}
             (generate-utility-address (:utility-company (first asset-data))))
           :council-tax
           (merge
@@ -99,13 +102,6 @@
                                acc
                                "Unknown")}
             (generate-council-address (:council (first asset-data)))))))))
-
-(comment
-  (get-letter-data node/xtdb-node
-    :council-tax
-    #uuid"2bcee42c-df67-4aff-93e1-b91002239a38"
-    :darlington-borough
-    #uuid"ac93d4ab-9741-4925-af0e-f240c9d0dfbc"))
 
 (mount/defstate templates
   :start {:utility (stencil/prepare (io/resource "darbylaw/templates/utility-notification.docx"))

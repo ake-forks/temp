@@ -1,7 +1,12 @@
 (ns darbylaw.api.notification-letter
   (:require
+    [clojure.java.io :as io]
     [clojure.string :as str]
+    [darbylaw.api.death-cert-verif-template :as death-cert-template]
     [darbylaw.api.util.tx-fns :as tx-fns]
+    [mount.core :as mount]
+    [pdfboxing.info :as pdf-info]
+    [pdfboxing.merge :as pdf-merge]
     [xtdb.api :as xt]
     [darbylaw.doc-store :as doc-store]
     [darbylaw.api.pdf :as pdf]
@@ -10,13 +15,40 @@
     [darbylaw.api.util.files :as files-util :refer [with-delete]]
     [darbylaw.api.case-history :as case-history]
     [darbylaw.api.bill.notification-template :as template]
-    [darbylaw.api.letter :as letter]))
+    [darbylaw.api.letter :as letter]
+    [darbylaw.api.pensions :as pensions]))
 
-(defn convert-to-pdf-and-store [case-id letter-id docx]
+(mount/defstate blank-page
+  :start (io/resource "darbylaw/templates/blank-page.pdf"))
+(defn convert-to-pdf-and-store [institution xtdb-node case-id letter-id docx]
+  ;state pensions need death cert verification form inserted, other letter types do not
   (with-delete [pdf (files-util/create-temp-file letter-id ".pdf")]
     (pdf/convert-file docx pdf)
     (doc-store/store-case-file case-id (str letter-id ".docx") docx)
-    (doc-store/store-case-file case-id (str letter-id ".pdf") pdf)))
+
+    (if (= institution :state)
+      (with-delete [death-cert-docx (files-util/create-temp-file (str letter-id "-death-cert") ".docx")
+                    death-cert-pdf (files-util/create-temp-file (str letter-id "-death-cert") ".pdf")]
+        (let [final-pdf (files-util/create-temp-file letter-id ".pdf")
+              template-data (death-cert-template/get-letter-template-data
+                              xtdb-node case-id)]
+          (death-cert-template/render-docx template-data death-cert-docx)
+          (pdf/convert-file death-cert-docx death-cert-pdf)
+          (pdf-merge/merge-pdfs
+            :input (->> [(.getAbsolutePath pdf)
+                         ;; We want death-cert-pdf to be on an odd numbered
+                         ;; page so that when the final-pdf is printed
+                         ;; double sided it's on it's own page.
+                         ;; To do this we insert a blank page when
+                         ;; letter-pdf has an odd number of pages.
+                         (when (odd? (pdf-info/page-number pdf))
+                           (io/as-file blank-page))
+                         (.getAbsolutePath death-cert-pdf)]
+                     (remove nil?))
+            :output (.getAbsolutePath final-pdf))
+          (doc-store/store-case-file case-id (str letter-id ".pdf") final-pdf)))
+
+      (doc-store/store-case-file case-id (str letter-id ".pdf") pdf))))
 
 (defn select-mandatory [m ks]
   (doseq [k ks]
@@ -30,11 +62,13 @@
         property-id (:property body-params)
         institution (case notification-type
                       :utility (:utility-company body-params)
-                      :council-tax (:council body-params))
+                      :council-tax (:council body-params)
+                      :pension (:provider body-params))
         asset-id (:asset-id body-params)
         template-data (case notification-type
                         :utility (template/get-letter-data xtdb-node :utility case-id institution property-id)
-                        :council-tax (template/get-letter-data xtdb-node :council-tax case-id institution property-id))
+                        :council-tax (template/get-letter-data xtdb-node :council-tax case-id institution property-id)
+                        :pension (pensions/get-letter-data xtdb-node case-id (parse-uuid asset-id)))
         _ (assert (:reference template-data))
         letter-id (str/join "."
                     [(:reference template-data)
@@ -42,18 +76,22 @@
                      (name notification-type)
                      (case notification-type
                        :utility (name (:utility-company body-params))
-                       :council-tax (name (:council body-params)))
+                       :council-tax (name (:council body-params))
+                       :pension (name (:provider body-params)))
                      (random-uuid)])]
+
     (with-delete [docx (files-util/create-temp-file letter-id ".docx")]
       (case notification-type
         :utility (template/render-docx :utility template-data docx)
-        :council-tax (template/render-docx :council-tax template-data docx))
-      (convert-to-pdf-and-store case-id letter-id docx))
+        :council-tax (template/render-docx :council-tax template-data docx)
+        :pension (pensions/render-docx (:pension-type body-params) template-data docx))
+      (convert-to-pdf-and-store institution xtdb-node case-id letter-id docx))
     (let [specific-props (case notification-type
                            :utility (select-mandatory body-params [:utility-company
                                                                    :property])
                            :council-tax (select-mandatory body-params [:council
-                                                                       :property]))]
+                                                                       :property])
+                           :pension (select-mandatory body-params [:provider :pension-type]))]
       (xt-util/exec-tx-or-throw xtdb-node
         (concat
           [[::xt/put (merge {:type :probate.notification-letter
@@ -136,7 +174,7 @@
       (let [username (:username user)]
         (assert (= content-type http/docx-mime-type))
         (with-delete [tempfile tempfile]
-          (convert-to-pdf-and-store case-id letter-id tempfile))
+          (convert-to-pdf-and-store nil xtdb-node case-id letter-id tempfile))
         (xt-util/exec-tx xtdb-node
           (concat
             (tx-fns/set-values letter-id
