@@ -43,7 +43,8 @@
 (def task-icon "/images/green.png")
 
 (defn task-item [{:keys [title body icon-path on-click href role]
-                  :or {role :personal-representative}}]
+                  :or {role :personal-representative
+                       icon-path task-icon}}]
   [:<>
    [mui/list-item-button (merge {:on-click on-click
                                  :href href

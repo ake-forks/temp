@@ -33,9 +33,9 @@
       {:db (fork/set-submitting db path false)}
       (case create|edit
         :create {::ui/navigate-no-history
-                 [:create-deceased-details {:case-id (let [case-id (:id response)]
-                                                       (assert case-id)
-                                                       case-id)}]}
+                 [:dashboard {:case-id (let [case-id (:id response)]
+                                         (assert case-id)
+                                         case-id)}]}
         :edit {::reset-form! [fork-params response]}))))
 
 (rf/reg-event-fx ::submit-failure
@@ -196,7 +196,7 @@
                            :disabled (and (= create|edit :edit)
                                           (not dirty))}
         (case create|edit
-          :create "Next"
+          :create "Create case"
           :edit "Save")]
        [mui/snackbar {:open @open?
                       :autoHideDuration 6000
@@ -275,9 +275,10 @@
     (finally
       (reset! form-state nil))))
 
-(defn dev-auto-fill []
+(defn dev-auto-fill
   "Fill out the form programmatically.
   For development purposes only."
+  []
   (let [test-data {:title "Mr",
                    :forename "John",
                    :surname "Doe",
