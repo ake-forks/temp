@@ -191,7 +191,8 @@
          :disabled submitting?
          :renderInput
          (react-component [props]
-           [mui/text-field
+           ; see https://github.com/arttuka/reagent-material-ui/issues/39
+           [ui/original-mui-text-field
             (merge props
               {:name name
                :label (let [date-pattern
