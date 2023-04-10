@@ -58,10 +58,12 @@
                          :secondary body}]]
    [mui/divider]])
 
+(defn footer-placeholder []
+  [mui/toolbar {:variant :dense}])
+
 (defn footer []
   [:<>
-   [mui/app-bar {:position :fixed
-                 :elevation 2
+   [mui/app-bar {:elevation 2
                  :sx {:top "auto"
                       :bottom 0}}
     [mui/container {:max-width :xl}
@@ -73,7 +75,4 @@
       [mui/link {:variant :body2
                  :underline :none
                  :color :text.disabled}
-       "terms and conditions"]]]]
-   ;; Fixes footer obscuring content at the bottom of the page
-   ;; See https://mui.com/material-ui/react-app-bar/#fixed-placement
-   [mui/toolbar {:variant :dense}]])
+       "terms and conditions"]]]]])
