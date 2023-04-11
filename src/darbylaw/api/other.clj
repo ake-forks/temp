@@ -12,7 +12,7 @@
 ;; >> Handlers
 
 (defn upload-documents [{:keys [xtdb-node user parameters multipart-params]}]
-  (let [{:keys [case-id vehicle-id]} (:path parameters)
+  (let [{:keys [case-id asset-id]} (:path parameters)
         files (->> multipart-params
                    vals
                    (filter (fn [{:keys [tempfile]}] (not (nil? tempfile)))))
@@ -22,7 +22,7 @@
              :keys [tempfile content-type]}
             files]
       (let [document-id (random-uuid)
-            filename (str case-ref ".vehicle." vehicle-id ".document." document-id)]
+            filename (str case-ref ".other-asset." asset-id ".document." document-id)]
         (with-delete [tempfile tempfile]
           (doc-store/store
             (str case-id "/" filename)
@@ -35,13 +35,13 @@
                         :uploaded-by (:username user)
                         :uploaded-at (xt-util/now)
                         :original-filename original-filename}]]
-            (tx-fns/append-unique vehicle-id [:documents] [document-id])
+            (tx-fns/append-unique asset-id [:documents] [document-id])
             (case-history/put-event2
               {:case-id case-id
                :user user
-               :subject :probate.case.vehicle.document
+               :subject :probate.case.other-asset.document
                :op :added
-               :vehicle-id vehicle-id
+               :asset-id asset-id
                :document-id document-id})))))
     {:status http/status-204-no-content}))
 
@@ -57,15 +57,15 @@
      :body (.getObjectContent s3-file)}))
 
 (defn delete-document [{:keys [xtdb-node user parameters]}]
-  (let [{:keys [case-id vehicle-id document-id]} (:path parameters)]
+  (let [{:keys [case-id asset-id document-id]} (:path parameters)]
     (xt-util/exec-tx xtdb-node
       (concat
         [[::xt/delete document-id]]
-        (tx-fns/remove-unique vehicle-id [:documents] [document-id])
+        (tx-fns/remove-unique asset-id [:documents] [document-id])
         (case-history/put-event2
           {:case-id case-id
            :user user
-           :subject :probate.case.vehicle.document
+           :subject :probate.case.other-asset.document
            :op :deleted
            :document-id document-id})))
     {:status http/status-204-no-content}))
@@ -78,39 +78,39 @@
        (into {})))
 
 (defn upsert [{:keys [xtdb-node user parameters multipart-params] :as request}]
-  (let [{:keys [case-id vehicle-id]} (:path parameters)
-        insert? (nil? vehicle-id)
-        vehicle-id (if insert? (random-uuid) vehicle-id)
-        vehicle-data (:multipart parameters)]
+  (let [{:keys [case-id asset-id]} (:path parameters)
+        insert? (nil? asset-id)
+        asset-id (if insert? (random-uuid) asset-id)
+        asset-data (:multipart parameters)]
     (xt-util/exec-tx xtdb-node
       (concat
-        (tx-fns/set-values vehicle-id 
-                           (merge {:xt/id vehicle-id
-                                   :type :probate.vehicle
-                                   :probate.vehicle/case case-id}
-                                  vehicle-data))
-        (tx-fns/append-unique case-id [:other-assets] [vehicle-id])
+        (tx-fns/set-values asset-id 
+                           (merge {:xt/id asset-id
+                                   :type :probate.other-asset
+                                   :probate.other-asset/case case-id}
+                                  asset-data))
+        (tx-fns/append-unique case-id [:other-assets] [asset-id])
         (case-history/put-event2
           {:case-id case-id
            :user user
-           :subject :probate.case.vehicle
-           :vehicle-id vehicle-id
+           :subject :probate.case.other-asset
+           :asset-id asset-id
            :op (if insert? :added :updated)})))
     (let [files (extract-files multipart-params)]
       (when-not (empty? files)
         (upload-documents
           (assoc request
                  :multipart-params files
-                 :parameters (assoc-in parameters [:path :vehicle-id] vehicle-id)))))
+                 :parameters (assoc-in parameters [:path :asset-id] asset-id)))))
     {:status http/status-200-ok
-     :body {:id vehicle-id}}))
+     :body {:id asset-id}}))
 
 (comment
   (upsert
     {:xtdb-node darbylaw.xtdb-node/xtdb-node
      :user {:username "osm"}
      :parameters {:path {:case-id (parse-uuid "c68c5adc-e4f1-4159-a9b1-0ab1de98c85c")
-                         :vehicle-id (parse-uuid "41fa2bbf-5650-4d7b-b46b-fd140aafcc44")}
+                         :asset-id (parse-uuid "41fa2bbf-5650-4d7b-b46b-fd140aafcc44")}
                   :multipart {:registration-number "CUA 12345"
                               :description "Silver Ford Fiesta"
                               :estimated-value "123.12"}}}))
@@ -125,26 +125,26 @@
     {:post {:handler upsert
             :parameters {:path [:map [:case-id :uuid]]
                          :multipart data/schema}}}]
-   ["/other/:vehicle-id"
+   ["/other/:asset-id"
     {:post {:handler upsert
             :parameters {:path [:map
                                 [:case-id :uuid]
-                                [:vehicle-id :uuid]]
+                                [:asset-id :uuid]]
                          :multipart data/schema}}}]
-   ["/other/:vehicle-id"
+   ["/other/:asset-id"
     ["/document"
      {:post {:handler upload-documents
              :parameters {:path [:map
                                  [:case-id :uuid]
-                                 [:vehicle-id :uuid]]}}}]
+                                 [:asset-id :uuid]]}}}]
     ["/document/:document-id"
      {:get {:handler download-document
             :parameters {:path [:map
                                 [:case-id :uuid]
-                                [:vehicle-id :uuid]
+                                [:asset-id :uuid]
                                 [:document-id :uuid]]}}
       :delete {:handler delete-document
                :parameters {:path [:map
                                    [:case-id :uuid]
-                                   [:vehicle-id :uuid]
+                                   [:asset-id :uuid]
                                    [:document-id :uuid]]}}}]]])
