@@ -116,14 +116,14 @@
    [mui/alert-title "No documents uploaded"]
    "We recommend uploading either a receipt from the dealer or a V5 transfer"])
 
-(defn existing-documents [vehicle-id]
+(defn existing-documents [asset-id]
   (let [case-id (<< ::case-model/case-id)
-        existing-files (:documents (<< ::model/vehicle vehicle-id))]
+        existing-files (:documents (<< ::model/asset asset-id))]
     [:<>
      [document-title
       {:title "Uploaded documents"
        :store-fn #(let [file (-> % .-target .-files first)]
-                    (rf/dispatch [::model/upload-document case-id vehicle-id file]))}]
+                    (rf/dispatch [::model/upload-document case-id asset-id file]))}]
      (if (empty? existing-files)
        [no-doc-alert]
        (->> existing-files
@@ -131,8 +131,8 @@
                    ^{:key document-id}
                    [document-item 
                     {:filename original-filename
-                     :download-link (str "/api/case/" case-id "/other/" vehicle-id "/document/" document-id)
-                     :delete-fn #(rf/dispatch [::model/delete-document case-id vehicle-id document-id])}]))
+                     :download-link (str "/api/case/" case-id "/other/" asset-id "/document/" document-id)
+                     :delete-fn #(rf/dispatch [::model/delete-document case-id asset-id document-id])}]))
             (interpose [mui/divider])
             (into [mui/stack])))]))
 
@@ -177,10 +177,10 @@
       [:<>
        [sold-at fork-args]
        [confirmed-value fork-args]])
-    (let [vehicle-id (<< ::model/dialog-context)]
-      (if (and (not (nil? vehicle-id))
-               (not (= :add vehicle-id)))
-        [existing-documents vehicle-id]
+    (let [asset-id (<< ::model/dialog-context)]
+      (if (and (not (nil? asset-id))
+               (not (= :add asset-id)))
+        [existing-documents asset-id]
         [form-documents]))
     [submit-buttons fork-args]]])
 

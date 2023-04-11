@@ -14,15 +14,15 @@
     (let [case-id (<< ::case-model/case-id)
           context (<< ::model/dialog-context)]
       [form/form
-       (if (= :add context) {} (<< ::model/vehicle-form-details context))
+       (if (= :add context) {} (<< ::model/asset-form-details context))
        #(let [context (<< ::model/dialog-context)]
           ;; NOTE: Pulling in dialog-context inside the function is required.
           ;;       If we pull it outside then it won't be updated and pressing
-          ;;       save twice will add two vehicles.
-          (rf/dispatch [::model/upsert-vehicle
+          ;;       save twice will add two assets.
+          (rf/dispatch [::model/upsert-asset
                         (merge {:case-id case-id}
                                (when-not (= :add context)
-                                 {:vehicle-id context}))
+                                 {:asset-id context}))
                         %]))])]])
 
 
