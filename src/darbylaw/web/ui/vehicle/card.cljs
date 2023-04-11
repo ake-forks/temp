@@ -7,7 +7,7 @@
 
 (defn card []
   (let [vehicles @(rf/subscribe [::model/vehicles])]
-    [asset-card {:title "Vehicles"}
+    [asset-card {:title "vehicles"}
      (for [{:keys [vehicle-id registration-number
                    estimated-value confirmed-value]}
            vehicles]
