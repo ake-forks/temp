@@ -18,6 +18,7 @@
     [darbylaw.web.ui.keydocs.dialog :as key-docs]
     [darbylaw.web.ui.identity.dialog :as identity-dialog]
     [darbylaw.web.ui.vehicle.card :as vehicle-card]
+    [darbylaw.web.ui.other.card :as other-card]
     [re-frame.core :as rf]
     [reagent.core :as r]
     [reagent.format :as format]
@@ -236,6 +237,7 @@
      [bills-card]
      [funeral-card current-case]
      [vehicle-card/card]
+     [other-card/card]
      [property/properties-card]
      [pensions/pensions-card]]
     [mui/stack {:spacing 2 :style {:width "30%"}}

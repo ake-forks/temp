@@ -32,6 +32,7 @@
     [darbylaw.api.bank-notification.mailing-controls :as mailing]
     [darbylaw.api.smart-search :as smart-search-api]
     [darbylaw.api.vehicle :as vehicle-api]
+    [darbylaw.api.other :as other-api]
     [darbylaw.api.properties :as properties-api]
     [darbylaw.api.pensions :as pensions-api]
     [darbylaw.middleware.xtdb :refer [wrap-xtdb-node]]
@@ -92,6 +93,7 @@
      (mailing/routes)
      (smart-search-api/routes)
      (vehicle-api/routes)
+     (other-api/routes)
      (properties-api/routes)
      (pensions-api/routes)]]])
 

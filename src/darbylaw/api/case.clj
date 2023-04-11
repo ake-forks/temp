@@ -286,6 +286,15 @@
         ['(:xt/id {:as :document-id})
          :original-filename
          :uploaded-by]}]
+      vehicle-data/props)}
+
+   {:other-assets
+    (into
+      ['(:xt/id {:as :vehicle-id})
+       {:documents
+        ['(:xt/id {:as :document-id})
+         :original-filename
+         :uploaded-by]}]
       vehicle-data/props)}])
 
 (defn get-cases [{:keys [xtdb-node]}]
