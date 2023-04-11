@@ -174,7 +174,7 @@
       (if (and (not (nil? asset-id))
                (not (= :add asset-id)))
         [existing-documents asset-id]
-        [form-documents]))
+        [form-documents fork-args]))
     [submit-buttons fork-args]]])
 
 (def data-validation

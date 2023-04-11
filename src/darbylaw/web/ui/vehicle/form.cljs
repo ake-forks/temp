@@ -181,7 +181,7 @@
       (if (and (not (nil? vehicle-id))
                (not (= :add vehicle-id)))
         [existing-documents vehicle-id]
-        [form-documents]))
+        [form-documents fork-args]))
     [submit-buttons fork-args]]])
 
 (def data-validation
