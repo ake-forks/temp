@@ -4,6 +4,10 @@
             [darbylaw.api.smart-search.auth :refer [wrap-auth]]))
 
 
+; Docs
+; Currently used version: https://sandbox-api.smartsearchsecure.com/
+; Next version: https://docs.app.smartsearch.com/
+
 ;; >> Authenticated client
 
 (defn client-for-env
@@ -57,7 +61,7 @@
     (client (doccheck-request
               {:client_ref "oliver_test"
                :sanction_region "gbr"
-               :name {:title "Mr"
+               :name {;:title "Mr"
                       :first "John"
                       :middle "I"
                       :last "Smith"}

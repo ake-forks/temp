@@ -37,19 +37,24 @@
 (defn panel [panel-k]
   [:<>
    [c/navbar]
-   [mui/box {:sx {:display :flex}}
-    [mui/drawer {:variant :permanent
-                 :anchor :left
-                 :sx {"& .MuiDrawer-paper" {:position :static}}}
-     [mui/toolbar] ; placeholder
-     [menu panel-k]]
-    [mui/box {:component :main
-              :sx {:flex-grow 1}}
-     [mui/toolbar] ; placeholder
-     (case panel-k
-       :user-details-panel [user-details/user-details-panel]
-       :deceased-details-panel [deceased-details/panel])]]
-   [mui/toolbar]
+   [mui/stack {:height "100vh"}
+    [c/navbar-placeholder]
+    [mui/box {:flex-grow 1
+              :sx {:overflow :auto}}
+     [mui/stack {:direction :row
+                 :sx {:max-height 1}}
+      [mui/drawer {:variant :permanent
+                   :anchor :left
+                   :sx {"& .MuiDrawer-paper" {:position :static}}}
+       [menu panel-k]]
+      [mui/box {:component :main
+                :flex-grow 1
+                :sx {:width 1
+                     :overflow :auto}}
+       (case panel-k
+         :user-details-panel [user-details/user-details-panel]
+         :deceased-details-panel [deceased-details/panel])]]]
+    [c/footer-placeholder]]
    [c/footer]])
 
 (defmethod routes/panels :user-details-panel [panel-k]

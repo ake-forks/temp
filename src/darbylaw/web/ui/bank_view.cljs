@@ -190,6 +190,7 @@
   [mui/container
    [c/navbar]
    [display-info]
+   [c/footer-placeholder]
    [c/footer]])
 
 (defmethod routes/panels :view-bank-panel [] [panel])

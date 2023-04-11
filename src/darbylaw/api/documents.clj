@@ -1,13 +1,15 @@
 (ns darbylaw.api.documents
   (:require
     [darbylaw.api.case-history :as case-history]
+    [darbylaw.api.util.http :as http]
     [darbylaw.api.util.tx-fns :as tx-fns]
     [darbylaw.api.util.xtdb :as xt-util]
     [darbylaw.api.util.data :as data-util]
     [darbylaw.api.util.model :as model]
     [darbylaw.doc-store :as doc-store]
     [xtdb.api :as xt]
-    [darbylaw.api.util.files :refer [with-delete]]))
+    [darbylaw.api.util.files :refer [with-delete]]
+    [darbylaw.api.services.textract :as textract]))
 
 (def accepted-documents
   #{:death-certificate :will :grant-of-probate})
@@ -70,8 +72,20 @@
     {:status 200
      :body input-stream}))
 
+(defn analyze-death-certificate [{:keys [path-params xtdb-node]}]
+  (let [case-id (parse-uuid (:case-id path-params))
+        doc-name (keyword (:document-name path-params))
+        _ (assert doc-name :death-certificate)
+        doc-id (get-document-id xtdb-node case-id doc-name)
+        s3-key (doc-store/s3-key case-id doc-id)
+        analyze-result (textract/analyze s3-key)]
+    {:status http/status-200-ok
+     :body analyze-result}))
+
 (defn routes []
   ["/case/:case-id"
    ["/document/:document-name"
     {:post {:handler post-document}
-     :get {:handler get-document}}]])
+     :get {:handler get-document}}]
+   ["/document/:document-name/analyze"
+    {:get {:handler analyze-death-certificate}}]])

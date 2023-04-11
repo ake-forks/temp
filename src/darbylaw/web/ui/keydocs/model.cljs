@@ -1,5 +1,7 @@
 (ns darbylaw.web.ui.keydocs.model
   (:require
+    [clojure.string :as str]
+    [darbylaw.api.util.data :as data-util]
     [darbylaw.web.ui :as ui]
     [darbylaw.web.ui.case-model :as case-model]
     [re-frame.core :as rf]
@@ -60,6 +62,11 @@
     (js/window.open
       (str "/api/case/" case-id "/document/" (name document-name)))))
 
-
-
-
+(rf/reg-sub ::death-certificate-extension
+  :<- [::case-model/current-case]
+  (fn [current-case]
+    (some-> current-case
+      :death-certificate
+      :filename
+      data-util/file-extension
+      str/lower-case)))

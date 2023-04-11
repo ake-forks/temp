@@ -41,10 +41,12 @@
          nickname]]
        #_(ui/???_TO_BE_DEFINED_??? "do we replace probate-tree with a logo img? black or colourful?")]]]))
 
+(defn footer-placeholder []
+  [mui/toolbar {:variant :dense}])
+
 (defn footer []
   [:<>
-   [mui/app-bar {:position :fixed
-                 :elevation 2
+   [mui/app-bar {:elevation 2
                  :sx {:top "auto"
                       :bottom 0}}
     [mui/container {:max-width :xl}
@@ -56,10 +58,7 @@
       [mui/link {:variant :body2
                  :underline :none
                  :color :text.disabled}
-       "terms and conditions"]]]]
-   ;; Fixes footer obscuring content at the bottom of the page
-   ;; See https://mui.com/material-ui/react-app-bar/#fixed-placement
-   [mui/toolbar {:variant :dense}]])
+       "terms and conditions"]]]]])
 
 ;Dashboard cards
 (defn asset-add-button [{:keys [title on-click]}]
@@ -83,7 +82,8 @@
   [mui/card {:sx {:border-style :solid
                   :border-width 1
                   :border-color :divider}}
-   [mui/card-content {:sx {"&:last-child" {:paddingBottom (ui/theme-spacing 1)}}}
+   [mui/card-content {:sx {:paddingTop (ui/theme-spacing 1.5)
+                           "&:last-child" {:paddingBottom (ui/theme-spacing 0.5)}}}
     [asset-card-header title]
     (into [:<>] body)]])
 
@@ -141,14 +141,19 @@
 ;Tasks
 (def task-icon "/images/green.png")
 
-(defn task-item [{:keys [title body icon-path on-click href]}]
+(defn task-item [{:keys [title body icon-path on-click href role]
+                  :or {role :personal-representative
+                       icon-path task-icon}}]
   [:<>
-   [mui/list-item (merge {:on-click on-click
-                          :href href
-                          :disableGutters true}
-                         (when (or on-click href)
-                           {:sx {:cursor :pointer}}))
-    [mui/list-item-icon [:img {:src icon-path :width "30px" :height "30px"}]]
+   [mui/list-item-button (merge {:on-click on-click
+                                 :href href
+                                 :disableGutters true}
+                                (when (or on-click href)
+                                  {:sx {:cursor :pointer}}))
+    [mui/list-item-icon {:sx {:min-width "46px"}}
+     (case role
+       :personal-representative [:img {:src icon-path :width "30px" :height "30px"}]
+       :laywer [ui/icon-admin-panel-settings-outlined {:fontSize "large"}])]
     [mui/list-item-text {:primary title
                          :secondary body}]]
    [mui/divider]])

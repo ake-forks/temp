@@ -22,6 +22,7 @@
     [reagent-mui.icons.launch]
     [reagent-mui.icons.mail]
     [reagent-mui.icons.mail-outlined]
+    [reagent-mui.icons.manage-search]
     [reagent-mui.icons.open-in-new]
     [reagent-mui.icons.link]
     [reagent-mui.icons.outbox]
@@ -78,6 +79,7 @@
 (def icon-launch reagent-mui.icons.launch/launch)
 (def icon-mail reagent-mui.icons.mail/mail)
 (def icon-mail-outlined reagent-mui.icons.mail-outlined/mail-outlined)
+(def icon-manage-search reagent-mui.icons.manage-search/manage-search)
 (def icon-open-in-new reagent-mui.icons.open-in-new/open-in-new)
 (def icon-question-mark reagent-mui.icons.question-mark/question-mark)
 (def icon-link reagent-mui.icons.link/link)

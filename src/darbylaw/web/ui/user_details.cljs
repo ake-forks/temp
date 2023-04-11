@@ -7,9 +7,10 @@
 
 (defn user-details-panel []
   (r/with-let [case-loaded? (case-model/await-load-case!)]
-    [mui/container {:max-width :md}
+    [mui/container {:max-width :md
+                    :sx {:py 2}}
      [mui/typography {:variant :h3
-                      :sx {:pt 4 :pb 2}}
+                      :sx {:py 2}}
       "your details"]
      (if @case-loaded?
        [form/user-details-form :edit
