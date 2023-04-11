@@ -253,6 +253,7 @@
       [c/navbar-placeholder]
       [heading current-case]]
      [content current-case]
+     [c/footer-placeholder]
      [c/footer]]))
 
 (defn panel []

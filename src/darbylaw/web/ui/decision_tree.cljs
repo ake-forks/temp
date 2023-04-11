@@ -171,6 +171,7 @@
   [:<>
    [landing/navbar]
    [content]
+   [c/footer-placeholder]
    [c/footer]])
 
 (defmethod routes/panels :decision-tree-panel []

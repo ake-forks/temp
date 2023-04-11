@@ -3,13 +3,14 @@
             [fork.re-frame :as fork]
             [vlad.core :as v]
             [reagent-mui.components :as mui]
-            [darbylaw.web.ui :as ui]
+            [darbylaw.web.ui :as ui :refer [<<]]
             [darbylaw.web.util.form :as form]
             [darbylaw.web.util.vlad :as v-utils]
             [reagent.core :as r]
             [darbylaw.web.ui.case-model :as case-model]
             [darbylaw.web.util.dayjs :as dayjs]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [darbylaw.web.ui.deceased-details-autofill :as textract]))
 
 (defonce form-state (r/atom nil))
 
@@ -102,6 +103,21 @@
                            :width "200px"}]])}
     [ui/icon-search]]])
 
+(defn autofill-button [{:keys [set-handle-change] :as _fork-args}]
+  (let [case-id (<< ::case-model/case-id)
+        loading? (<< ::textract/loading?)]
+    [ui/loading-button
+     {:onClick #(rf/dispatch [::textract/autofill case-id set-handle-change form-state])
+      :loading loading?
+      :loadingPosition :start
+      :variant :contained
+      :startIcon (r/as-element [ui/icon-manage-search])
+      :sx {:mb 1
+           :mr 1}}
+     (if-not loading?
+       "autofill from certificate scan"
+       "analysing document...")]))
+
 (defn deceased-details-form* [create|edit {:keys [dirty] :as fork-args}]
   [:form
    [mui/stack {:spacing 4}
@@ -113,6 +129,8 @@
      fields are correct now will make the rest of the probate process smoother."]
     [mui/typography {:variant :p}
      "Hover over " [ui/icon-search] " to see where you will find each field on the death certificate."]
+    (when (= :edit create|edit)
+      [autofill-button fork-args])
     [mui/divider {:style {:margin-top "0.5rem"}}]
     [mui/stack {:spacing 1 :style {:margin-top "1rem"}}
      (textfield-with-tooltip
@@ -244,7 +262,7 @@
         :required true
         :full-width true
         :multiline true
-        :rows 2}
+        :rows 6}
        "cause.png"
        fork-args)
      (textfield-with-tooltip

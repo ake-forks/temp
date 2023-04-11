@@ -220,6 +220,7 @@
   [:<>
    [navbar]
    [content]
+   [c/footer-placeholder]
    [c/footer]])
 
 (defmethod routes/panels :landing-panel []
