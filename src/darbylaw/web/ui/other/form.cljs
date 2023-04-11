@@ -10,16 +10,16 @@
             [vlad.core :as v]
             [darbylaw.web.util.vlad :as v-util]))
 
-(defn registration-number [fork-args]
+(defn name-field [fork-args]
   [form/text-field fork-args
-   {:name :registration-number
-    :label "registration number"
+   {:name :name
+    :label "name"
     :required true}])
 
-(defn description [fork-args]
+(defn note [fork-args]
   [form/text-field fork-args
-   {:name :description
-    :label "description"
+   {:name :note
+    :label "note"
     :multiline true
     :maxRows 3
     :minRows 3}])
@@ -41,35 +41,28 @@
             :control (r/as-element [mui/switch])}
            inner-config)]])
 
-(defn estimated-value [fork-args]
+(defn value [fork-args]
   [currency-field fork-args
-   {:name :estimated-value
-    :label "estimated value"
+   {:name :value
+    :label "value"
     :full-width true}])
 
-(defn sold [{:keys [values handle-change]}]
+(defn paid [{:keys [values handle-change]}]
   [mui/form-control-label
-   {:label "sold?"
+   {:label "paid?"
     :control
     (r/as-element
       [mui/checkbox
-       {:name :sold
-        :value (:sold values false)
-        :checked (:sold values false)
+       {:name :paid
+        :value (:paid values false)
+        :checked (:paid values false)
         :on-change #(handle-change %)}])}])
 
-(defn sold-at [fork-args]
+(defn paid-at [fork-args]
   [form/date-picker fork-args
-   {:name :sold-at
-    :inner-config {:label "sold at"
+   {:name :paid-at
+    :inner-config {:label "paid at"
                    :required true}}])
-
-(defn confirmed-value [fork-args]
-  [currency-field fork-args
-   {:name :confirmed-value
-    :label "confirmed value"
-    :full-width true
-    :required true}])
 
 (defn submit-buttons [_fork-args]
   [mui/stack {:spacing 1
@@ -114,7 +107,7 @@
 (defn no-doc-alert []
   [mui/alert {:severity :info}
    [mui/alert-title "No documents uploaded"]
-   "We recommend uploading either a receipt from the dealer or a V5 transfer"])
+   "If appropriate, we recommend uploading an invoice or receipt"])
 
 (defn existing-documents [asset-id]
   (let [case-id (<< ::case-model/case-id)
@@ -169,14 +162,14 @@
   [:form {:on-submit handle-submit
           :style {:width "100%"}}
    [mui/stack {:spacing 1}
-    [registration-number fork-args]
-    [description fork-args]
-    [sold fork-args]
-    (if-not (:sold values)
-      [estimated-value fork-args]
+    [name-field fork-args]
+    [value fork-args]
+    (when (neg? (:value values))
       [:<>
-       [sold-at fork-args]
-       [confirmed-value fork-args]])
+       [paid fork-args]
+       (when (:paid values)
+         [paid-at fork-args])])
+    [note fork-args]
     (let [asset-id (<< ::model/dialog-context)]
       (if (and (not (nil? asset-id))
                (not (= :add asset-id)))
@@ -186,17 +179,13 @@
 
 (def data-validation
   (v/join
-    (v/attr [:registration-number] (v/present))
-    (v-util/v-when #(:estimated-value %)
-      (v/attr [:estimated-value] (v-util/currency?)))
-    (v-util/v-when #(true? (:sold %))
-      (v/join
-        (v/attr [:sold-at] (v/chain
-                             (v-util/not-nil)
-                             (v-util/valid-dayjs-date)))
-        (v/attr [:confirmed-value] (v/chain
-                                     (v/present)
-                                     (v-util/currency?)))))))
+    (v/attr [:name] (v/present))
+    (v-util/v-when #(:value %)
+      (v/attr [:value] (v-util/currency?)))
+    (v-util/v-when #(true? (:paid %))
+      (v/attr [:paid-at] (v/chain
+                           (v-util/not-nil)
+                           (v-util/valid-dayjs-date))))))
 
 (defn form [values on-submit]
   [form/form {:validation #(v/field-errors data-validation %)

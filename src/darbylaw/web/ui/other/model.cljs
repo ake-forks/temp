@@ -3,7 +3,7 @@
     [re-frame.core :as rf]
     [darbylaw.web.ui.case-model :as case-model]
     [darbylaw.api.other.data :as data]
-    [darbylaw.web.ui :as ui :refer [<<]]
+    [darbylaw.web.ui :as ui]
     [darbylaw.web.util.form :as form]
     [darbylaw.web.util.dayjs :as dayjs]
     [medley.core :as medley]))
@@ -53,7 +53,7 @@
   (fn [assets-by-id [_ asset-id]]
     (-> (get assets-by-id asset-id)
         (select-keys data/props)
-        (update :sold-at dayjs/maybe-read))))
+        (update :paid-at dayjs/maybe-read))))
 
 
 

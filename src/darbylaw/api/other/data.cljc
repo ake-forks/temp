@@ -4,14 +4,13 @@
 (def schema
   [:and
    [:map
-    [:registration-number :string]
-    [:description {:optional true} :string]
-    [:estimated-value {:optional true} :string]
-    [:sold {:optional true} :boolean]
-    [:sold-at {:optional true} :string]
-    [:confirmed-value {:optional true} :string]]
-   (malli+/when-match [:map [:sold true?]]
-     (malli+/required [:sold-at :confirmed-value]))])
+    [:name :string]
+    [:note {:optional true} :string]
+    [:value {:optional true} :string]
+    [:paid {:optional true} :boolean]
+    [:paid-at {:optional true} :string]]
+   (malli+/when-match [:map [:paid true?]]
+     (malli+/required [:paid-at]))])
 
 (def props
   (->> schema second rest (map first)))
