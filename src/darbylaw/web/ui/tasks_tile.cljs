@@ -12,7 +12,8 @@
     [darbylaw.web.ui.banking.tasks :as banking-tasks]
     [darbylaw.web.ui.keydocs.tasks :refer [keydocs-tasks]]
     [darbylaw.web.ui.identity.tasks :refer [identity-tasks]]
-    [darbylaw.web.ui.vehicle.tasks :refer [vehicle-tasks]]))
+    [darbylaw.web.ui.vehicle.tasks :refer [vehicle-tasks]]
+    [darbylaw.web.ui.other.tasks :refer [other-asset-tasks]]))
 
 (defn valid? [validations data]
   (->> data
@@ -41,6 +42,7 @@
      [keydocs-tasks]
      [banking-tasks/banks]
      [banking-tasks/buildsocs]
-     [vehicle-tasks]]]])
+     [vehicle-tasks]
+     [other-asset-tasks]]]])
 
 
