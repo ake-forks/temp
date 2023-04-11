@@ -8,6 +8,7 @@
     [darbylaw.web.ui.funeral.model :as funeral-model]
     [darbylaw.web.ui.bills.model :as bills-model]
     [darbylaw.web.ui.vehicle.model :as vehicle-model]
+    [darbylaw.web.ui.other.model :as other-model]
     [clojure.string :as str]))
 
 (defn parse-float
@@ -24,6 +25,7 @@
         utility-expenses @(rf/subscribe [::bills-model/current-utilities])
         council-tax-expenses @(rf/subscribe [::bills-model/current-council-tax])
         vehicle-expenses @(rf/subscribe [::vehicle-model/vehicles])
+        other-expenses @(rf/subscribe [::other-model/assets])
         banking (->> (concat bank-accounts buildsoc-accounts)
                      (mapcat :accounts)
                      (map #(if-let [confirmed-value (:confirmed-value %)]
@@ -44,7 +46,11 @@
                       (map (fn [{:keys [confirmed-value estimated-value]}]
                              (or confirmed-value estimated-value "0")))
                       (map parse-float))
-        assets (concat banking funeral utility council-tax vehicles)]
+        other-assets (->> other-expenses
+                          (map :value)
+                          (map #(or % "0"))
+                          (map parse-float))
+        assets (concat banking funeral utility council-tax vehicles other-assets)]
     (reduce + assets)))
 
 (defn overview-card []
