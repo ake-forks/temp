@@ -22,7 +22,7 @@
              :keys [tempfile content-type]}
             files]
       (let [document-id (random-uuid)
-            filename (str case-ref ".vehicle." vehicle-id ".document." document-id)]
+            filename (str case-ref ".vehicle.document." document-id)]
         (with-delete [tempfile tempfile]
           (doc-store/store
             (str case-id "/" filename)
